@@ -18,6 +18,7 @@ import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.preference.PrefKey
+import timber.log.Timber
 
 internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup, baseActivity: BaseActivity, private val bannerUnitId: Int, private val interstitialUnitId: Int, private val smartSegmentationInterstitialUnitId: Int) : BaseAdHandler(factory, adContainer, baseActivity) {
     private var admobView: AdView? = null
@@ -53,8 +54,9 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
                     visibility = View.VISIBLE
                 }
 
-                override fun onAdFailedToLoad(i: Int) {
-                    trackBannerFailed(PROVIDER_ADMOB, i.toString())
+                override fun onAdFailedToLoad(error: LoadAdError) {
+                    Timber.w(error.toString())
+                    trackBannerFailed(PROVIDER_ADMOB, error.code.toString())
                     hide()
                 }
             }
@@ -65,7 +67,7 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
 
     private val calculateAdSize: AdSize
         get() {
-            val display = (activity as Activity).windowManager.defaultDisplay
+            val display = activity.windowManager.defaultDisplay
             val outMetrics = DisplayMetrics()
             display.getMetrics(outMetrics)
             val density = outMetrics.density
