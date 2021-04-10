@@ -229,7 +229,7 @@ public class GoogleDriveBackendProvider extends AbstractSyncBackendProvider {
         accountFolder = driveServiceHelper.createFolder(baseFolder.getId(), accountUuid, null);
         createWarningFile();
       }
-      saveFileContentsToAccountDir(null, getAccountMetadataFilename(), buildMetadata(account), getMimetypeForData(), true);
+      saveFileContentsToAccountDir(null, getAccountMetadataFilename(), buildMetadata(account), getMimeTypeForData(), true);
     }
   }
 
