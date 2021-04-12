@@ -10,8 +10,15 @@
   * ./gradlew disableSystemAnimations clean connectedPlayWithDriveWithAdsGmsInternDebugAndroidTest
   * ./gradlew clean bundlePlayWithDriveWithAdsGmsInternRelease
 * test upgrade mechanism
-* Create release tag in GIT (git tag r39gp; git push gitlab r39gp)
-* mv APK and mapping.txt into a new folder in releases
+* execute command returned by ./gradlew playEchoPublishTag
 * upload to Play
 * add recent changes in Market
 * update _config.yml and push gh-pages
+
+# Huawei
+* ./gradlew clean myExpenses:packageHuaweiWithDriveWithAdsGmsInternReleaseUniversalApk
+* execute command returned by ./gradlew huaweiEchoPublishTag
+
+# Amazon
+# ./gradlew clean :myExpenses:packageAmazonWithDriveWithAdsGmsInternReleaseUniversalApk
+* execute command returned by ./gradlew amazonEchoPublishTag
