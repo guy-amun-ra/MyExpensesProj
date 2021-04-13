@@ -16,43 +16,36 @@
  */
 package org.totschnig.myexpenses.util.licence
 
-import android.app.Activity
+import android.content.Context
 import com.amazon.device.iap.PurchasingListener
 import com.amazon.device.iap.PurchasingService
 import com.amazon.device.iap.model.*
 import org.totschnig.myexpenses.contrib.Config
 import org.totschnig.myexpenses.util.licence.LicenceHandler.Companion.log
 
-/**
- * Handles all the interactions with Play Store (via Billing library), maintains connection to
- * it through BillingClient and caches temporary states/data if needed
- */
-class BillingManagerAmazon(val activity: Activity, private val mBillingUpdatesListener: AmazonBillingUpdatesListener, query: Boolean) : BillingManager {
+class BillingManagerAmazon(val context: Context, private val mBillingUpdatesListener: AmazonBillingUpdatesListener) : BillingManager {
+    var initialPurchasesRequestId: RequestId? = null
 
     init {
-        log().d("Creating Billing client.")
+       log().d("BillingManagerAmazon init.")
 
-        log().d("Starting setup.")
-
-        PurchasingService.registerListener(activity.applicationContext, object : PurchasingListener {
+        PurchasingService.registerListener(context, object : PurchasingListener {
             override fun onProductDataResponse(productDataResponse: ProductDataResponse) {
                 val status = productDataResponse.requestStatus
-                val requestId = productDataResponse.requestId
-                log().d("onProductDataResponse() reqStatus: %s, reqId: %s", status, requestId)
-
+                log().d("onProductDataResponse() reqStatus: %s, reqId: %s", status, productDataResponse.requestId)
                 when (status) {
                     ProductDataResponse.RequestStatus.SUCCESSFUL -> {
                         mBillingUpdatesListener.onProductDataResponse(productDataResponse.productData)
                     }
-                    else -> { //TODO
+                    else -> {
+                        mBillingUpdatesListener.onBillingSetupFailed("Unable to fetch product data")
                     }
                 }
             }
 
             override fun onPurchaseResponse(purchaseResponse: PurchaseResponse) {
                 val status = purchaseResponse.requestStatus
-                val requestId = purchaseResponse.requestId
-                log().d("onPurchaseResponse() reqStatus: %s, reqId: %s", status, requestId)
+                log().d("onPurchaseResponse() reqStatus: %s, reqId: %s", status, purchaseResponse.requestId)
                 when (status) {
                     PurchaseResponse.RequestStatus.SUCCESSFUL -> {
                         with (purchaseResponse.receipt) {
@@ -72,33 +65,50 @@ class BillingManagerAmazon(val activity: Activity, private val mBillingUpdatesLi
 
                 when (status) {
                     PurchaseUpdatesResponse.RequestStatus.SUCCESSFUL -> {
-                        mBillingUpdatesListener.onPurchasesUpdated(purchaseUpdatesResponse.receipts)
+                        mBillingUpdatesListener.onPurchasesUpdated(purchaseUpdatesResponse.receipts, requestId.equals(initialPurchasesRequestId))
+                        if (purchaseUpdatesResponse.hasMore()) {
+                            fetchPurchaseUpdates()
+                        }
                     }
-                    else -> { //TODO
-                    }
+                    else ->  mBillingUpdatesListener.onBillingSetupFailed("Unable to fetch purchase updates")
                 }
             }
 
             override fun onUserDataResponse(userDataResponse: UserDataResponse) {
-                when (userDataResponse.requestStatus) {
+                val requestStatus = userDataResponse.requestStatus
+                log().d("onUserDataResponse() reqStatus: %s, reqId: %s", requestStatus, userDataResponse.requestId)
+                when (requestStatus) {
                     UserDataResponse.RequestStatus.SUCCESSFUL -> {
-                        (activity as? BillingListener)?.onBillingSetupFinished()
-                        if (query) {
-                            PurchasingService.getPurchaseUpdates(true)
-                            PurchasingService.getProductData(Config.amazonSkus.toSet())
-                        }
+                        mBillingUpdatesListener.onBillingSetupFinished()
                     }
                     else -> {
-                        (activity as? BillingListener)?.onBillingSetupFailed(
+                        mBillingUpdatesListener.onBillingSetupFailed(
                                 "Please make sure you are logged into Amazon AppStore (%s)"
-                                        .format(userDataResponse.requestStatus.name))
+                                        .format(requestStatus.name))
                     }
                 }
 
             }
 
         })
+    }
+
+    override fun onResume(query: Boolean) {
+        log().d("BillingManagerAmazon onResume 1.")
         PurchasingService.getUserData()
+        if (query) {
+            log().d("BillingManagerAmazon onResume 2.")
+            fetchPurchaseUpdates()
+            PurchasingService.getProductData(Config.amazonSkus.toSet())
+        }
+    }
+
+    private fun fetchPurchaseUpdates() {
+        if (initialPurchasesRequestId == null) {
+            initialPurchasesRequestId = PurchasingService.getPurchaseUpdates(true)
+        } else {
+            PurchasingService.getPurchaseUpdates(false)
+        }
     }
 
     /**
@@ -107,20 +117,13 @@ class BillingManagerAmazon(val activity: Activity, private val mBillingUpdatesLi
     fun initiatePurchaseFlow(sku: String) {
         PurchasingService.purchase(sku)
     }
-
-    /**
-     * Clear the resources
-     */
-    override fun destroy() {
-        //nothing to do
-    }
-
 }
 
 interface AmazonBillingUpdatesListener {
-    //return true if purchases should be acknowledged
-    fun onPurchasesUpdated(purchases: MutableList<Receipt>)
+    fun onPurchasesUpdated(purchases: MutableList<Receipt>, initialFullRequest: Boolean)
     fun onProductDataResponse(productData: MutableMap<String, Product>)
     fun onPurchase(receipt: Receipt) : Boolean
     fun onPurchaseFailed(resultCode: PurchaseResponse.RequestStatus)
+    fun onBillingSetupFailed(message: String)
+    fun onBillingSetupFinished()
 }

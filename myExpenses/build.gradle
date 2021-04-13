@@ -116,6 +116,7 @@ android {
             dimension "distribution"
             buildConfigField "String", "DISTRIBUTION", "\"AMAZON\""
             ext.gitTagSuffix = 'aa'
+            proguardFile 'proguard-amazon.txt'
         }
         huawei {
             dimension "distribution"

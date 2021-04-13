@@ -34,6 +34,7 @@ open class PlayStoreLicenceHandler(context: MyApplication, preferenceObfuscator:
                 skuDetails.introductoryPrice.takeIf { !TextUtils.isEmpty(it) } ?: skuDetails.price
             }
 
+    @Suppress("MemberVisibilityCanBePrivate")
     fun getSkuDetailsFromPrefs(sku: String): SkuDetails? {
         pricesPrefs.getString(prefKeyForSkuJson(sku), null)?.let {
             return try {

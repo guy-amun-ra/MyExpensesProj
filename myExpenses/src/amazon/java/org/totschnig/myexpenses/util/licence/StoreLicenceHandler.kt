@@ -16,7 +16,7 @@ import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 class StoreLicenceHandler(context: MyApplication, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) :
-        PlayStoreLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
+        AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
 
     override fun initBillingManager(activity: Activity, query: Boolean): BillingManager {
         val billingUpdatesListener = object : AmazonBillingUpdatesListener {
@@ -26,9 +26,9 @@ class StoreLicenceHandler(context: MyApplication, preferenceObfuscator: Preferen
                 return licenceStatus != null
             }
 
-            override fun onPurchasesUpdated(purchases: MutableList<Receipt>) {
+            override fun onPurchasesUpdated(purchases: MutableList<Receipt>, initialFullRequest: Boolean) {
                 val oldStatus = licenceStatus
-                registerInventory(purchases)
+                registerInventory(purchases, initialFullRequest)
                 if (oldStatus != licenceStatus) {
                     (activity as? BillingListener)?.onLicenceStatusSet(prettyPrintStatus(activity))
                 }
@@ -42,15 +42,22 @@ class StoreLicenceHandler(context: MyApplication, preferenceObfuscator: Preferen
                 log().w("onPurchaseFailed() resultCode: %s", resultCode)
                 (activity as? ContribInfoDialogActivity)?.onPurchaseFailed(resultCode.ordinal)
             }
+
+            override fun onBillingSetupFailed(message: String) {
+                (activity as? BillingListener)?.onBillingSetupFailed(message)
+            }
+
+            override fun onBillingSetupFinished() {
+                (activity as? BillingListener)?.onBillingSetupFinished()
+            }
         }
-        return BillingManagerAmazon(activity, billingUpdatesListener, query)
+        return BillingManagerAmazon(activity.applicationContext, billingUpdatesListener)
     }
 
-    private fun registerInventory(purchases: MutableList<Receipt>) {
-        val receipt = findHighestValidPurchase(purchases)
-        receipt?.let {
+    private fun registerInventory(purchases: MutableList<Receipt>, maybeCancel: Boolean) {
+        findHighestValidPurchase(purchases)?.let {
             handlePurchaseForLicence(it.sku, it.receiptId)
-        } ?: kotlin.run { maybeCancel() }
+        } ?: kotlin.run { if (maybeCancel) maybeCancel() }
     }
 
     private fun findHighestValidPurchase(purchases: List<Receipt>) =
