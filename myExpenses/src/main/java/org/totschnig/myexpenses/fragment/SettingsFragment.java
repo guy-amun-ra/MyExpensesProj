@@ -228,7 +228,7 @@ public class SettingsFragment extends BaseSettingsFragment implements
   private final Preference.OnPreferenceChangeListener storeInDatabaseChangeListener =
       (preference, newValue) -> {
         activity().startTaskExecution(TaskExecutionFragment.TASK_STORE_SETTING,
-            new String[]{preference.getKey()}, newValue.toString(), R.string.progress_dialog_saving);
+            new String[]{preference.getKey()}, newValue.toString(), R.string.saving);
         return true;
       };
 
@@ -957,7 +957,7 @@ public class SettingsFragment extends BaseSettingsFragment implements
       }
       activity.invalidateHomeCurrency();
       activity.startTaskExecution(TaskExecutionFragment.TASK_RESET_EQUIVALENT_AMOUNTS,
-          null, null, R.string.progress_dialog_saving);
+          null, null, R.string.saving);
     }
   }
 }
