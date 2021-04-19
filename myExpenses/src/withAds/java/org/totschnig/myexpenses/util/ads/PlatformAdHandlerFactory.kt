@@ -29,9 +29,9 @@ class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userC
             remoteConfig.fetchAndActivate().addOnCompleteListener { task ->
                 if (!task.isSuccessful) {
                     task.exception?.let {
-                        Timber.e(it)
+                        Timber.w(it)
                     } ?: run {
-                        Timber.e("Firebase Remote Config Fetch failed")
+                        Timber.w("Firebase Remote Config Fetch failed")
                     }
                 }
             }
