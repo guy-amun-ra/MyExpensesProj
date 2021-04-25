@@ -59,8 +59,8 @@ import static org.totschnig.myexpenses.util.ColorUtils.MAIN_COLORS;
 import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
 
 public class TransactionDatabase extends SQLiteOpenHelper {
-  public static final int DATABASE_VERSION = 115;
-  private Context mCtx;
+  public static final int DATABASE_VERSION = 116;
+  private final Context mCtx;
 
   /**
    * SQL statement for expenses TABLE
@@ -629,7 +629,7 @@ public class TransactionDatabase extends SQLiteOpenHelper {
           + "primary key (" + KEY_TAGID + "," + KEY_TRANSACTIONID + "));";
 
   private static final String ACCOUNT_TAGS_CREATE =
-          "CREATE TABLE " + TABLE_ACCOUNT_TAGS
+          "CREATE TABLE " + TABLE_ACCOUNTS_TAGS
             + " ( " + KEY_TAGID + " integer references " + TABLE_TAGS + "(" + KEY_ROWID + ") ON DELETE CASCADE, "
             + KEY_ACCOUNTID + " integer references " + TABLE_ACCOUNTS + "(" + KEY_ROWID + ") ON DELETE CASCADE, "
             + "primary key (" + KEY_TAGID + "," + KEY_ACCOUNTID + "));";
@@ -2148,6 +2148,9 @@ public class TransactionDatabase extends SQLiteOpenHelper {
         createOrRefreshTransactionTriggers(db);
         createOrRefreshAccountTriggers(db);
         createOrRefreshAccountMetadataTrigger(db);
+      }
+      if (oldVersion < 116) {
+        db.execSQL("CREATE TABLE accounts_tags ( tag_id integer references tags(_id) ON DELETE CASCADE, account_id integer references accounts(_id) ON DELETE CASCADE, primary key (tag_id,account_id));");
       }
       TransactionProvider.resumeChangeTrigger(db);
     } catch (SQLException e) {
