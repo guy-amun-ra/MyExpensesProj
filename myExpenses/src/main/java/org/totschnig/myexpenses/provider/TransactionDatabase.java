@@ -23,7 +23,6 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Build;
@@ -58,8 +57,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
 import static org.totschnig.myexpenses.util.ColorUtils.MAIN_COLORS;
 import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
 
-public class TransactionDatabase extends SQLiteOpenHelper {
-  public static final int DATABASE_VERSION = 116;
+public class TransactionDatabase extends BaseTransactionDatabase {
   private final Context mCtx;
 
   /**
@@ -660,7 +658,7 @@ public class TransactionDatabase extends SQLiteOpenHelper {
   public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
 
   TransactionDatabase(Context context, String databaseName) {
-    super(context, databaseName, null, DATABASE_VERSION);
+    super(context, databaseName);
     mCtx = context;
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
       setWriteAheadLoggingEnabled(false);
@@ -764,9 +762,8 @@ public class TransactionDatabase extends SQLiteOpenHelper {
 
     //Views
     createOrRefreshViews(db);
-    //Run on ForTest build type
     //insertTestData(db, 50, 50);
-    PrefKey.FIRST_INSTALL_DB_SCHEMA_VERSION.putInt(DATABASE_VERSION);
+    super.onCreate(db);
   }
 
   public void createOrRefreshTransferTagsTriggers(SQLiteDatabase db) {
@@ -2060,12 +2057,11 @@ public class TransactionDatabase extends SQLiteOpenHelper {
         createOrRefreshAccountTriggers(db);
         createOrRefreshAccountMetadataTrigger(db);
       }
-      if (oldVersion < 100) {
+/*      if (oldVersion < 100) {
         ContentValues initialValues = new ContentValues();
         initialValues.put("code", CurrencyEnum.VEB.name());
-        //will log SQLiteConstraintException if value already exists in table
         db.insert("currency", null, initialValues);
-      }
+      }*/
       if (oldVersion < 102) {
         db.execSQL("CREATE TABLE tags (_id integer primary key autoincrement, label text UNIQUE not null)");
         db.execSQL("CREATE TABLE transactions_tags ( tag_id integer references tags(_id) ON DELETE CASCADE, transaction_id integer references transactions(_id) ON DELETE CASCADE, primary key (tag_id,transaction_id))");
@@ -2151,6 +2147,9 @@ public class TransactionDatabase extends SQLiteOpenHelper {
       }
       if (oldVersion < 116) {
         db.execSQL("CREATE TABLE accounts_tags ( tag_id integer references tags(_id) ON DELETE CASCADE, account_id integer references accounts(_id) ON DELETE CASCADE, primary key (tag_id,account_id));");
+      }
+      if (oldVersion < 117) {
+        upgradeTo117(db);
       }
       TransactionProvider.resumeChangeTrigger(db);
     } catch (SQLException e) {
