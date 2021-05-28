@@ -62,8 +62,6 @@ import org.totschnig.myexpenses.delegate.TransferDelegate
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.ConfirmationDialogListener
 import org.totschnig.myexpenses.feature.OcrResultFlat
-import org.totschnig.myexpenses.fragment.KEY_DELETED_IDS
-import org.totschnig.myexpenses.fragment.KEY_TAG_LIST
 import org.totschnig.myexpenses.fragment.PlanMonthFragment
 import org.totschnig.myexpenses.fragment.SplitPartList
 import org.totschnig.myexpenses.fragment.TemplatesList
@@ -113,7 +111,6 @@ import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask
 import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TRANSACTION
 import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TRANSACTION_FROM_TEMPLATE
 import org.totschnig.myexpenses.viewmodel.data.Account
-import org.totschnig.myexpenses.viewmodel.data.Tag
 import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET
 import timber.log.Timber
 import java.io.Serializable
@@ -242,7 +239,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), LoaderManag
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setHelpVariant(HelpVariant.transaction)
+        setHelpVariant(HelpVariant.transaction, false)
         rootBinding = OneExpenseBinding.inflate(LayoutInflater.from(this))
         rootBinding.TagRow.TagLabel.setText(R.string.tags)
         dateEditBinding = DateEditBinding.bind(rootBinding.root)
@@ -540,8 +537,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), LoaderManag
             }
             setDirty()
         } else {
-            intent.getLongExtra(KEY_DATE, 0).takeIf { it != 0L }?.let {
-                transaction.date = it / 1000
+            intent.getLongExtra(KEY_DATE, 0).takeIf { it != 0L }?.let { it/1000 }?.let {
+                transaction.date = it
+                transaction.valueDate = it
             }
         }
         delegate = TransactionDelegate.create(transaction, rootBinding, dateEditBinding, methodRowBinding, prefHandler)
@@ -1036,24 +1034,24 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), LoaderManag
         when (id) {
             AUTOFILL_CURSOR -> {
                 val dataToLoad: MutableList<String> = ArrayList()
-                val autoFillAccountFromPreference = prefHandler.getString(PrefKey.AUTO_FILL_ACCOUNT, "never")
+                val autoFillAccountFromPreference = prefHandler.getString(PrefKey.AUTO_FILL_ACCOUNT, "aggregate")
                 val autoFillAccountFromExtra = intent.getBooleanExtra(KEY_AUTOFILL_MAY_SET_ACCOUNT, false)
                 val overridePreferences = args!!.getBoolean(KEY_AUTOFILL_OVERRIDE_PREFERENCES)
                 val mayLoadAccount = overridePreferences && autoFillAccountFromExtra || autoFillAccountFromPreference == "always" ||
                         autoFillAccountFromPreference == "aggregate" && autoFillAccountFromExtra
-                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_AMOUNT, false)) {
+                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_AMOUNT, true)) {
                     dataToLoad.add(DatabaseConstants.KEY_CURRENCY)
                     dataToLoad.add(KEY_AMOUNT)
                 }
-                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_CATEGORY, false)) {
+                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_CATEGORY, true)) {
                     dataToLoad.add(DatabaseConstants.KEY_CATID)
                     dataToLoad.add(DatabaseConstants.CAT_AS_LABEL)
                     dataToLoad.add(DatabaseConstants.CATEGORY_ICON)
                 }
-                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_COMMENT, false)) {
+                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_COMMENT, true)) {
                     dataToLoad.add(DatabaseConstants.KEY_COMMENT)
                 }
-                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_METHOD, false)) {
+                if (overridePreferences || prefHandler.getBoolean(PrefKey.AUTO_FILL_METHOD, true)) {
                     dataToLoad.add(DatabaseConstants.KEY_METHODID)
                 }
                 if (mayLoadAccount) {

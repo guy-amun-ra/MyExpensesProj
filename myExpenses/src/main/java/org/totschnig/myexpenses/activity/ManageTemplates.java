@@ -64,7 +64,7 @@ public class ManageTemplates extends ProtectedFragmentActivity implements
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setHelpVariant(HelpVariant.templates);
+    setHelpVariant(HelpVariant.templates, true);
     setContentView(R.layout.manage_templates);
     setupToolbar(true);
     setTitle(getString(R.string.menu_manage_plans));
@@ -144,7 +144,7 @@ public class ManageTemplates extends ProtectedFragmentActivity implements
       if (tag instanceof Long) {
         mListFragment.dispatchCreateInstanceEditDo((Long) tag);
       } else if (tag instanceof long[]) {
-        mListFragment.dispatchCreateInstanceSaveDo((long[]) tag, null);
+        mListFragment.dispatchCreateInstanceSaveDo((long[]) tag);
       }
     }
   }

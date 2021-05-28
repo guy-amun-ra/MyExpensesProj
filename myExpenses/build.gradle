@@ -4,7 +4,7 @@ buildscript {
     repositories {
 //        mavenLocal()
         google()
-        jcenter()
+        mavenCentral()
     }
     dependencies {
 //        classpath 'com.jakewharton.hugo:hugo-plugin:1.2.2-SNAPSHOT'
@@ -18,11 +18,6 @@ plugins {
     id 'kotlin-parcelize'
     id 'kotlin-kapt'
     id 'com.google.firebase.crashlytics'
-}
-
-repositories {
-//    mavenLocal()
-    mavenCentral()
 }
 
 def getPropertyIfDefined(property, defaultValue) {
@@ -258,10 +253,10 @@ dependencies {
     implementation "org.apache.commons:commons-text:$commonsText"
     implementation "com.squareup.picasso:picasso:$picassoVersion"
     implementation 'com.github.mtotschnig:MPAndroidChart:6fcf34d9d4'
-    implementation 'com.github.mtotschnig:Caldroid:d217ebc306'
+    implementation 'com.github.mtotschnig:Caldroid:2fcb748f0e'
     implementation 'com.github.eltos:simpledialogfragments:v3.3.2'
     implementation 'com.annimon:stream:1.2.1'
-    implementation 'com.getkeepsafe.taptargetview:taptargetview:1.13.0'
+    implementation 'com.getkeepsafe.taptargetview:taptargetview:1.13.2'
 
     // WebDAV2
     //noinspection GradleDependency
@@ -311,7 +306,8 @@ dependencies {
     api 'androidx.preference:preference-ktx:1.1.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
 
-    implementation 'com.google.android:flexbox:2.0.1'
+    // Revert to com.google.android:flexbox:2.0.1 when https://github.com/google/flexbox-layout/issues/566 is resolved
+    implementation("com.github.google:flexbox-layout:2.0.1")
 
     implementation project(path: ':setupwizard')
 
@@ -328,7 +324,8 @@ dependencies {
     implementation 'com.squareup.sqlbrite3:sqlbrite:3.2.0'
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
 
-    implementation 'com.romandanylyk:pageindicatorview:1.0.3@aar'
+    //https://github.com/romandanylyk/PageIndicatorView/issues/141
+    implementation 'com.github.romandanylyk:PageIndicatorView:b1bad589b5'
 
     implementation 'com.afollestad.material-dialogs:core:3.3.0'
 
@@ -380,7 +377,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines"
 
     //implementation "androidx.activity:activity-ktx:$activity_version"
-    implementation "androidx.fragment:fragment-ktx:$fragment_version"
+    implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
 
     internImplementation "com.google.android.gms:play-services-base:17.6.0"
 
@@ -404,6 +401,10 @@ task copyFileForFixture(type: Files) {
 }
 
 apply plugin: 'com.google.gms.google-services'
+
+tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile) {
+    kotlinOptions.useOldBackend = true
+}
 
 def categoryIcons() {
     return new File("${projectDir}/src/main/categoryIcons/drawable")
