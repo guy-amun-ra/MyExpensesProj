@@ -41,7 +41,6 @@ import org.totschnig.myexpenses.util.io.FileCopyUtils;
 import org.totschnig.myexpenses.util.io.FileUtils;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
@@ -153,7 +152,7 @@ public class RestoreTask extends AsyncTask<Void, Result, Result> {
         }
 
       }
-    } catch (FileNotFoundException | SecurityException | GeneralSecurityException e) {
+    } catch (Exception e) {
       Map<String, String> customData = new HashMap<>();
       customData.put("fileUri", fileUri != null ? fileUri.toString() : "null");
       customData.put("syncAccountName", syncAccountName);
@@ -281,7 +280,9 @@ public class RestoreTask extends AsyncTask<Void, Result, Result> {
 
       for (Map.Entry<String, ?> entry : backupPref.getAll().entrySet()) {
         String key = entry.getKey();
-        if (key.equals(PrefKey.LICENCE_LEGACY.getKey()) || key.equals(PrefKey.FIRST_INSTALL_VERSION.getKey())) {
+        if (key.equals(PrefKey.LICENCE_LEGACY.getKey()) || key.equals(PrefKey.FIRST_INSTALL_VERSION.getKey())
+          || key.equals(PrefKey.UI_WEB)
+        ) {
           continue;
         }
         Object val = entry.getValue();
