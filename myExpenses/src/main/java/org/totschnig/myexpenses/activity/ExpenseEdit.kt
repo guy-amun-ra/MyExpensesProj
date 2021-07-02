@@ -1083,8 +1083,10 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), LoaderManag
             return
         }
         when (loader.id) {
-            AUTOFILL_CURSOR ->
+            AUTOFILL_CURSOR -> {
                 (delegate as? CategoryDelegate)?.autoFill(data, currencyContext)
+                mManager.destroyLoader(AUTOFILL_CURSOR)
+            }
         }
     }
 
@@ -1114,7 +1116,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), LoaderManag
         }
     }
 
-    override fun onPositive(args: Bundle) {
+    override fun onPositive(args: Bundle, checked: Boolean) {
         when (args.getInt(ConfirmationDialogFragment.KEY_COMMAND_POSITIVE)) {
             R.id.AUTO_FILL_COMMAND -> {
                 startAutoFill(args.getLong(KEY_ROWID), true)
@@ -1123,7 +1125,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), LoaderManag
             R.id.LOAD_TEMPLATE_DO -> {
                 loadTemplate(args.getLong(KEY_ROWID))
             }
-            else -> super.onPositive(args)
+            else -> super.onPositive(args, checked)
         }
     }
 

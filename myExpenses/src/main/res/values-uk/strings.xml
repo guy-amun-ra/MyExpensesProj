@@ -445,7 +445,6 @@
     <string name="warning_reset_account_all">Якщо продовжити, операції всіх рахунків %1$s будуть видалені з бази даних, і більше не зможуть бути відновлені.</string>
     <string name="warning_reset_account_matched">Якщо ви продовжите, операції, які відповідають поточному фільтру, будуть видалені з бази даних, і більше не зможуть бути відновлені.</string>
     <string name="warning_restore">Базу даних та налаштування буде відновлено з файлу \"%1$s\". Поточні дані будуть видалені.</string>
-    <string name="warning_app_folder_will_be_deleted_upon_uninstall">Якщо видалити {app_name}, поточна тека для резервних копій та експорту автоматично видалиться системою Android. Ви можете запобігти цьому, вибравши іншу теку на екрані Налаштувань.</string>
     <string name="warning_splitpartcategory_context">Операції, що є частиною поділу, можна редагувати лише в контексті поділу.</string>
     <string name="validation_error_number_out_of_range" tools:ignore="PluralsCandidate">Будь ласка, вкажіть число між %1$d та %2$d</string>
     <string name="warning_change_fraction_digits_1">Суми в базі даних потрібно оновити, щоб вони відповідали новому налаштуванню кількості знаків після коми.</string>
@@ -453,7 +452,7 @@
     <string name="warning_change_fraction_digits_2_divided" tools:ignore="PluralsCandidate">Якщо суми не оновити, після зміни вони відображатимуться як розділені на %d.</string>
     <string name="warning_change_fraction_digits_3">Якщо суми оновити, ви втратите інформацію про їх дробову частину.</string>
     <string name="warning_change_fraction_digits_checkbox_label">Оновити суми в базі даних</string>
-    <string name="import_categories_success">Успішно імпортовано %1$s категорії</string>
+    <string name="import_categories_success">Успішно імпортовано %1$d категорії</string>
     <string name="import_parties_success">Успішно імпортовано %1$s учасників</string>
     <string name="import_accounts_success">Успішно імпортовано %1$s рахунки</string>
     <string name="import_transactions_success" tools:ignore="PluralsCandidate">%1$d операцій успішно імпортовано до рахунку %2$s</string>
@@ -622,7 +621,6 @@
     <string name="all_extended_key_features">Всі можливості розширеної версії</string>
     <string name="pref_backup_cloud_title">Зберігати на сервері синхронізації</string>
     <string name="pref_backup_cloud_summary">На додаток до локального збереження на пристрої, файл резервної копії може бути скопійований на віддалений сервер.</string>
-    <string name="auto_backup_cloud_create_backend">Створіть сервер синхронізації з головного екрану налаштувань.</string>
     <string name="auto_backup_cloud_failure">Сталася помилка при спробі зберегти файл резервної копії %1$s на сервері %2$s:</string>
     <string name="auto_backup_cloud_success">Файл резервної копії %1$s було успішно збережено на сервері %2$s.</string>
     <string name="home_screen_shortcuts_nougate_info">Ярлики можна додати шляхом довгого натискання іконки програми на Головному Екрані.</string>
@@ -824,4 +822,9 @@
     <!-- Title of a section on the Settings screen where each entry corresponds to a subsection dedicated to one feature (functionality)  -->
     <string name="pref_category_title_features">Особливості</string>
     <string name="button_download">Завантажити</string>
-    </resources>
+    <string name="crash_reports_user_info">{app_name} автоматично надсилатиме звіти розробникам про аварійне завершення роботи програми, що дозволить виправляти проблеми швидше.</string>
+    <string name="pref_category_title_crash_reports">Звіти про помилки</string>
+    <string name="pref_enable_acra">Дозволити автоматичне надсилання звітів про помилки</string>
+    <string name="pref_acra_user_email">Емейл користувача буде включено у звіт про помилки</string>
+    <string name="pref_acra_user_email_summary">Будь ласка, вкажіть свій емейл, якщо Ви хочете допомогти у виправленні помилок і даєте згоду на контакт з Вами</string>
+</resources>

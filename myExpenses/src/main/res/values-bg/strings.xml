@@ -440,7 +440,6 @@
     <string name="warning_reset_account_all">Ако продължите, всички транзакции с валута %1$s, по всички сметки, ще бъдат изтрити от базата данни и не могат да бъдат възстановени.</string>
     <string name="warning_reset_account_matched">Ако продължите, транзакциите, избрани с текущия филтър, ще бъдат изтрити от базата данни и не могат да бъдат възстановени.</string>
     <string name="warning_restore">База данни и предпочитания ще бъдат възстановени от файл „%1$s“. Текущите данни ще бъдат изтрити.</string>
-    <string name="warning_app_folder_will_be_deleted_upon_uninstall">Текущо избраната папка за архив и експорт ще се изтрие автоматично от Андроид, ако деинсталирате {app_name}. Може да избегнете това, като изберете различна папка от Настройки.</string>
     <string name="warning_splitpartcategory_context">Преводите, които са част от разпределяне, могат да се редактират само в контекста на разпределянето.</string>
     <string name="validation_error_number_out_of_range" tools:ignore="PluralsCandidate">Моля задайте число между %1$d и %2$d</string>
     <string name="warning_change_fraction_digits_1">Сумите в базата данни трябва да бъдат обновени, за да отговарят на новия брой дробни цифри.</string>
@@ -448,7 +447,7 @@
     <string name="warning_change_fraction_digits_2_divided" tools:ignore="PluralsCandidate">Ако сумите не бъдат обновени, след промяната ще бъдат показвани като разделени на %d.</string>
     <string name="warning_change_fraction_digits_3">Ако сумите бъдат обновени ще загубите информацията от тяхната дробна част.</string>
     <string name="warning_change_fraction_digits_checkbox_label">Обнови сумите в базата данни</string>
-    <string name="import_categories_success">Успешно са внесени %1$s категории</string>
+    <string name="import_categories_success">Успешно са внесени %1$d категории</string>
     <string name="import_parties_success">Успешно са внесени %1$s страни</string>
     <string name="import_accounts_success">Успешно са внесени %1$s сметки</string>
     <string name="import_transactions_success" tools:ignore="PluralsCandidate">Успешно са внесени %1$d транзакции в сметка %2$s</string>
@@ -621,7 +620,6 @@
     <string name="upgrade_now">Надстрой</string>
     <string name="pref_backup_cloud_title">Запазване в отдалечено хранилище</string>
     <string name="pref_backup_cloud_summary">Освен локално - в това устройство, архивният файл може да бъде запазен и в отдалечено хранилище.</string>
-    <string name="auto_backup_cloud_create_backend">Задаване на отдалечено хранилище за синхронизация от основния екран на менюто Настройки.</string>
     <string name="auto_backup_cloud_failure">Възникна грешка при опит за запис на архивен файл %1$s в отдалеченото хранилище %2$s:</string>
     <string name="auto_backup_cloud_success">Файлът архив %1$s е съхранен успешно в хранилище %2$s.</string>
     <string name="home_screen_shortcuts_nougate_info">Може да се добавят шорткъти чрез продължително натискане върху иконата на приложението на начален екран.</string>
@@ -993,4 +991,9 @@
     <!-- This warning is shown when a user calls the Reset or Cancel commands on a scheduled transaction, for a date
      where the transaction has already been created.  -->
     <string name="warning_plan_instance_delete">Създадената вече транзакция за избраната дата, ще бъде изтрита.</string>
+    <string name="crash_reports_user_info">{app_name} ще изпраща доклад за срив на приложението до програмистите, което позволява по-бързо отстраняване на проблемите.</string>
+    <string name="pref_category_title_crash_reports">Доклад за срив</string>
+    <string name="pref_enable_acra">Разрешeние за автоматично изпращане</string>
+    <string name="pref_acra_user_email">Електронна поща на потребителя</string>
+    <string name="pref_acra_user_email_summary">Моля, въведете адрес на вашата електронна поща, който да се включи в доклад за срив, за връзка с вас, ако желаете да помогнете за отстраняване на проблеми.</string>
 </resources>

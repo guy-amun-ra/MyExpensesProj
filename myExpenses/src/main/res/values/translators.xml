@@ -20,6 +20,7 @@
 
     <string-array name="translators_cs">
         <item>Jan Šplíchal</item>
+        <item>https://gengo.com/</item>
     </string-array>
 
     <string-array name="translators_da">
@@ -28,6 +29,7 @@
 
     <string-array name="translators_de">
         <item>Michael Totschnig</item>
+        <item>J. Lavoie</item>
     </string-array>
 
     <string-array name="translators_el">
@@ -43,6 +45,7 @@
         <item>Gudrun Totschnig</item>
         <item>Christof Totschnig</item>
         <item>Laurent Collombet</item>
+        <item>Guille</item>
     </string-array>
 
     <string-array name="translators_eu">
@@ -58,10 +61,12 @@
 
     <string-array name="translators_hr">
         <item>Mihovil Nakić-Vojnović</item>
+        <item>Milo Ivir</item>
     </string-array>
 
     <string-array name="translators_hu">
         <item>Csipai Roland</item>
+        <item>https://gengo.com/</item>
     </string-array>
 
     <string-array name="translators_it">
@@ -75,10 +80,12 @@
         <item>Silvia Delpero</item>
         <item>Gudrun Totschnig</item>
         <item>Pierluigi Rufo</item>
+        <item>Alessandro Mandelli</item>
     </string-array>
 
     <string-array name="translators_iw">
         <item>צבי  פנחסוביץ</item>
+        <item>Yaron Shahrabani</item>
     </string-array>
 
     <string-array name="translators_ja">
@@ -116,10 +123,12 @@
         <item>Frederico Gonçalves Guimarães</item>
         <item>Fernando Maia</item>
         <item>Maria Gabriel</item>
+        <item>ssantos</item>
     </string-array>
 
     <string-array name="translators_pt_pt">
         <item>Sérgio Marques</item>
+        <item>ssantos</item>
     </string-array>
 
     <string-array name="translators_ro">
@@ -130,6 +139,7 @@
         <item>Дмитрий Стрельников</item>
         <item>Дмитрий Куренков</item>
         <item>Kirill Arkhipkin</item>
+        <item>Nikita Epifanov</item>
     </string-array>
 
     <string-array name="translators_si">
@@ -149,6 +159,7 @@
     <string-array name="translators_tr">
         <item>mauron</item>
         <item>Caner Başaran</item>
+        <item>Oğuz Ersen</item>
     </string-array>
 
     <string-array name="translators_uk">
