@@ -11,9 +11,6 @@ android {
         missingDimensionStrategy 'textRecognition', 'intern'
         applicationId "org.totschnig.webui"
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }

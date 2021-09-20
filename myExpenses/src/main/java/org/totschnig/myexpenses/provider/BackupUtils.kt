@@ -41,7 +41,7 @@ fun doBackup(context: Context, password: String?, withSync: String?): Result<Doc
         CrashHandler.report("CacheDir is null")
         return failure(context, R.string.io_error_cachedir_null)
     }
-    val result = DbUtils.backup(cacheDir)
+    val result = DbUtils.backup(cacheDir, context)
     val failure: Throwable
     if (result.isSuccess) {
         try {
@@ -117,10 +117,6 @@ private fun requireBackupFile(appDir: DocumentFile, encrypted: Boolean): Documen
     )
 }
 
-fun getBackupDbFile(backupDir: File?): File {
-    return File(backupDir, BACKUP_DB_FILE_NAME)
-}
+fun getBackupDbFile(backupDir: File?) = File(backupDir, BACKUP_DB_FILE_NAME)
 
-fun getBackupPrefFile(backupDir: File?): File {
-    return File(backupDir, BACKUP_PREF_FILE_NAME)
-}
+fun getBackupPrefFile(backupDir: File?) = File(backupDir, BACKUP_PREF_FILE_NAME)

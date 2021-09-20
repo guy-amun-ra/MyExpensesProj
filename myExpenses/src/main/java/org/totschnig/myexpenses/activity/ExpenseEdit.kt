@@ -15,7 +15,6 @@
 package org.totschnig.myexpenses.activity
 
 import android.annotation.SuppressLint
-import android.app.Dialog
 import android.app.NotificationManager
 import android.content.ContentUris
 import android.content.Context
@@ -30,7 +29,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.Nullable
@@ -56,6 +54,7 @@ import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
 import org.totschnig.myexpenses.databinding.OneExpenseBinding
 import org.totschnig.myexpenses.delegate.CategoryDelegate
+import org.totschnig.myexpenses.delegate.MainDelegate
 import org.totschnig.myexpenses.delegate.SplitDelegate
 import org.totschnig.myexpenses.delegate.TransactionDelegate
 import org.totschnig.myexpenses.delegate.TransferDelegate
@@ -96,7 +95,6 @@ import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.PictureDirHelper
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.checkMenuIcon
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.getEnumFromPreferencesWithDefault
 import org.totschnig.myexpenses.util.tracking.Tracker
 import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
@@ -112,7 +110,6 @@ import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask
 import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TRANSACTION_FROM_TEMPLATE
 import org.totschnig.myexpenses.viewmodel.data.Account
 import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET
-import timber.log.Timber
 import java.io.Serializable
 import java.math.BigDecimal
 import java.util.*
@@ -126,7 +123,7 @@ import org.totschnig.myexpenses.viewmodel.data.Template as DataTemplate
  */
 open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     LoaderManager.LoaderCallbacks<Cursor?>, ContribIFace, ConfirmationDialogListener,
-    ButtonWithDialog.Host, ExchangeRateEdit.Host {
+    ExchangeRateEdit.Host {
     private lateinit var rootBinding: OneExpenseBinding
     private lateinit var dateEditBinding: DateEditBinding
     private lateinit var methodRowBinding: MethodRowBinding
@@ -212,6 +209,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         get() = isTemplate && !isSplitPart
 
     private val shouldLoadMethods: Boolean
+        get() = operationType != TYPE_TRANSFER && !isSplitPart
+
+    private val shouldLoadDebts: Boolean
         get() = operationType != TYPE_TRANSFER && !isSplitPart
 
     private val isMainTransaction: Boolean
@@ -431,6 +431,17 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         loadCurrencies()
     }
 
+    private fun loadDebts() {
+        if (shouldLoadDebts) {
+            viewModel.getDebts().observe(this) { debts ->
+                (delegate as? MainDelegate)?.let {
+                    it.setDebts(debts)
+                    it.setupDebtChangedListener()
+                }
+            }
+        }
+    }
+
     private fun loadTags() {
         if (!isSplitPart) {
             viewModel.getTags().observe(this, { tags ->
@@ -467,6 +478,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                         accounts,
                         if (fromSavedState) null else intent.getStringExtra(DatabaseConstants.KEY_CURRENCY)
                     )
+                    loadDebts()
                     accountsLoaded = true
                     if (mIsResumed) setupListeners()
                 }
@@ -515,9 +527,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     ) {
         transaction?.let {
             if (transaction.isSealed) {
-                abortWithMessage("This transaction refers to a closed account and can no longer be edited")
+                abortWithMessage("This transaction refers to a closed account or debt and can no longer be edited")
             } else {
-                populate(it)
+                populate(it, withAutoFill && task != TRANSACTION_FROM_TEMPLATE)
 
             }
         } ?: run {
@@ -532,7 +544,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     private fun populateWithNewInstance(transaction: Transaction?) {
-        transaction?.let { populate(it) } ?: run {
+        transaction?.let { populate(it, withAutoFill) } ?: run {
             val errMsg = getString(R.string.warning_no_account)
             abortWithMessage(errMsg)
         }
@@ -554,7 +566,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         (intent.getSerializableExtra(KEY_AMOUNT) as? BigDecimal)?.let { amountInput.setAmount(it) }
     }
 
-    private fun populate(transaction: Transaction) {
+    private fun populate(transaction: Transaction, withAutoFill: Boolean) {
         parentId = transaction.parentId ?: 0L
         if (isClone) {
             transaction.crStatus = CrStatus.UNRECONCILED
@@ -635,17 +647,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         }
     }
 
-    override fun hideKeyBoardAndShowDialog(id: Int) {
-        hideKeyboard()
-        try {
-            showDialog(id)
-        } catch (e: WindowManager.BadTokenException) {
-            CrashHandler.report(e)
-        }
-    }
-
     override fun onValueSet(view: View) {
-        setDirty()
+        super.onValueSet(view)
         if (view is DateButton) {
             val date = view.date
             if (areDatesLinked) {
@@ -905,25 +908,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         //to crash upon saving https://github.com/mtotschnig/MyExpenses/issues/71
         i.putExtra(KEY_ROWID, (delegate as? CategoryDelegate)?.catId)
         startActivityForResult(i, SELECT_CATEGORY_REQUEST)
-    }
-
-    override fun onCreateDialog(id: Int): Dialog? {
-        hideKeyboard()
-        return try {
-            (findViewById<View>(id) as ButtonWithDialog).onCreateDialog(prefHandler)
-        } catch (e: ClassCastException) {
-            Timber.e(e)
-            null
-        }
-    }
-
-    override fun onPrepareDialog(id: Int, dialog: Dialog) {
-        super.onPrepareDialog(id, dialog)
-        try {
-            (findViewById<View>(id) as ButtonWithDialog).onPrepareDialog(dialog)
-        } catch (e: ClassCastException) {
-            Timber.e(e)
-        }
     }
 
     override fun saveState() {
@@ -1285,8 +1269,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     override fun getCurrentFragment() = findSplitPartList()
 
     @SuppressLint("NewApi")
-    fun showPicturePopupMenu(v: View?) {
-        val popup = PopupMenu(this, v!!)
+    fun showPicturePopupMenu(v: View) {
+        val popup = PopupMenu(this, v)
         popup.setOnMenuItemClickListener { item: MenuItem ->
             handlePicturePopupMenuClick(item.itemId)
             true

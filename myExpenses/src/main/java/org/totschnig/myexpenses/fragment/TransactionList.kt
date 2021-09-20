@@ -10,6 +10,7 @@ import android.text.style.ForegroundColorSpan
 import android.util.SparseBooleanArray
 import android.view.ActionMode
 import android.view.Menu
+import android.view.View
 import android.widget.AbsListView
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.DialogFragment
@@ -47,6 +48,7 @@ import org.totschnig.myexpenses.util.TextUtils.concatResStrings
 import org.totschnig.myexpenses.util.asTrueSequence
 import org.totschnig.myexpenses.viewmodel.KEY_ROW_IDS
 import org.totschnig.myexpenses.viewmodel.data.Tag
+import se.emilsjolander.stickylistheaders.StickyListHeadersListView
 import java.util.*
 
 const val KEY_REPLACE = "replace"
@@ -98,32 +100,51 @@ class TransactionList : BaseTransactionList() {
         }
     }
 
-    private fun warnSealedAccount() {
+    override fun onHeaderLongClick(
+        l: StickyListHeadersListView?, header: View?,
+        itemPosition: Int, headerId: Long, currentlySticky: Boolean
+    ): Boolean {
+        val ctx = requireActivity() as MyExpenses
+        headerData?.get(headerId)?.get(6)?.let {
+            if (it > 0) {
+                ctx.contribFeatureRequested(ContribFeature.DISTRIBUTION, headerId)
+            } else {
+                ctx.showSnackbar(R.string.no_mapped_transactions)
+            }
+        }
+        return true
+    }
+    
+    private fun warnSealedAccount(sealedAccount: Boolean, sealedDebt: Boolean) {
+        val resIds = mutableListOf<Int>()
+        resIds.add(R.string.warning_account_for_transaction_is_closed)
+        if (sealedAccount) {
+            resIds.add(R.string.object_sealed)
+        }
+        if (sealedDebt) {
+            resIds.add(R.string.object_sealed_debt)
+        }
         (requireActivity() as ProtectedFragmentActivity).showSnackbar(
             concatResStrings(
                 context,
                 " ",
-                R.string.warning_account_for_transaction_is_closed,
-                R.string.object_sealed
+                *resIds.toTypedArray()
             )
         )
     }
 
     override fun checkSealed(itemIds: LongArray, onChecked: Runnable) {
-        CheckSealedHandler(requireActivity().contentResolver).check(
-            itemIds, object : CheckSealedHandler.ResultListener {
-                override fun onResult(result: Result<Boolean>) {
-                    lifecycleScope.launchWhenResumed {
-                        result.onSuccess {
-                            if (it) {
-                                onChecked.run()
-                            } else {
-                                warnSealedAccount()
-                            }
-                        }.onFailure(showFailure)
+        CheckSealedHandler(requireActivity().contentResolver).check(itemIds) { result ->
+            lifecycleScope.launchWhenResumed {
+                result.onSuccess {
+                    if (it.first && it.second) {
+                        onChecked.run()
+                    } else {
+                        warnSealedAccount(!it.first, !it.second)
                     }
-                }
-            })
+                }.onFailure(showFailure)
+            }
+        }
     }
 
     val showFailure: (exception: Throwable) -> Unit = {
@@ -320,30 +341,27 @@ class TransactionList : BaseTransactionList() {
                         }
                     }
                 }
-                CheckTransferAccountOfSplitPartsHandler(requireActivity().contentResolver).check(
-                    splitIds, object : CheckTransferAccountOfSplitPartsHandler.ResultListener {
-                        override fun onResult(result: Result<List<Long>>) {
-                            lifecycleScope.launchWhenResumed {
-                                result.onSuccess {
-                                    excludedIds.addAll(it)
-                                    val dialogFragment =
-                                        org.totschnig.myexpenses.dialog.select.SelectSingleAccountDialogFragment.newInstance(
-                                            R.string.menu_remap,
-                                            R.string.remap_empty_list,
-                                            excludedIds
-                                        )
-                                    dialogFragment.setTargetFragment(
-                                        this@TransactionList,
-                                        MAP_ACCOUNT_REQUEST
-                                    )
-                                    dialogFragment.show(
-                                        requireActivity().supportFragmentManager,
-                                        "REMAP_ACCOUNT"
-                                    )
-                                }.onFailure(showFailure)
-                            }
-                        }
-                    })
+                CheckTransferAccountOfSplitPartsHandler(requireActivity().contentResolver).check(splitIds) { result ->
+                    lifecycleScope.launchWhenResumed {
+                        result.onSuccess {
+                            excludedIds.addAll(it)
+                            val dialogFragment =
+                                org.totschnig.myexpenses.dialog.select.SelectSingleAccountDialogFragment.newInstance(
+                                    R.string.menu_remap,
+                                    R.string.remap_empty_list,
+                                    excludedIds
+                                )
+                            dialogFragment.setTargetFragment(
+                                this@TransactionList,
+                                MAP_ACCOUNT_REQUEST
+                            )
+                            dialogFragment.show(
+                                requireActivity().supportFragmentManager,
+                                "REMAP_ACCOUNT"
+                            )
+                        }.onFailure(showFailure)
+                    }
+                }
             }
             return true
         } else if (command == R.id.LINK_TRANSFER_COMMAND) {
@@ -380,42 +398,32 @@ class TransactionList : BaseTransactionList() {
 
     override fun setTitle(mode: ActionMode, lv: AbsListView) {
         val count = lv.checkedItemCount
-        mAccount?.let {
-            selectedTransactionSumFormatted =
-                currencyFormatter.convAmount(selectedTransactionSum, it.currencyUnit)
-        }
-        mode.title = TextUtils.concat(
-            count.toString(), " ", setColor(
-                selectedTransactionSumFormatted
-                    ?: ""
-            )
-        )
-    }
-
-    private fun setColor(text: String): SpannableString {
-        val spanText = SpannableString(text)
-        if (selectedTransactionSum <= 0) {
-            spanText.setSpan(
-                ForegroundColorSpan(
-                    ResourcesCompat.getColor(
-                        resources,
-                        R.color.colorExpense,
-                        null
-                    )
-                ), 0, spanText.length, 0
+        if (count > 1) {
+            mAccount?.let {
+                selectedTransactionSumFormatted =
+                    currencyFormatter.convAmount(selectedTransactionSum, it.currencyUnit)
+            }
+            mode.title = TextUtils.concat(
+                count.toString(), " ", setColor(
+                    selectedTransactionSumFormatted
+                        ?: ""
+                )
             )
         } else {
-            spanText.setSpan(
-                ForegroundColorSpan(
-                    ResourcesCompat.getColor(
-                        resources,
-                        R.color.colorIncome,
-                        null
-                    )
-                ), 0, spanText.length, 0
-            )
+            super.setTitle(mode, lv)
         }
-        return spanText
+    }
+
+    private fun setColor(text: String) = SpannableString(text).apply {
+        setSpan(
+            ForegroundColorSpan(
+                ResourcesCompat.getColor(
+                    resources,
+                    if (selectedTransactionSum <= 0) R.color.colorExpense else R.color.colorIncome,
+                    null
+                )
+            ), 0, length, 0
+        )
     }
 
     override fun onSelectionChanged(position: Int, checked: Boolean) {

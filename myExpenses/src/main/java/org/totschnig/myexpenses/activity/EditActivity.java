@@ -26,18 +26,20 @@ import android.view.inputmethod.InputMethodManager;
 
 import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment;
+import org.totschnig.myexpenses.model.CurrencyUnit;
 import org.totschnig.myexpenses.ui.AmountInput;
+import org.totschnig.myexpenses.ui.ButtonWithDialog;
 import org.totschnig.myexpenses.util.FormAccentUtilKt;
 
 import java.math.BigDecimal;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.widget.Toolbar;
 import icepick.State;
 
-public abstract class EditActivity extends ProtectedFragmentActivity implements TextWatcher {
+public abstract class EditActivity extends ProtectedFragmentActivity implements TextWatcher, ButtonWithDialog.Host {
 
-  private static final String KEY_IS_DIRTY = "isDirty";
   protected boolean mIsSaving = false;
   @State
   protected boolean mIsDirty = false;
@@ -49,8 +51,6 @@ public abstract class EditActivity extends ProtectedFragmentActivity implements 
   protected BigDecimal validateAmountInput(AmountInput input, boolean showToUser) {
     return input.getTypedValue(true, showToUser);
   }
-
-  protected abstract void setupListeners();
 
   @Override
   public void beforeTextChanged(CharSequence s, int start, int count, int after) {
@@ -65,14 +65,6 @@ public abstract class EditActivity extends ProtectedFragmentActivity implements 
   @Override
   public void afterTextChanged(Editable s) {
     setDirty();
-  }
-
-  @Override
-  protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    if (savedInstanceState != null && savedInstanceState.getBoolean(KEY_IS_DIRTY)) {
-      setDirty();
-    }
   }
 
   @Override
@@ -153,6 +145,16 @@ public abstract class EditActivity extends ProtectedFragmentActivity implements 
     } else {
       dispatchOnBackPressed();
     }
+  }
+
+  @Override
+  public void onCurrencySelectionChanged(CurrencyUnit currencyUnit) {
+    setDirty();
+  }
+
+  @Override
+  public void onValueSet(@NonNull View view) {
+    setDirty();
   }
 
   protected void dispatchOnBackPressed() {

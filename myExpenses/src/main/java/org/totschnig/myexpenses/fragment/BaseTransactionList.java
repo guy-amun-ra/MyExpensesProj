@@ -240,7 +240,7 @@ public abstract class BaseTransactionList extends ContextualActionBarFragment im
    * [5] interimBalance
    * [6] mappedCategories
    */
-  private final LongSparseArray<Long[]> headerData = new LongSparseArray<>();
+  protected final LongSparseArray<Long[]> headerData = new LongSparseArray<>();
   private String[] sections;
   private int[] sectionIds;
   /**
@@ -1073,18 +1073,6 @@ public abstract class BaseTransactionList extends ContextualActionBarFragment im
     return String.format(Locale.ROOT, "collapsedHeaders_%d_%s", mAccount.getId(), mAccount.getGrouping());
   }
 
-  @Override
-  public boolean onHeaderLongClick(StickyListHeadersListView l, View header,
-                                   int itemPosition, long headerId, boolean currentlySticky) {
-    MyExpenses ctx = (MyExpenses) requireActivity();
-    if (headerData != null && headerData.get(headerId)[6] > 0) {
-      ctx.contribFeatureRequested(ContribFeature.DISTRIBUTION, headerId);
-    } else {
-      ctx.showSnackbar(R.string.no_mapped_transactions);
-    }
-    return true;
-  }
-
   protected boolean isTransferAtPosition(int position) {
     if (mTransactionsCursor != null) {
       return mTransactionsCursor.moveToPosition(position) &&
@@ -1169,6 +1157,7 @@ public abstract class BaseTransactionList extends ContextualActionBarFragment im
   @Override
   public void onCreateOptionsMenu(@NonNull Menu menu, @NonNull MenuInflater inflater) {
     inflater.inflate(R.menu.expenses, menu);
+    menu.findItem(R.id.MANAGE_PARTIES_COMMAND).setTitle(getString(R.string.pref_manage_parties_title) + " / " + getString(R.string.debts));
     inflater.inflate(R.menu.grouping, menu);
   }
 

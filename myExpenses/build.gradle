@@ -48,12 +48,6 @@ android {
 
         vectorDrawables.useSupportLibrary = true
         resConfigs "en", "ar", "bg", "ca", "cs", "da", "de", "el", "es", "eu", "fr", "hr", "hu", "it", "iw", "ja", "km", "kn", "ko", "ms", "pl", "pt_BR", "pt_PT", "ro", "ru", "si", "ta", "te", "tr", "uk", "vi", "zh_CN", "zh_HK", "zh_TW"
-
-        javaCompileOptions {
-            annotationProcessorOptions {
-                includeCompileClasspath false
-            }
-        }
     }
 
     kotlinOptions {
@@ -161,13 +155,11 @@ android {
     }
 
     lintOptions {
-        disable 'InvalidPackage', 'MissingQuantity', 'MissingTranslation', 'ImpliedQuantity'
+        checkDependencies true
+        //UsingOnClickInXml can be activated again with appcompat 1.4.0
+        disable 'InvalidPackage', 'MissingQuantity', 'MissingTranslation', 'ImpliedQuantity', 'UsingOnClickInXml'
     }
 
-    dexOptions {
-        javaMaxHeapSize "2048M"
-        jumboMode = true
-    }
     packagingOptions {
         exclude 'META-INF/*'
     }
@@ -263,7 +255,7 @@ dependencies {
     implementation "com.squareup.okhttp3:okhttp:$okHttpVersion"
 
     // Dropbox
-    implementation 'com.dropbox.core:dropbox-core-sdk:3.1.5'
+    implementation 'com.dropbox.core:dropbox-core-sdk:4.0.0'
 
     //noinspection GradleCompatible
     implementation 'androidx.multidex:multidex:2.0.1'
@@ -304,7 +296,7 @@ dependencies {
     api "com.google.android.material:material:$materialComponents"
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
     api 'androidx.preference:preference-ktx:1.1.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
 
     // Revert to com.google.android:flexbox:2.0.1 when https://github.com/google/flexbox-layout/issues/566 is resolved
     implementation("com.github.google:flexbox-layout:2.0.1")
@@ -325,6 +317,7 @@ dependencies {
     implementation 'com.github.lzyzsd:circleprogress:1.2.1'
 
     implementation 'com.squareup.sqlbrite3:sqlbrite:3.2.0'
+    implementation 'app.cash.copper:copper-flow:1.0.0'
     implementation 'io.reactivex.rxjava2:rxandroid:2.1.1'
 
     //https://github.com/romandanylyk/PageIndicatorView/issues/141
@@ -413,9 +406,11 @@ task echoPublishTag() {
     doLast {
         println "ChangeLog.install/bin/ChangeLog fdroid ${versionName} ${versionCode}"
         println "git add metadata/*/changelogs/${versionCode}.txt"
+        println "echo -e \"versionName=${versionName}\\nversionCode=${versionCode}\">docs/.well-known/fdroid-latest.txt"
+        println "git add docs/.well-known/fdroid-latest.txt"
         println "git commit -m \"Release ${versionName}\""
         println "git push"
-        println "git tag r${versionCode}; git push origin r${versionCode}; echo -e \"versionName=${versionName}\\nversionCode=${versionCode}\">../MyExpenses.website/.well-known/fdroid-latest.txt"
+        println "git tag r${versionCode}; git push origin r${versionCode}"
     }
 }
 

@@ -9,9 +9,6 @@ android {
     defaultConfig {
         missingDimensionStrategy 'security', 'gms'
         minSdkVersion project.minSdkVersion
-        targetSdkVersion project.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -54,7 +51,7 @@ tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile) {
 dependencies {
     api project(':myExpenses')
     implementation "androidx.core:core-ktx:$ktxVersion"
-    implementation 'com.jakewharton.timber:timber:4.7.1'
+    implementation "com.jakewharton.timber:timber:$timberVersion"
     implementation "androidx.appcompat:appcompat:$appcompatVersion"
     implementation "com.squareup.picasso:picasso:$picassoVersion"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$archLifecycleVersion"

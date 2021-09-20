@@ -22,3 +22,4 @@
 # Amazon
 # ./gradlew clean :myExpenses:packageAmazonWithDriveWithAdsGmsInternReleaseUniversalApk
 * execute command returned by ./gradlew amazonEchoPublishTag
+

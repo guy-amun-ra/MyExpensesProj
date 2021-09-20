@@ -35,7 +35,6 @@
     <string name="already_defined">%1$s già definita</string>
     <string name="amount">Importo</string>
     <string name="app_name">Le mie spese</string>
-    <string name="backup_failure">Il backup su «%1$s» non è riuscito.</string>
     <string name="backup_success">La base di dati e le impostazioni sono state salvate correttamente su «%1$s».</string>
     <string name="category">Categoria</string>
     <string name="color">Colore</string>
@@ -104,7 +103,6 @@
     <string name="dialog_remind_rate_yes">Vota ora</string>
     <string name="dialog_security_answer">Risposta</string>
     <string name="dialog_security_question">Domanda</string>
-    <string name="dialog_title_attention">Attenzione</string>
     <string name="dialog_title_information">Informazioni</string>
     <!-- %1$s is replace with account label -->
     <string name="dialog_title_balance_account">Bilanciare %1$s</string>
@@ -263,8 +261,6 @@
     <string name="plan_event_deleted">Il piano associato a questo modello è stato eliminato dal calendario.</string>
     <!-- This message is shown, after a user decides to not apply a manual plan -->
     <string name="plan_execution_canceled">Esecuzione del piano annullata</string>
-    <!-- Label on the switch, where user decides if a plan should be executed automatically, or manually (i.e. user gets notification where he can cancel the execution or edit the instance) -->
-    <string name="plan_manual">manuale</string>
     <string name="planner_create_calendar_failure">Impossibile creare un calendario di pianificazione locale</string>
     <string name="planner_create_calendar_success">Calendario di pianificazione locale creato con successo</string>
     <!-- payment methods -->
@@ -612,7 +608,7 @@
     <string name="progress_dialog_checking_sync_backend">Sto verificando il back-end</string>
     <string name="template">Modello</string>
     <string name="contrib_feature_synchronization_label" tools:ignore="UnusedResources">Sincronizzazione con il cloud</string>
-    <string name="all_contrib_key_features">Tutte le caratteristiche di Licenza Contributore</string>
+    <string name="all_contrib_key_features">Tutte le funzionalità della Licenza Contributore</string>
     <string name="all_extended_key_features">Tutte le funzionalità della Licenza Funzionalità Estese</string>
     <!-- button leading user to purchase flow for licence keys -->
     <string name="upgrade_now">Acquista una licenza</string>
@@ -1001,4 +997,18 @@
     <string name="backup_save_to_sync_backend">Salvato in %s</string>
     <string name="new_version">Nuova versione</string>
     <string name="pref_news_title">Notizie</string>
+    <string name="debt_managment">Gestione dei debiti</string>
+    <string name="object_sealed_debt">L\'oggetto si riferisce a un debito chiuso.</string>
+    <plurals name="debt_mapped_transactions">
+        <item quantity="one">Il debito %1$s ha una transazione mappata %2$d.</item>
+        <item quantity="other">Il debito %1$s ha %2$d transazioni mappate.</item>
+    </plurals>
+    <string name="dialog_title_delete_debt">Cancellare il debito\?</string>
+    <string name="dialog_confirm_discard_new_debt">Scarta il nuovo debito\?</string>
+    <string name="dialog_title_warning_delete_party">Eliminare la partite\?</string>
+    <string name="warning_party_delete_debt">Quando si elimina questa parte, anche i debiti definiti per essa saranno eliminati.</string>
+    <string name="debts">Debiti</string>
+    <string name="debt_I_owe">Devo %s</string>
+    <string name="debt_owes_me">%s mi deve</string>
+    <string name="menu_new_debt">Nuovo debito</string>
 </resources>
