@@ -29,10 +29,11 @@ public class GoogleDriveBackendProviderFactory extends SyncBackendProviderFactor
 
   @NonNull
   @Override
-  protected SyncBackendProvider _fromAccount(Context context, Account account, AccountManager accountManager) throws SyncBackendProvider.SyncParseException {
+  protected SyncBackendProvider fromAccount(Context context, Account account, AccountManager accountManager) throws SyncBackendProvider.SyncParseException {
     return new GoogleDriveBackendProvider(context, account, accountManager);
   }
 
+  @NonNull
   @Override
   public String getLabel() {
     return LABEL;

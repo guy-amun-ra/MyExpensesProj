@@ -10,7 +10,6 @@ import com.annimon.stream.Stream;
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException;
 import com.google.api.services.drive.model.File;
 
-import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.model.Account;
 import org.totschnig.myexpenses.model.AccountType;
 import org.totschnig.myexpenses.sync.json.AccountMetaData;
@@ -120,7 +119,7 @@ public class GoogleDriveBackendProvider extends AbstractSyncBackendProvider {
   }
 
   private void saveUriToFolder(String fileName, Uri uri, File driveFolder, boolean maybeEncrypt) throws IOException {
-    InputStream in = MyApplication.getInstance().getContentResolver().openInputStream(uri);
+    InputStream in = getContext().getContentResolver().openInputStream(uri);
     if (in == null) {
       throw new IOException("Could not read " + uri.toString());
     }
@@ -303,7 +302,7 @@ public class GoogleDriveBackendProvider extends AbstractSyncBackendProvider {
 
   @NonNull
   @Override
-  public Stream<Exceptional<AccountMetaData>> getRemoteAccountList() throws IOException {
+  public Stream<Exceptional<AccountMetaData>> getRemoteAccountStream() throws IOException {
     requireBaseFolder();
     List<File> fileList = driveServiceHelper.listChildren(baseFolder);
     return Stream.of(fileList)
