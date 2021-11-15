@@ -665,15 +665,10 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_TEMPLATEID + " integer references " + TABLE_TEMPLATES + "(" + KEY_ROWID + ") ON DELETE CASCADE, "
           + "primary key (" + KEY_TAGID + "," + KEY_TEMPLATEID + "));";
 
-  public static final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-  public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
-
   TransactionDatabase(Context context, String databaseName) {
     super(context, databaseName);
     mCtx = context;
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-      setWriteAheadLoggingEnabled(false);
-    }
+    setWriteAheadLoggingEnabled(false);
   }
 
   @Override
@@ -1354,7 +1349,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
               ContentValues templateValues = new ContentValues();
               while (c.getPosition() < c.getCount()) {
                 templateValues.put("uuid", Model.generateUuid());
-                long templateId = c.getLong(c.getColumnIndex("_id"));
+                long templateId = c.getLong(c.getColumnIndexOrThrow("_id"));
                 db.update("templates", templateValues, "_id = " + templateId, null);
                 c.moveToNext();
               }
@@ -2170,6 +2165,9 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       }
       if (oldVersion < 119) {
         upgradeTo119(db);
+      }
+      if (oldVersion < 120) {
+        upgradeTo120(db);
       }
       TransactionProvider.resumeChangeTrigger(db);
     } catch (SQLException e) {

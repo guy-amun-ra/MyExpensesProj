@@ -36,6 +36,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SUM;
 import static org.totschnig.myexpenses.util.ColorUtils.getShades;
 import static org.totschnig.myexpenses.util.ColorUtils.getTints;
+import static org.totschnig.myexpenses.util.CurrencyFormatterKt.convAmount;
 
 public abstract class CategoryTreeBaseAdapter<ROWBINDING extends ViewBinding> extends BaseExpandableListAdapter {
   protected final CurrencyUnit currency;
@@ -150,7 +151,7 @@ public abstract class CategoryTreeBaseAdapter<ROWBINDING extends ViewBinding> ex
     label.setText(item.getLabel());
     label.setTypeface(label.getTypeface(), parentItem == null ? Typeface.BOLD : Typeface.NORMAL);
     if (item.getSum() != null && currency != null) {
-      amount(holder).setText(currencyFormatter.convAmount(item.getSum(), currency));
+      amount(holder).setText(convAmount(currencyFormatter, item.getSum(), currency));
     }
     icon(holder).setImageResource(icon != null ? context.getResources().getIdentifier(icon, "drawable", context.getPackageName()) : 0);
     return convertView;
@@ -193,7 +194,7 @@ public abstract class CategoryTreeBaseAdapter<ROWBINDING extends ViewBinding> ex
           final long id = cursor.getLong(columnIndexRowId);
           final Long parentId = DbUtils.getLongOrNull(cursor, columnIndexParentId);
           final Category category = new Category(
-              id, parentId, cursor.getString(cursor.getColumnIndex(KEY_LABEL)),
+              id, parentId, cursor.getString(cursor.getColumnIndexOrThrow(KEY_LABEL)),
               columnIndexSum == -1 ? null : cursor.getLong(columnIndexSum),
               columnIndexMapBudgets == -1 ? null : cursor.getInt(columnIndexMapBudgets) > 0,
               cursor.getInt(columnIndexColor),

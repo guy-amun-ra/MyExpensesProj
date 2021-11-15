@@ -32,7 +32,7 @@ import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.color.SimpleColorDialog
 import icepick.State
 import org.apache.commons.lang3.ArrayUtils
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.adapter.CurrencyAdapter
@@ -330,7 +330,6 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
         super.onCreateOptionsMenu(menu)
         menu.add(Menu.NONE, R.id.EXCLUDE_FROM_TOTALS_COMMAND, 0, R.string.menu_exclude_from_totals)
                 .setCheckable(true)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         return true
     }
 

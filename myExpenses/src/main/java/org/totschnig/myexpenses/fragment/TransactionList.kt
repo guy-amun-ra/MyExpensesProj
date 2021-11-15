@@ -4,15 +4,12 @@ import android.app.Activity
 import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
-import android.text.SpannableString
 import android.text.TextUtils
-import android.text.style.ForegroundColorSpan
 import android.util.SparseBooleanArray
 import android.view.ActionMode
 import android.view.Menu
 import android.view.View
 import android.widget.AbsListView
-import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.lifecycleScope
 import com.afollestad.materialdialogs.MaterialDialog
@@ -45,11 +42,12 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_IS_SAME_CURRENCY
 import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.task.TaskExecutionFragment
 import org.totschnig.myexpenses.util.TextUtils.concatResStrings
+import org.totschnig.myexpenses.util.TextUtils.withAmountColor
 import org.totschnig.myexpenses.util.asTrueSequence
+import org.totschnig.myexpenses.util.convAmount
 import org.totschnig.myexpenses.viewmodel.KEY_ROW_IDS
 import org.totschnig.myexpenses.viewmodel.data.Tag
 import se.emilsjolander.stickylistheaders.StickyListHeadersListView
-import java.util.*
 
 const val KEY_REPLACE = "replace"
 
@@ -126,9 +124,9 @@ class TransactionList : BaseTransactionList() {
         }
         (requireActivity() as ProtectedFragmentActivity).showSnackbar(
             concatResStrings(
-                context,
+                requireContext(),
                 " ",
-                *resIds.toTypedArray()
+                *resIds.toIntArray()
             )
         )
     }
@@ -283,13 +281,13 @@ class TransactionList : BaseTransactionList() {
                     if (positions.valueAt(i)) {
                         mTransactionsCursor.moveToPosition(positions.keyAt(i))
                         val amount = mTransactionsCursor.getLong(
-                            mTransactionsCursor.getColumnIndex(KEY_AMOUNT)
+                            mTransactionsCursor.getColumnIndexOrThrow(KEY_AMOUNT)
                         )
                         if (amount > 0) hasIncome = true
                         if (amount < 0) hasExpense = true
                         accountTypes.add(
                             mTransactionsCursor.getString(
-                                mTransactionsCursor.getColumnIndex(
+                                mTransactionsCursor.getColumnIndexOrThrow(
                                     DatabaseConstants.KEY_ACCOUNT_TYPE
                                 )
                             )
@@ -404,34 +402,21 @@ class TransactionList : BaseTransactionList() {
                     currencyFormatter.convAmount(selectedTransactionSum, it.currencyUnit)
             }
             mode.title = TextUtils.concat(
-                count.toString(), " ", setColor(
-                    selectedTransactionSumFormatted
-                        ?: ""
-                )
+                count.toString(), " ", setColor(selectedTransactionSumFormatted)
             )
         } else {
             super.setTitle(mode, lv)
         }
     }
 
-    private fun setColor(text: String) = SpannableString(text).apply {
-        setSpan(
-            ForegroundColorSpan(
-                ResourcesCompat.getColor(
-                    resources,
-                    if (selectedTransactionSum <= 0) R.color.colorExpense else R.color.colorIncome,
-                    null
-                )
-            ), 0, length, 0
-        )
-    }
+    private fun setColor(text: String?) = text?.withAmountColor(resources, selectedTransactionSum > 0) ?: ""
 
     override fun onSelectionChanged(position: Int, checked: Boolean) {
         if (mTransactionsCursor.moveToPosition(position)) {
-            val amount = mTransactionsCursor.getLong(mTransactionsCursor.getColumnIndex(KEY_AMOUNT))
+            val amount = mTransactionsCursor.getLong(mTransactionsCursor.getColumnIndexOrThrow(KEY_AMOUNT))
             val shouldCount = if (isTransferAtPosition(position) && mAccount.isAggregate) {
                 if (mAccount.isHomeAggregate) false else mTransactionsCursor.getInt(
-                    mTransactionsCursor.getColumnIndex(KEY_IS_SAME_CURRENCY)
+                    mTransactionsCursor.getColumnIndexOrThrow(KEY_IS_SAME_CURRENCY)
                 ) != 1
             } else true
             if (shouldCount) {

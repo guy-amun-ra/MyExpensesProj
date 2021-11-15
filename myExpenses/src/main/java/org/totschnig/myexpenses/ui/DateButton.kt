@@ -5,10 +5,10 @@ import android.util.AttributeSet
 import android.view.MotionEvent
 import com.google.android.material.datepicker.MaterialDatePicker
 import icepick.State
-import org.threeten.bp.LocalDate
-import org.threeten.bp.ZoneId
-import org.threeten.bp.ZonedDateTime
-import org.threeten.bp.format.DateTimeFormatter
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.util.UiUtils
 import org.totschnig.myexpenses.util.epochMillis2LocalDate
@@ -33,8 +33,7 @@ class DateButton @JvmOverloads constructor(
     private val formatter: DateTimeFormatter = getDateTimeFormatter(context)
 
     init {
-        UiUtils.setCompoundDrawablesCompatWithIntrinsicBounds(
-            this,
+        this.setCompoundDrawablesRelativeWithIntrinsicBounds(
             R.drawable.ic_chevron_start,
             0,
             R.drawable.ic_chevron_end,

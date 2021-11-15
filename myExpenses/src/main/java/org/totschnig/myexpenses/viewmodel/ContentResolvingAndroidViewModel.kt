@@ -12,14 +12,19 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
+import app.cash.copper.flow.mapToList
+import app.cash.copper.flow.observeQuery
 import com.squareup.sqlbrite3.BriteContentResolver
 import io.reactivex.disposables.Disposable
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.Account.HOME_AGGREGATE_ID
+import org.totschnig.myexpenses.model.CurrencyContext
 import org.totschnig.myexpenses.model.Template
 import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefHandler
@@ -34,6 +39,7 @@ import org.totschnig.myexpenses.provider.checkForSealedDebt
 import org.totschnig.myexpenses.ui.ContextHelper
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.data.AccountMinimal
+import org.totschnig.myexpenses.viewmodel.data.Debt
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
@@ -53,6 +59,9 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
     @Inject
     lateinit var prefHandler: PrefHandler
 
+    @Inject
+    lateinit var currencyContext: CurrencyContext
+
     var disposable: Disposable? = null
 
     val contentResolver: ContentResolver
@@ -65,6 +74,9 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
             ContextHelper.wrap(this, appComponent.userLocaleProvider().getUserPreferredLocale())
         }
 
+    private val debts = MutableLiveData<List<Debt>>()
+    fun getDebts(): LiveData<List<Debt>> = debts
+
     protected fun accountsMinimal(withHidden: Boolean = true): LiveData<List<AccountMinimal>> {
         val liveData = MutableLiveData<List<AccountMinimal>>()
         disposable = briteContentResolver.createQuery(
@@ -73,14 +85,14 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
             null, null, false
         )
             .mapToList { cursor ->
-                val id = cursor.getLong(cursor.getColumnIndex(KEY_ROWID))
+                val id = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ROWID))
                 AccountMinimal(
                     id,
                     if (id == HOME_AGGREGATE_ID)
                         getString(R.string.grand_total)
                     else
-                        cursor.getString(cursor.getColumnIndex(KEY_LABEL)),
-                    cursor.getString(cursor.getColumnIndex(KEY_CURRENCY))
+                        cursor.getString(cursor.getColumnIndexOrThrow(KEY_LABEL)),
+                    cursor.getString(cursor.getColumnIndexOrThrow(KEY_CURRENCY))
                 )
             }
             .subscribe {
@@ -184,6 +196,48 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
             }
             true
         }
+
+    /**
+     * @param rowId For split transactions, we check if any of their children is linked to a debt,
+     * in which case the parent should not be linkable to a debt, and we return an empty list
+     */
+    fun loadDebts(rowId: Long? = null) {
+        viewModelScope.launch {
+            contentResolver.observeQuery(
+                uri = with(TransactionProvider.DEBTS_URI.buildUpon()) {
+                    rowId?.let {
+                        appendQueryParameter(DatabaseConstants.KEY_TRANSACTIONID, rowId.toString())
+                    }
+                    build()
+                },
+                selection = "${DatabaseConstants.KEY_SEALED} = 0",
+                notifyForDescendants = true
+            )
+                .mapToList { Debt.fromCursor(it) }
+                .collect {
+                    debts.postValue(it)
+                }
+        }
+    }
+
+/*    fun loadDebugDebts(count: Int = 10) {
+        debts.postValue(List(
+            count
+        ) {
+            Debt(
+                it.toLong(),
+                "Debt $it",
+                "Description",
+                1,
+                5000,
+                "EUR",
+                System.currentTimeMillis() / 1000,
+                "John doe",
+                false,
+                4123
+            )
+        })
+    }*/
 
     companion object {
         fun <K, V> lazyMap(initializer: (K) -> V): Map<K, V> {

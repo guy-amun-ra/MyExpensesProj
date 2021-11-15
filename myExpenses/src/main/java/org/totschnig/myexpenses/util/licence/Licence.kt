@@ -3,7 +3,7 @@ package org.totschnig.myexpenses.util.licence
 import android.content.Context
 import androidx.annotation.Keep
 import com.google.gson.annotations.SerializedName
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 
 @Keep
 data class Licence(@SerializedName("valid_since") val validSince: LocalDate?,
@@ -14,7 +14,7 @@ data class Licence(@SerializedName("valid_since") val validSince: LocalDate?,
         get() = parseFeatures(features)
 
     fun featureListAsResIDs(context: Context) =
-            parseFeatures(features).map { it.getLabelResIdOrThrow(context) }.toTypedArray()
+            parseFeatures(features).map { it.getLabelResIdOrThrow(context) }.toIntArray()
 
     companion object {
         fun parseFeatures(features: List<String>?) = AddOnPackage::class.sealedSubclasses.filter { features?.contains(it.simpleName) == true }

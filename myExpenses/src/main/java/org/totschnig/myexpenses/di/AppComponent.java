@@ -6,13 +6,16 @@ import com.google.gson.Gson;
 import com.google.gson.JsonDeserializer;
 import com.squareup.picasso.Picasso;
 
-import org.threeten.bp.LocalDate;
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.activity.BaseActivity;
 import org.totschnig.myexpenses.activity.BaseMyExpenses;
+import org.totschnig.myexpenses.activity.DebtOverview;
 import org.totschnig.myexpenses.activity.ExpenseEdit;
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
 import org.totschnig.myexpenses.db2.Repository;
+import org.totschnig.myexpenses.delegate.CategoryDelegate;
+import org.totschnig.myexpenses.delegate.SplitDelegate;
+import org.totschnig.myexpenses.delegate.TransferDelegate;
 import org.totschnig.myexpenses.dialog.AmountFilterDialog;
 import org.totschnig.myexpenses.dialog.BaseDialogFragment;
 import org.totschnig.myexpenses.dialog.ContribDialogFragment;
@@ -53,6 +56,7 @@ import org.totschnig.myexpenses.retrofit.ExchangeRateService;
 import org.totschnig.myexpenses.service.AutoBackupService;
 import org.totschnig.myexpenses.service.PlanExecutor;
 import org.totschnig.myexpenses.sync.webdav.WebDavClient;
+import org.totschnig.myexpenses.task.ExportTask;
 import org.totschnig.myexpenses.task.LicenceApiTask;
 import org.totschnig.myexpenses.util.CurrencyFormatter;
 import org.totschnig.myexpenses.util.ads.BaseAdHandler;
@@ -70,11 +74,11 @@ import org.totschnig.myexpenses.viewmodel.ExchangeRateViewModel;
 import org.totschnig.myexpenses.viewmodel.FeatureViewModel;
 import org.totschnig.myexpenses.viewmodel.OcrViewModel;
 import org.totschnig.myexpenses.viewmodel.RoadmapViewModel;
-import org.totschnig.myexpenses.viewmodel.TransactionViewModel;
 import org.totschnig.myexpenses.viewmodel.UpgradeHandlerViewModel;
 import org.totschnig.myexpenses.widget.AbstractWidget;
 import org.totschnig.myexpenses.widget.TemplateRemoteViewsFactory;
 
+import java.time.LocalDate;
 import java.util.Locale;
 
 import javax.inject.Named;
@@ -157,6 +161,8 @@ public interface AppComponent {
 
   void inject(BaseMyExpenses myExpenses);
 
+  void inject(DebtOverview debtOverview);
+
   void inject(ProtectedFragmentActivity protectedFragmentActivity);
 
   void inject(TransactionDetailFragment transactionDetailFragment);
@@ -192,8 +198,6 @@ public interface AppComponent {
   void inject(RoadmapViewModel roadmapViewModel);
 
   void inject(HistoryChart historyChart);
-
-  void inject(TransactionViewModel transactionViewModel);
 
   void inject(DonateDialogFragment donateDialogFragment);
 
@@ -264,4 +268,12 @@ public interface AppComponent {
   void inject(DebtViewModel debtViewModel);
 
   void inject(DebtDetailsDialogFragment debtDetailsDialogFragment);
+
+  void inject(CategoryDelegate transactionDelegate);
+
+  void inject(SplitDelegate transactionDelegate);
+
+  void inject(TransferDelegate transactionDelegate);
+
+  void inject(ExportTask exportTask);
 }

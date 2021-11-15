@@ -37,9 +37,7 @@ import org.totschnig.myexpenses.provider.TransactionProvider.QUERY_PARAMETER_ACC
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.data.Account
-import org.totschnig.myexpenses.viewmodel.data.Debt
 import org.totschnig.myexpenses.viewmodel.data.PaymentMethod
-import java.util.*
 import kotlin.math.pow
 import org.totschnig.myexpenses.model.Account as Account_model
 import org.totschnig.myexpenses.viewmodel.data.Template as DataTemplate
@@ -59,30 +57,31 @@ class TransactionEditViewModel(application: Application) : TransactionViewModel(
 
     private val accounts by lazy {
         val liveData = MutableLiveData<List<Account>>()
-        disposables.add(briteContentResolver.createQuery(TransactionProvider.ACCOUNTS_BASE_URI, null, "$KEY_SEALED = 0", null, null, false)
-                .mapToList { buildAccount(it, currencyContext) }
-                .subscribe { liveData.postValue(it) })
-        return@lazy liveData
-    }
-
-    private val debts by lazy {
-        val liveData = MutableLiveData<List<Debt>>()
-        disposables.add(briteContentResolver.createQuery(TransactionProvider.DEBTS_URI, null, "$KEY_SEALED = 0", null, null, false)
-            .mapToList { Debt.fromCursor(it) }
+        disposables.add(briteContentResolver.createQuery(
+            TransactionProvider.ACCOUNTS_BASE_URI,
+            null,
+            "$KEY_SEALED = 0",
+            null,
+            null,
+            false
+        )
+            .mapToList { buildAccount(it, currencyContext) }
             .subscribe { liveData.postValue(it) })
         return@lazy liveData
     }
 
     private val templates by lazy {
         val liveData = MutableLiveData<List<DataTemplate>>()
-        disposables.add(briteContentResolver.createQuery(TransactionProvider.TEMPLATES_URI.buildUpon()
+        disposables.add(briteContentResolver.createQuery(
+            TransactionProvider.TEMPLATES_URI.buildUpon()
                 .build(), arrayOf(KEY_ROWID, KEY_TITLE),
-                "$KEY_PLANID is null AND $KEY_PARENTID is null AND $KEY_SEALED = 0",
-                null,
-                Sort.preferredOrderByForTemplatesWithPlans(prefHandler, Sort.USAGES),
-                false)
-                .mapToList { DataTemplate.fromCursor(it) }
-                .subscribe { liveData.postValue(it) }
+            "$KEY_PLANID is null AND $KEY_PARENTID is null AND $KEY_SEALED = 0",
+            null,
+            Sort.preferredOrderByForTemplatesWithPlans(prefHandler, Sort.USAGES),
+            false
+        )
+            .mapToList { DataTemplate.fromCursor(it) }
+            .subscribe { liveData.postValue(it) }
         )
         return@lazy liveData
     }
@@ -93,32 +92,33 @@ class TransactionEditViewModel(application: Application) : TransactionViewModel(
 
     fun getTemplates(): LiveData<List<DataTemplate>> = templates
 
-    fun getDebts(): LiveData<List<Debt>> = debts
-
     fun plan(planId: Long): LiveData<Plan?> = liveData(context = coroutineContext()) {
         emit(Plan.getInstanceFromDb(planId))
     }
 
     fun loadMethods(isIncome: Boolean, type: AccountType) {
-        disposables.add(briteContentResolver.createQuery(TransactionProvider.METHODS_URI.buildUpon()
+        disposables.add(briteContentResolver.createQuery(
+            TransactionProvider.METHODS_URI.buildUpon()
                 .appendPath(TransactionProvider.URI_SEGMENT_TYPE_FILTER)
                 .appendPath(if (isIncome) "1" else "-1")
                 .appendQueryParameter(QUERY_PARAMETER_ACCOUNTY_TYPE_LIST, type.name)
-                .build(), null, null, null, null, false)
-                .mapToList { PaymentMethod.create(it) }
-                .subscribe { methods.postValue(it) }
+                .build(), null, null, null, null, false
+        )
+            .mapToList { PaymentMethod.create(it) }
+            .subscribe { methods.postValue(it) }
         )
     }
 
     private fun buildAccount(cursor: Cursor, currencyContext: CurrencyContext): Account {
-        val currency = currencyContext.get(cursor.getString(cursor.getColumnIndex(KEY_CURRENCY)))
+        val currency = currencyContext.get(cursor.getString(cursor.getColumnIndexOrThrow(KEY_CURRENCY)))
         return Account(
-                cursor.getLong(cursor.getColumnIndex(KEY_ROWID)),
-                cursor.getString(cursor.getColumnIndex(KEY_LABEL)),
-                currency,
-                cursor.getInt(cursor.getColumnIndex(KEY_COLOR)),
-                AccountType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(KEY_TYPE))),
-                adjustExchangeRate(cursor.getDouble(cursor.getColumnIndex(KEY_EXCHANGE_RATE)), currency))
+            cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ROWID)),
+            cursor.getString(cursor.getColumnIndexOrThrow(KEY_LABEL)),
+            currency,
+            cursor.getInt(cursor.getColumnIndexOrThrow(KEY_COLOR)),
+            AccountType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow(KEY_TYPE))),
+            adjustExchangeRate(cursor.getDouble(cursor.getColumnIndexOrThrow(KEY_EXCHANGE_RATE)), currency)
+        )
     }
 
     override fun onCleared() {
@@ -146,14 +146,18 @@ class TransactionEditViewModel(application: Application) : TransactionViewModel(
         emit(if (result > 0 && !transaction.saveTags(tags.value)) ERROR_WHILE_SAVING_TAGS else result)
     }
 
-    fun cleanupSplit(id: Long, isTemplate: Boolean): LiveData<Unit> = liveData(context = coroutineContext()) {
-        emit(
-                if (isTemplate) Template.cleanupCanceledEdit(id) else SplitTransaction.cleanupCanceledEdit(id)
-        )
-    }
+    fun cleanupSplit(id: Long, isTemplate: Boolean): LiveData<Unit> =
+        liveData(context = coroutineContext()) {
+            emit(
+                if (isTemplate) Template.cleanupCanceledEdit(id) else SplitTransaction.cleanupCanceledEdit(
+                    id
+                )
+            )
+        }
 
     private fun adjustExchangeRate(raw: Double, currencyUnit: CurrencyUnit): Double {
-        val minorUnitDelta: Int = currencyUnit.fractionDigits - Utils.getHomeCurrency().fractionDigits
+        val minorUnitDelta: Int =
+            currencyUnit.fractionDigits - Utils.getHomeCurrency().fractionDigits
         return raw * 10.0.pow(minorUnitDelta.toDouble())
     }
 
@@ -163,21 +167,28 @@ class TransactionEditViewModel(application: Application) : TransactionViewModel(
         }
     }
 
-    fun newTemplate(operationType: Int, accountId: Long, parentId: Long?): LiveData<Template?> = liveData(context = coroutineContext()) {
-        emit(Template.getTypedNewInstance(operationType, accountId, true, parentId))
-    }
+    fun newTemplate(operationType: Int, accountId: Long, parentId: Long?): LiveData<Template?> =
+        liveData(context = coroutineContext()) {
+            emit(Template.getTypedNewInstance(operationType, accountId, true, parentId))
+        }
 
-    fun newTransaction(accountId: Long, parentId: Long?): LiveData<Transaction?> = liveData(context = coroutineContext()) {
-        emit(Transaction.getNewInstance(accountId, parentId))
-    }
+    fun newTransaction(accountId: Long, parentId: Long?): LiveData<Transaction?> =
+        liveData(context = coroutineContext()) {
+            emit(Transaction.getNewInstance(accountId, parentId))
+        }
 
-    fun newTransfer(accountId: Long, transferAccountId: Long?, parentId: Long?): LiveData<Transfer?> = liveData(context = coroutineContext()) {
+    fun newTransfer(
+        accountId: Long,
+        transferAccountId: Long?,
+        parentId: Long?
+    ): LiveData<Transfer?> = liveData(context = coroutineContext()) {
         emit(Transfer.getNewInstance(accountId, transferAccountId, parentId))
     }
 
-    fun newSplit(accountId: Long): LiveData<SplitTransaction?> = liveData(context = coroutineContext()) {
-        emit(SplitTransaction.getNewInstance(accountId))
-    }
+    fun newSplit(accountId: Long): LiveData<SplitTransaction?> =
+        liveData(context = coroutineContext()) {
+            emit(SplitTransaction.getNewInstance(accountId))
+        }
 }
 
 

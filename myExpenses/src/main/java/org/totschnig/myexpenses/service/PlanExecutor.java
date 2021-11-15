@@ -13,11 +13,11 @@ import android.text.TextUtils;
 import com.android.calendar.CalendarContractCompat;
 import com.android.calendar.CalendarContractCompat.Events;
 
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.ZoneId;
-import org.threeten.bp.ZonedDateTime;
-import org.threeten.bp.temporal.ChronoUnit;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import org.totschnig.myexpenses.BuildConfig;
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.R;
@@ -51,6 +51,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_INSTANCEID
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSACTIONID;
+import static org.totschnig.myexpenses.util.CurrencyFormatterKt.formatMoney;
 import static org.totschnig.myexpenses.util.DateUtilsKt.epochMillis2LocalDate;
 import static org.totschnig.myexpenses.util.DateUtilsKt.localDateTime2EpochMillis;
 
@@ -154,8 +155,8 @@ public class PlanExecutor extends JobIntentService {
           if (cursor.moveToFirst()) {
             LocalDate today = LocalDate.now();
             while (!cursor.isAfterLast()) {
-              long planId = cursor.getLong(cursor.getColumnIndex(CalendarContractCompat.Instances.EVENT_ID));
-              long date = cursor.getLong(cursor.getColumnIndex(CalendarContractCompat.Instances.BEGIN));
+              long planId = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContractCompat.Instances.EVENT_ID));
+              long date = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContractCompat.Instances.BEGIN));
               LocalDate localDate = epochMillis2LocalDate(date, ZoneId.systemDefault());
               long diff = ChronoUnit.DAYS.between(today, localDate);
               long instanceId = CalendarProviderProxy.calculateId(date);
@@ -187,7 +188,7 @@ public class PlanExecutor extends JobIntentService {
                     } else {
                       content += " : ";
                     }
-                    content += currencyFormatter.formatCurrency(template.getAmount());
+                    content += formatMoney(currencyFormatter, template.getAmount());
                     builder.setContentText(content);
                     if (template.isPlanExecutionAutomatic()) {
                       Pair<Transaction, List<Tag>> pair = Transaction.getInstanceFromTemplateWithTags(template);

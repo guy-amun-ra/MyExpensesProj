@@ -44,7 +44,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import icepick.State
-import org.threeten.bp.LocalDate
+import java.time.LocalDate
 import org.totschnig.myexpenses.ACTION_SELECT_MAPPING
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
@@ -79,18 +79,18 @@ import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_INSTANCEID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEEID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PICTURE_URI
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.task.TaskExecutionFragment
 import org.totschnig.myexpenses.ui.AmountInput
-import org.totschnig.myexpenses.ui.ButtonWithDialog
 import org.totschnig.myexpenses.ui.DateButton
 import org.totschnig.myexpenses.ui.DiscoveryHelper
 import org.totschnig.myexpenses.ui.ExchangeRateEdit
 import org.totschnig.myexpenses.ui.IDiscoveryHelper
-import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.PictureDirHelper
 import org.totschnig.myexpenses.util.Utils
@@ -179,7 +179,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     private var pObserver: ContentObserver? = null
     private lateinit var currencyViewModel: CurrencyViewModel
     override fun getDate(): LocalDate {
-        return dateEditBinding.Date2Button.date
+        return dateEditBinding.DateButton.date
     }
 
     enum class HelpVariant {
@@ -188,9 +188,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
 
     @Inject
     lateinit var imageViewIntentProvider: ImageViewIntentProvider
-
-    @Inject
-    lateinit var currencyFormatter: CurrencyFormatter
 
     @Inject
     lateinit var discoveryHelper: IDiscoveryHelper
@@ -212,7 +209,13 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         get() = operationType != TYPE_TRANSFER && !isSplitPart
 
     private val shouldLoadDebts: Boolean
-        get() = operationType != TYPE_TRANSFER && !isSplitPart
+        get() = operationType != TYPE_TRANSFER && !parentHasDebt
+
+    private val parentHasDebt: Boolean
+        get() = intent.getBooleanExtra(KEY_PARENT_HAS_DEBT, false)
+
+    val parentPayeeId: Long
+        get() = intent.getLongExtra(KEY_PAYEEID, 0)
 
     private val isMainTransaction: Boolean
         get() = operationType != TYPE_TRANSFER && !isSplitPartOrTemplate
@@ -266,7 +269,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                 rootBinding,
                 dateEditBinding,
                 methodRowBinding,
-                prefHandler
+                (applicationContext as MyApplication).appComponent
             )
             setupObservers(true)
             delegate.bind(
@@ -337,7 +340,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                         return
                     }
                 }
-                parentId = intent.getLongExtra(DatabaseConstants.KEY_PARENTID, 0)
+                parentId = intent.getLongExtra(KEY_PARENTID, 0)
                 var accountId = intent.getLongExtra(DatabaseConstants.KEY_ACCOUNTID, 0)
                 if (isNewTemplate) {
                     viewModel.newTemplate(
@@ -421,6 +424,12 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                 delegate.setMethods(paymentMethods)
             }
         })
+        viewModel.getDebts().observe(this) { debts ->
+            (delegate as? MainDelegate)?.let {
+                it.setDebts(debts)
+                it.setupDebtChangedListener()
+            }
+        }
     }
 
     private fun setupObservers(fromSavedState: Boolean) {
@@ -433,12 +442,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
 
     private fun loadDebts() {
         if (shouldLoadDebts) {
-            viewModel.getDebts().observe(this) { debts ->
-                (delegate as? MainDelegate)?.let {
-                    it.setDebts(debts)
-                    it.setupDebtChangedListener()
-                }
-            }
+            viewModel.loadDebts(delegate.rowId)
         }
     }
 
@@ -478,7 +482,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                         accounts,
                         if (fromSavedState) null else intent.getStringExtra(DatabaseConstants.KEY_CURRENCY)
                     )
-                    loadDebts()
+                    if (!isTemplate) {
+                        loadDebts()
+                    }
                     accountsLoaded = true
                     if (mIsResumed) setupListeners()
                 }
@@ -489,7 +495,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     private fun loadCurrencies() {
         currencyViewModel.getCurrencies().observe(this, { currencies ->
             if (::delegate.isInitialized) {
-                delegate.setCurrencies(currencies, currencyContext)
+                delegate.setCurrencies(currencies)
             }
         })
     }
@@ -562,7 +568,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         intent.getParcelableExtra<Uri>(KEY_PICTURE_URI)?.let {
             delegate.setPicture(it)
         }
-        amountInput.type = intent.getBooleanExtra(KEY_INCOME, false)
+        if (!intent.hasExtra(KEY_CACHED_DATA)) {
+            amountInput.type = intent.getBooleanExtra(KEY_INCOME, false)
+        }
         (intent.getSerializableExtra(KEY_AMOUNT) as? BigDecimal)?.let { amountInput.setAmount(it) }
     }
 
@@ -611,7 +619,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             rootBinding,
             dateEditBinding,
             methodRowBinding,
-            prefHandler
+            (applicationContext as MyApplication).appComponent
         )
         setupObservers(false)
         delegate.bindUnsafe(
@@ -691,6 +699,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         if (shouldLoadMethods) {
             loadMethods(currentAccount)
         }
+        (delegate as? MainDelegate)?.let {
+            it.onAmountChanged()
+        }
         discoveryHelper.markDiscovered(DiscoveryHelper.Feature.expense_income_switch)
     }
 
@@ -769,10 +780,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         } else if (isMainTransaction) {
             menu.add(Menu.NONE, R.id.ORIGINAL_AMOUNT_COMMAND, 0, R.string.menu_original_amount)
                 .setCheckable(true)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
             menu.add(Menu.NONE, R.id.EQUIVALENT_AMOUNT_COMMAND, 0, R.string.menu_equivalent_amount)
                 .setCheckable(true)
-                .setShowAsAction(MenuItem.SHOW_AS_ACTION_NEVER)
         }
         return true
     }
@@ -815,7 +824,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     override fun doSave(andNew: Boolean) {
         if (operationType == Transactions.TYPE_SPLIT) {
             findSplitPartList()?.let {
-                if (!it.splitComplete()) {
+                if (!it.splitComplete) {
                     showSnackbar(
                         getString(R.string.unsplit_amount_greater_than_zero),
                         Snackbar.LENGTH_SHORT
@@ -872,7 +881,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             }
             R.id.EQUIVALENT_AMOUNT_COMMAND -> {
                 if (::delegate.isInitialized) {
-                    delegate.toggleEquivalentAmount(currentAccount)
+                    delegate.toggleEquivalentAmount()
                     invalidateOptionsMenu()
                     return true
                 }
@@ -887,13 +896,16 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             showSnackbar(R.string.account_list_not_yet_loaded)
             return
         }
-        val i = Intent(this, ExpenseEdit::class.java)
-        forwardDataEntryFromWidget(i)
-        i.putExtra(Transactions.OPERATION_TYPE, Transactions.TYPE_TRANSACTION)
-        i.putExtra(DatabaseConstants.KEY_ACCOUNTID, account.id)
-        i.putExtra(DatabaseConstants.KEY_PARENTID, delegate.rowId)
-        i.putExtra(KEY_NEW_TEMPLATE, isMainTemplate)
-        startActivityForResult(i, EDIT_REQUEST)
+        startActivityForResult(Intent(this, ExpenseEdit::class.java).apply {
+            forwardDataEntryFromWidget(this)
+            putExtra(Transactions.OPERATION_TYPE, Transactions.TYPE_TRANSACTION)
+            putExtra(DatabaseConstants.KEY_ACCOUNTID, account.id)
+            putExtra(KEY_PARENTID, delegate.rowId)
+            putExtra(KEY_PARENT_HAS_DEBT, (delegate as? MainDelegate)?.debtId != null)
+            putExtra(KEY_PAYEEID, (delegate as? MainDelegate)?.payeeId)
+            putExtra(KEY_NEW_TEMPLATE, isMainTemplate)
+            putExtra(KEY_INCOME, delegate.isIncome)
+        }, EDIT_REQUEST)
     }
 
     /**
@@ -912,7 +924,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
 
     override fun saveState() {
         if (::delegate.isInitialized) {
-            delegate.syncStateAndValidate(true, currencyContext)?.let { transaction ->
+            delegate.syncStateAndValidate(true)?.let { transaction ->
                 mIsSaving = true
                 if (planInstanceId > 0L) {
                     transaction.originPlanInstanceId = planInstanceId
@@ -1068,7 +1080,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             val restartIntent = intent
             restartIntent.putExtra(Transactions.OPERATION_TYPE, newType)
             if (isDirty) {
-                delegate.syncStateAndValidate(false, currencyContext)?.let {
+                delegate.syncStateAndValidate(false)?.let {
                     restartIntent.putExtra(KEY_CACHED_DATA, it)
                     if (it.pictureUri != null) {
                         restartIntent.putExtra(KEY_CACHED_PICTURE_URI, it.pictureUri)
@@ -1192,7 +1204,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         }
         when (loader.id) {
             AUTOFILL_CURSOR -> {
-                (delegate as? CategoryDelegate)?.autoFill(data, currencyContext)
+                (delegate as? CategoryDelegate)?.autoFill(data)
                 mManager.destroyLoader(AUTOFILL_CURSOR)
             }
         }
@@ -1372,7 +1384,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             fm.beginTransaction()
                 .add(
                     R.id.scrollableContent,
-                    SplitPartList.newInstance(rowId, isTemplate, currentAccount!!),
+                    SplitPartList.newInstance(rowId, isTemplate, currentAccount!!.currency),
                     SPLIT_PART_LIST
                 )
                 .commit()
@@ -1424,6 +1436,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         private const val KEY_AUTOFILL_OVERRIDE_PREFERENCES = "autoFillOverridePreferences"
         const val AUTOFILL_CURSOR = 8
         const val KEY_INCOME = "income"
+        const val KEY_PARENT_HAS_DEBT = "parentHasSplit"
     }
 
     fun loadActiveTags(id: Long) {
@@ -1437,7 +1450,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     fun copyUnsplitAmount(@Suppress("UNUSED_PARAMETER") view: View) {
-        findSplitPartList()?.unsplitAmountFormatted()?.let {
+        findSplitPartList()?.unsplitAmountFormatted?.let {
             copyToClipboard(it)
         }
     }

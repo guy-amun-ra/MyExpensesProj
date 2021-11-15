@@ -53,7 +53,9 @@
     <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
     <uses-permission android:name="com.android.vending.BILLING" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <uses-permission android:name="android.permission.READ_PHONE_STATE" tools:node="remove"/>
+    <uses-permission
+        android:name="android.permission.READ_PHONE_STATE"
+        tools:node="remove" />
 
     <uses-feature
         android:name="android.hardware.wifi"
@@ -62,16 +64,20 @@
     <queries>
         <intent>
             <action android:name="org.totschnig.ocr.action.RECOGNIZE" />
+
             <data android:mimeType="image/jpeg" />
         </intent>
         <intent>
             <action android:name="android.intent.action.VIEW" />
-            <data android:scheme="market" android:host="details" />
+
+            <data
+                android:host="details"
+                android:scheme="market" />
         </intent>
     </queries>
 
     <application
-        android:name="org.totschnig.myexpenses.MyApplication"
+        android:name=".MyApplication"
         android:allowBackup="true"
         android:fullBackupContent="@xml/mybackupscheme"
         android:icon="@mipmap/ic_myexpenses"
@@ -80,15 +86,19 @@
         android:supportsRtl="true"
         android:theme="@style/MyTheme"
         tools:replace="android:label">
-
-        <activity android:name="org.acra.dialog.CrashReportDialog"
-            tools:replace="android:theme"
+        <activity
+            android:name=".activity.DebtOverview"
+            android:exported="false"
+            android:label="@string/title_activity_debt_overview"
+            android:theme="@style/EditDialog" />
+        <activity
+            android:name="org.acra.dialog.CrashReportDialog"
             android:theme="@style/CrashDialogTheme"
-            />
-
+            tools:replace="android:theme" />
         <activity
             android:name=".activity.SplashActivity"
-            android:theme="@android:style/Theme.NoDisplay">
+            android:theme="@android:style/Theme.NoDisplay"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -96,24 +106,22 @@
                 <category android:name="android.intent.category.LAUNCHER" />
                 <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER" />
             </intent-filter>
+
             <meta-data
                 android:name="android.app.shortcuts"
                 android:resource="@xml/shortcuts" />
         </activity>
-
         <activity
             android:name=".activity.OnboardingActivity"
             android:theme="@style/Onboarding" />
-
         <activity
             android:name=".activity.MyExpenses"
-            android:label="${appName}"
             android:launchMode="singleTop"
-            android:theme="@style/MyTheme.Main" />
-
+            android:theme="@style/MyTheme" />
         <activity
             android:name=".activity.DeepLinkActivity"
             android:excludeFromRecents="true"
+            android:exported="true"
             android:theme="@style/Translucent">
             <intent-filter
                 android:autoVerify="true"
@@ -127,14 +135,12 @@
                     android:host="www.myexpenses.mobi"
                     android:path="/callback2.html"
                     android:scheme="https" />
-
                 <data
                     android:host="www.myexpenses.mobi"
                     android:path="/callback.html"
                     android:scheme="https" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activity.ExpenseEdit"
             android:exported="true"
@@ -143,11 +149,14 @@
             tools:ignore="UnusedAttribute">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.INSERT" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data
                     android:host="${applicationId}"
                     android:path="/transactions"
@@ -158,18 +167,15 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="org.totschnig.myexpenses.activity.MyExpenses" />
         </activity>
-
         <activity
             android:name=".activity.AccountEdit"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name=".activity.MethodEdit"
             android:theme="@style/EditDialog" />
         <activity
             android:name=".activity.BudgetEdit"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name=".activity.ManageCategories"
             android:exported="false"
@@ -178,7 +184,6 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
-
         <activity
             android:name=".activity.Distribution"
             android:exported="false" />
@@ -191,24 +196,21 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="content" />
                 <data android:mimeType="application/zip" />
                 <data android:mimeType="application/octet-stream" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activity.GrisbiImport"
             android:exported="false"
             android:theme="@style/Translucent" />
-
         <activity
             android:name=".activity.QifImport"
             android:exported="false"
             android:theme="@style/Translucent" />
-
         <activity android:name=".activity.CsvImportActivity" />
-
         <activity
             android:name=".activity.MyPreferenceActivity"
             android:exported="true">
@@ -216,7 +218,6 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activity.Help"
             android:theme="@style/Translucent">
@@ -224,7 +225,6 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activity.ManageParties"
             android:exported="false"
@@ -233,14 +233,11 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
-
         <activity android:name=".activity.ManageBudgets" />
-
         <activity
             android:name=".activity.ManageStaleImages"
             android:exported="false"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name=".activity.ManageTemplates"
             android:parentActivityName=".activity.MyExpenses"
@@ -261,16 +258,13 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="org.totschnig.myexpenses.activity.MyExpenses" />
         </activity>
-
         <activity
             android:name=".activity.ManageMethods"
             android:exported="false"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name=".activity.FolderBrowser"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name=".activity.CalculatorInput"
             android:theme="@style/Calculator">
@@ -278,7 +272,6 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activity.ContribInfoDialogActivity"
             android:theme="@style/Translucent">
@@ -286,30 +279,27 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activity.ManageCurrencies"
             android:exported="false"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name=".activity.ManageSyncBackends"
             android:exported="false"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name="com.dropbox.core.android.AuthActivity"
             android:configChanges="orientation|keyboard"
             android:launchMode="singleTask">
             <intent-filter>
                 <data android:scheme="db-09ctg08r5gnsh5c" />
+
                 <action android:name="android.intent.action.VIEW" />
 
                 <category android:name="android.intent.category.BROWSABLE" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".activity.AccountWidgetConfigure"
             android:label="@string/account_widget_configuration"
@@ -318,15 +308,12 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
-
         <activity android:name=".activity.RoadmapVoteActivity">
             <meta-data
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
-
         <activity android:name=".activity.HistoryActivity" />
-
         <activity android:name=".activity.DropboxSetup" />
 
         <service
@@ -342,7 +329,6 @@
             android:authorities="${applicationId}"
             android:exported="false"
             android:syncable="true" />
-
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -352,7 +338,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/image_path" />
         </provider>
-
         <provider
             android:name=".provider.CalendarProviderProxy"
             android:authorities="${applicationId}.calendarinstances"
@@ -367,9 +352,7 @@
                 <action android:name="${applicationId}.ACTION_EXECUTE_PLANS" />
             </intent-filter>
         </service>
-
         <service android:name=".service.PlanNotificationClickHandler" />
-
         <service android:name=".service.SyncNotificationDismissHandler" />
 
         <activity android:name=".activity.SimpleToastActivity">
@@ -377,20 +360,16 @@
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
-
         <activity android:name=".activity.SimpleImageActivity" />
-
         <activity android:name=".activity.BudgetActivity" />
-
         <activity
             android:name=".activity.ManageTags"
             android:theme="@style/EditDialog" />
-
         <activity
             android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
             android:theme="@style/Base.Theme.AppCompat" />
-
-        <activity android:name=".activity.DebtEdit"
+        <activity
+            android:name=".activity.DebtEdit"
             android:theme="@style/EditDialog" />
 
         <service
@@ -402,18 +381,17 @@
                 <action android:name="${applicationId}.ACTION_AUTO_BACKUP" />
             </intent-filter>
         </service>
-
         <service
             android:name=".sync.GenericAccountService"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
+
             <meta-data
                 android:name="android.accounts.AccountAuthenticator"
                 android:resource="@xml/authenticator" />
         </service>
-
         <service
             android:name=".sync.SyncService"
             android:exported="true"
@@ -422,6 +400,7 @@
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
+
             <meta-data
                 android:name="android.content.SyncAdapter"
                 android:resource="@xml/sync_adapter" />
@@ -433,11 +412,9 @@
                 <action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />
             </intent-filter>
         </receiver>
-
         <receiver android:name=".service.ScheduleReceiver" />
-
         <receiver
-            android:name="org.totschnig.myexpenses.widget.AccountWidget"
+            android:name=".widget.AccountWidget"
             android:label="@string/widget_title_accounts">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -447,9 +424,8 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/account_widget_info" />
         </receiver>
-
         <receiver
-            android:name="org.totschnig.myexpenses.widget.TemplateWidget"
+            android:name=".widget.TemplateWidget"
             android:label="@string/widget_title_templates">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -464,7 +440,6 @@
             android:name=".widget.AccountWidgetService"
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
-
         <service
             android:name=".widget.TemplateWidgetService"
             android:exported="false"
@@ -478,8 +453,7 @@
             android:value="true" />
 
         <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
-        <!-- <meta-data android:name="com.samsung.android.sdk.multiwindow.penwindow.enable" android:value="true"/> -->
-        <!-- <uses-library android:name="com.sec.android.app.multiwindow" android:required="false" /> -->
+
     </application>
 
 </manifest>

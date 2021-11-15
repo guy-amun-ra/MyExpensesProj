@@ -35,13 +35,11 @@ import android.os.StrictMode;
 import com.android.calendar.CalendarContractCompat;
 import com.android.calendar.CalendarContractCompat.Calendars;
 import com.android.calendar.CalendarContractCompat.Events;
-import com.jakewharton.threetenabp.AndroidThreeTen;
 
 import org.totschnig.myexpenses.activity.OnboardingActivity;
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
 import org.totschnig.myexpenses.di.AppComponent;
 import org.totschnig.myexpenses.di.DaggerAppComponent;
-import org.totschnig.myexpenses.di.SecurityProvider;
 import org.totschnig.myexpenses.feature.FeatureManager;
 import org.totschnig.myexpenses.feature.OcrFeature;
 import org.totschnig.myexpenses.model.Template;
@@ -60,7 +58,6 @@ import org.totschnig.myexpenses.util.NotificationBuilderWrapper;
 import org.totschnig.myexpenses.util.Result;
 import org.totschnig.myexpenses.util.Utils;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
-import org.totschnig.myexpenses.util.crypt.PRNGFixes;
 import org.totschnig.myexpenses.util.io.NetworkUtilsKt;
 import org.totschnig.myexpenses.util.io.StreamReader;
 import org.totschnig.myexpenses.util.licence.LicenceHandler;
@@ -72,7 +69,6 @@ import org.totschnig.myexpenses.widget.WidgetObserver;
 
 import java.io.IOException;
 import java.util.Locale;
-import java.util.TimeZone;
 
 import javax.inject.Inject;
 
@@ -152,12 +148,10 @@ public class MyApplication extends Application implements
   @Override
   public void onCreate() {
     if (BuildConfig.DEBUG) {
-      ///TODO disable in test
       enableStrictMode();
     }
     super.onCreate();
     checkAppReplacingState();
-    initThreeTen();
     AppCompatDelegate.setCompatVectorFromResourcesEnabled(true);
     MoreUiUtilsKt.setNightMode(prefHandler, this);
     final boolean syncService = isSyncService();
@@ -177,15 +171,6 @@ public class MyApplication extends Application implements
     }
     licenceHandler.init();
     NotificationBuilderWrapper.createChannels(this);
-    PRNGFixes.apply();
-    SecurityProvider.init(this);
-  }
-
-  private void initThreeTen() {
-    if ("Asia/Hanoi".equals(TimeZone.getDefault().getID())) {
-      TimeZone.setDefault(TimeZone.getTimeZone("Asia/Ho_Chi_Minh"));
-    }
-    AndroidThreeTen.init(this);
   }
 
   private void checkAppReplacingState() {
@@ -760,7 +745,7 @@ public class MyApplication extends Application implements
     }
   }
 
-  private void enableStrictMode() {
+  protected void enableStrictMode() {
     StrictMode.ThreadPolicy.Builder threadPolicyBuilder = new StrictMode.ThreadPolicy.Builder()
         .detectAll()
         .penaltyLog()

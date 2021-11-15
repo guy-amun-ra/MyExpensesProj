@@ -5,10 +5,10 @@
 * check if version_codes, version_names, upgrade.xml use the correction version code
 * if applicable publish announcement on Google+ and Facebook and add links
 * Test and assemble
-  * ./gradlew lintPlayWithDriveWithAdsGmsInternRelease
-  * ./gradlew testPlayWithDriveWithAdsGmsInternDebugUnitTest
-  * ./gradlew disableSystemAnimations clean connectedPlayWithDriveWithAdsGmsInternDebugAndroidTest
-  * ./gradlew clean bundlePlayWithDriveWithAdsGmsInternRelease
+  * ./gradlew lintPlayWithDriveWithAdsInternRelease
+  * ./gradlew testPlayWithDriveWithAdsInternDebugUnitTest
+  * ./gradlew clean connectedPlayWithDriveWithAdsInternDebugAndroidTest
+  * ./gradlew clean bundlePlayWithDriveWithAdsInternRelease
 * test upgrade mechanism
 * execute command returned by ./gradlew playEchoPublishTag
 * upload to Play
@@ -16,10 +16,10 @@
 * update _config.yml and push gh-pages
 
 # Huawei
-* ./gradlew clean myExpenses:packageHuaweiWithDriveWithAdsGmsInternReleaseUniversalApk
+* ./gradlew clean myExpenses:packageHuaweiWithDriveWithAdsInternReleaseUniversalApk
 * execute command returned by ./gradlew huaweiEchoPublishTag
 
 # Amazon
-# ./gradlew clean :myExpenses:packageAmazonWithDriveWithAdsGmsInternReleaseUniversalApk
+# ./gradlew clean :myExpenses:packageAmazonWithDriveWithAdsInternReleaseUniversalApk
 * execute command returned by ./gradlew amazonEchoPublishTag
 

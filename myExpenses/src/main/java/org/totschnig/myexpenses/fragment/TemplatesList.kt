@@ -80,12 +80,12 @@ import org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup
 import org.totschnig.myexpenses.util.TextUtils.concatResStrings
 import org.totschnig.myexpenses.util.UiUtils
 import org.totschnig.myexpenses.util.Utils
+import org.totschnig.myexpenses.util.convAmount
 import org.totschnig.myexpenses.viewmodel.PlanInstanceInfo
 import org.totschnig.myexpenses.viewmodel.TemplatesListViewModel
 import timber.log.Timber
 import java.io.Serializable
 import java.lang.ref.WeakReference
-import java.util.*
 import javax.inject.Inject
 
 const val KEY_INSTANCES = "instances"
@@ -500,7 +500,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
                         ) {
                             missingUuids.add(
                                 mTemplatesCursor!!.getString(
-                                    mTemplatesCursor!!.getColumnIndex(
+                                    mTemplatesCursor!!.getColumnIndexOrThrow(
                                         DatabaseConstants.KEY_UUID
                                     )
                                 )
@@ -567,7 +567,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
             })
             .msg(
                 concatResStrings(
-                    context,
+                    requireContext(),
                     " ",
                     R.string.warning_plan_instance_delete,
                     R.string.continue_confirmation

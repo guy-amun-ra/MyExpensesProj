@@ -23,7 +23,7 @@ import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.dialog.DebtDetailsDialogFragment
 import org.totschnig.myexpenses.fragment.PartiesList
 
-class ManageParties : ProtectedFragmentActivity() {
+class ManageParties : DebtActivity() {
     private lateinit var listFragment: PartiesList
     fun configureFabMergeMode(mergeMode: Boolean) {
         configureFloatingActionButton(
@@ -76,15 +76,14 @@ class ManageParties : ProtectedFragmentActivity() {
             listFragment.dispatchFabClick()
             return true
         }
-        if (command == R.id.DELETE_DEBT_COMMAND) {
-            (supportFragmentManager.findFragmentByTag(PartiesList.DIALOG_DEBT_DETAILS) as? DebtDetailsDialogFragment)
-                ?.deleteDebtDo(tag as Long)
-        }
         return false
     }
 
+    override fun deleteDebtDo(debtId: Long) {
+        (supportFragmentManager.findFragmentByTag(PartiesList.DIALOG_DEBT_DETAILS) as? DebtDetailsDialogFragment)
+            ?.deleteDebtDo(debtId)
+    }
+
     val action: String
-        get() {
-            return intent.action ?: ACTION_MANAGE
-        }
+        get() = intent.action ?: ACTION_MANAGE
 }

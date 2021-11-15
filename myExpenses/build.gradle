@@ -8,7 +8,7 @@ buildscript {
     }
     dependencies {
 //        classpath 'com.jakewharton.hugo:hugo-plugin:1.2.2-SNAPSHOT'
-        classpath 'com.novoda:gradle-android-command-plugin:2.0'
+        classpath 'com.novoda:gradle-android-command-plugin:2.0.1'
     }
 }
 
@@ -53,9 +53,11 @@ android {
     kotlinOptions {
         jvmTarget = "1.8"
         freeCompilerArgs = ["-Xallow-result-return-type"]
+        useIR = true
     }
 
     compileOptions {
+        coreLibraryDesugaringEnabled true
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -93,7 +95,7 @@ android {
         type.resValue "string", 'sync_account_type', defaultConfig.applicationId + type.applicationIdSuffix + ".sync"
     }
 
-    flavorDimensions "distribution", "drive", "ads", "security", "textRecognition"
+    flavorDimensions "drive", "ads", "security", "textRecognition"
 
     productFlavors {
         play {
@@ -118,9 +120,7 @@ android {
         withAds {
             dimension "ads"
         }
-        gms {
-            dimension "security"
-        }
+
         intern {
             dimension "textRecognition"
         }
@@ -145,6 +145,7 @@ android {
 
     sourceSets {
         main.res.srcDirs += 'src/main/categoryIcons'
+
         test {
             java.srcDirs += "src/testShared/java"
         }
@@ -161,7 +162,16 @@ android {
     }
 
     packagingOptions {
-        exclude 'META-INF/*'
+        exclude "**/attach_hotspot_windows.dll"
+        exclude "META-INF/licenses/**"
+        exclude "META-INF/AL2.0"
+        exclude "META-INF/LGPL2.1"
+        resources {
+            excludes += ['/META-INF/{AL2.0,LGPL2.1}', 'META-INF/*']
+        }
+        jniLibs {
+            excludes += ['META-INF/*']
+        }
     }
 
     variantFilter { variant ->
@@ -196,24 +206,38 @@ android {
 
     buildFeatures {
         viewBinding true
+        compose true
     }
     //It does not seem possible to define dynamicFeatures dependent on variant
     //If you want to build intern variant, you need to include mlkit and/or tesseract module
     dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui']
     //dynamicFeatures = [':ocr', ':webui']
+    composeOptions {
+        kotlinCompilerExtensionVersion compose_version
+    }
 }
 
 dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
     implementation project(':transactionscontract')
     implementation "com.jakewharton:butterknife:$butterknifeVersion"
     implementation 'com.squareup.phrase:phrase:1.1.0'
+    implementation "androidx.compose.ui:ui:$compose_version"
+    implementation "androidx.compose.material:material:$compose_version"
+    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0'
+    implementation 'androidx.activity:activity-compose:1.4.0'
+    implementation "com.google.android.material:compose-theme-adapter:$compose_version"
+    implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
+    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
     kapt "com.jakewharton:butterknife-compiler:$butterknifeVersion"
     kapt "com.google.dagger:dagger-compiler:$daggerVersion"
     implementation "com.google.dagger:dagger:$daggerVersion"
     compileOnly 'javax.annotation:jsr250-api:1.0'
     implementation 'frankiesardo:icepick:3.2.0'
     kapt 'frankiesardo:icepick-processor:3.2.0'
-    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.google.code.gson:gson:2.8.8'
 
     api 'com.google.auto.value:auto-value-annotations:1.7.4'
     kapt 'com.google.auto.value:auto-value:1.7'
@@ -296,7 +320,7 @@ dependencies {
     api "com.google.android.material:material:$materialComponents"
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
     api 'androidx.preference:preference-ktx:1.1.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
 
     // Revert to com.google.android:flexbox:2.0.1 when https://github.com/google/flexbox-layout/issues/566 is resolved
     implementation("com.github.google:flexbox-layout:2.0.1")
@@ -308,11 +332,6 @@ dependencies {
     implementation "com.squareup.retrofit2:converter-gson:$retrofitVersion"
     //noinspection GradleDependency
     implementation "com.squareup.okhttp3:logging-interceptor:$okHttpVersion"
-
-    implementation "com.jakewharton.threetenabp:threetenabp:$threetenabp"
-    testImplementation('org.threeten:threetenbp:1.5.1') {
-        exclude group: 'com.jakewharton.threetenabp', module: 'threetenabp'
-    }
 
     implementation 'com.github.lzyzsd:circleprogress:1.2.1'
 
@@ -334,11 +353,15 @@ dependencies {
     androidTestUtil "androidx.test:orchestrator:$androidSupportTestVersion"
     androidTestImplementation "androidx.test:rules:$androidSupportTestVersion"
     androidTestImplementation "androidx.test.espresso:espresso-intents:$espressoVersion"
-    androidTestImplementation("androidx.test.espresso:espresso-contrib:$espressoVersion") {
-        exclude module: 'accessibility-test-framework'
-    }
+    androidTestImplementation("androidx.test.espresso:espresso-contrib:$espressoVersion")
+    //https://github.com/android/android-test/issues/861#issuecomment-952431166
+    androidTestImplementation "com.google.android.apps.common.testing.accessibility.framework:accessibility-test-framework:3.1.2"
     //androidTestImplementation  "androidx.test.espresso.idling:idling-concurrent:$espressoVersion"
     androidTestImplementation "org.mockito:mockito-android:$mockitoVersion"
+
+    androidTestImplementation('com.adevinta.android:barista:4.2.0') {
+        exclude group: 'org.jetbrains.kotlin' // Only if you already use Kotlin in your project
+    }
 
     testImplementation "junit:junit:$junitVersion"
     testImplementation 'pl.pragmatists:JUnitParams:1.1.1'
@@ -412,10 +435,6 @@ task echoPublishTag() {
         println "git push"
         println "git tag r${versionCode}; git push origin r${versionCode}"
     }
-}
-
-tasks.withType(org.jetbrains.kotlin.gradle.dsl.KotlinJvmCompile) {
-    kotlinOptions.useOldBackend = true
 }
 
 def categoryIcons() {

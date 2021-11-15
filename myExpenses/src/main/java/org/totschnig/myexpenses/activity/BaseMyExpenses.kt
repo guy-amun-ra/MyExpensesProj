@@ -22,8 +22,6 @@ import eltos.simpledialogfragment.form.Hint
 import eltos.simpledialogfragment.form.SimpleFormDialog
 import eltos.simpledialogfragment.form.Spinner
 import icepick.State
-import org.threeten.bp.LocalDate
-import org.threeten.bp.LocalTime
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit.Companion.KEY_OCR_RESULT
@@ -51,11 +49,14 @@ import org.totschnig.myexpenses.ui.DiscoveryHelper
 import org.totschnig.myexpenses.ui.IDiscoveryHelper
 import org.totschnig.myexpenses.util.TextUtils
 import org.totschnig.myexpenses.util.distrib.ReviewManager
+import org.totschnig.myexpenses.util.formatMoney
 import org.totschnig.myexpenses.viewmodel.MyExpensesViewModel
 import timber.log.Timber
 import java.io.File
 import java.io.Serializable
 import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.LocalTime
 import java.util.*
 import javax.inject.Inject
 
@@ -235,7 +236,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 startEdit(
                                         createRowIntent(Transactions.TYPE_TRANSACTION, false).apply {
                                             putExtra(KEY_AMOUNT, (extras.getSerializable(KEY_AMOUNT) as BigDecimal) -
-                                                    Money(currencyUnit, cursor.getLong(cursor.getColumnIndex(DatabaseConstants.KEY_CURRENT_BALANCE))).amountMajor)
+                                                    Money(currencyUnit, cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_CURRENT_BALANCE))).amountMajor)
                                         }
                                 )
                             }
@@ -293,7 +294,9 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        menu.findItem(R.id.SCAN_MODE_COMMAND)?.isChecked = prefHandler.getBoolean(PrefKey.OCR, false)
+        menu.findItem(R.id.SCAN_MODE_COMMAND)?.let {
+            it.isChecked = prefHandler.getBoolean(PrefKey.OCR, false)
+        }
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -323,11 +326,11 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     fun setBalance() {
         accountsCursor?.let { cursor ->
             currentCurrencyUnit?.let { currencyUnit ->
-                val balance = cursor.getLong(cursor.getColumnIndex(DatabaseConstants.KEY_CURRENT_BALANCE))
+                val balance = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_CURRENT_BALANCE))
                 val label = cursor.getString(columnIndexLabel)
-                val isHome = cursor.getInt(cursor.getColumnIndex(DatabaseConstants.KEY_IS_AGGREGATE)) == AggregateAccount.AGGREGATE_HOME
+                val isHome = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_IS_AGGREGATE)) == AggregateAccount.AGGREGATE_HOME
                 currentBalance = String.format(Locale.getDefault(), "%s%s", if (isHome) " ≈ " else "",
-                        currencyFormatter.formatCurrency(Money(currencyUnit, balance)))
+                        currencyFormatter.formatMoney(Money(currencyUnit, balance)))
                 title = if (isHome) getString(R.string.grand_total) else label
                 toolbar.subtitle = currentBalance
                 toolbar.setSubtitleTextColor(ResourcesCompat.getColor(resources, if (balance < 0) R.color.colorExpense else R.color.colorIncome, null))
@@ -350,11 +353,9 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         floatingActionButton!!.setImageResource(if (scanMode) R.drawable.ic_scan else R.drawable.ic_menu_add_fab)
     }
 
-    fun isScanMode(): Boolean {
-        return prefHandler.getBoolean(PrefKey.OCR, false)
-    }
+    fun isScanMode(): Boolean = prefHandler.getBoolean(PrefKey.OCR, false)
 
-    fun activateOcrMode() {
+    private fun activateOcrMode() {
         prefHandler.putBoolean(PrefKey.OCR, true)
         updateFab()
         invalidateOptionsMenu()

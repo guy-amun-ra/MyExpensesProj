@@ -17,9 +17,6 @@ import javax.inject.Inject
 
 open class TransactionViewModel(application: Application) : TagHandlingViewModel(application) {
 
-    @Inject
-    lateinit var currencyContext: CurrencyContext
-
     enum class InstantiationTask { TRANSACTION, TEMPLATE, TRANSACTION_FROM_TEMPLATE, FROM_INTENT_EXTRAS }
 
     fun transaction(transactionId: Long, task: InstantiationTask, clone: Boolean, forEdit: Boolean, extras: Bundle?): LiveData<Transaction?> = liveData(context = coroutineContext()) {
@@ -42,7 +39,7 @@ open class TransactionViewModel(application: Application) : TagHandlingViewModel
     fun loadOriginalTags(id: Long, uri: Uri, column: String) {
         disposable = briteContentResolver.createQuery(uri, null, "$column = ?", arrayOf(id.toString()), null, false)
                 .mapToList { cursor ->
-                    Tag(cursor.getLong(cursor.getColumnIndex(DatabaseConstants.KEY_ROWID)), cursor.getString(cursor.getColumnIndex(DatabaseConstants.KEY_LABEL)), true)
+                    Tag(cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_ROWID)), cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_LABEL)), true)
                 }
                 .subscribe { tags.postValue(it) }
     }
