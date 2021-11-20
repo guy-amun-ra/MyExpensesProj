@@ -158,7 +158,10 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     } catch (Throwable throwable) {
       if (throwable instanceof SyncBackendProvider.SyncParseException || throwable instanceof SyncBackendProvider.EncryptionException) {
         syncResult.databaseError = true;
-        report(throwable);
+        log().e(throwable);
+        if (throwable instanceof SyncBackendProvider.SyncParseException) {
+          report(throwable);
+        }
         GenericAccountService.deactivateSync(account);
         accountManager.setUserData(account, GenericAccountService.KEY_BROKEN, "1");
         notifyUser("Synchronization backend deactivated",
@@ -420,7 +423,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
       }
       cursor.close();
     }
-    backend.tearDown();
   }
 
   private CurrencyContext getCurrencyConext() {
@@ -496,7 +498,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
   private boolean handleAuthException(SyncBackendProvider backend, Exception e, Account account) {
     if (backend.isAuthException(e)) {
-      backend.tearDown();
       Intent manageSyncBackendsIntent = getManageSyncBackendsIntent();
       manageSyncBackendsIntent.setAction(ManageSyncBackends.ACTION_REFRESH_LOGIN);
       manageSyncBackendsIntent.putExtra(KEY_SYNC_ACCOUNT_NAME, account.name);

@@ -56,7 +56,6 @@ public class TaskExecutionFragment<T> extends Fragment {
   public static final String KEY_FORMAT = "format";
 
   public static final int TASK_DELETE_PAYMENT_METHODS = 8;
-  public static final int TASK_TOGGLE_CRSTATUS = 11;
   public static final int TASK_MOVE = 12;
   public static final int TASK_INSTANTIATE_PLAN = 15;
   public static final int TASK_GRISBI_IMPORT = 19;
@@ -78,7 +77,6 @@ public class TaskExecutionFragment<T> extends Fragment {
   public static final int TASK_SYNC_REMOVE_BACKEND = 47;
   public static final int TASK_SYNC_LINK_SAVE = 48;
 
-  public static final int TASK_SETUP_FROM_SYNC_ACCOUNTS = 52;
   public static final int TASK_REPAIR_SYNC_BACKEND = 53;
   public static final int TASK_VALIDATE_LICENCE = 55;
   public static final int TASK_REMOVE_LICENCE = 56;
@@ -86,7 +84,6 @@ public class TaskExecutionFragment<T> extends Fragment {
   public static final int TASK_ACCOUNT_SORT = 60;
   public static final int TASK_CATEGORY_COLOR = 61;
   public static final int TASK_SET_ACCOUNT_HIDDEN = 63;
-  public static final int TASK_SET_ACCOUNT_SEALED = 64;
 
 
   /**

@@ -51,8 +51,6 @@ import com.annimon.stream.IntStream;
 import com.annimon.stream.Stream;
 import com.github.lzyzsd.circleprogress.DonutProgress;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.activity.ExpenseEdit;
@@ -113,6 +111,8 @@ import org.totschnig.myexpenses.viewmodel.data.DateInfo;
 import org.totschnig.myexpenses.viewmodel.data.Tag;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Locale;
@@ -299,7 +299,7 @@ public abstract class BaseTransactionList extends ContextualActionBarFragment im
     final AppComponent appComponent = ((MyApplication) requireActivity().getApplication()).getAppComponent();
     appComponent.inject(this);
     appComponent.inject(viewModel);
-    viewModel.account(getArguments().getLong(KEY_ACCOUNTID)).observe(this, account -> {
+    viewModel.account(getArguments().getLong(KEY_ACCOUNTID), false).observe(this, account -> {
       mAccount = account;
       shouldStartActionMode = mAccount != null && (mAccount.isAggregate() || !mAccount.isSealed());
       mAdapter.setAccount(mAccount);
@@ -750,7 +750,8 @@ public abstract class BaseTransactionList extends ContextualActionBarFragment im
     private final SparseBooleanArray sumLineState = new SparseBooleanArray();
 
     private MyGroupedAdapter(Context context, int layout, Cursor c, int flags) {
-      super(context, layout, c, flags, currencyFormatter, prefHandler, currencyContext);
+      super(context, layout, c, flags, currencyFormatter, prefHandler, currencyContext,
+          id -> checkSealed(new long[]{id}, () -> viewModel.toggleCrStatus(id)));
       inflater = LayoutInflater.from(getActivity());
     }
 
