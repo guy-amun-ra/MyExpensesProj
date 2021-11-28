@@ -38,8 +38,6 @@ android {
         targetSdkVersion project.targetSdkVersion
         versionCode project.versionCode
         versionName project.versionName
-        multiDexEnabled true
-        multiDexKeepProguard file('multidex-config.pro')
 
         buildConfigField "String", "DISTRIBUTION", "\"GITHUB\""
         buildConfigField "boolean", "UNLOCK_SWITCH", getPropertyIfDefined("UNLOCK", "false")
@@ -86,6 +84,7 @@ android {
             manifestPlaceholders = [appName: "My Expenses Debug", debug: "true"]
             buildConfigField "int", "TEST_SCENARIO", getPropertyIfDefined('testScenario', "1")
             buildConfigField "String", "BUILD_DATE", "\"now\""
+            buildConfigField "String", "OPEN_EXCHANGE_RATES_API_KEY", "\"" + getPropertyIfDefined('OPEN_EXCHANGE_RATES_API_KEY', "") + "\""
         }
         beta {
             initWith release
@@ -216,7 +215,7 @@ android {
     }
     //It does not seem possible to define dynamicFeatures dependent on variant
     //If you want to build intern variant, you need to include mlkit and/or tesseract module
-    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui']
+    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_Latn', ':mlkit_Han', ':mlkit_Deva', ':mlkit_Jpan', ':mlkit_Kore']
     //dynamicFeatures = [':ocr', ':webui']
     composeOptions {
         kotlinCompilerExtensionVersion compose_version
@@ -259,9 +258,7 @@ dependencies {
     implementation 'com.github.mtotschnig:StickyListHeaders:2.8.0'
     implementation 'com.github.mtotschnig:MaterialSeekBarPreference:bc211774e5'
     implementation project(':PlayLicensingOrig')
-    implementation('com.gitlab.mtotschn:dav4android:fbaa5b51') {
-        exclude group: "com.android.support", module: "support-annotations"
-    }
+    implementation('com.gitlab.mtotschn:dav4android:2c26db1e24')
     implementation 'com.itextpdf:itextpdf:5.5.13.1'
     implementation "ch.acra:acra-mail:$acraVersion"
     implementation "ch.acra:acra-dialog:$acraVersion"
@@ -289,9 +286,9 @@ dependencies {
     //noinspection GradleCompatible
     implementation 'androidx.multidex:multidex:2.0.1'
 
-    implementation 'org.apache.commons:commons-collections4:4.1'
+    implementation 'org.apache.commons:commons-collections4:4.4'
 
-    implementation "com.jakewharton.timber:timber:$timberVersion"
+    api "com.jakewharton.timber:timber:$timberVersion"
 
     withAdsImplementation 'com.google.android.gms:play-services-ads:20.4.0'
     //noinspection GradleDynamicVersion
@@ -325,7 +322,7 @@ dependencies {
     api "com.google.android.material:material:$materialComponents"
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
     api 'androidx.preference:preference-ktx:1.1.1'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.1.2'
 
     // Revert to com.google.android:flexbox:2.0.1 when https://github.com/google/flexbox-layout/issues/566 is resolved
     implementation("com.github.google:flexbox-layout:2.0.1")

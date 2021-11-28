@@ -229,13 +229,13 @@
     <string-array name="whats_new_314" tools:ignore="UnusedResources">
         <item>@string/title_scan_receipt_feature</item>
     </string-array>
-    <string-array name="whats_new_315" tools:ignore="UnusedResources">
+    <string-array name="whats_new_315" tools:ignore="InconsistentArrays,UnusedResources">
         <item>@string/ui_refinement</item>
     </string-array>
     <string-array name="whats_new_319" tools:ignore="UnusedResources">
         <item>@string/ui_refinement</item>
     </string-array>
-    <string-array name="whats_new_334">
+    <string-array name="whats_new_334" tools:ignore="UnusedResources">
         <item>@string/debt_managment</item>
     </string-array>
     <!-- During onboarding, user can select to restore data from synchronized account-specific data . This is the title for the tab where the accounts are listed -->
@@ -250,7 +250,6 @@
     <string name="date_format_unsupported_character">Only Day (d), Month (M), and Year (y) can be used.</string>
     <string name="date_format_specifier_missing">You need to use Day (d), Month (M), and Year (y)</string>
     <string name="pref_ui_theme_default">dark</string>
-    <string name="title_mlkit">Mlkit</string>
-    <string name="title_tesseract">Tesseract</string>
     <string name="pref_tesseract_language_key">tesseract_language</string>
+    <string name="pref_mlkit_script_key">mlkit_script</string>
 </resources>

@@ -129,8 +129,8 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val viewModelProvider = ViewModelProvider(this)
-        ocrViewModel = viewModelProvider.get(OcrViewModel::class.java)
-        featureViewModel = viewModelProvider.get(FeatureViewModel::class.java)
+        ocrViewModel = viewModelProvider[OcrViewModel::class.java]
+        featureViewModel = viewModelProvider[FeatureViewModel::class.java]
         with((applicationContext as MyApplication).appComponent) {
             inject(ocrViewModel)
             inject(featureViewModel)
@@ -225,9 +225,9 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     override fun dispatchCommand(command: Int, tag: Any?): Boolean {
         trackCommand(command)
         if (command == R.id.TESSERACT_DOWNLOAD_COMMAND) {
-            ocrViewModel.downloadTessData().observe(this, {
+            ocrViewModel.downloadTessData().observe(this) {
                 downloadPending = it
-            })
+            }
             return true
         }
         return false
@@ -235,9 +235,9 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
 
     fun processImageCaptureError(resultCode: Int, activityResult: CropImage.ActivityResult?) {
         if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
-            showSnackbar(activityResult?.error?.let {
-                if (it is ActivityNotFoundException) getString(R.string.image_capture_not_installed) else it.message
-            } ?: "ERROR")
+            val throwable = activityResult?.error ?: Throwable("ERROR")
+            CrashHandler.report(throwable)
+            showSnackbar(if (throwable is ActivityNotFoundException) getString(R.string.image_capture_not_installed) else throwable.message ?: "ERROR")
         }
     }
 
@@ -343,10 +343,10 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     }
 
     fun checkTessDataDownload() {
-        ocrViewModel.tessDataExists().observe(this, {
+        ocrViewModel.tessDataExists().observe(this) {
             if (!it)
                 offerTessDataDownload()
-        })
+        }
     }
 
     fun startActionView(uri: String) {

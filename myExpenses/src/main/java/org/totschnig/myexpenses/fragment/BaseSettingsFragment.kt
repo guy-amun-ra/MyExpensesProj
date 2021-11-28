@@ -37,6 +37,7 @@ import org.totschnig.myexpenses.preference.LocalizedFormatEditTextPreference
 import org.totschnig.myexpenses.preference.LocalizedFormatEditTextPreference.OnValidationErrorListener
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
+import org.totschnig.myexpenses.preference.requireString
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.service.DailyScheduler
 import org.totschnig.myexpenses.sync.GenericAccountService
@@ -247,10 +248,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             locale.getDisplayName(locale)
         }
 
-    fun configureTesseractLanguagePref() {
-        requirePreference<ListPreference>(PrefKey.TESSERACT_LANGUAGE).let {
-            activity().ocrViewModel.configureTesseractLanguagePref(it)
-        }
+    fun configureOcrEnginePrefs() {
+        val tesseract = requirePreference<ListPreference>(PrefKey.TESSERACT_LANGUAGE)
+        val mlkit = requirePreference<ListPreference>(PrefKey.MLKIT_SCRIPT)
+        activity().ocrViewModel.configureOcrEnginePrefs(tesseract, mlkit)
     }
 
     fun requireApplication(): MyApplication {
@@ -338,7 +339,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             if (!featureManager.isFeatureInstalled(Feature.OCR, activity())) {
                 featureManager.requestFeature(Feature.OCR, activity())
             }
-            configureTesseractLanguagePref()
+            configureOcrEnginePrefs()
         }
     }
 
@@ -709,7 +710,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             }
             this.requirePreference<ListPreference>(PrefKey.OCR_ENGINE).isVisible =
                 activity().ocrViewModel.shouldShowEngineSelection()
-            configureTesseractLanguagePref()
+            configureOcrEnginePrefs()
         } else if (rootKey == getKey(PrefKey.SYNC)) {
             requirePreference<Preference>(PrefKey.MANAGE_SYNC_BACKENDS).summary = (getString(
                 R.string.pref_manage_sync_backends_summary,
@@ -726,10 +727,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             requirePreference<Preference>(PrefKey.EXCHANGE_RATE_PROVIDER).onPreferenceChangeListener =
                 this
             configureOpenExchangeRatesPreference(
-                prefHandler.getString(
+                prefHandler.requireString(
                     PrefKey.EXCHANGE_RATE_PROVIDER,
                     "EXCHANGE_RATE_HOST"
-                )!!
+                )
             )
         }
     }
