@@ -215,7 +215,7 @@ android {
     }
     //It does not seem possible to define dynamicFeatures dependent on variant
     //If you want to build intern variant, you need to include mlkit and/or tesseract module
-    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_Latn', ':mlkit_Han', ':mlkit_Deva', ':mlkit_Jpan', ':mlkit_Kore']
+    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore']
     //dynamicFeatures = [':ocr', ':webui']
     composeOptions {
         kotlinCompilerExtensionVersion compose_version

@@ -11,6 +11,20 @@ android {
         targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    flavorDimensions 'distribution'
+
+    productFlavors {
+        play {
+            dimension "distribution"
+        }
+        amazon {
+            dimension "distribution"
+        }
+        huawei {
+            dimension "distribution"
+        }
+    }
 }
 
 dependencies {
