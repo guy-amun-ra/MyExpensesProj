@@ -9,8 +9,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.totschnig.myexpenses.R;
-import org.totschnig.myexpenses.activity.MyExpenses;
-import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
+import org.totschnig.myexpenses.activity.TestMyExpenses;
 import org.totschnig.myexpenses.model.Account;
 import org.totschnig.myexpenses.model.AccountType;
 import org.totschnig.myexpenses.model.ContribFeature;
@@ -19,6 +18,7 @@ import org.totschnig.myexpenses.model.Money;
 import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.testutils.BaseUiTest;
+import org.totschnig.myexpenses.testutils.DecoratedCheckSealedHandler;
 
 import java.util.Currency;
 import java.util.Objects;
@@ -26,6 +26,8 @@ import java.util.concurrent.TimeoutException;
 
 import androidx.annotation.NonNull;
 import androidx.test.core.app.ActivityScenario;
+import androidx.test.espresso.IdlingRegistry;
+import androidx.test.espresso.idling.CountingIdlingResource;
 import androidx.test.espresso.matcher.CursorMatchers;
 import androidx.test.filters.FlakyTest;
 
@@ -48,10 +50,11 @@ import static org.hamcrest.Matchers.is;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID;
 import static org.totschnig.myexpenses.testutils.Matchers.withAdaptedData;
 
-public final class MyExpensesCabTest extends BaseUiTest {
+public final class MyExpensesCabTest extends BaseUiTest<TestMyExpenses> {
 
-  private ActivityScenario<MyExpenses> activityScenario = null;
+  private ActivityScenario<TestMyExpenses> activityScenario = null;
   private Account account;
+  private final CountingIdlingResource countingResource = new CountingIdlingResource("FooServerCalls");
 
   @Before
   public void fixture() {
@@ -65,13 +68,16 @@ public final class MyExpensesCabTest extends BaseUiTest {
     for (int i = 0; i < times; i++) {
       op0.saveAsNew();
     }
-    Intent i = new Intent(getTargetContext(), MyExpenses.class);
+    Intent i = new Intent(getTargetContext(), TestMyExpenses.class);
     i.putExtra(KEY_ROWID, account.getId());
     activityScenario = ActivityScenario.launch(i);
+    activityScenario.onActivity(activity -> activity.decoratedCheckSealeHandler = new DecoratedCheckSealedHandler(activity.getContentResolver(), countingResource));
+    IdlingRegistry.getInstance().register(countingResource);
   }
 
   @After
   public void tearDown() throws RemoteException, OperationApplicationException {
+    IdlingRegistry.getInstance().unregister(countingResource);
     Account.delete(account.getId());
   }
 
@@ -107,9 +113,9 @@ public final class MyExpensesCabTest extends BaseUiTest {
         .perform(typeText(templateTitle));
     closeSoftKeyboard();
     onView(withText(R.string.dialog_button_add)).perform(click());
+    closeSoftKeyboard();
     onView(withId(R.id.CREATE_COMMAND)).perform(click());
 
-    //((EditText) mSolo.getView(EditText.class, 0)).onEditorAction(EditorInfo.IME_ACTION_DONE);
     clickMenuItem(R.id.MANAGE_TEMPLATES_COMMAND);
     onView(withText(is(templateTitle))).check(matches(isDisplayed()));
   }
@@ -175,7 +181,7 @@ public final class MyExpensesCabTest extends BaseUiTest {
 
   @NonNull
   @Override
-  protected ActivityScenario<? extends ProtectedFragmentActivity> getTestScenario() {
+  protected ActivityScenario<TestMyExpenses> getTestScenario() {
     return Objects.requireNonNull(activityScenario);
   }
 }
