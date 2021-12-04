@@ -13,7 +13,6 @@ import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.feature.Script
 import org.totschnig.myexpenses.feature.getUserConfiguredMlkitScript
 import org.totschnig.myexpenses.preference.PrefHandler
-import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.getDisplayNameForScript
 import org.totschnig.ocr.Element
 import org.totschnig.ocr.Line
