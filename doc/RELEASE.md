@@ -6,7 +6,7 @@
 * if applicable publish announcement on Google+ and Facebook and add links
 * Test and assemble
   * ./gradlew lintPlayWithDriveWithAdsInternRelease
-  * ./gradlew testPlayWithDriveWithAdsInternBetaUnitTest (testPlayWithDriveWithAdsInternReleaseUnitTest)
+  * ./gradlew testPlayWithDriveWithAdsInternBetaUnitTest (testPlayWithDriveWithAdsInternDebugUnitTest)
   * ./gradlew clean connectedPlayWithDriveWithAdsInternDebugAndroidTest
   * ./gradlew clean bundlePlayWithDriveWithAdsInternRelease
 * test upgrade mechanism
