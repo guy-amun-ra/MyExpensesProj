@@ -436,7 +436,7 @@
     <string name="warning_change_fraction_digits_2_divided" tools:ignore="PluralsCandidate">ಮೊತ್ತವನ್ನು ನವೀಕರಿಸದಿದ್ದರೆ, ಬದಲಾವಣೆಯ ನಂತರ ಅವುಗಳನ್ನು %d ನಿಂದ ಭಾಗಿಸಿದಂತೆ ಪ್ರದರ್ಶಿಸಲಾಗುತ್ತದೆ.</string>
     <string name="warning_change_fraction_digits_3">ಮೊತ್ತವನ್ನು ನವೀಕರಿಸಿದರೆ, ಅವುಗಳ ಭಾಗಶಃ ಮಾಹಿತಿಯನ್ನು ನೀವು ಕಳೆದುಕೊಳ್ಳುತ್ತೀರಿ.</string>
     <string name="warning_change_fraction_digits_checkbox_label">ಡೇಟಾಬೇಸ್‌ನಲ್ಲಿ ಮೊತ್ತವನ್ನು ನವೀಕರಿಸಿ</string>
-    <string name="import_categories_success">%1$d ವಿಭಾಗಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಮದು ಮಾಡಲಾಗಿದೆ</string>
+    <string name="import_categories_success">%1$d ವಿಭಾಗಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಮದು ಮಾಡಲಾಗಿದೆ.</string>
     <string name="import_parties_success">%1$s ಪಕ್ಷಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಮದು ಮಾಡಲಾಗಿದೆ</string>
     <string name="import_accounts_success">%1$s ಖಾತೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಆಮದು ಮಾಡಲಾಗಿದೆ</string>
     <string name="import_transactions_success" tools:ignore="PluralsCandidate">%1$d ವಹಿವಾಟುಗಳನ್ನು %2$s ಖಾತೆಗೆ ಯಶಸ್ವಿಯಾಗಿ ಆಮದು ಮಾಡಲಾಗಿದೆ</string>
@@ -975,4 +975,8 @@
     <string name="debt_owes_me">%s ನನಗೆ ಣಿಯಾಗಿದೆ</string>
     <string name="menu_new_debt">ಹೊಸ ಸಾಲ</string>
     <string name="dialog_title_warning_delete_party">ಪಾರ್ಟಿಯನ್ನು ಅಳಿಸುವುದೇ\?</string>
+    <string name="cb_label_merge_accounts">ಖಾತೆಗಳನ್ನು ವಿಲೀನಗೊಳಿಸಿ</string>
+    <string name="debt">ಸಾಲ</string>
+    <string name="pref_mlkit_script_title">MlKit ಗಾಗಿ ಸ್ಕ್ರಿಪ್ಟ್</string>
+    <string name="title_activity_debt_overview">ಸಾಲದ ಅವಲೋಕನ</string>
 </resources>
