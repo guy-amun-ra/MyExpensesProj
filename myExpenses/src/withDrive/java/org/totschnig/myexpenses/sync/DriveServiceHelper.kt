@@ -132,7 +132,7 @@ class DriveServiceHelper(context: Context, accountName: String) {
     @Throws(IOException::class)
     fun getFileByNameAndParent(parent: File, name: String): File? {
         val result = search(parent.id, "name = '%s'".format(Locale.ROOT, name))
-        return if (result.size > 0) result[0] else null
+        return if (result.isNotEmpty()) result[0] else null
     }
 
     @Throws(IOException::class)

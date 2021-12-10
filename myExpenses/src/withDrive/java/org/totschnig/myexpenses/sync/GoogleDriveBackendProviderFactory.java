@@ -5,7 +5,6 @@ import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
@@ -55,7 +54,6 @@ public class GoogleDriveBackendProviderFactory extends SyncBackendProviderFactor
 
   @Override
   public boolean isEnabled(Context context) {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) return false;
     GoogleApiAvailability googleApiAvailability = GoogleApiAvailability.getInstance();
     int result = googleApiAvailability.isGooglePlayServicesAvailable(context);
     return result == ConnectionResult.SUCCESS || googleApiAvailability.isUserResolvableError(result);

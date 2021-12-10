@@ -289,6 +289,9 @@ dependencies {
         exclude module: 'httpclient'
         exclude module: 'commons-logging'
     }
+    withDriveImplementation('com.google.http-client:google-http-client-android:1.40.1') {
+        exclude group: 'org.apache.httpcomponents'
+    }
     withDriveImplementation('com.google.api-client:google-api-client-android:1.32.2') {
         exclude group: 'org.apache.httpcomponents'
     }
