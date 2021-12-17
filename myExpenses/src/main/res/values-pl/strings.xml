@@ -317,7 +317,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Utwórz nowy lokalny kalendarz planowania</string>
     <string name="pref_planning_calendar_summary">Wybierz kalendarz gdzie będą przechowywane przyszłe plany oraz cykliczne transakcje</string>
-    <string name="pref_planning_calendar_title">Kalendarz planowania</string>
     <string name="pref_protection_delay_seconds_summary">Ilość sekund przed zablokowaniem aplikacji przez hasło.</string>
     <string name="pref_protection_delay_seconds_title">Okres przed zabezpieczeniem</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">Wprowadzanie danych z widżetów i skrótów</string>
@@ -452,9 +451,6 @@
     <string name="import_source_select_error">Proszę wskazać plik w formacie %1$s</string>
     <string name="menu_categories_setup_default">Ustaw domyślne kategorie</string>
     <string name="menu_create_folder">Nowy folder</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">Do góry</string>
-    <string name="create_new_folder_fail">Nie udało się utworzyć folderu</string>
     <string name="widget_title_accounts">Moje konta</string>
     <string name="widget_title_templates">Moje szablony</string>
     <string name="app_dir_not_accessible">Aktualnie wybrany folder na kopie zapasowe i eksport (%1$s) jest niedostępny. Proszę wybrać inny.</string>

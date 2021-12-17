@@ -288,7 +288,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">새 로컬 플래닝 캘린더 만들기</string>
     <string name="pref_planning_calendar_summary">향후의 재무 계획과 반복 거래가 저장될 캘린더 선택</string>
-    <string name="pref_planning_calendar_title">플래닝 캘린더</string>
     <string name="pref_protection_delay_seconds_summary">앱이 암호로 잠기기 전의 유휴 시간을 초 단위로 설정합니다.</string>
     <string name="pref_protection_delay_seconds_title">지연된 보안</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">위젯과 바로가기로부터의 데이터 입력</string>
@@ -404,9 +403,6 @@
     <string name="import_source_select_error">%1$s 형식의 파일을 제공해주세요</string>
     <string name="menu_categories_setup_default">기본 카테고리 설정</string>
     <string name="menu_create_folder">새 폴더</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">위</string>
-    <string name="create_new_folder_fail">폴더를 생성하지 못했습니다</string>
     <string name="widget_title_accounts">내 계좌</string>
     <string name="widget_title_templates">내 템플릿</string>
     <string name="app_dir_not_accessible">백업과 내보내기를 위해 현재 선택된 폴더(%1$s)가 접근 가능하지 않습니다. 다른 폴더를 선택하세요.</string>

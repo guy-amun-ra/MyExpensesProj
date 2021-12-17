@@ -329,7 +329,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">انشاء مخطِط تقويم محلي جديد</string>
     <string name="pref_planning_calendar_summary">حدد التقويم الذي تم تخزين الخطط المستقبلية والمعاملات المتكررة فيه</string>
-    <string name="pref_planning_calendar_title">تخطيط تقويم</string>
     <string name="pref_protection_delay_seconds_summary">ثواني دون تفاعل قبل أن يتم قفل التطبيق بكلمة مرور.</string>
     <string name="pref_protection_delay_seconds_title">مهلة الحماية</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">إدخال البيانات عبر الحاجيات والاختصارات</string>
@@ -484,9 +483,6 @@
     <string name="import_source_select_error">يرجى تقديم ملف من نوع %1$s</string>
     <string name="menu_categories_setup_default">إعداد الفئات الافتراضية</string>
     <string name="menu_create_folder">مجلد جديد</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">أعلى</string>
-    <string name="create_new_folder_fail">فشل في انشاء المجلد</string>
     <string name="widget_title_accounts">حساباتي</string>
     <string name="widget_title_templates">نماذجي</string>
     <string name="app_dir_not_accessible">لا يمكن الوصول إلى المجلد المحدد حالياً للنسخ الاحتياطية والتصدير (%1$s). يُرجى اختيار مجلد مختلف.</string>

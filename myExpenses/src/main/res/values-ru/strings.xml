@@ -322,7 +322,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Создать новый локальный календарь планов</string>
     <string name="pref_planning_calendar_summary">Выберите календарь где хранятся планы на будущее и повторяющиеся операции</string>
-    <string name="pref_planning_calendar_title">Календарь планов</string>
     <string name="pref_protection_delay_seconds_summary">Секунд простоя, прежде чем приложение будет заблокировано паролем.</string>
     <string name="pref_protection_delay_seconds_title">Задержка до защиты</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">Ввод данных из виджетов и ярлыков</string>
@@ -465,9 +464,6 @@
     <string name="import_source_select_error">Пожалуйста заполните тип файла %1$s</string>
     <string name="menu_categories_setup_default">Установить категории по умолчанию</string>
     <string name="menu_create_folder">Новый каталог</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">Вверх</string>
-    <string name="create_new_folder_fail">Ошибка создания каталога</string>
     <string name="widget_title_accounts">Мои счета</string>
     <string name="widget_title_templates">Мои шаблоны</string>
     <string name="app_dir_not_accessible">Текущая выбранная папка для резервного копирования и экспорта (%1$s) недоступна. Пожалуйста, выберите другую.</string>

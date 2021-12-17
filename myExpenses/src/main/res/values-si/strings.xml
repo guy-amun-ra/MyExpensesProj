@@ -41,7 +41,6 @@
     <string name="date">දිනය </string>
     <string name="date_format">දින ආකෘතිය </string>
     <string name="date_format_illegal">අයුතු දින ආකෘතිය කි</string>
-    <string name="decimal_separator"/>
     <string name="description">සවිස්තරය</string>
     <string name="dialog_command_disabled_reset_account">නිර්යාත කිරීමට ගනුදෙනු නැත.</string>
     <string name="dialog_command_disabled_distribution">ප්‍රබේධ සදහා වෙන්කළ ගනුදෙනු මෙම ගිණුමෙහි නොමැත </string>
@@ -234,7 +233,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">නව පරිස්ථානීය සැලසුම්  දින දර්ශනයක් නිර්මාණය කරන්න  </string>
     <string name="pref_planning_calendar_summary">අනාගත සැලසුම් සහ නැවත ඇතිවන ගනුදෙනු තැන්පත් කිරීම සදහා දින දර්ශනයක් තෝරාගන්න </string>
-    <string name="pref_planning_calendar_title">දින දර්ශනයක් සැලසුම් කිරීම </string>
     <string name="pref_protection_delay_seconds_summary">අක්‍රිය තත්පර ගණනකට  පෙර  ඇපය මුරපදයෙන් හිරවෙ </string>
     <string name="pref_protection_delay_seconds_title">ආරක්ෂාව එනතුරු පරක්කු කරන්න </string>
     <string name="pref_protection_enable_data_entry_from_widget_title">විජටයන්ගෙන් දත්ත ඇතුලත් කිරීම </string>
@@ -339,9 +337,6 @@
     <string name="import_source_select_error">කරුණකර  %1$s ලිපිගොනු වර්ගයක් යොදන්න </string>
     <string name="menu_categories_setup_default">මුල් ප්‍රබේධ පිහිටුවන්න </string>
     <string name="menu_create_folder">නව ගොනුව </string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">ඉහල </string>
-    <string name="create_new_folder_fail">ගොනුව නිර්මාණය  කිරීම අසාර්ථකයි </string>
     <string name="widget_title_accounts">මගේ ගිණුම් </string>
     <string name="widget_title_templates">මගේ අච්චු </string>
     <string name="switch_on_text">සක්‍රියයි</string>

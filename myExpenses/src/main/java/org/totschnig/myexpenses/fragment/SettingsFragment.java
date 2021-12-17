@@ -13,7 +13,6 @@ import com.annimon.stream.Stream;
 
 import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity;
-import org.totschnig.myexpenses.activity.FolderBrowser;
 import org.totschnig.myexpenses.activity.MyPreferenceActivity;
 import org.totschnig.myexpenses.di.AppComponent;
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment;
@@ -30,7 +29,6 @@ import org.totschnig.myexpenses.preference.SimplePasswordDialogFragmentCompat;
 import org.totschnig.myexpenses.preference.SimplePasswordPreference;
 import org.totschnig.myexpenses.preference.TimePreference;
 import org.totschnig.myexpenses.preference.TimePreferenceDialogFragmentCompat;
-import org.totschnig.myexpenses.util.AppDirHelper;
 import org.totschnig.myexpenses.util.CurrencyFormatter;
 import org.totschnig.myexpenses.util.ShareUtils;
 import org.totschnig.myexpenses.util.Utils;
@@ -50,7 +48,6 @@ import javax.inject.Inject;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
-import androidx.documentfile.provider.DocumentFile;
 import androidx.fragment.app.DialogFragment;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
@@ -106,7 +103,6 @@ public class SettingsFragment extends BaseSettingsFragment implements
   private long pickFolderRequestStart;
   private static final int PICK_FOLDER_REQUEST = 2;
   private static final int CONTRIB_PURCHASE_REQUEST = 3;
-  private static final int PICK_FOLDER_REQUEST_LEGACY = 4;
 
   @Inject
   CrashHandler crashHandler;
@@ -144,13 +140,6 @@ public class SettingsFragment extends BaseSettingsFragment implements
           prefHandler.getBoolean(PROTECTION_LEGACY, false) ? R.string.pref_protection_password_title :
               prefHandler.getBoolean(PROTECTION_DEVICE_LOCK_SCREEN, false) ? R.string.pref_protection_device_lock_screen_title :
                   R.string.switch_off_text));
-      Preference preference = requirePreference(PLANNER_CALENDAR_ID);
-      if (activity.isCalendarPermissionPermanentlyDeclined()) {
-        preference.setSummary(Utils.getTextWithAppName(getContext(),
-            R.string.calendar_permission_required));
-      } else {
-        preference.setSummary(R.string.pref_planning_calendar_summary);
-      }
       configureContribPrefs();
       loadSyncAccountData();
     }
@@ -159,8 +148,7 @@ public class SettingsFragment extends BaseSettingsFragment implements
   public void showPreference(String prefKey) {
     final Preference preference = findPreference(prefKey);
     if (preference != null) {
-      //noinspection RestrictedApi
-      preference.performClick();
+      onDisplayPreferenceDialog(preference);
     }
   }
 
@@ -169,7 +157,7 @@ public class SettingsFragment extends BaseSettingsFragment implements
     if (matches(pref, HOME_CURRENCY)) {
       if (!value.equals(prefHandler.getString(HOME_CURRENCY, null))) {
         MessageDialogFragment.newInstance(getString(R.string.dialog_title_information),
-            concatResStrings(getContext(), " ", R.string.home_currency_change_warning, R.string.continue_confirmation),
+            concatResStrings(requireContext(), " ", R.string.home_currency_change_warning, R.string.continue_confirmation),
             new MessageDialogFragment.Button(android.R.string.ok, R.id.CHANGE_COMMAND, ((String) value)),
             null, MessageDialogFragment.noButton()).show(getParentFragmentManager(), "CONFIRM");
       }
@@ -307,12 +295,9 @@ public class SettingsFragment extends BaseSettingsFragment implements
       try {
         pickFolderRequestStart = System.currentTimeMillis();
         startActivityForResult(intent, PICK_FOLDER_REQUEST);
-        return true;
       } catch (ActivityNotFoundException e) {
-        CrashHandler.report(e);
-        //fallback to FolderBrowser
+        reportException(e);
       }
-      startLegacyFolderRequest(AppDirHelper.getAppDir(getActivity()));
       return true;
     }
     if (handleContrib(IMPORT_CSV, CSV_IMPORT, preference)) return true;
@@ -356,13 +341,6 @@ public class SettingsFragment extends BaseSettingsFragment implements
 
   private void contribBuyDo(Package selectedPackage, boolean shouldReplaceExisting) {
     startActivity(ContribInfoDialogActivity.getIntentFor(getContext(), selectedPackage, shouldReplaceExisting));
-  }
-
-  private void startLegacyFolderRequest(@NonNull DocumentFile appDir) {
-    Intent intent;
-    intent = new Intent(getActivity(), FolderBrowser.class);
-    intent.putExtra(FolderBrowser.PATH, appDir.getUri().getPath());
-    startActivityForResult(intent, PICK_FOLDER_REQUEST_LEGACY);
   }
 
   @Override
@@ -423,16 +401,10 @@ public class SettingsFragment extends BaseSettingsFragment implements
         //we try to determine if we get here due to abnormal failure (observed on Xiaomi) of request, or if user canceled
         long pickFolderRequestDuration = System.currentTimeMillis() - pickFolderRequestStart;
         if (pickFolderRequestDuration < 250) {
-          CrashHandler.report(String.format(Locale.ROOT, "PICK_FOLDER_REQUEST returned after %d millis with request code %d",
-              pickFolderRequestDuration, requestCode));
-          DocumentFile appDir = AppDirHelper.getAppDir(getActivity());
-          if (appDir != null) {
-            startLegacyFolderRequest(appDir);
-          }
+          reportException(new IllegalStateException(String.format(Locale.ROOT, "PICK_FOLDER_REQUEST returned after %d millis with request code %d",
+              pickFolderRequestDuration, requestCode)));
         }
       }
-    } else if (requestCode == PICK_FOLDER_REQUEST_LEGACY && resultCode == Activity.RESULT_OK) {
-      loadAppDirSummary();
     }
   }
 

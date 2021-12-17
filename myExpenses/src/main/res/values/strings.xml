@@ -321,7 +321,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Create new local planning calendar</string>
     <string name="pref_planning_calendar_summary">Select the calendar where plans for future and recurring transactions are stored</string>
-    <string name="pref_planning_calendar_title">Planning calendar</string>
     <string name="pref_protection_delay_seconds_summary">Idle seconds before app will be locked by password.</string>
     <string name="pref_protection_delay_seconds_title">Delay until protection</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">Data entry from widgets and shortcuts</string>
@@ -452,9 +451,6 @@
     <string name="import_source_select_error">Please provide a file of type %1$s</string>
     <string name="menu_categories_setup_default">Setup default categories</string>
     <string name="menu_create_folder">New folder</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">Up</string>
-    <string name="create_new_folder_fail">Failed to create the folder</string>
     <string name="widget_title_accounts">My accounts</string>
     <string name="widget_title_templates">My templates</string>
     <string name="app_dir_not_accessible">The currently selected folder for backups and exports (%1$s) is not accessible. Please select a different one.</string>

@@ -312,7 +312,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Cipta kalendar perancangan setempat baharu</string>
     <string name="pref_planning_calendar_summary">Pilih kalendar yang mana plan untuk transaksi akan datang dan berulang disimpan</string>
-    <string name="pref_planning_calendar_title">Kalendar perancangan</string>
     <string name="pref_protection_delay_seconds_summary">Saat melahu sebelum apl akan dikunci oleh kata laluan.</string>
     <string name="pref_protection_delay_seconds_title">Lengahan sehingga dilindungi</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">Masukan data dari widjet dan pintasan</string>
@@ -436,9 +435,6 @@
     <string name="import_source_select_error">Sila sediakan fail jenis %1$s</string>
     <string name="menu_categories_setup_default">Persediaan kategori lalai</string>
     <string name="menu_create_folder">Folder baharu</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">Naik</string>
-    <string name="create_new_folder_fail">Gagal mencipta folder</string>
     <string name="widget_title_accounts">Akaun saya</string>
     <string name="widget_title_templates">Templat saya</string>
     <string name="app_dir_not_accessible">Folder terpilih semasa untuk sandar dan eksport (%1$s) tidak boleh dicapai. Sila pilih yang lain.</string>

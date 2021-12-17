@@ -338,6 +338,10 @@ dependencies {
 
     implementation 'com.afollestad.material-dialogs:core:3.3.0'
 
+    // dynamic feature module compilation fails with
+    //Cannot access 'com.vmadalin.easypermissions.EasyPermissions.PermissionCallbacks' which is a supertype of 'org.totschnig.myexpenses.activity.BaseActivity'
+    api 'com.vmadalin:easypermissions-ktx:1.0.0'
+
     androidTestImplementation 'tools.fastlane:screengrab:2.0.0'
     //Screengrab still references falcon 2.2.1 which is not on Jcenter
     androidTestImplementation 'com.jraska:falcon:2.2.0'
@@ -399,7 +403,7 @@ dependencies {
     //implementation "androidx.activity:activity-ktx:$activity_version"
     implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
 
-    internImplementation "com.google.android.gms:play-services-base:17.6.0"
+    internImplementation "com.google.android.gms:play-services-base:18.0.0"
 
     //noinspection GradleDependency
     implementation 'com.github.mtotschnig:Android-Image-Cropper:cbea979d2a'
@@ -427,8 +431,6 @@ task echoPublishTag() {
     doLast {
         println "ChangeLog.install/bin/ChangeLog fdroid ${versionName} ${versionCode}"
         println "git add metadata/*/changelogs/${versionCode}.txt"
-        println "echo -e \"versionName=${versionName}\\nversionCode=${versionCode}\">docs/.well-known/fdroid-latest.txt"
-        println "git add docs/.well-known/fdroid-latest.txt"
         println "git commit -m \"Release ${versionName}\""
         println "git push"
         println "git tag r${versionCode}; git push origin r${versionCode}"

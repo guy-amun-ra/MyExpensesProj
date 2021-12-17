@@ -317,7 +317,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Criar nova agenda de planejamento local</string>
     <string name="pref_planning_calendar_summary">Selecione a agenda onde os planos para transações futuras e recorrentes serão armazenados</string>
-    <string name="pref_planning_calendar_title">Agenda de planejamento</string>
     <string name="pref_protection_delay_seconds_summary">Intervalo de segundos antes do app ser bloqueada por senha.</string>
     <string name="pref_protection_delay_seconds_title">Tempo até a proteção</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">Entrada de dados a partir de widgets e atalhos</string>
@@ -448,9 +447,6 @@
     <string name="import_source_select_error">Por favor, forneça um ficheiro do tipo %1$s</string>
     <string name="menu_categories_setup_default">Configurar categorias padrão</string>
     <string name="menu_create_folder">Nova pasta</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">Acima</string>
-    <string name="create_new_folder_fail">Não foi possível criar a pasta</string>
     <string name="widget_title_accounts">Minhas contas</string>
     <string name="widget_title_templates">Meus modelos</string>
     <string name="app_dir_not_accessible">A pasta atualmente selecionada para backups e exportações (%1$s) não está acessível. Por favor, selecione outra.</string>

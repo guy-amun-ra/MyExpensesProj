@@ -315,7 +315,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Sortu tokiko planifikazio egutegi berria</string>
     <string name="pref_planning_calendar_summary">Aukeratu etorkizuneko gastuak eta gastu errepikakorrak gordetzeko egutegia</string>
-    <string name="pref_planning_calendar_title">Planifikazio egutegia</string>
     <string name="pref_protection_delay_seconds_summary">Itxaronaldi segundoak aplikazioa pasahitz bidez blokeatu aurretik.</string>
     <string name="pref_protection_delay_seconds_title">Babes aurreko itxaronaldia</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">Datuen sarrera trepeta eta laster-bideetatik</string>
@@ -445,9 +444,6 @@
     <string name="import_source_select_error">Aukeratu %1$s motako fitxategi bat</string>
     <string name="menu_categories_setup_default">Ezarri lehenetsitako kategoriak</string>
     <string name="menu_create_folder">Karpeta berria</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">Gora</string>
-    <string name="create_new_folder_fail">Huts egin du karpeta sortzean</string>
     <string name="widget_title_accounts">Nire kontuak</string>
     <string name="widget_title_templates">Nire txantiloiak</string>
     <string name="app_dir_not_accessible">Babeskopia eta esportazioetarako aukeratutako karpeta (%1$s) ezin da atzitu. mesedez aukeratu beste bat.</string>

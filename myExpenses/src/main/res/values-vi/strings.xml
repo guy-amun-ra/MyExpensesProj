@@ -308,7 +308,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Tạo lịch kế hoạch trên máy</string>
     <string name="pref_planning_calendar_summary">Chọn lịch để lưu trữ các kế hoạch trong tương lai và các giao dịch lặp lại</string>
-    <string name="pref_planning_calendar_title">Lịch lên kế hoạch</string>
     <string name="pref_protection_delay_seconds_summary">Số giây hiển thị trước khi ứng dụng bị khóa bởi mật khẩu</string>
     <string name="pref_protection_delay_seconds_title">Độ trễ cho đến khi bật chế độ bảo vệ</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">Các mục dữ liệu từ các tiện ích và phím tắt</string>
@@ -431,9 +430,6 @@
     <string name="import_source_select_error">Hãy cung cấp một tập tin dạng %1$s</string>
     <string name="menu_categories_setup_default">Thiết lập các danh mục mặc định</string>
     <string name="menu_create_folder">Thư mục mới</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">Lên</string>
-    <string name="create_new_folder_fail">Không thể tạo thư mục</string>
     <string name="widget_title_accounts">Tài khoản của tôi</string>
     <string name="widget_title_templates">Bản mẫu của tôi</string>
     <string name="app_dir_not_accessible">Thư mục được chọn hiện tại cho sao lưu và xuất ra (%1$s) không thể truy nhập được. Vui lòng chọn một cái khác.</string>

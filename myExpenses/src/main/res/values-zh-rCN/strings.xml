@@ -314,7 +314,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">创建新的本地计划日历</string>
     <string name="pref_planning_calendar_summary">选择存储未来和定期交易计划的日历</string>
-    <string name="pref_planning_calendar_title">计划日历</string>
     <string name="pref_protection_delay_seconds_summary">在应用程序被密码锁定之前的闲置秒数。</string>
     <string name="pref_protection_delay_seconds_title">延迟保护</string>
     <string name="pref_protection_enable_data_entry_from_widget_title">从小部件和快捷方式输入数据</string>
@@ -439,9 +438,6 @@
     <string name="import_source_select_error">请提供 %1$s类型的文件</string>
     <string name="menu_categories_setup_default">设置应用程序默认的类别</string>
     <string name="menu_create_folder">新建文件夹</string>
-    <!-- This string is used for navigating up in the folder browser -->
-    <string name="menu_up">往上一层</string>
-    <string name="create_new_folder_fail">创建文件夹失败</string>
     <string name="widget_title_accounts">我的账户</string>
     <string name="widget_title_templates">我的模板</string>
     <string name="app_dir_not_accessible">无法使用您所选的文件夹(%1$s)，请选择其他文件夹。</string>

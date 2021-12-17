@@ -44,7 +44,6 @@ import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import icepick.State
-import java.time.LocalDate
 import org.totschnig.myexpenses.ACTION_SELECT_MAPPING
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
@@ -112,7 +111,7 @@ import org.totschnig.myexpenses.viewmodel.data.Account
 import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET
 import java.io.Serializable
 import java.math.BigDecimal
-import java.util.*
+import java.time.LocalDate
 import javax.inject.Inject
 import org.totschnig.myexpenses.viewmodel.data.Template as DataTemplate
 
@@ -274,7 +273,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             setupObservers(true)
             delegate.bind(
                 null,
-                isCalendarPermissionPermanentlyDeclined,
                 mNewInstance,
                 savedInstanceState,
                 null,
@@ -448,26 +446,26 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
 
     private fun loadTags() {
         if (!isSplitPart) {
-            viewModel.getTags().observe(this, { tags ->
+            viewModel.getTags().observe(this) { tags ->
                 if (::delegate.isInitialized) {
                     delegate.showTags(tags) { tag ->
                         viewModel.removeTag(tag)
                         setDirty()
                     }
                 }
-            })
+            }
         }
     }
 
     private fun loadTemplates() {
-        viewModel.getTemplates().observe(this, { templates ->
+        viewModel.getTemplates().observe(this) { templates ->
             menuItem2TemplateMap.clear()
             for (template in templates) {
                 val menuId = ViewCompat.generateViewId()
                 menuItem2TemplateMap[menuId] = template
                 invalidateOptionsMenu()
             }
-        })
+        }
     }
 
     private fun loadAccounts(fromSavedState: Boolean) {
@@ -624,7 +622,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         setupObservers(false)
         delegate.bindUnsafe(
             transaction,
-            isCalendarPermissionPermanentlyDeclined,
             mNewInstance,
             null,
             intent.getSerializableExtra(KEY_CACHED_RECURRENCE) as? Recurrence,
@@ -853,8 +850,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                 if (::delegate.isInitialized) {
                     createTemplate = !createTemplate
                     delegate.setCreateTemplate(
-                        createTemplate,
-                        isCalendarPermissionPermanentlyDeclined
+                        createTemplate
                     )
                     invalidateOptionsMenu()
                 }
@@ -1321,16 +1317,17 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             .start(this)
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        val granted = PermissionHelper.allGranted(grantResults)
-        when (requestCode) {
-            PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR -> {
-                delegate.onCalendarPermissionsResult(granted)
-            }
+    override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
+        super.onPermissionsGranted(requestCode, perms)
+        if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR) {
+            delegate.onCalendarPermissionsResult(true)
+        }
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
+        super.onPermissionsDenied(requestCode, perms)
+        if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR) {
+            delegate.onCalendarPermissionsResult(false)
         }
     }
 
@@ -1346,7 +1343,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         updateFab()
         updateDateLink()
         if (!isSplitPartOrTemplate) {
-            delegate.setCreateTemplate(createTemplate, isCalendarPermissionPermanentlyDeclined)
+            delegate.setCreateTemplate(createTemplate)
         }
     }
 

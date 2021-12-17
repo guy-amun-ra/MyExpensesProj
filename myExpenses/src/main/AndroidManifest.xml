@@ -45,7 +45,7 @@
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.READ_SYNC_STATS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="${applicationId}.UNLOCK_PREMIUM" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
@@ -261,9 +261,6 @@
         <activity
             android:name=".activity.ManageMethods"
             android:exported="false"
-            android:theme="@style/EditDialog" />
-        <activity
-            android:name=".activity.FolderBrowser"
             android:theme="@style/EditDialog" />
         <activity
             android:name=".activity.CalculatorInput"

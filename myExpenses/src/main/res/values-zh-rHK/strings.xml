@@ -208,7 +208,6 @@
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">建立新的本機計劃日曆</string>
     <string name="pref_planning_calendar_summary">選取一個日曆用於計劃將來和記錄經常性交易</string>
-    <string name="pref_planning_calendar_title">計劃日曆</string>
     <string name="pref_protection_delay_seconds_summary">閒置秒數將被密碼鎖定。</string>
     <string name="pref_protection_delay_seconds_title">剩時保護</string>
     <string name="pref_qif_export_file_encoding_title">字符編碼</string>
@@ -276,7 +275,6 @@
     <string name="warning_splitpartcategory_context">轉移是分割的一部分，它只能在有分割的情況下被編輯或刪除。</string>
     <string name="import_categories_success">%1$d 類別  被匯入成功。</string>
     <string name="import_parties_success">%1$s 貿易夥伴被匯入成功</string>
-    <string name="create_new_folder_fail">目錄建立失敗</string>
     <string name="pref_auto_backup_title">啟用自動備份</string>
     <string name="pref_auto_backup_summary">每日在指定時間備份資料庫 (僅當數據已經改變)</string>
     <string name="pref_auto_backup_time_title">自動備份時間</string>

@@ -24,10 +24,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
+import com.vmadalin.easypermissions.EasyPermissions
+import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import icepick.State
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.dialog.MessageDialogFragment
@@ -38,6 +37,7 @@ import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.ui.SnackbarAction
+import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.UiUtils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
@@ -48,7 +48,7 @@ import org.totschnig.myexpenses.viewmodel.data.EventObserver
 import timber.log.Timber
 import javax.inject.Inject
 
-abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener {
+abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener, EasyPermissions.PermissionCallbacks {
     private var snackbar: Snackbar? = null
     private val downloadReceiver: BroadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -57,23 +57,13 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     }
 
     fun copyToClipboard(text: String) {
-        lifecycleScope.launch {
-            showSnackbar(
-                withContext(Dispatchers.IO) {
-                    try {
-                        ContextCompat.getSystemService(
-                            this@BaseActivity,
-                            ClipboardManager::class.java
-                        )
-                            ?.setPrimaryClip(ClipData.newPlainText(null, text))
-                        "${getString(R.string.toast_text_copied)}: $text"
-                    } catch (e: RuntimeException) {
-                        Timber.e(e)
-                        e.message ?: "Error"
-                    }
-                }
-            )
-        }
+        showSnackbar(try {
+            ContextCompat.getSystemService(this, ClipboardManager::class.java)?.setPrimaryClip(ClipData.newPlainText(null, text))
+            "${getString(R.string.toast_text_copied)}: $text"
+        } catch (e: RuntimeException) {
+            Timber.e(e)
+            e.message ?: "Error"
+        })
     }
 
 
@@ -408,6 +398,33 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         this.helpVariant = helpVariant
         if (addBreadCrumb) {
             crashHandler.addBreadcrumb(helpVariant.toString())
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
+    open fun requestPermission(permissionGroup: PermissionHelper.PermissionGroup) {
+        EasyPermissions.requestPermissions(
+            host = this,
+            rationale = permissionGroup.permissionRequestRationale(this),
+            requestCode = permissionGroup.requestCode,
+            perms = permissionGroup.androidPermissions
+        )
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            SettingsDialog.Builder(this)
+                .title(R.string.permissions_label)
+                .rationale(PermissionHelper.PermissionGroup.fromRequestCode(requestCode).permissionRequestRationale(this))
+                .build().show()
         }
     }
 }
