@@ -8,7 +8,7 @@ EOF
 exit 1
 }
 
-while getopts "p:c:u:n:" opt; do
+while getopts "p:c:u:" opt; do
     case "$opt" in
         p) case "$OPTARG" in
                History)
@@ -51,7 +51,7 @@ while getopts "p:c:u:n:" opt; do
     esac
 done
 
-if [ -z "$KEY" ] || [ -z "$PRICE" ] || [ -z "$COUNTRY" ] || [ -z "$USER" ]
+if [ -z "$KEY" ] || [ -z "$PRICE" ] || [ -z "$COUNTRY" ] || [ -z "$KUNDE" ]
   then
      show_help
 fi

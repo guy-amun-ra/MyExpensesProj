@@ -521,7 +521,6 @@
     <string name="progress_validating_licence">Provjeravanje valjanosti licence</string>
     <string name="menu_create_template_for_split">Predložak za novu višedjelnu transakciju</string>
     <string name="picture">Slika</string>
-    <string name="storage_permission_required">Odabrani izvor može se čitati samo ako odobriš čitanje s vanjske memorije.</string>
     <string name="plan_custom_recurrence_info">Najprije spremi predložak. Nakon toga će se otvoriti plan u programu kalendara gdje možeš postaviti prilagođeno ponavljanje.</string>
     <string name="pref_debug_logging_summary">Piši podatke o otklanjanju grešaka u dnevnik sustava</string>
     <string name="pref_sync_notification_summary">Obavijesti o napretku sinkronizacije</string>
@@ -942,4 +941,11 @@
     <string name="warning_party_delete_debt">Brisanjem ove strane brišu se i za nju definirani dugovi.</string>
     <string name="debt">Dug</string>
     <string name="title_activity_debt_overview">Pregled dugova</string>
+    <plurals name="import_categories_icons_updated">
+        <item quantity="one">%1$d kategorija je aktualizirana s ikonama.</item>
+        <item quantity="few">%1$d kategorije su aktualizirane s ikonama.</item>
+        <item quantity="other">%1$d kategorija je aktualizirano s ikonama.</item>
+    </plurals>
+    <string name="cb_label_merge_accounts">Spoji račune</string>
+    <string name="pref_mlkit_script_title">Skripta za MlKit</string>
 </resources>
