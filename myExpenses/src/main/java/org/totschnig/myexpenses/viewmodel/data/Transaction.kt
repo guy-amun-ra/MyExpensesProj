@@ -4,55 +4,13 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import org.totschnig.myexpenses.adapter.SplitPartRVAdapter
-import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.model.AccountType
-import org.totschnig.myexpenses.model.CrStatus
-import org.totschnig.myexpenses.model.CurrencyContext
-import org.totschnig.myexpenses.model.Money
+import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.PaymentMethod
 import org.totschnig.myexpenses.model.Template
 import org.totschnig.myexpenses.provider.BaseTransactionProvider.Companion.DEBT_LABEL_EXPRESSION
 import org.totschnig.myexpenses.provider.BaseTransactionProvider.Companion.KEY_DEBT_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.CATEGORY_ICON
-import org.totschnig.myexpenses.provider.DatabaseConstants.FULL_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNT_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNT_TYPE
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COMMENT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CR_STATUS
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_EQUIVALENT_AMOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_EXCHANGE_RATE
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHODID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHOD_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ORIGINAL_AMOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ORIGINAL_CURRENCY
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PICTURE_URI
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_REFERENCE_NUMBER
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_AMOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_PEER
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_VALUE_DATE
-import org.totschnig.myexpenses.provider.DatabaseConstants.SPLIT_CATID
-import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS
-import org.totschnig.myexpenses.provider.DatabaseConstants.TRANSFER_AMOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.TRANSFER_CURRENCY
-import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_EXTENDED
-import org.totschnig.myexpenses.provider.DatabaseConstants.getExchangeRate
-import org.totschnig.myexpenses.provider.DbUtils.getLongOr0L
-import org.totschnig.myexpenses.provider.DbUtils.getLongOrNull
-import org.totschnig.myexpenses.provider.DbUtils.getString
+import org.totschnig.myexpenses.provider.DatabaseConstants.*
+import org.totschnig.myexpenses.provider.DbUtils.*
 import org.totschnig.myexpenses.provider.checkSealedWithAlias
 import org.totschnig.myexpenses.provider.getStringOrNull
 import org.totschnig.myexpenses.util.AppDirHelper
@@ -120,6 +78,7 @@ data class Transaction(
             ) + " AS " + KEY_METHOD_LABEL,
             KEY_STATUS,
             TRANSFER_AMOUNT(VIEW_EXTENDED),
+            "$TRANSFER_PEER_PARENT AS $KEY_TRANSFER_PEER_PARENT",
             KEY_TEMPLATEID,
             KEY_UUID,
             KEY_ORIGINAL_AMOUNT,
@@ -157,8 +116,10 @@ data class Transaction(
                 label = cursor.getStringOrNull(KEY_LABEL),
                 transferPeer = transferPeer,
                 transferAmount = transferAccountId?.let {
+                    val transferCurrencyUnit =
+                        currencyContext.get(cursor.getString(cursor.getColumnIndexOrThrow(KEY_TRANSFER_CURRENCY)))
                     Money(
-                        Account.getInstanceFromDb(it).currencyUnit,
+                        transferCurrencyUnit,
                         cursor.getLong(cursor.getColumnIndexOrThrow(KEY_TRANSFER_AMOUNT))
                     )
                 },
@@ -221,9 +182,10 @@ data class Transaction(
                 } catch (ex: IllegalArgumentException) {
                     AccountType.CASH
                 },
-                hasTransferPeerParent = org.totschnig.myexpenses.model.Transaction.hasParent(
-                    transferPeer
-                ),
+                hasTransferPeerParent = getLongOrNull(
+                    cursor,
+                    KEY_TRANSFER_PEER_PARENT
+                ) != null,
                 debtLabel = cursor.getStringOrNull(KEY_DEBT_LABEL)
             )
         }
