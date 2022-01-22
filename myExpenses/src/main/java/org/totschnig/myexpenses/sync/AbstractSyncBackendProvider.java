@@ -1,5 +1,9 @@
 package org.totschnig.myexpenses.sync;
 
+import static org.totschnig.myexpenses.sync.SyncAdapter.LOCK_TIMEOUT_MINUTES;
+import static org.totschnig.myexpenses.sync.json.Utils.getChanges;
+
+import android.accounts.AccountManager;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -8,6 +12,9 @@ import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.webkit.MimeTypeMap;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 import com.annimon.stream.Exceptional;
 import com.annimon.stream.Optional;
@@ -46,13 +53,8 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import dagger.internal.Preconditions;
 import timber.log.Timber;
-
-import static org.totschnig.myexpenses.sync.SyncAdapter.LOCK_TIMEOUT_MINUTES;
-import static org.totschnig.myexpenses.sync.json.Utils.getChanges;
 
 public abstract class AbstractSyncBackendProvider implements SyncBackendProvider {
   public static final String KEY_LOCK_TOKEN = "lockToken";
@@ -119,32 +121,27 @@ public abstract class AbstractSyncBackendProvider implements SyncBackendProvider
   }
 
   @Override
-  public Exceptional<Void> setUp(@Nullable String authToken, @Nullable String encryptionPassword, boolean create) {
+  public void setUp(AccountManager accountManager, android.accounts.Account account, @Nullable String encryptionPassword, boolean create) throws Exception {
     this.encryptionPassword = encryptionPassword;
-    try {
-      String encryptionToken = readEncryptionToken();
-      if (encryptionToken == null) {
-        if (encryptionPassword != null) {
-          if (create && isEmpty()) {
-            initEncryption();
-          } else {
-            return Exceptional.of(EncryptionException.notEncrypted(context));
-          }
-        }
-      } else {
-        if (encryptionPassword == null) {
-          return Exceptional.of(EncryptionException.encrypted(context));
+    String encryptionToken = readEncryptionToken();
+    if (encryptionToken == null) {
+      if (encryptionPassword != null) {
+        if (create && isEmpty()) {
+          initEncryption();
         } else {
-          try {
-            decrypt(encryptionToken);
-          } catch (GeneralSecurityException e) {
-            return Exceptional.of(EncryptionException.wrongPassphrase(context));
-          }
+          throw EncryptionException.notEncrypted(context);
         }
       }
-      return Exceptional.of(() -> null);
-    } catch (IOException | GeneralSecurityException e) {
-      return Exceptional.of(e);
+    } else {
+      if (encryptionPassword == null) {
+        throw EncryptionException.encrypted(context);
+      } else {
+        try {
+          decrypt(encryptionToken);
+        } catch (GeneralSecurityException e) {
+          throw EncryptionException.wrongPassphrase(context);
+        }
+      }
     }
   }
 
@@ -154,7 +151,7 @@ public abstract class AbstractSyncBackendProvider implements SyncBackendProvider
     return new String(EncryptionHelper.decrypt(Base64.decode(input, Base64.DEFAULT), encryptionPassword));
   }
 
-  protected abstract String readEncryptionToken() throws IOException;
+  protected abstract @Nullable String readEncryptionToken() throws IOException;
 
   protected String encrypt(byte[] plain) throws GeneralSecurityException {
     return Base64.encodeToString(EncryptionHelper.encrypt(plain, encryptionPassword), Base64.DEFAULT);
@@ -187,11 +184,6 @@ public abstract class AbstractSyncBackendProvider implements SyncBackendProvider
   protected InputStream toInputStream(String fileContents, boolean maybeEncrypt) throws IOException {
     final InputStream inputStream = new ByteArrayInputStream(fileContents.getBytes());
     return maybeEncrypt ? maybeEncrypt(inputStream) : inputStream;
-  }
-
-  @Override
-  public boolean isAuthException(Exception e) {
-    return false;
   }
 
   @NonNull
@@ -295,7 +287,6 @@ public abstract class AbstractSyncBackendProvider implements SyncBackendProvider
     return (dotIndex == -1) ? "" : fileName.substring(dotIndex + 1);
   }
 
-
   private TransactionChange mapPictureDuringWrite(TransactionChange transactionChange) throws IOException {
     if (transactionChange.pictureUri() != null) {
       String newUri = String.format("%s_%s%s", transactionChange.uuid(),
@@ -379,7 +370,7 @@ public abstract class AbstractSyncBackendProvider implements SyncBackendProvider
     }
   }
 
-  protected abstract String getExistingLockToken() throws IOException;
+  protected abstract @Nullable String getExistingLockToken() throws IOException;
 
   protected abstract void writeLockToken(String lockToken) throws IOException;
 

@@ -1,13 +1,11 @@
 package org.totschnig.myexpenses.activity
 
-import android.accounts.AccountManager
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo
-import com.dropbox.core.android.Auth
 import icepick.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
@@ -18,8 +16,6 @@ import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.model.Model
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
-import org.totschnig.myexpenses.sync.GenericAccountService
-import org.totschnig.myexpenses.sync.GenericAccountService.Companion.getAccount
 import org.totschnig.myexpenses.task.TaskExecutionFragment
 import org.totschnig.myexpenses.util.Result
 import org.totschnig.myexpenses.viewmodel.AccountSealedException
@@ -28,10 +24,6 @@ import java.io.Serializable
 
 class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
     private var newAccount: Account? = null
-
-    @JvmField
-    @State
-    var dropBoxTokenRequestPendingForAccount: String? = null
 
     @JvmField
     @State
@@ -46,27 +38,6 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
                 contribFeatureRequested(ContribFeature.SYNCHRONIZATION, null)
             }
             sanityCheck()
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        if (dropBoxTokenRequestPendingForAccount != null) {
-            val accessToken = Auth.getOAuth2Token()
-            if (accessToken != null) {
-                AccountManager.get(this).setAuthToken(
-                    getAccount(dropBoxTokenRequestPendingForAccount),
-                    GenericAccountService.AUTH_TOKEN_TYPE,
-                    accessToken
-                )
-            } else {
-                showSnackbar("Dropbox Oauth Token is null")
-            }
-            dropBoxTokenRequestPendingForAccount = null
-        } else {
-            if (ACTION_REFRESH_LOGIN == intent.action) {
-                requestDropboxAccess(intent.getStringExtra(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME))
-            }
         }
     }
 
@@ -178,7 +149,10 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
                     ConfirmationDialogFragment.KEY_POSITIVE_BUTTON_LABEL,
                     R.string.dialog_command_sync_link_local
                 )
-                b.putInt(ConfirmationDialogFragment.KEY_NEGATIVE_BUTTON_LABEL, android.R.string.cancel)
+                b.putInt(
+                    ConfirmationDialogFragment.KEY_NEGATIVE_BUTTON_LABEL,
+                    android.R.string.cancel
+                )
                 b.putSerializable(KEY_ACCOUNT, tag as Account?)
                 ConfirmationDialogFragment.newInstance(b)
                     .show(supportFragmentManager, "SYNC_LINK_LOCAL")
@@ -198,7 +172,10 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
                     ConfirmationDialogFragment.KEY_POSITIVE_BUTTON_LABEL,
                     R.string.dialog_command_sync_link_remote
                 )
-                b.putInt(ConfirmationDialogFragment.KEY_NEGATIVE_BUTTON_LABEL, android.R.string.cancel)
+                b.putInt(
+                    ConfirmationDialogFragment.KEY_NEGATIVE_BUTTON_LABEL,
+                    android.R.string.cancel
+                )
                 b.putSerializable(KEY_ACCOUNT, tag as Account?)
                 ConfirmationDialogFragment.newInstance(b)
                     .show(supportFragmentManager, "SYNC_LINK_REMOTE")
@@ -291,7 +268,7 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
 
     override fun onContextItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.SYNC_DOWNLOAD_COMMAND) {
-            if (prefHandler.getBoolean(PrefKey.NEW_ACCOUNT_ENABLED,true)) {
+            if (prefHandler.getBoolean(PrefKey.NEW_ACCOUNT_ENABLED, true)) {
                 newAccount = listFragment!!.getAccountForSync(
                     (item.menuInfo as ExpandableListContextMenuInfo).packedPosition
                 )
@@ -319,24 +296,19 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
     override fun contribFeatureNotCalled(feature: ContribFeature) {}
     public override fun onActivityResult(requestCode: Int, resultCode: Int, intent: Intent?) {
         super.onActivityResult(requestCode, resultCode, intent)
-        if (requestCode == REQUEST_REPAIR_INTENT && resultCode == RESULT_OK) {
-            for (factory in backendProviders) {
-                if (factory.startRepairTask(this, intent)) {
-                    break
+        if (resultCode == RESULT_OK) {
+            if (requestCode == REQUEST_REPAIR_INTENT) {
+                for (factory in backendProviders) {
+                    if (factory.startRepairTask(this, intent)) {
+                        break
+                    }
                 }
             }
         }
     }
 
-    fun requestDropboxAccess(accountName: String?) {
-        dropBoxTokenRequestPendingForAccount = accountName
-        //TODO generalize for other backends
-        getSyncBackendProviderFactoryByIdOrThrow(R.id.SYNC_BACKEND_DROPBOX).startSetup(this)
-    }
-
     companion object {
         private const val REQUEST_REPAIR_INTENT = 1
         private const val KEY_ACCOUNT = "account"
-        const val ACTION_REFRESH_LOGIN = "refreshLogin"
     }
 }

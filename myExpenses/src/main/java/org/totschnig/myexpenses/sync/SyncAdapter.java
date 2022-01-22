@@ -45,6 +45,7 @@ import org.totschnig.myexpenses.util.NotificationBuilderWrapper;
 import org.totschnig.myexpenses.util.TextUtils;
 import org.totschnig.myexpenses.util.Utils;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
+import org.totschnig.myexpenses.util.io.NetworkUtilsKt;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -83,6 +84,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
   public static final String KEY_RESET_REMOTE_ACCOUNT = "reset_remote_account";
   public static final String KEY_UPLOAD_AUTO_BACKUP_URI = "upload_auto_backup_uri";
   public static final String KEY_UPLOAD_AUTO_BACKUP_NAME = "upload_auto_backup_name";
+  //we pass the delay to the next sync via this extra
   public static final String KEY_NOTIFICATION_CANCELLED = "notification_cancelled";
   private SyncDelegate syncDelegate;
   public static final int LOCK_TIMEOUT_MINUTES = BuildConfig.DEBUG ? 1 : 5;
@@ -108,6 +110,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     return "last_synced_local_" + accountId;
   }
 
+
   private static long getIoDefaultDelaySeconds() {
     return (System.currentTimeMillis() / 1000) + IO_DEFAULT_DELAY_SECONDS;
   }
@@ -126,7 +129,9 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
   public void onPerformSync(Account account, Bundle extras, String authority,
                             ContentProviderClient provider, SyncResult syncResult) {
     log().i("onPerformSync %s", extras);
-    if (extras.getBoolean(KEY_NOTIFICATION_CANCELLED)) {
+    long canceledDelayUntil = extras.getLong(KEY_NOTIFICATION_CANCELLED);
+    if (canceledDelayUntil > 0L) {
+      syncResult.delayUntil = (System.currentTimeMillis() / 1000) + canceledDelayUntil;
       notificationContent.remove(account.hashCode());
       return;
     }
@@ -139,7 +144,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
 
     shouldNotify = getBooleanSetting(provider, PrefKey.SYNC_NOTIFICATION, true);
 
-    if (getBooleanSetting(provider, PrefKey.SYNC_WIFI_ONLY, false) && !isConnectedWifi(getContext())) {
+    if (getBooleanSetting(provider, PrefKey.SYNC_WIFI_ONLY, false) &&
+            !NetworkUtilsKt.isConnectedWifi(getContext())) {
       final String message = getContext().getString(R.string.wifi_not_connected);
       log().i(message);
       if (extras.getBoolean(ContentResolver.SYNC_EXTRAS_MANUAL)) {
@@ -170,8 +176,8 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                 throwable.getMessage()),
             null,
             getManageSyncBackendsIntent());
-      } else if (throwable instanceof SyncBackendProvider.ResolvableSetupException) {
-        notifyWithResolution((SyncBackendProvider.ResolvableSetupException) throwable);
+      } else if (handleAuthException(throwable, account)) {
+        return;
       } else {
         if (throwable instanceof IOException) {
           log().i(throwable, "Error setting up account %s", account);
@@ -264,7 +270,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
                   instanceFromDb.getLabel()), account, true);
             } catch (IOException e) {
               log().w(e);
-              if (handleAuthException(backend, e, account)) {
+              if (handleAuthException(e, account)) {
                 return;
               }
               syncResult.stats.numIoExceptions++;
@@ -278,7 +284,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             backend.withAccount(instanceFromDb);
           } catch (IOException e) {
             log().w(e);
-            if (handleAuthException(backend, e, account)) {
+            if (handleAuthException(e, account)) {
               return;
             }
             syncResult.stats.numIoExceptions++;
@@ -291,7 +297,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             backend.lock();
           } catch (IOException e) {
             log().w(e);
-            if (handleAuthException(backend, e, account)) {
+            if (handleAuthException(e, account)) {
               return;
             }
             notifyIoException(R.string.sync_io_exception_locking, account);
@@ -389,7 +395,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
             completedWithoutError = true;
           } catch (IOException e) {
             log().w(e);
-            if (handleAuthException(backend, e, account)) {
+            if (handleAuthException(e, account)) {
               return;
             }
             syncResult.stats.numIoExceptions++;
@@ -412,7 +418,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
               backend.unlock();
             } catch (IOException e) {
               log().w(e);
-              if (!handleAuthException(backend, e, account)) {
+              if (!handleAuthException(e, account)) {
                 notifyIoException(R.string.sync_io_exception_unlocking, account);
                 syncResult.stats.numIoExceptions++;
                 syncResult.delayUntil = getIoLockDelaySeconds();
@@ -486,7 +492,7 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
               getContext().getString(R.string.auto_backup_cloud_success, fileName, account.name), null);
         } catch (Exception e) {
           report(e);
-          if (!handleAuthException(backend, e, account)) {
+          if (!handleAuthException(e, account)) {
             notifyUser(getContext().getString(R.string.pref_auto_backup_title),
                 getContext().getString(R.string.auto_backup_cloud_failure, fileName, account.name)
                     + " " + e.getMessage(), null, null);
@@ -496,13 +502,13 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     }
   }
 
-  private boolean handleAuthException(SyncBackendProvider backend, Exception e, Account account) {
-    if (backend.isAuthException(e)) {
-      Intent manageSyncBackendsIntent = getManageSyncBackendsIntent();
-      manageSyncBackendsIntent.setAction(ManageSyncBackends.ACTION_REFRESH_LOGIN);
-      manageSyncBackendsIntent.putExtra(KEY_SYNC_ACCOUNT_NAME, account.name);
-      notifyUser(getContext().getString(R.string.sync_auth_exception_login_again), null, null, manageSyncBackendsIntent);
-      return true;
+  private boolean handleAuthException(Throwable e, Account account) {
+    if (e instanceof SyncBackendProvider.AuthException) {
+      Intent resolution = ((SyncBackendProvider.AuthException) e).resolution;
+      if (resolution != null) {
+        notifyUser(getContext().getString(R.string.sync_auth_exception_login_again), getContext().getString(R.string.sync_auth_exception_login_again), account, ((SyncBackendProvider.AuthException) e).resolution);
+        return true;
+      }
     }
     return false;
   }
@@ -564,19 +570,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
     notification.flags = Notification.FLAG_AUTO_CANCEL;
     ((NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE)).notify(
         "SYNC", account != null ? account.hashCode() : 0, notification);
-  }
-
-  private void notifyWithResolution(SyncBackendProvider.ResolvableSetupException exception) {
-    final PendingIntent resolution = exception.getResolution();
-    if (resolution != null) {
-      NotificationBuilderWrapper builder = NotificationBuilderWrapper.bigTextStyleBuilder(
-          getContext(), NotificationBuilderWrapper.CHANNEL_ID_SYNC, getNotificationTitle(), exception.getMessage());
-      builder.setContentIntent(resolution);
-      Notification notification = builder.build();
-      notification.flags = Notification.FLAG_AUTO_CANCEL;
-      ((NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE)).notify(
-          "SYNC", 0, notification);
-    }
   }
 
   private void notifyIoException(int resId, Account account) {
@@ -666,13 +659,6 @@ public class SyncAdapter extends AbstractThreadedSyncAdapter {
       c.close();
     }
     return result;
-  }
-
-  private boolean isConnectedWifi(Context context) {
-    ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-    if (cm == null) return false;
-    NetworkInfo info = cm.getActiveNetworkInfo();
-    return (info != null && info.isConnected() && info.getType() == ConnectivityManager.TYPE_WIFI);
   }
 
   private boolean getBooleanSetting(ContentProviderClient provider, PrefKey prefKey, boolean defaultValue) {
