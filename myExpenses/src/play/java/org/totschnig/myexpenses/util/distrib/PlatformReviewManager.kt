@@ -23,10 +23,11 @@ class PlatformReviewManager(val prefHandler: PrefHandler): ReviewManager {
     override fun init(context: Context) {
         reviewManager = ReviewManagerFactory.create(context)
     }
-    @ExperimentalCoroutinesApi
+
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onEditTransactionResult(activity: FragmentActivity) {
         reviewInfo?.apply {
-            if (isCompleted == true && isCancelled == false) {
+            if (isCompleted && !isCancelled) {
                 getCompleted().also {
                     activity.lifecycleScope.launchWhenResumed { reviewManager.launchReview(activity, it) }
                     prefHandler.putLong(PrefKey.LAST_REQUEST_RATE_PLAY, System.currentTimeMillis())

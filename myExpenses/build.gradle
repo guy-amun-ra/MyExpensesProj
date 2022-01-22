@@ -96,7 +96,7 @@ android {
         type.resValue "string", 'sync_account_type', defaultConfig.applicationId + type.applicationIdSuffix + ".sync"
     }
 
-    flavorDimensions "distribution", "drive", "ads", "textRecognition"
+    flavorDimensions "distribution", "ads", "textRecognition"
 
     productFlavors {
         play {
@@ -115,9 +115,7 @@ android {
             buildConfigField "String", "DISTRIBUTION", "\"HUAWEI\""
             ext.gitTagSuffix = 'hu'
         }
-        withDrive {
-            dimension "drive"
-        }
+
         withAds {
             dimension "ads"
         }
@@ -137,7 +135,7 @@ android {
                         def outputFolder = flavor.name == 'play' ? 'bundle' : 'universal_apk'
                         def artifactSuffix = flavor.name == 'play' ? '.aab' : '-universal.apk'
                         def renameTarget = flavor.name == 'huawei' ? '/myExpenses.apk' : ''
-                        println "mkdir ${dir}; mv myExpenses/build/outputs/mapping/${flavor.name}WithDriveWithAdsInternRelease/mapping.txt ${dir}; mv myExpenses/build/outputs/${outputFolder}/${flavor.name}WithDriveWithAdsInternRelease/myExpenses-${flavor.name}-withDrive-withAds-intern-release${artifactSuffix} ${dir}${renameTarget}; git tag r${tag}; git push gitlab r${tag}"
+                        println "mkdir ${dir}; mv myExpenses/build/outputs/mapping/${flavor.name}WithAdsInternRelease/mapping.txt ${dir}; mv myExpenses/build/outputs/${outputFolder}/${flavor.name}WithAdsInternRelease/myExpenses-${flavor.name}-withAds-intern-release${artifactSuffix} ${dir}${renameTarget}; git tag r${tag}; git push gitlab r${tag}"
                     }
                 }
             }
@@ -173,10 +171,6 @@ android {
         if (names.contains("withoutAds")) {
             setIgnore(true)
         }
-
-        if (names.contains("withoutDrive")) {
-            setIgnore(true)
-        }
     }
 
     testOptions {
@@ -196,7 +190,7 @@ android {
     //It does not seem possible to define dynamicFeatures dependent on variant
     //If you want to build intern variant, you need to include mlkit (+ at least one of ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore') and/or tesseract module
     //drive for Sync with Google Drive
-    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore', 'drive']
+    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore', ':drive']
 
     composeOptions {
         kotlinCompilerExtensionVersion compose_compiler_version
@@ -383,7 +377,7 @@ dependencies {
     implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
 
     //Mlkit / Drive
-    //implementation "com.google.android.gms:play-services-base:18.0.1"
+    implementation "com.google.android.gms:play-services-base:18.0.1"
 
     //noinspection GradleDependency
     implementation 'com.github.mtotschnig:Android-Image-Cropper:cbea979d2a'

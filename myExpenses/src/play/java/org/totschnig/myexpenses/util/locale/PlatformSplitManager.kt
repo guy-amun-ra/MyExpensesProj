@@ -115,8 +115,7 @@ class PlatformSplitManager(private val userLocaleProvider: UserLocaleProvider, p
         }
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
-    private fun subFeatures(feature: Feature, context: Context) = buildList<Feature> {
+    private fun subFeatures(feature: Feature, context: Context) = buildList {
             if (feature == Feature.OCR) {
                 getUserConfiguredOcrEngine(context, prefHandler).also {
                     add(it)
@@ -127,9 +126,9 @@ class PlatformSplitManager(private val userLocaleProvider: UserLocaleProvider, p
             }
         }
 
-    override fun installedFeatures() = manager.installedModules
+    override fun installedFeatures(): MutableSet<String> = manager.installedModules
 
-    override fun installedLanguages() = manager.installedLanguages
+    override fun installedLanguages(): MutableSet<String> = manager.installedLanguages
 
     override fun uninstallFeatures(features: Set<String>) {
         manager.deferredUninstall(features.toList())

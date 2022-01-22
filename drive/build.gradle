@@ -18,6 +18,20 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
+    flavorDimensions 'distribution'
+
+    productFlavors {
+        play {
+            dimension "distribution"
+        }
+        amazon {
+            dimension "distribution"
+        }
+        huawei {
+            dimension "distribution"
+        }
+    }
 }
 
 dependencies {
