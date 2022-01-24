@@ -25,7 +25,7 @@ import dagger.Provides;
 public class LicenceModule {
   @Provides
   @Singleton
-  LicenceHandler providesLicenceHandler(PreferenceObfuscator preferenceObfuscator, CrashHandler crashHandler, MyApplication application, PrefHandler prefHandler) {
+  protected LicenceHandler providesLicenceHandler(PreferenceObfuscator preferenceObfuscator, CrashHandler crashHandler, MyApplication application, PrefHandler prefHandler) {
     switch (DistributionHelper.getDistribution()) {
       case HUAWEI:
       case PLAY:

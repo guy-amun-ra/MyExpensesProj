@@ -1,11 +1,11 @@
 package org.totschnig.myexpenses.util.licence
 
+import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.VisibleForTesting
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.google.android.vending.licensing.PreferenceObfuscator
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contrib.Config
 import org.totschnig.myexpenses.preference.PrefHandler
@@ -13,7 +13,7 @@ import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 
-abstract class AbstractInAppPurchaseLicenceHandler(context: MyApplication, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) : ContribStatusLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
+abstract class AbstractInAppPurchaseLicenceHandler(context: Application, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) : ContribStatusLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
     val pricesPrefs: SharedPreferences = context.getSharedPreferences(PRICES_PREFS_FILE, Context.MODE_PRIVATE)
 
     override fun getLegacyStatus() = STATUS_ENABLED_LEGACY_SECOND

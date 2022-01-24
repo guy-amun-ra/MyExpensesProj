@@ -1,5 +1,7 @@
 package org.totschnig.myexpenses.util.licence;
 
+import android.app.Application;
+
 import com.google.android.vending.licensing.PreferenceObfuscator;
 
 import org.totschnig.myexpenses.BuildConfig;
@@ -41,7 +43,7 @@ public abstract class ContribStatusLicenceHandler extends LicenceHandler {
 
   private int contribStatus;
 
-  ContribStatusLicenceHandler(MyApplication context, PreferenceObfuscator preferenceObfuscator, CrashHandler crashHandler, PrefHandler prefHandler) {
+  ContribStatusLicenceHandler(Application context, PreferenceObfuscator preferenceObfuscator, CrashHandler crashHandler, PrefHandler prefHandler) {
     super(context, preferenceObfuscator, crashHandler, prefHandler);
   }
 

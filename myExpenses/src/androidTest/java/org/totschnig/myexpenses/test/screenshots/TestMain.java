@@ -155,7 +155,7 @@ public class TestMain extends BaseUiTest<MyExpenses> {
     if (pref == null)
       Assert.fail("Could not find prefs");
     pref.edit().putString(PrefKey.HOME_CURRENCY.getKey(), Utils.getSaveDefault().getCurrencyCode()).apply();
-    getApp().getLicenceHandler().setLockState(false);
+    ((MockLicenceHandler) getApp().getLicenceHandler()).setLockState(false);
 
     getApp().fixture.setup(withPicture);
     int current_version = DistributionHelper.getVersionNumber();

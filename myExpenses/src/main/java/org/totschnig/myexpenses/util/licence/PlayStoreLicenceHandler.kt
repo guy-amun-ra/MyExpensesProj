@@ -1,6 +1,7 @@
 package org.totschnig.myexpenses.util.licence
 
 import android.app.Activity
+import android.app.Application
 import android.text.TextUtils
 import androidx.annotation.VisibleForTesting
 import com.android.billingclient.api.BillingClient
@@ -16,7 +17,7 @@ import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import java.util.*
 
-open class PlayStoreLicenceHandler(context: MyApplication, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) : AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
+open class PlayStoreLicenceHandler(context: Application, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) : AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
     private fun storeSkuDetails(inventory: List<SkuDetails>) {
         val editor = pricesPrefs.edit()
         for (skuDetails in inventory) {
