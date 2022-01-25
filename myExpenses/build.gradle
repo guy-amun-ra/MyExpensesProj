@@ -373,13 +373,8 @@ dependencies {
     implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
 
     //Mlkit / Drive
-<<<<<<< HEAD
     implementation "com.google.android.gms:play-services-base:18.0.1"
     implementation "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava"
-=======
-    //implementation "com.google.android.gms:play-services-base:18.0.1"
-    //implementation "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava"
->>>>>>> master
 
     //noinspection GradleDependency
     implementation 'com.github.mtotschnig:Android-Image-Cropper:cbea979d2a'
