@@ -15,6 +15,7 @@ import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.activity.MyExpenses;
 import org.totschnig.myexpenses.preference.PrefKey;
 import org.totschnig.myexpenses.testutils.BaseUiTest;
+import org.totschnig.myexpenses.testutils.MockLicenceHandler;
 import org.totschnig.myexpenses.util.Utils;
 import org.totschnig.myexpenses.util.distrib.DistributionHelper;
 

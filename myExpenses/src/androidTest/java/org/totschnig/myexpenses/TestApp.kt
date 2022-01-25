@@ -1,13 +1,14 @@
 package org.totschnig.myexpenses
 
 import androidx.test.platform.app.InstrumentationRegistry
-import com.google.android.vending.licensing.PreferenceObfuscator
-import org.totschnig.myexpenses.di.*
+import org.totschnig.myexpenses.di.AppComponent
+import org.totschnig.myexpenses.di.CrashHandlerModule
+import org.totschnig.myexpenses.di.DaggerAppComponent
+import org.totschnig.myexpenses.di.UiModule
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.testutils.*
 import org.totschnig.myexpenses.ui.IDiscoveryHelper
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import org.totschnig.myexpenses.util.licence.LicenceHandler
 import java.util.*
 
 class TestApp : MyApplication() {
