@@ -51,6 +51,7 @@ import java.util.Locale;
 
 import timber.log.Timber;
 
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ACCOUNT_REMAP_TRANSFER_TRIGGER_CREATE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
 import static org.totschnig.myexpenses.util.ColorUtils.MAIN_COLORS;
 import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
@@ -676,8 +677,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_TEMPLATEID + " integer references " + TABLE_TEMPLATES + "(" + KEY_ROWID + ") ON DELETE CASCADE, "
           + "primary key (" + KEY_TAGID + "," + KEY_TEMPLATEID + "));";
 
-  TransactionDatabase(Context context, String databaseName) {
-    super(context, databaseName);
+  TransactionDatabase(Context context, String databaseName, SQLiteDatabase.CursorFactory cursorFactory) {
+    super(context, databaseName, cursorFactory);
     mCtx = context;
     setWriteAheadLoggingEnabled(false);
   }
@@ -779,6 +780,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
 
     db.execSQL(DEBT_CREATE);
     createOrRefreshTransactionDebtTriggers(db);
+
+    db.execSQL(ACCOUNT_REMAP_TRANSFER_TRIGGER_CREATE);
 
     //Views
     createOrRefreshViews(db);
@@ -2183,6 +2186,9 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       if (oldVersion < 121) {
         createOrRefreshViews(db);
         createOrRefreshTemplateViews(db);
+      }
+      if (oldVersion < 122) {
+        upgradeTo122(db);
       }
       TransactionProvider.resumeChangeTrigger(db);
     } catch (SQLException e) {
