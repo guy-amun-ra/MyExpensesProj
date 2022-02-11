@@ -9,7 +9,6 @@ android {
     defaultConfig {
         missingDimensionStrategy 'textRecognition', 'intern'
         minSdk project.minSdkVersion
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
     flavorDimensions 'distribution'
@@ -29,7 +28,6 @@ android {
 
 dependencies {
     implementation project(":myExpenses")
-    implementation "androidx.core:core-ktx:$ktxVersion"
     implementation 'frankiesardo:icepick:3.2.0'
     kapt 'frankiesardo:icepick-processor:3.2.0'
     implementation 'com.annimon:stream:1.2.1'

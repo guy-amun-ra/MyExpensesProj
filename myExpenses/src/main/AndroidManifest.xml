@@ -311,7 +311,6 @@
                 android:resource="@xml/searchable" />
         </activity>
         <activity android:name=".activity.HistoryActivity" />
-        <activity android:name=".activity.DropboxSetup" />
 
         <service
             android:name=".service.MyService"
