@@ -11,12 +11,7 @@ import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListene
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.MyApplication.DEFAULT_LANGUAGE
-import org.totschnig.myexpenses.activity.BaseActivity
-import org.totschnig.myexpenses.feature.Callback
-import org.totschnig.myexpenses.feature.Feature
-import org.totschnig.myexpenses.feature.FeatureManager
-import org.totschnig.myexpenses.feature.getUserConfiguredMlkitScriptModule
-import org.totschnig.myexpenses.feature.getUserConfiguredOcrEngine
+import org.totschnig.myexpenses.feature.*
 import org.totschnig.myexpenses.preference.PrefHandler
 import timber.log.Timber
 import java.util.*
@@ -90,11 +85,11 @@ class PlatformSplitManager(private val userLocaleProvider: UserLocaleProvider, p
 
     private fun isModuleInstalled(feature: Feature) = manager.installedModules.contains(feature.moduleName)
 
-    override fun requestFeature(feature: Feature, activity: BaseActivity) {
+    override fun requestFeature(feature: Feature, context: Context) {
         val isModuleInstalled = isModuleInstalled(feature)
-        val subFeatureToInstall = subFeatures(feature, activity).filter { !isModuleInstalled(it) }
+        val subFeatureToInstall = subFeatures(feature, context).filter { !isModuleInstalled(it) }
         if (isModuleInstalled && subFeatureToInstall.isEmpty()) {
-            super.requestFeature(feature, activity)
+            super.requestFeature(feature, context)
         } else {
             callback?.onAsyncStartedFeature(feature)
             val request = SplitInstallRequest
