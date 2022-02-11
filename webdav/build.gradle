@@ -7,8 +7,22 @@ android {
     compileSdk project.compileSdkVersion
 
     defaultConfig {
-        missingDimensionStrategy 'textRecognition', 'extern'
+        missingDimensionStrategy 'textRecognition', 'intern'
         minSdk project.minSdkVersion
+    }
+
+    flavorDimensions 'distribution'
+
+    productFlavors {
+        play {
+            dimension "distribution"
+        }
+        amazon {
+            dimension "distribution"
+        }
+        huawei {
+            dimension "distribution"
+        }
     }
 
     buildFeatures {
