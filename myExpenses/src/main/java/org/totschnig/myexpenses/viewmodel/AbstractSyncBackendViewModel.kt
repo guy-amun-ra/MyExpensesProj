@@ -7,7 +7,6 @@ import androidx.core.util.Pair
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.liveData
-import com.annimon.stream.Exceptional
 import com.squareup.sqlbrite3.SqlBrite
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.model.Account
@@ -27,7 +26,7 @@ abstract class AbstractSyncBackendViewModel(application: Application) :
 
     fun getLocalAccountInfo(): LiveData<Map<String, String?>> = localAccountInfo
 
-    abstract fun accountMetadata(accountName: String): LiveData<Result<List<Exceptional<AccountMetaData>>>>
+    abstract fun accountMetadata(accountName: String): LiveData<Result<List<Result<AccountMetaData>>>>
 
     fun loadLocalAccountInfo() {
         disposable = briteContentResolver.createQuery(
@@ -83,10 +82,8 @@ abstract class AbstractSyncBackendViewModel(application: Application) :
     fun syncCheck(uuid: String, syncAccountName: String) = liveData(context = coroutineContext()) {
         emit(GenericAccountService.getSyncBackendProvider(getApplication(), syncAccountName)
             .mapCatching { syncBackendProvider ->
-                if (syncBackendProvider.remoteAccountStream
-                        .filter(Exceptional<AccountMetaData>::isPresent)
-                        .map(Exceptional<AccountMetaData>::get)
-                        .anyMatch { it.uuid() == uuid }
+                if (syncBackendProvider.remoteAccountList.mapNotNull { it.getOrNull() }
+                        .any { it.uuid() == uuid }
                 ) {
                     throw Exception(
                         TextUtils.concatResStrings(

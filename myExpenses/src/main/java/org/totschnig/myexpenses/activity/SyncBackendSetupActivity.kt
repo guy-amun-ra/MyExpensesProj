@@ -22,7 +22,7 @@ import org.totschnig.myexpenses.sync.BackendService
 import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.sync.json.AccountMetaData
 import org.totschnig.myexpenses.viewmodel.SyncViewModel
-import org.totschnig.myexpenses.viewmodel.SyncViewModel.Companion.KEY_RETURN_REMOTE_DATA_LIST
+import org.totschnig.myexpenses.viewmodel.SyncViewModel.Companion.KEY_RETURN_BACKUPS
 import java.io.File
 
 abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextDialogListener,
@@ -31,7 +31,6 @@ abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextD
     private lateinit var backendProviders: List<BackendService>
     protected lateinit var viewModel: SyncViewModel
     private var isResumed = false
-    private var setupPending = false
 
     @JvmField
     @State
@@ -77,9 +76,8 @@ abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextD
     override fun onResume() {
         super.onResume()
         isResumed = true
-        if (setupPending) {
+        if (selectedFactoryId != 0) {
             startSetupDo()
-            setupPending = false
         }
     }
 
@@ -92,8 +90,6 @@ abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextD
         selectedFactoryId = itemId
         if (isResumed) {
             startSetupDo()
-        } else {
-            setupPending = true
         }
     }
 
@@ -102,13 +98,16 @@ abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextD
         val feature = backendService?.feature
         if (feature == null || featureManager.isFeatureInstalled(feature, this)) {
             backendService?.instantiate()?.startSetup(this)
+            selectedFactoryId = 0
         } else {
             featureManager.requestFeature(feature, this)
         }
     }
 
     override fun onFeatureAvailable(feature: Feature) {
-        startSetupDo()
+        if (selectedFactoryId != 0 && getBackendServiceByIdOrThrow(selectedFactoryId).feature == feature) {
+            startSetupDo()
+        }
     }
 
     //Google Drive & Dropbox
@@ -142,8 +141,8 @@ abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextD
         args.putString(AccountManager.KEY_AUTHTOKEN, authToken)
         args.putParcelable(AccountManager.KEY_USERDATA, bundle)
         args.putBoolean(
-            KEY_RETURN_REMOTE_DATA_LIST,
-            createAccountTaskShouldReturnDataList()
+            KEY_RETURN_BACKUPS,
+            createAccountTaskShouldReturnBackups()
         )
         SimpleFormDialog.build().msg(R.string.passphrase_for_synchronization)
             .fields(
@@ -186,7 +185,7 @@ abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextD
         }
     }
 
-    protected open fun createAccountTaskShouldReturnDataList(): Boolean {
+    protected open fun createAccountTaskShouldReturnBackups(): Boolean {
         return false
     }
 

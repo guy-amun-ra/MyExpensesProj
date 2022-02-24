@@ -1,6 +1,6 @@
 package org.totschnig.myexpenses.activity
 
-import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -8,21 +8,18 @@ import android.widget.ExpandableListView.ExpandableListContextMenuInfo
 import icepick.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
-import org.totschnig.myexpenses.dialog.select.SelectUnSyncedAccountDialogFragment
+import org.totschnig.myexpenses.dialog.SetupSyncDialogFragment
 import org.totschnig.myexpenses.fragment.SyncBackendList
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.ContribFeature
-import org.totschnig.myexpenses.model.Model
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
-import org.totschnig.myexpenses.task.TaskExecutionFragment
-import org.totschnig.myexpenses.util.Result
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.AccountSealedException
 import org.totschnig.myexpenses.viewmodel.SyncViewModel.SyncAccountData
 import java.io.Serializable
 
 class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
-    private var newAccount: Account? = null
 
     @JvmField
     @State
@@ -56,26 +53,32 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
     override fun onPositive(args: Bundle, checked: Boolean) {
         when (args.getInt(ConfirmationDialogFragment.KEY_COMMAND_POSITIVE)) {
             R.id.SYNC_UNLINK_COMMAND -> {
-                listFragment!!.syncUnlink(args.getString(DatabaseConstants.KEY_UUID)!!)
+                listFragment.syncUnlink(args.getString(DatabaseConstants.KEY_UUID)!!)
                 return
             }
             R.id.SYNC_REMOVE_BACKEND_COMMAND -> {
-                startTaskExecution(
-                    TaskExecutionFragment.TASK_SYNC_REMOVE_BACKEND,
-                    arrayOf(args.getString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)),
-                    null,
-                    0
-                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    if (viewModel.removeBackend(args.getString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)!!)) {
+                        listFragment.reloadAccountList()
+                    }
+                } else {
+                    CrashHandler.report(IllegalStateException("Remove backend not supported on API 21"))
+                }
                 return
             }
             R.id.SYNC_LINK_COMMAND_LOCAL_DO -> {
                 val account = args.getSerializable(KEY_ACCOUNT) as Account
-                startTaskExecution(
-                    TaskExecutionFragment.TASK_SYNC_LINK_LOCAL,
-                    arrayOf(account.uuid!!),
-                    account.syncAccountName,
-                    0
-                )
+                viewModel.syncLinkLocal(
+                    accountName = account.syncAccountName,
+                    uuid = account.uuid!!
+                ).observe(this) { result ->
+                    result.onFailure {
+                        showSnackBar(
+                            if (it is AccountSealedException) getString(R.string.object_sealed) else it.message
+                                ?: "ERROR"
+                        )
+                    }
+                }
                 return
             }
             R.id.SYNC_LINK_COMMAND_REMOTE_DO -> {
@@ -172,71 +175,35 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
         }
     }
 
-    //DbWriteFragment
-    override fun onPostExecute(result: Uri?) {
-        super.onPostExecute(result)
-        if (result == null) {
-            showSnackBar(String.format("There was an error saving account %s", newAccount!!.label))
-        }
-    }
 
     override fun onReceiveSyncAccountData(data: SyncAccountData) {
-        listFragment!!.reloadAccountList()
-        if (data.localNotSynced > 0) {
-            showSelectUnsyncedAccount(data.accountName)
+        listFragment.reloadAccountList()
+        if (callingActivity == null && (data.localAccountsNotSynced.isNotEmpty() || data.remoteAccounts.isNotEmpty())) {
+            //if we were called from AccountEdit, we do not show the setup account selection
+            //since we suppose that user wants to create one account for the account he is editing
+            SetupSyncDialogFragment.newInstance(data).show(supportFragmentManager, "SETUP_SYNC")
         }
     }
 
-    override fun onPostExecute(taskId: Int, o: Any?) {
-        super.onPostExecute(taskId, o)
-        when (taskId) {
-            TaskExecutionFragment.TASK_SYNC_REMOVE_BACKEND -> {
-                val result = o as Result<*>?
-                if (result!!.isSuccess) {
-                    listFragment!!.reloadAccountList()
-                }
-            }
-            TaskExecutionFragment.TASK_SYNC_LINK_SAVE -> {
-                run {
-                    val result = o as Result<*>?
-                    showDismissibleSnackBar(result!!.print(this))
-                }
-                run {
-                    val result = o as Result<*>?
-                    if (!result!!.isSuccess) {
-                        showSnackBar(result.print(this))
-                    }
-                }
-            }
-            TaskExecutionFragment.TASK_SYNC_LINK_LOCAL -> {
-                val result = o as Result<*>?
-                if (!result!!.isSuccess) {
-                    showSnackBar(result.print(this))
-                }
-            }
-        }
-    }
-
-    private fun showSelectUnsyncedAccount(accountName: String?) {
-        //if we were called from AccountEdit, we do not show the unsynced account selection
-        //since we suppose that user wants to create one account for the account he is editing
-        if (callingActivity == null) {
-            SelectUnSyncedAccountDialogFragment.newInstance(accountName)
-                .show(supportFragmentManager, "SELECT_UNSYNCED")
-        }
-    }
-
-    private val listFragment: SyncBackendList?
-        get() = supportFragmentManager.findFragmentById(R.id.backend_list) as SyncBackendList?
+    private val listFragment: SyncBackendList
+        get() = supportFragmentManager.findFragmentById(R.id.backend_list) as SyncBackendList
 
     override fun onContextItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.SYNC_DOWNLOAD_COMMAND) {
             if (prefHandler.getBoolean(PrefKey.NEW_ACCOUNT_ENABLED, true)) {
-                newAccount = listFragment!!.getAccountForSync(
+                listFragment.getAccountForSync(
                     (item.menuInfo as ExpandableListContextMenuInfo).packedPosition
-                )
-                if (newAccount != null) {
-                    startDbWriteTask()
+                )?.let { account ->
+                    viewModel.save(account).observe(this) {
+                        if (it == null) {
+                            showSnackBar(
+                                String.format(
+                                    "There was an error saving account %s",
+                                    account.label
+                                )
+                            )
+                        }
+                    }
                 }
             } else {
                 contribFeatureRequested(ContribFeature.ACCOUNTS_UNLIMITED, null)
@@ -244,10 +211,6 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
             return true
         }
         return super.onContextItemSelected(item)
-    }
-
-    override fun getObject(): Model {
-        return newAccount!!
     }
 
     override fun contribFeatureCalled(feature: ContribFeature, tag: Serializable?) {

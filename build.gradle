@@ -11,7 +11,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.1.1'
+        classpath 'com.android.tools.build:gradle:7.1.2'
         //Drive
         classpath 'com.google.gms:google-services:4.3.10'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.8.1'
@@ -53,7 +53,7 @@ ext {
     butterknifeVersion = "10.2.3"
     robolectricVersion = "4.5.1"
     roomVersion = "2.4.1"
-    archLifecycleVersion = '2.4.0'
+    archLifecycleVersion = '2.4.1'
     androidxArchVersion = '2.1.0'
     fragmentVersion = "1.4.1"
     coroutines = '1.6.0'
@@ -63,7 +63,7 @@ ext {
     appcompatVersion = "1.4.1"
     picassoVersion = "2.71828"
     recyclerview = "1.2.1"
-    materialComponents = "1.4.0"
+    materialComponents = "1.5.0" //currently using patch
     junitVersion = "4.13.2"
     timberVersion = "5.0.1"
     assertjVersion = "3.19.0"

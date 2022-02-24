@@ -3,18 +3,12 @@ package org.totschnig.myexpenses.fragment
 import android.app.Activity.RESULT_OK
 import android.content.ContentResolver
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
-import android.view.ContextMenu
+import android.view.*
 import android.view.ContextMenu.ContextMenuInfo
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
 import android.widget.ExpandableListView
-import android.widget.ExpandableListView.ExpandableListContextMenuInfo
-import android.widget.ExpandableListView.OnChildClickListener
-import android.widget.ExpandableListView.OnGroupExpandListener
+import android.widget.ExpandableListView.*
 import androidx.core.util.Pair
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -26,9 +20,7 @@ import icepick.Icepick
 import icepick.State
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
-import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.activity.ManageSyncBackends
-import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
 import org.totschnig.myexpenses.activity.SyncBackendSetupActivity.Companion.REQUEST_CODE_RESOLUTION
 import org.totschnig.myexpenses.adapter.SyncBackendAdapter
 import org.totschnig.myexpenses.databinding.SyncBackendsListBinding
@@ -36,17 +28,19 @@ import org.totschnig.myexpenses.dialog.AccountMetaDataDialogFragment
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
 import org.totschnig.myexpenses.dialog.DialogUtils
 import org.totschnig.myexpenses.dialog.MessageDialogFragment
+import org.totschnig.myexpenses.feature.Feature
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.model.CurrencyContext
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.sync.BackendService
+import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.activateSync
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.getAccount
 import org.totschnig.myexpenses.sync.SyncBackendProvider
 import org.totschnig.myexpenses.util.UiUtils
-import org.totschnig.myexpenses.util.asResult
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.viewmodel.AbstractSyncBackendViewModel
 import javax.inject.Inject
@@ -86,14 +80,25 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
         Icepick.restoreInstanceState(this, savedInstanceState)
     }
 
+    override fun onResume() {
+        super.onResume()
+        accountList.mapNotNull { account ->
+            featureForAccount(account.first)
+        }.distinct().forEach {
+            manageSyncBackends.requireFeature(it)
+        }
+    }
+
+    private fun featureForAccount(account: String): Feature? =
+        BackendService.forAccount(account)?.feature
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val context = activity as ProtectedFragmentActivity?
         _binding = SyncBackendsListBinding.inflate(inflater, container, false)
-        syncBackendAdapter = SyncBackendAdapter(context, currencyContext, accountList)
+        syncBackendAdapter = SyncBackendAdapter(requireContext(), currencyContext, accountList)
         binding.list.setAdapter(syncBackendAdapter)
         binding.list.emptyView = binding.empty
         binding.list.setOnGroupExpandListener(this)
@@ -116,9 +121,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
         val commandId: Int
         val titleId: Int
         val isSyncAvailable = licenceHandler.hasTrialAccessTo(ContribFeature.SYNCHRONIZATION)
-        if (ExpandableListView.getPackedPositionType(packedPosition) ==
-            ExpandableListView.PACKED_POSITION_TYPE_CHILD
-        ) {
+        if (getPackedPositionType(packedPosition) == PACKED_POSITION_TYPE_CHILD) {
             if (isSyncAvailable) {
                 when (syncBackendAdapter.getSyncState(packedPosition)) {
                     SyncBackendAdapter.SyncState.SYNCED_TO_THIS -> {
@@ -162,7 +165,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
     override fun onContextItemSelected(item: MenuItem): Boolean {
         val packedPosition = (item.menuInfo as ExpandableListContextMenuInfo).packedPosition
         val itemId = item.itemId
-        (requireActivity() as BaseActivity).trackCommand(itemId)
+        manageSyncBackends.trackCommand(itemId)
         when (itemId) {
             R.id.SYNC_COMMAND -> {
                 requestSync(packedPosition)
@@ -172,7 +175,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
                 val accountForSync = getAccountForSync(packedPosition)
                 if (accountForSync != null) {
                     DialogUtils.showSyncUnlinkConfirmationDialog(
-                        requireActivity(),
+                        manageSyncBackends,
                         accountForSync.syncAccountName, accountForSync.uuid
                     )
                 }
@@ -181,7 +184,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
             R.id.SYNCED_TO_OTHER_COMMAND -> {
                 val account = getAccountForSync(packedPosition)
                 if (account != null) {
-                    (requireActivity() as ProtectedFragmentActivity).showMessage(
+                    manageSyncBackends.showMessage(
                         getString(R.string.dialog_synced_to_other, account.uuid)
                     )
                 }
@@ -210,32 +213,42 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
                 return true
             }
             R.id.SYNC_REMOVE_BACKEND_COMMAND -> {
-                val syncAccountName = syncBackendAdapter.getSyncAccountName(packedPosition)
-                val b = Bundle()
-                val message =
-                    (getString(R.string.dialog_confirm_sync_remove_backend, syncAccountName)
-                            + " " + getString(R.string.continue_confirmation))
-                b.putString(ConfirmationDialogFragment.KEY_MESSAGE, message)
-                b.putInt(
-                    ConfirmationDialogFragment.KEY_COMMAND_POSITIVE,
-                    R.id.SYNC_REMOVE_BACKEND_COMMAND
-                )
-                b.putInt(ConfirmationDialogFragment.KEY_POSITIVE_BUTTON_LABEL, R.string.menu_remove)
-                b.putInt(
-                    ConfirmationDialogFragment.KEY_NEGATIVE_BUTTON_LABEL,
-                    android.R.string.cancel
-                )
-                b.putString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME, syncAccountName)
-                ConfirmationDialogFragment.newInstance(b)
-                    .show(parentFragmentManager, "SYNC_REMOVE_BACKEND")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
+                    val syncAccountName = syncBackendAdapter.getSyncAccountName(packedPosition)
+                    ConfirmationDialogFragment.newInstance(Bundle().apply {
+                        putString(
+                            ConfirmationDialogFragment.KEY_MESSAGE,
+                            (getString(R.string.dialog_confirm_sync_remove_backend, syncAccountName)
+                                    + " " + getString(R.string.continue_confirmation))
+                        )
+                        putInt(
+                            ConfirmationDialogFragment.KEY_COMMAND_POSITIVE,
+                            R.id.SYNC_REMOVE_BACKEND_COMMAND
+                        )
+                        putInt(
+                            ConfirmationDialogFragment.KEY_POSITIVE_BUTTON_LABEL,
+                            R.string.menu_remove
+                        )
+                        putInt(
+                            ConfirmationDialogFragment.KEY_NEGATIVE_BUTTON_LABEL,
+                            android.R.string.cancel
+                        )
+                        putString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME, syncAccountName)
+                    })
+                        .show(parentFragmentManager, "SYNC_REMOVE_BACKEND")
+                } else {
+                    manageSyncBackends.showSnackBar("Account can be deleted from Android System Settings")
+                }
+                return true
             }
             R.id.SHOW_PASSWORD_COMMAND -> {
                 viewModel.loadPassword(syncBackendAdapter.getSyncAccountName(packedPosition))
                     .observe(this) {
-                        (activity as? ProtectedFragmentActivity)?.showDismissibleSnackBar(
+                        manageSyncBackends.showDismissibleSnackBar(
                             it ?: "Could not retrieve passphrase"
                         )
                     }
+                return true
             }
         }
         return super.onContextItemSelected(item)
@@ -245,13 +258,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
         val syncAccountName = syncBackendAdapter.getSyncAccountName(packedPosition)
         val account = getAccount(syncAccountName)
         if (ContentResolver.getIsSyncable(account, TransactionProvider.AUTHORITY) > 0) {
-            val bundle = Bundle()
-            bundle.putBoolean(ContentResolver.SYNC_EXTRAS_MANUAL, true)
-            bundle.putBoolean(ContentResolver.SYNC_EXTRAS_EXPEDITED, true)
-            ContentResolver.requestSync(
-                account,
-                TransactionProvider.AUTHORITY, bundle
-            )
+            GenericAccountService.requestSync(syncAccountName)
         } else {
             val bundle = Bundle(1)
             bundle.putString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME, syncAccountName)
@@ -271,6 +278,8 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
         }
     }
 
+    private val manageSyncBackends get() = requireActivity() as ManageSyncBackends
+
     override fun onGroupExpand(groupPosition: Int) {
         if (!syncBackendAdapter.hasAccountMetadata(groupPosition)) {
             metadataLoadingCount++
@@ -278,19 +287,25 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
                 snackbar.show()
             }
             val backendLabel = syncBackendAdapter.getBackendLabel(groupPosition)
-            viewModel.accountMetadata(backendLabel).observe(viewLifecycleOwner) { result ->
-                metadataLoadingCount--
-                if (metadataLoadingCount == 0) {
-                    snackbar.dismiss()
-                }
-                result.onSuccess { list ->
-                    syncBackendAdapter.setAccountMetadata(groupPosition, list.map { it.asResult() })
-                }.onFailure { throwable ->
-                    val activity = requireActivity() as ManageSyncBackends
-                    if (handleAuthException(throwable)) {
-                        resolutionPendingForGroup = groupPosition
-                    } else {
-                        activity.showSnackBar(throwable.message ?: "ERROR", Snackbar.LENGTH_SHORT)
+            if (featureForAccount(backendLabel)?.let {
+                    manageSyncBackends.isFeatureAvailable(it)
+                } != false) {
+                viewModel.accountMetadata(backendLabel).observe(viewLifecycleOwner) { result ->
+                    metadataLoadingCount--
+                    if (metadataLoadingCount == 0) {
+                        snackbar.dismiss()
+                    }
+                    result.onSuccess { list ->
+                        syncBackendAdapter.setAccountMetadata(groupPosition, list)
+                    }.onFailure { throwable ->
+                        if (handleAuthException(throwable)) {
+                            resolutionPendingForGroup = groupPosition
+                        } else {
+                            manageSyncBackends.showSnackBar(
+                                throwable.message ?: "ERROR",
+                                Snackbar.LENGTH_SHORT
+                            )
+                        }
                     }
                 }
             }
@@ -315,7 +330,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
     override fun onResult(dialogTag: String, which: Int, extras: Bundle): Boolean {
         if (dialogTag == DIALOG_INACTIVE_BACKEND && which == OnDialogResultListener.BUTTON_POSITIVE) {
             activateSync(
-                getAccount(extras.getString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)),
+                getAccount(extras.getString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)!!),
                 prefHandler
             )
         }
@@ -325,7 +340,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
     fun syncUnlink(uuid: String) {
         viewModel.syncUnlink(uuid).observe(this) { result ->
             result.onFailure {
-                (requireActivity() as ManageSyncBackends).showSnackBar(it.message ?: "ERROR")
+                manageSyncBackends.showSnackBar(it.message ?: "ERROR")
             }
         }
     }
