@@ -105,12 +105,12 @@ public class CustomEvent implements CustomEventBanner, CustomEventInterstitial {
       int widthInPixels = size.getWidthInPixels(context);
       DisplayMetrics displayMetrics = Resources.getSystem().getDisplayMetrics();
       int widthInDp = Math.round(widthInPixels / displayMetrics.density);
-      Pair<PartnerProgram, String> contentProvider = PartnerProgram.pickContent(partnerPrograms,
-          appComponent.userCountry(), context, widthInDp);
+      Pair<PartnerProgram, String> contentProvider = PartnerProgram.Companion.pickContent(partnerPrograms,
+          appComponent.userCountry(), appComponent.prefHandler(), context, widthInDp);
       if (contentProvider == null) {
         listener.onAdFailedToLoad(com.google.android.gms.ads.AdRequest.ERROR_CODE_NO_FILL);
       } else {
-        adView = new AdView(context);
+        adView = new AdView(context, appComponent.prefHandler());
         // Implement a SampleAdListener and forward callbacks to mediation. The callback forwarding
         // is handled by SampleBannerEventForwarder.
         adView.setAdListener(new CustomEventForwarder(listener));
@@ -161,12 +161,12 @@ public class CustomEvent implements CustomEventBanner, CustomEventInterstitial {
     if (partnerPrograms.isEmpty()) {
       listener.onAdFailedToLoad(com.google.android.gms.ads.AdRequest.ERROR_CODE_INVALID_REQUEST);
     } else {
-      Pair<PartnerProgram, String> contentProvider = PartnerProgram.pickContent(partnerPrograms,
-          appComponent.userCountry(), context, -1);
+      Pair<PartnerProgram, String> contentProvider = PartnerProgram.Companion.pickContent(partnerPrograms,
+          appComponent.userCountry(), appComponent.prefHandler(), context, -1);
       if (contentProvider == null) {
         listener.onAdFailedToLoad(com.google.android.gms.ads.AdRequest.ERROR_CODE_NO_FILL);
       } else {
-        interstitial = new Interstitial(context);
+        interstitial = new Interstitial(context, appComponent.prefHandler());
 
         interstitial.setContentProvider(contentProvider);
 
