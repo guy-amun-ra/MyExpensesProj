@@ -9,6 +9,7 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import timber.log.Timber
+import java.util.*
 
 class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
     private var crashReportingTree: CrashReportingTree? = null
@@ -31,7 +32,13 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
     override fun setKeys(context: Context) {
         super.setKeys(context)
         setUserEmail(prefHandler.getString(PrefKey.CRASHREPORT_USEREMAIL, null))
+        instance?.setUserId(userId)
     }
+
+    private val userId: String
+        get() = prefHandler.getString(PrefKey.CRASHLYTICS_USER_ID, null) ?: UUID.randomUUID().toString().also {
+            prefHandler.putString(PrefKey.CRASHLYTICS_USER_ID, it)
+        }
 
     override fun putCustomData(key: String, value: String?) {
         value?.let { instance?.setCustomKey(key, it) }

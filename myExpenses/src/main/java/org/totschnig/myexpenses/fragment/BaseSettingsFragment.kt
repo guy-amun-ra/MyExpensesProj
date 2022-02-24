@@ -750,6 +750,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                     )
                 )
             }
+            getKey(PrefKey.DEBUG_SCREEN) -> {
+                requirePreference<Preference>(PrefKey.CRASHLYTICS_USER_ID).summary =
+                    prefHandler.getString(PrefKey.CRASHLYTICS_USER_ID,null).toString()
+            }
         }
     }
 
