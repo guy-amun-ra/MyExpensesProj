@@ -1,6 +1,7 @@
 package org.totschnig.myexpenses.dialog
 
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.os.Bundle
 import android.os.Parcelable
 import androidx.compose.foundation.clickable
@@ -27,6 +28,10 @@ import eltos.simpledialogfragment.SimpleDialog
 import kotlinx.parcelize.Parcelize
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.activity.Help
+import org.totschnig.myexpenses.compose.Menu
+import org.totschnig.myexpenses.compose.MenuEntry
+import org.totschnig.myexpenses.compose.OverFlowMenu
 import org.totschnig.myexpenses.viewmodel.SetupSyncViewModel
 import org.totschnig.myexpenses.viewmodel.SetupSyncViewModel.SyncSource
 import org.totschnig.myexpenses.viewmodel.SyncViewModel
@@ -81,6 +86,8 @@ class SetupSyncDialogFragment : ComposeBaseDialogFragment(), SimpleDialog.OnDial
 
     @Composable
     override fun BuildContent() {
+        val data: SyncViewModel.SyncAccountData =
+            requireArguments().getParcelable(KEY_DATA)!!
         val progress = remember {
             mutableStateOf(SetupProgress.NOT_STARTED)
         }
@@ -89,6 +96,29 @@ class SetupSyncDialogFragment : ComposeBaseDialogFragment(), SimpleDialog.OnDial
                 .padding(8.dp)
                 .verticalScroll(rememberScrollState())
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(
+                    style = MaterialTheme.typography.h6,
+                    text = data.accountName
+                )
+                OverFlowMenu(
+                    menu = Menu(
+                        listOf(
+                            MenuEntry(
+                                label = stringResource(id = R.string.menu_help)
+                            ) {
+                                startActivity(Intent(requireContext(), Help::class.java).apply {
+                                    putExtra(HelpDialogFragment.KEY_CONTEXT, "SetupSync")
+                                    putExtra(HelpDialogFragment.KEY_TITLE, "${getString(R.string.synchronization)} - ${getString(R.string.setup)}")
+                                })
+                            }
+                        )
+                    )
+                )
+            }
             Row {
                 Text(
                     modifier = cell(0),
@@ -119,8 +149,6 @@ class SetupSyncDialogFragment : ComposeBaseDialogFragment(), SimpleDialog.OnDial
                         if (viewModel.dialogState.values.any { it.value != null }) {
                             Button(onClick = {
                                 progress.value = SetupProgress.RUNNING
-                                val data: SyncViewModel.SyncAccountData =
-                                    requireArguments().getParcelable(KEY_DATA)!!
                                 viewModel.setupSynchronization(
                                     accountName = data.accountName,
                                     localAccounts = data.localAccountsNotSynced.filter { account ->
