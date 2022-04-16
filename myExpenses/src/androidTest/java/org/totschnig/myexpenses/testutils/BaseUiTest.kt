@@ -1,6 +1,7 @@
 package org.totschnig.myexpenses.testutils
 
 import android.app.Activity
+import android.content.ContentUris
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -12,6 +13,7 @@ import android.widget.Adapter
 import android.widget.AdapterView
 import android.widget.ListView
 import androidx.test.core.app.ActivityScenario
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.espresso.Espresso.closeSoftKeyboard
 import androidx.test.espresso.Espresso.onData
 import androidx.test.espresso.Espresso.onView
@@ -28,11 +30,16 @@ import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.Matcher
 import org.junit.Assert
 import org.junit.Before
+import org.mockito.Mockito
+import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.TestApp
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
+import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.model.ContribFeature
+import org.totschnig.myexpenses.model.CurrencyContext
 import org.totschnig.myexpenses.preference.PrefKey
+import org.totschnig.myexpenses.viewmodel.data.Category
 import org.totschnig.myexpenses.debug.test.R as RT
 import se.emilsjolander.stickylistheaders.StickyListHeadersListView
 import java.util.*
@@ -165,6 +172,12 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
             } else null
         }
 
+    protected val repository: Repository
+        get() = Repository(
+            ApplicationProvider.getApplicationContext<MyApplication>(),
+            Mockito.mock(CurrencyContext::class.java)
+        )
+
     @Throws(TimeoutException::class)
     protected fun waitForAdapter(): Adapter {
         var iterations = 0
@@ -220,4 +233,7 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
                 .atPosition(1)
                 .perform(ViewActions.longClick())
     }
+
+    protected fun writeCategory(label: String, parentId: Long? = null) =
+        ContentUris.parseId(repository.saveCategory(Category(label = label, parentId = parentId))!!)
 }

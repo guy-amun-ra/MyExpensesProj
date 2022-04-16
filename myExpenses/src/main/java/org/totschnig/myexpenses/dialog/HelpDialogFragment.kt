@@ -233,7 +233,9 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>(), ImageGetter {
         !arrayOf(
             "ManageTemplates_plans_cabitems",
             "ManageTemplates_planner_cabitems",
-            "ManageParties_manage_cabitems"
+            "ManageParties_manage_cabitems",
+            "ManageCategories_manage_cabitems",
+            "ManageCategories_select_filter_cabitems"
         )
             .contains(componentName)
 

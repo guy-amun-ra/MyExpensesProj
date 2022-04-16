@@ -27,20 +27,10 @@ import android.text.TextUtils
 import android.text.style.StyleSpan
 import android.text.style.UnderlineSpan
 import android.util.SparseBooleanArray
+import android.view.*
 import android.view.ContextMenu.ContextMenuInfo
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuInflater
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
-import android.widget.AbsListView
-import android.widget.AdapterView
+import android.widget.*
 import android.widget.AdapterView.AdapterContextMenuInfo
-import android.widget.ImageView
-import android.widget.SimpleCursorAdapter
-import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.DialogFragment
@@ -54,21 +44,11 @@ import icepick.Icepick
 import icepick.State
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
-import org.totschnig.myexpenses.activity.BaseActivity
-import org.totschnig.myexpenses.activity.EDIT_REQUEST
-import org.totschnig.myexpenses.activity.ExpenseEdit
-import org.totschnig.myexpenses.activity.ManageTemplates
-import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
+import org.totschnig.myexpenses.activity.*
 import org.totschnig.myexpenses.databinding.TemplatesListBinding
 import org.totschnig.myexpenses.dialog.MessageDialogFragment
-import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.model.Category
-import org.totschnig.myexpenses.model.ContribFeature
-import org.totschnig.myexpenses.model.CurrencyContext
-import org.totschnig.myexpenses.model.Sort
+import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.Sort.Companion.preferredOrderByForTemplatesWithPlans
-import org.totschnig.myexpenses.model.Template
-import org.totschnig.myexpenses.model.Transfer
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DbUtils
@@ -79,6 +59,7 @@ import org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup
 import org.totschnig.myexpenses.util.TextUtils.concatResStrings
 import org.totschnig.myexpenses.viewmodel.PlanInstanceInfo
 import org.totschnig.myexpenses.viewmodel.TemplatesListViewModel
+import org.totschnig.myexpenses.viewmodel.data.Category
 import timber.log.Timber
 import java.io.Serializable
 import java.lang.ref.WeakReference
@@ -97,7 +78,6 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
     private var mAdapter: SimpleCursorAdapter? = null
     lateinit var mManager: LoaderManager
     private var columnIndexAmount = 0
-    private var columnIndexLabelSub = 0
     private var columnIndexComment = 0
     private var columnIndexPayee = 0
     private var columnIndexColor = 0
@@ -168,7 +148,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
         // Create an array to specify the fields we want to display in the list
         val from = arrayOf(
             DatabaseConstants.KEY_TITLE,
-            DatabaseConstants.KEY_LABEL_MAIN,
+            DatabaseConstants.KEY_LABEL,
             DatabaseConstants.KEY_AMOUNT
         )
         // and an array of the fields we want to bind those fields to
@@ -433,7 +413,6 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
             if (c != null && !indexesCalculated) {
                 columnIndexRowId = c.getColumnIndex(DatabaseConstants.KEY_ROWID)
                 columnIndexAmount = c.getColumnIndex(DatabaseConstants.KEY_AMOUNT)
-                columnIndexLabelSub = c.getColumnIndex(DatabaseConstants.KEY_LABEL_SUB)
                 columnIndexComment = c.getColumnIndex(DatabaseConstants.KEY_COMMENT)
                 columnIndexPayee = c.getColumnIndex(DatabaseConstants.KEY_PAYEE_NAME)
                 columnIndexColor = c.getColumnIndex(DatabaseConstants.KEY_COLOR)
@@ -661,12 +640,6 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
                 val catId = DbUtils.getLongOrNull(c, DatabaseConstants.KEY_CATID)
                 if (catId == null) {
                     catText = Category.NO_CATEGORY_ASSIGNED_LABEL
-                } else {
-                    val labelSub = c.getString(columnIndexLabelSub)
-                    if (labelSub != null && labelSub.isNotEmpty()) {
-                        val categorySeparator = " : "
-                        catText = catText.toString() + categorySeparator + labelSub
-                    }
                 }
             }
             //TODO: simplify confer TemplateWidget

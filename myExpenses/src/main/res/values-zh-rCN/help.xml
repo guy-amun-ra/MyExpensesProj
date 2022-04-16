@@ -3,45 +3,26 @@
     <string name="help_menu_commands">菜单命令</string>
     <string name="cab_delete_help_text">删除所选条目。</string>
     <string name="cab_edit_help_text">编辑所选条目。</string>
-    <!--My Expenses Transaction list-->
     <string name="help_MyExpenses_title">交易清单</string>
     <string name="cab_create_template_from_transaction_help_text">根据所选交易定义一个新模板.会提示你交易标题。</string>
-    <!--ManageMethods title is in keys-->
-    <!--ManageParties title is in keys-->
-    <!--ManageTemplates title is in keys-->
     <string name="cab_ManageTemplates_delete_help_text">删除所选模板及其关联的计划。</string>
     <string name="cab_ManageTemplates_edit_help_text">编辑所选模板并创建或编辑一个关联的计划。</string>
     <string name="cab_ManageTemplates_plans_create_instance_save_help_text">在选定事件实例时创建交易并立即保存它们。</string>
     <string name="cab_ManageTemplates_plans_create_instance_edit_help_text">在选定事件实例时创建交易并进入其编辑表格，你可在表格中进行编辑然后保存。</string>
     <string name="cab_ManageTemplates_plans_cancel_plan_instance_help_text">表明在选定的事件实例中，不应该创建任何交易。如果已为所选事件实例创建了交易，则将删除它们。</string>
-    <!--ManageCategories_* titles are in keys-->
     <string name="menu_back_help_text">导航到前一组。也可以通过从左到右的滑动手势来实现。</string>
-    <string name="cab_ManageCategories_create_sub_cat_help_text">打开对话框以指定所选类别之下的新子类别的标题。</string>
-    <string name="cab_ManageCategories_move_help_text">可以把子类别移动到一个不同的主类别，或者将其转换为主类别。没有子类别的主类别可以转换为不同主类别的子类别。</string>
-    <string name="cab_ManageCategories_select_help_text">将选定的类别映射到交易，并返回到交易表单。</string>
     <string name="menu_categories_setup_default_help_text">将导入一组默认类别。</string>
     <string name="menu_categories_export_help_text">类别会被导出到QIF文件。</string>
-    <string name="cab_ManageCategories_select_filter_select_help_text">所选类别将用于筛选交易列表。</string>
+    <string name="cab_ManageCategories_select_filter_select_help_text">选择的类别将用于过滤交易列表。</string>
     <string name="menu_ManageCategories_search_help_text">只显示与您的查询匹配的主类别和子类别。</string>
-    <!--ExpenseEdit-->
     <string name="form_comment_help_text">输入有关交易条目的备注信息。</string>
     <string name="form_title_help_text">输入唯一标识该模板的标题。</string>
     <string name="menu_save_help_text">保存数据并且关闭表格。</string>
     <string name="menu_invert_transfer_help_text">交换 “From” 和 “To” 账户反转交易的方向。</string>
-    <!--AccountEdit-->
-    <!--MethodEdit-->
-    <!--ManageCurrencies-->
-    <!--FolderBrowser title is in keys-->
     <string name="menu_create_folder_help_text">在当前文件夹内创建新文件夹。</string>
     <string name="menu_FolderBrowser_select_help_text">选择当前文件夹作为导出和备份的存储目标。</string>
     <string name="menu_up_help_text">导航到当前文件夹的父目录。</string>
-    <!--StaleImages-->
-    <!--CSV Import-->
     <string name="menu_create_account_help_text">创建一个新账户。免费版仅可创建5个账户。</string>
-    <!--SyncBackends-->
-    <!--History-->
-    <!--Budget-->
-    <!--Tags-->
     <string name="popup_MyExpenses_toolbar_intro">轻按工具栏（账户文本标签或当前余额）弹出包含以下条目的菜单：</string>
     <string name="help_MyExpenses_fab_long_press">长按悬浮操作按钮，通过弹出菜单编制转账、分拆交易或收入表单。</string>
     <string name="help_MyExpenses_info">此界面列明了当前账户的所有交易。请使用悬浮操作按钮打开表单，创建一项新交易。</string>
@@ -139,7 +120,6 @@
     <string name="menu_distribution_aggreate_help_text">默认情况下，计算的总金额包括支出和收入。你可以设置分开展示，在操作栏的按钮切换支出和收入。</string>
     <string name="menu_distribution_show_pie_char_help_text">切换为饼图。</string>
     <string name="menu_forward_help_text">导航到下一组。也可以通过从右到左的滑动手势来实现。</string>
-    <string name="help_ManageCategories_select_filter_info">选择用于筛选交易列表的类别。为了查找某个主类别，您必须调用该类别的快捷菜单。</string>
     <string name="menu_ManageCategories_distribution_grouping_help_text">设置分组类型，并以每天、每月、每周或每年为单位显示分布情况。</string>
     <string name="help_ExpenseEdit_splitPartTransfer_title">转账拆分部分的表单</string>
     <string name="help_ExpenseEdit_templateTransfer_title">用于转账模板的表单</string>
@@ -157,8 +137,8 @@
     <string name="help_ManageTags_select_mapping_info">轻按标签进行映射或取消映射。使用浮动操作按钮确认映射。</string>
     <string name="help_ManageTemplates_templates_info">&lt;img src=ic_menu_template&gt;模板可以基于交易通过快捷菜单加以创建，此处您可以点击悬浮操作按钮，从头创建新的（交易或转账）模板。点击某一模板，即可创建基于该模板的实例。&lt;br&gt;&lt;img src=ic_event&gt;计划是指您在计划表日历中为之创建（单次或重复）事件的模板。点击某一计划，将会打开日历视图，显示某一计划的过去和即将到来的实例。</string>
     <string name="help_ManageCategories_distribution_info">此界面显示您的支出和收入在每个类别、账户中的所有交易或特定组中的分布。如果您在列表中展开一个主要类别，饼图将显示其子类别的分布。如果您在列表中选择一个类别，它将在饼图中突出显示，反之亦然。长按一个类别，可显示映射到该类别的交易的汇总列表。</string>
-    <string name="help_ManageCategories_select_mapping_info">除了从首选项界面管理类别时可以执行的操作(创建、编辑、删除)之外，在此界面上，您可以将某项交易映射到选定的类别。只需单击子类别，即可选择映射到当前交易的子类别。为了映射一个主类别，你必须调用其快捷菜单。</string>
-    <string name="help_ManageCategories_manage_info">此界面允许创建、编辑和删除类别。默认情况下，类别列表中的主要排序标准是您使用类别的次数(次要标准是字母顺序)。您可以借此快速访问最常使用的类别。您可以在设置中选择按简单的字母顺序对类别进行排序。点击一个主类别，可展开其子类别。通过主类别的快捷菜单，您可以添加新的子类别、删除类别或编辑类别。子类别也设有快捷菜单，可进行删除和编辑操作。</string>
+    <string name="help_ManageCategories_select_mapping_info">除了从首选项界面管理类别时可以执行的操作(创建、编辑、删除)之外，在此界面上，您可以将某项交易映射到选定的类别。只需单击子类别。</string>
+    <string name="help_ManageCategories_manage_info">此界面允许创建、编辑和删除类别。默认情况下，类别列表中的主要排序标准是您使用类别的次数(次要标准是字母顺序)。您可以借此快速访问最常使用的类别。</string>
     <string name="help_ExpenseEdit_templateCategory_title">用于交易模板的表单</string>
     <string name="help_FolderBrowser_info">您在此选择的文件夹将用于存储备份和导出。浏览文件夹层次结构，直到找到所需的文件夹。</string>
     <string name="help_ExpenseEdit_templateSplit_title">用于拆分模板的表单</string>

@@ -14,12 +14,12 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.databinding.SplitPartRowBinding
-import org.totschnig.myexpenses.model.Category
 import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.Transfer
 import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.formatMoney
+import org.totschnig.myexpenses.viewmodel.data.Category
 
 class SplitPartRVAdapter(
     context: Context,

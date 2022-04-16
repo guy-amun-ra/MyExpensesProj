@@ -15,23 +15,7 @@
 
 package org.totschnig.myexpenses.test.model;
 
-import android.content.OperationApplicationException;
-import android.database.Cursor;
-import android.os.RemoteException;
-
-import org.totschnig.myexpenses.model.Account;
-import org.totschnig.myexpenses.model.AggregateAccount;
-import org.totschnig.myexpenses.model.Category;
-import org.totschnig.myexpenses.model.CurrencyUnit;
-import org.totschnig.myexpenses.model.Money;
-import org.totschnig.myexpenses.model.Transaction;
-import org.totschnig.myexpenses.model.CrStatus;
-import org.totschnig.myexpenses.model.Transfer;
-import org.totschnig.myexpenses.provider.TransactionProvider;
-import org.totschnig.myexpenses.provider.filter.CategoryCriteria;
-import org.totschnig.myexpenses.provider.filter.WhereFilter;
-import org.totschnig.myexpenses.util.Utils;
-
+import static org.junit.Assert.assertNotEquals;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CODE;
@@ -44,6 +28,22 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SUM_INCOME
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SUM_TRANSFERS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_HELPER;
 
+import android.content.OperationApplicationException;
+import android.database.Cursor;
+import android.os.RemoteException;
+
+import org.totschnig.myexpenses.model.Account;
+import org.totschnig.myexpenses.model.AggregateAccount;
+import org.totschnig.myexpenses.model.CrStatus;
+import org.totschnig.myexpenses.model.CurrencyUnit;
+import org.totschnig.myexpenses.model.Money;
+import org.totschnig.myexpenses.model.Transaction;
+import org.totschnig.myexpenses.model.Transfer;
+import org.totschnig.myexpenses.provider.TransactionProvider;
+import org.totschnig.myexpenses.provider.filter.CategoryCriteria;
+import org.totschnig.myexpenses.provider.filter.WhereFilter;
+import org.totschnig.myexpenses.util.Utils;
+
 public class AccountTest extends ModelTest {
   public static final String TEST_CAT = "TestCat";
   Account account1, account2;
@@ -55,18 +55,6 @@ public class AccountTest extends ModelTest {
       transferP = 50L,
       transferN = 60L;
   private long catId;
-  
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    if (account1 != null) {
-      Account.delete(account1.getId());
-    }
-    if (account2 != null) {
-      Account.delete(account2.getId());
-    }
-    Category.delete(catId);
-  }
 
   private void insertData() {
     Transaction op;
@@ -74,7 +62,7 @@ public class AccountTest extends ModelTest {
     account1.save();
     account2 = new Account("Account 2", openingBalance, "Account 2");
     account2.save();
-    catId = Category.write(0, TEST_CAT, null);
+    catId = writeCategory(TEST_CAT, null);
     op = Transaction.getNewInstance(account1.getId());
     assert op != null;
     op.setAmount(new Money(account1.getCurrencyUnit(), -expense1));
@@ -98,15 +86,15 @@ public class AccountTest extends ModelTest {
 
   public void testAccount() throws RemoteException, OperationApplicationException {
     Account account, restored;
-    Long openingBalance = (long) 100;
+    long openingBalance = (long) 100;
     account = new Account("TestAccount", openingBalance, "Testing with Junit");
-    account.setCurrency(new CurrencyUnit(java.util.Currency.getInstance("EUR")));
+    account.setCurrency(CurrencyUnit.Companion.getDebugInstance());
     assertEquals("EUR", account.getCurrencyUnit().getCode());
     account.save();
     assertTrue(account.getId() > 0);
     restored = Account.getInstanceFromDb(account.getId());
     assertEquals(account, restored);
-    Long trAmount = (long) 100;
+    long trAmount = (long) 100;
     Transaction op1 = Transaction.getNewInstance(account.getId());
     assert op1 != null;
     op1.setAmount(new Money(account.getCurrencyUnit(), trAmount));
@@ -203,7 +191,7 @@ public class AccountTest extends ModelTest {
         null);
     assert c != null;
     c.moveToFirst();
-    long id = 0 - c.getLong(0);
+    long id = -c.getLong(0);
     c.close();
     AggregateAccount aa = (AggregateAccount) Account.getInstanceFromDb(id);
     assert aa != null;
@@ -214,7 +202,7 @@ public class AccountTest extends ModelTest {
   public void testBalanceWithoutReset() {
     insertData();
     Money initialclearedBalance = account1.getClearedBalance();
-    assertFalse(initialclearedBalance.equals(account1.getReconciledBalance()));
+    assertNotEquals(initialclearedBalance, account1.getReconciledBalance());
     assertEquals(4, count(account1.getId(), KEY_CR_STATUS + " = '" + CrStatus.CLEARED.name() + "'"));
     assertEquals(0, count(account1.getId(), KEY_CR_STATUS + " = '" + CrStatus.RECONCILED.name() + "'"));
     account1.balance(false);
@@ -226,7 +214,7 @@ public class AccountTest extends ModelTest {
   public void testBalanceWithReset() {
     insertData();
     Money initialclearedBalance = account1.getClearedBalance();
-    assertFalse(initialclearedBalance.equals(account1.getReconciledBalance()));
+    assertNotEquals(initialclearedBalance, account1.getReconciledBalance());
     assertEquals(4, count(account1.getId(), KEY_CR_STATUS + " = '" + CrStatus.CLEARED.name() + "'"));
     assertEquals(0, count(account1.getId(), KEY_CR_STATUS + " = '" + CrStatus.RECONCILED.name() + "'"));
     account1.balance(true);

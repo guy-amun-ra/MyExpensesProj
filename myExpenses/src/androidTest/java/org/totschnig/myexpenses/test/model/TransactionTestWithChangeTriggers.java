@@ -15,24 +15,23 @@
 
 package org.totschnig.myexpenses.test.model;
 
+import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_UNCOMMITTED;
+
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 
 import org.totschnig.myexpenses.model.Account;
-import org.totschnig.myexpenses.model.Category;
+import org.totschnig.myexpenses.model.CrStatus;
 import org.totschnig.myexpenses.model.Money;
 import org.totschnig.myexpenses.model.SplitTransaction;
 import org.totschnig.myexpenses.model.Transaction;
-import org.totschnig.myexpenses.model.CrStatus;
 import org.totschnig.myexpenses.model.Transfer;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.TransactionProvider;
 import org.totschnig.myexpenses.util.PictureDirHelper;
 
 import java.util.Date;
-
-import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_UNCOMMITTED;
 
 /**
  * copy of {@link TransactionTest} which runs under the assumption that changes triggers fire
@@ -59,15 +58,6 @@ public class TransactionTestWithChangeTriggers extends ModelTest {
     ContentValues values = new ContentValues(1);
     values.put(DatabaseConstants.KEY_SYNC_SEQUENCE_LOCAL, 1);
     getProvider().getOpenHelperForTest().getWritableDatabase().update(DatabaseConstants.TABLE_ACCOUNTS, values, null, null);
-  }
-
-  @Override
-  protected void tearDown() throws Exception {
-    super.tearDown();
-    Account.delete(mAccount1.getId());
-    Account.delete(mAccount2.getId());
-    Category.delete(catId1);
-    Category.delete(catId2);
   }
 
   public void testTransaction() {
@@ -195,8 +185,8 @@ public class TransactionTestWithChangeTriggers extends ModelTest {
   }
 
   public void testIncreaseCatUsage() {
-    catId1 = Category.write(0, "Test category 1", null);
-    catId2 = Category.write(0, "Test category 2", null);
+    catId1 = writeCategory("Test category 1", null);
+    catId2 = writeCategory("Test category 2", null);
     assertEquals(getCatUsage(catId1), 0);
     assertEquals(getCatUsage(catId2), 0);
     Transaction op1 = Transaction.getNewInstance(mAccount1.getId());

@@ -169,7 +169,7 @@
         <item>search</item>
         <item>categories_setup_default</item>
     </string-array>
-    <string-array name="Distribution_menuitems" tools:ignore="UnusedResources">
+    <string-array name="DistributionActivity_menuitems" tools:ignore="UnusedResources">
         <item>grouping</item>
         <item>back</item>
         <item>forward</item>
@@ -181,10 +181,12 @@
         <item>create_sub_cat</item>
         <item>delete</item>
         <item>move</item>
-        <item>color</item>
+    </string-array>
+    <string-array name="cab_ManageCategories_edit_help_text">
+        <item>cab_edit_help_text</item>
+        <item>cab_ManageCategories_color_help_text</item>
     </string-array>
     <string-array name="ManageCategories_select_mapping_cabitems" tools:ignore="UnusedResources">
-        <item>select</item>
         <item>edit</item>
         <item>create_sub_cat</item>
         <item>delete</item>
@@ -193,9 +195,9 @@
     <string-array name="ManageCategories_select_filter_cabitems" tools:ignore="UnusedResources">
         <item>select</item>
     </string-array>
-    <string-array name="Distribution_cabitems" tools:ignore="UnusedResources">
-        <item>color</item>
+    <string-array name="DistributionActivity_cabitems" tools:ignore="UnusedResources">
         <item>show_transactions</item>
+        <item>color</item>
     </string-array>
 
     <string-array name="BudgetActivity_menuitems" tools:ignore="UnusedResources">
@@ -205,10 +207,6 @@
         <item>budget_aggregate</item>
         <item>budget_allocated_only</item>
         <item>delete</item>
-    </string-array>
-    <string-array name="BudgetActivity_cabitems" tools:ignore="UnusedResources">
-        <item>color</item>
-        <item>show_transactions</item>
     </string-array>
 
     <string-array name="ExpenseEdit_transaction_menuitems" tools:ignore="UnusedResources">
@@ -418,6 +416,22 @@
         <item>popup_MyExpenses_toolbar</item>
     </string-array>
 
+    <string-array name="help_ManageCategories_manage_info">
+        <item>help_ManageCategories_manage_info</item>
+        <item>help_ManageCategories_expand_collapse</item>
+        <item>help_ManageCategories_manage_context</item>
+    </string-array>
+
+    <string-array name="help_ManageCategories_select_mapping_info">
+        <item>help_ManageCategories_select_mapping_info</item>
+        <item>help_ManageCategories_expand_collapse</item>
+    </string-array>
+
+    <string-array name="help_ManageCategories_select_filter_info">
+        <item>help_ManageCategories_expand_collapse</item>
+        <item>help_ManageCategories_select_filter_info</item>
+    </string-array>
+
     <string-array name="popup_MyExpenses_toolbar_items" tools:ignore="UnusedResources">
         <item>copy_text</item>
         <item>new_balance</item>
@@ -480,6 +494,7 @@
     <string-array name="help_BudgetActivity_info" tools:ignore="UnusedResources">
         <item>help_BudgetActivity_info</item>
         <item>help_Budget_amount_click</item>
+        <item>help_Budget_spent_click</item>
     </string-array>
 
     <string-array name="help_ManageBudgets_info" tools:ignore="UnusedResources">

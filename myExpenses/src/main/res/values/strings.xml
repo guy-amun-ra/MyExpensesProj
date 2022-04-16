@@ -52,6 +52,7 @@
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>Email support</b> with guaranteed response within 2 business days</string>
     <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">Voting right on <b>development roadmap</b></string>
     <string name="contrib_feature_history_label" tools:ignore="UnusedResources">History chart</string>
+    <string name="contrib_feature_category_tree_label" tools:ignore="UnusedResources">Category tree</string>
     <string name="licence_status_free">Free</string>
     <string name="contrib_key">Contrib Key</string>
     <string name="extended_key">Extended Key</string>
@@ -89,6 +90,7 @@
     <string name="dialog_contrib_usage_limit_accounts" tools:ignore="PluralsCandidate">Your current licence status (%2$s) allows you to create %1$d accounts.</string>
     <string name="dialog_contrib_usage_limit_plans" tools:ignore="PluralsCandidate">Your current licence status (%2$s) allows you to create %1$d plans.</string>
     <string name="dialog_contrib_usage_limit_split_templates">Your current licence status (%1$s) allows you to create 1 split template.</string>
+    <string name="dialog_contrib_usage_limit_with_dialog">With your current licence status (%1$s), this dialogue will be displayed on every usage.</string>
     <string name="dialog_export_delete">Delete exported transactions</string>
     <string name="dialog_export_not_yet_exported">Export only transactions not yet exported</string>
     <string name="dialog_password_activate_protection">Activate password protection</string>
@@ -415,14 +417,8 @@
         <item quantity="one">The selected transaction will be deleted.</item>
         <item quantity="other">%1$d selected transactions will be deleted.</item>
     </plurals>
-    <plurals name="move_category_success">
-        <item quantity="one">One category was successfully moved.</item>
-        <item quantity="other">%d categories were successfully moved.</item>
-    </plurals>
-    <plurals name="move_category_failure">
-        <item quantity="one">One category was not moved, because the same label already exists at the target.</item>
-        <item quantity="other">%d categories were not moved, because the same label already exists at the target.</item>
-    </plurals>
+    <string name="move_category_success">One category was successfully moved.</string>
+    <string name="move_category_failure">One category was not moved, because the same label already exists at the target.</string>
     <string name="warning_delete_reconciled">Deleting reconciled transactions will cause your records to differ from the bank statement.</string>
     <string name="warning_balance_account">Please compare the cleared total with the ending balance in your bank statement. If you proceed, cleared transactions will be marked as reconciled.</string>
     <string name="warning_password_protected">App is password protected.</string>
@@ -1025,4 +1021,6 @@
     <!-- New feature in version 3.3.6 #2 (https://github.com/mtotschnig/MyExpenses/issues/889) -->
     <string name="whats_new_336_2">Tags for split parts</string>
     <string name="setup_completed">Setup completed</string>
+    <!-- New feature in version 3.3.8 -->
+    <string name="whats_new_338">Arbitrarily deep category hierarchy</string>
 </resources>
