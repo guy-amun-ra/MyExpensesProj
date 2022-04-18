@@ -23,10 +23,10 @@ abstract class AbstractRemoteViewsFactory(
 
     override fun getLoadingView() = null
 
-    override fun getItemId(position: Int) = with(cursor!!) {
-        moveToPosition(position)
-        getLong(getColumnIndexOrThrow(DatabaseConstants.KEY_ROWID))
-    }
+    override fun getItemId(position: Int) = cursor?.let {
+        it.moveToPosition(position)
+        it.getLong(it.getColumnIndexOrThrow(DatabaseConstants.KEY_ROWID))
+    } ?: 0
 
     override fun hasStableIds() = true
 
@@ -42,11 +42,9 @@ abstract class AbstractRemoteViewsFactory(
         cursor?.close()
         val token = Binder.clearCallingIdentity()
         try {
-            try {
-                cursor = buildCursor()
-            } catch (e: SQLiteException) {
-                CrashHandler.report(e)
-            }
+            cursor = buildCursor()
+        } catch (e: SQLiteException) {
+            CrashHandler.report(e)
         } finally {
             Binder.restoreCallingIdentity(token)
         }

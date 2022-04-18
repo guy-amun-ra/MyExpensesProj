@@ -106,6 +106,7 @@ abstract class SyncBackendSetupActivity : ProtectedFragmentActivity(), EditTextD
     }
 
     override fun onFeatureAvailable(feature: Feature) {
+        featureManager.initActivity(this)
         if (selectedFactoryId != 0 && getBackendServiceByIdOrThrow(selectedFactoryId).feature == feature) {
             startSetupDo()
         }
