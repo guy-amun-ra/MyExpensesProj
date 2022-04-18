@@ -4,14 +4,9 @@ import android.app.Activity
 import android.app.Application
 import android.text.TextUtils
 import androidx.annotation.VisibleForTesting
-import com.android.billingclient.api.BillingClient
-import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.Purchase
-import com.android.billingclient.api.SkuDetails
-import com.android.billingclient.api.SkuDetailsResponseListener
+import com.android.billingclient.api.*
 import com.google.android.vending.licensing.PreferenceObfuscator
 import org.json.JSONException
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
@@ -101,7 +96,7 @@ open class PlayStoreLicenceHandler(context: Application, preferenceObfuscator: P
 
     private fun registerInventory(inventory: List<Purchase>, newPurchase: Boolean) {
         inventory.forEach { purchase: Purchase -> log().i("%s (acknowledged %b)", purchase.sku, purchase.isAcknowledged) }
-        findHighestValidPurchase(inventory)?.let {
+        findHighestValidPurchase(inventory)?.also {
             if (it.purchaseState == Purchase.PurchaseState.PURCHASED) {
                 handlePurchaseForLicence(it.sku, it.orderId, it.purchaseToken)
             } else {
