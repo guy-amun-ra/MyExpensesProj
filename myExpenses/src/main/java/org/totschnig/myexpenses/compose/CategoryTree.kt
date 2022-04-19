@@ -209,7 +209,7 @@ fun CategoryRenderer(
                     .size(24.dp)
                     .padding(end = 6.dp),
                 painter = rememberDrawablePainter(drawable = drawable),
-                contentDescription = category.icon
+                contentDescription = null
             )
         } else {
             Spacer(modifier = Modifier.width(24.dp))
