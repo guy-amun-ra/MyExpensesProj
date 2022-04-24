@@ -152,7 +152,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                     it.label
                 )
             }, "").apply {
-                colors = categories.map(Category::color)
+                colors = categories.map { it.color ?: 0 }
                 sliceSpace = 2f
                 setDrawValues(false)
                 xValuePosition = PieDataSet.ValuePosition.OUTSIDE_SLICE
@@ -196,8 +196,12 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                 val isDark = isSystemInDarkTheme()
                 val configuration = LocalConfiguration.current
                 val categoryTree =
-                    viewModel.categoryTreeForDistribution.collectAsState(initial = Category.LOADING).value.withSubColors {
-                        getSubColors(it, isDark)
+                    viewModel.categoryTreeForDistribution.collectAsState(initial = Category.LOADING).value.let { category ->
+                        if (showChart.value) category.withSubColors {
+                            getSubColors(it, isDark)
+                        } else {
+                            category.copy(children = category.children.map { it.copy(color = null) })
+                        }
                     }
 
                 val chartCategoryTree = derivedStateOf {
