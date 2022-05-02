@@ -15,25 +15,28 @@
 
 package org.totschnig.myexpenses.provider;
 
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_KEY;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_VALUE;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_WEEK_END;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_WEEK_START;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.getCountFromWeekStartZero;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.getWeekMax;
+
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
-import android.content.ContentUris;
 import android.content.ContentValues;
-import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
-import com.android.calendar.CalendarContractCompat;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.model.PaymentMethod;
-import org.totschnig.myexpenses.model.Template;
-import org.totschnig.myexpenses.preference.PrefKey;
 import org.totschnig.myexpenses.service.DailyScheduler;
 import org.totschnig.myexpenses.util.ColorUtils;
-import org.totschnig.myexpenses.util.Result;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 
 import java.io.File;
@@ -41,32 +44,9 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_KEY;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_VALUE;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_WEEK_END;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_WEEK_START;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.getCountFromWeekStartZero;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.getWeekMax;
-import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.cacheSyncState;
-import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
-
 public class DbUtils {
 
   private DbUtils() {
-  }
-
-  public static Result backup(File backupDir, Context context) {
-    cacheEventData(context);
-    cacheSyncState(context);
-    ContentResolver resolver = MyApplication.getInstance().getContentResolver();
-    ContentProviderClient client = resolver.acquireContentProviderClient(TransactionProvider.AUTHORITY);
-    TransactionProvider provider = (TransactionProvider) client.getLocalContentProvider();
-    Result result = provider.backup(backupDir);
-    client.release();
-    return result;
   }
 
   public static boolean restore(File backupFile) {
@@ -116,8 +96,6 @@ public class DbUtils {
   }
 
   /**
-   * @param c
-   * @param field
    * @return Long that is null if field is null in db
    */
   @Nullable
@@ -133,8 +111,6 @@ public class DbUtils {
   }
 
   /**
-   * @param c
-   * @param field
    * @return Long that is OL if field is null in db
    */
   public static Long getLongOr0L(Cursor c, String field) {
@@ -148,8 +124,6 @@ public class DbUtils {
   }
 
   /**
-   * @param c
-   * @param field
    * @return String that is guaranteed to be not null
    */
   public static String getString(Cursor c, String field) {
@@ -190,46 +164,6 @@ public class DbUtils {
     }
     c.close();
     return data;
-  }
-
-  private static void cacheEventData(Context context) {
-    if (!CALENDAR.hasPermission(context)) {
-      return;
-    }
-    String plannerCalendarId = PrefKey.PLANNER_CALENDAR_ID.getString("-1");
-    if (plannerCalendarId.equals("-1")) {
-      return;
-    }
-    ContentValues eventValues = new ContentValues();
-    ContentResolver cr = context.getContentResolver();
-    //remove old cache
-    cr.delete(
-        TransactionProvider.EVENT_CACHE_URI, null, null);
-
-    Cursor planCursor = cr.query(Template.CONTENT_URI, new String[]{
-            DatabaseConstants.KEY_PLANID},
-        DatabaseConstants.KEY_PLANID + " IS NOT null", null, null);
-    if (planCursor != null) {
-      if (planCursor.moveToFirst()) {
-        String[] projection = MyApplication.buildEventProjection();
-        do {
-          long planId = planCursor.getLong(0);
-          Uri eventUri = ContentUris.withAppendedId(CalendarContractCompat.Events.CONTENT_URI,
-              planId);
-
-          Cursor eventCursor = cr.query(eventUri, projection,
-              CalendarContractCompat.Events.CALENDAR_ID + " = ?", new String[]{plannerCalendarId}, null);
-          if (eventCursor != null) {
-            if (eventCursor.moveToFirst()) {
-              MyApplication.copyEventData(eventCursor, eventValues);
-              cr.insert(TransactionProvider.EVENT_CACHE_URI, eventValues);
-            }
-            eventCursor.close();
-          }
-        } while (planCursor.moveToNext());
-      }
-      planCursor.close();
-    }
   }
 
   @VisibleForTesting

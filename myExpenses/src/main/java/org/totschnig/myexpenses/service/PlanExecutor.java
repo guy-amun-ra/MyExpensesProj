@@ -1,5 +1,6 @@
 package org.totschnig.myexpenses.service;
 
+import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -8,10 +9,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.provider.CalendarContract;
 import android.text.TextUtils;
-
-import com.android.calendar.CalendarContractCompat;
-import com.android.calendar.CalendarContractCompat.Events;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -90,6 +89,7 @@ public class PlanExecutor extends JobIntentService {
     ((MyApplication) getApplication()).getAppComponent().inject(this);
   }
 
+  @SuppressLint("InlinedApi")
   @Override
   public void onHandleWork(Intent intent) {
     String action = intent.getAction();
@@ -140,9 +140,9 @@ public class PlanExecutor extends JobIntentService {
         Cursor cursor;
         try {
           cursor = getContentResolver().query(eventsUri, null,
-              Events.CALENDAR_ID + " = " + plannerCalendarId,
+              CalendarContract.Events.CALENDAR_ID + " = " + plannerCalendarId,
               null,
-              CalendarContractCompat.Instances.BEGIN + " ASC");
+              CalendarContract.Instances.BEGIN + " ASC");
         } catch (Exception e) {
           //} catch (SecurityException | IllegalArgumentException e) {
           CrashHandler.report(e);
@@ -155,8 +155,8 @@ public class PlanExecutor extends JobIntentService {
           if (cursor.moveToFirst()) {
             LocalDate today = LocalDate.now();
             while (!cursor.isAfterLast()) {
-              long planId = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContractCompat.Instances.EVENT_ID));
-              long date = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContractCompat.Instances.BEGIN));
+              long planId = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Instances.EVENT_ID));
+              long date = cursor.getLong(cursor.getColumnIndexOrThrow(CalendarContract.Instances.BEGIN));
               LocalDate localDate = epochMillis2LocalDate(date, ZoneId.systemDefault());
               long diff = ChronoUnit.DAYS.between(today, localDate);
               long instanceId = CalendarProviderProxy.calculateId(date);
@@ -200,7 +200,7 @@ public class PlanExecutor extends JobIntentService {
                             .putExtra(KEY_ROWID, template.getAccountId())
                             .putExtra(KEY_TRANSACTIONID, t.getId());
                         resultIntent = PendingIntent.getActivity(this, notificationId, displayIntent,
-                            FLAG_UPDATE_CURRENT);
+                            FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                         builder.setContentIntent(resultIntent);
                       } else {
                         builder.setContentText(getString(R.string.save_transaction_error));
@@ -219,7 +219,7 @@ public class PlanExecutor extends JobIntentService {
                           android.R.drawable.ic_menu_close_clear_cancel,
                           R.drawable.ic_menu_close_clear_cancel,
                           getString(android.R.string.cancel),
-                          PendingIntent.getService(this, notificationId, cancelIntent, FLAG_UPDATE_CURRENT));
+                          PendingIntent.getService(this, notificationId, cancelIntent, FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
                       Intent editIntent = new Intent(this, ExpenseEdit.class)
                           .putExtra(MyApplication.KEY_NOTIFICATION_ID, notificationId)
                           .putExtra(KEY_TEMPLATEID, template.getId())
@@ -228,7 +228,7 @@ public class PlanExecutor extends JobIntentService {
                       if (useDateFromPlan) {
                           editIntent.putExtra(KEY_DATE, date);
                       }
-                      resultIntent = PendingIntent.getActivity(this, notificationId, editIntent, FLAG_UPDATE_CURRENT);
+                      resultIntent = PendingIntent.getActivity(this, notificationId, editIntent, FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
                       builder.addAction(
                           android.R.drawable.ic_menu_edit,
                           R.drawable.ic_menu_edit,
@@ -247,7 +247,7 @@ public class PlanExecutor extends JobIntentService {
                           android.R.drawable.ic_menu_save,
                           R.drawable.ic_menu_save,
                           getString(R.string.menu_apply_template),
-                          PendingIntent.getService(this, notificationId, applyIntent, FLAG_UPDATE_CURRENT));
+                          PendingIntent.getService(this, notificationId, applyIntent, FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
                       builder.setContentIntent(resultIntent);
                       notification = builder.build();
                       notification.flags |= Notification.FLAG_NO_CLEAR;

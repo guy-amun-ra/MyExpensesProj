@@ -219,7 +219,7 @@ dependencies {
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
     implementation 'androidx.activity:activity-compose:1.4.0'
-    implementation "com.google.android.material:compose-theme-adapter:1.1.6"
+    implementation "com.google.android.material:compose-theme-adapter:1.1.7"
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
@@ -258,7 +258,7 @@ dependencies {
 
     implementation 'org.apache.commons:commons-csv:1.8'
     implementation "org.apache.commons:commons-text:$commonsText"
-    implementation "com.squareup.picasso:picasso:$picassoVersion"
+    api "com.squareup.picasso:picasso:$picassoVersion"
     implementation 'com.github.mtotschnig:MPAndroidChart:6fcf34d9d4'
     implementation 'com.github.mtotschnig:Caldroid:2fcb748f0e'
     api('io.github.eltos:simpledialogfragments:3.5.2')
@@ -322,13 +322,7 @@ dependencies {
     androidTestImplementation 'tools.fastlane:screengrab:2.1.1'
     androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxTextExtJunit"
-    androidTestImplementation "androidx.test:runner:$androidSupportTestVersion"
-    //https://github.com/android/android-test/issues/1254
-    androidTestImplementation('androidx.test:monitor') {
-        version {
-            strictly '1.4.0'
-        }
-    }
+    androidTestImplementation "androidx.test:runner:1.5.0-alpha03"
     androidTestUtil "androidx.test:orchestrator:1.4.1"
     androidTestImplementation "androidx.test:rules:$androidSupportTestVersion"
     androidTestImplementation "androidx.test.espresso:espresso-intents:$espressoVersion"

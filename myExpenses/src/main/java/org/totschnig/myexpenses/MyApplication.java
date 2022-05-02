@@ -32,9 +32,9 @@ import android.os.Build;
 import android.os.Process;
 import android.os.StrictMode;
 
-import com.android.calendar.CalendarContractCompat;
-import com.android.calendar.CalendarContractCompat.Calendars;
-import com.android.calendar.CalendarContractCompat.Events;
+import android.provider.CalendarContract;
+import android.provider.CalendarContract.Calendars;
+import android.provider.CalendarContract.Events;
 
 import org.totschnig.myexpenses.activity.OnboardingActivity;
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
@@ -46,6 +46,7 @@ import org.totschnig.myexpenses.model.Template;
 import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.preference.PrefHandler;
 import org.totschnig.myexpenses.preference.PrefKey;
+import org.totschnig.myexpenses.provider.BaseTransactionProvider;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.DbUtils;
 import org.totschnig.myexpenses.provider.TransactionProvider;
@@ -108,8 +109,6 @@ public class MyApplication extends Application implements
   private static MyApplication mSelf;
 
   public static final String KEY_NOTIFICATION_ID = "notification_id";
-
-  public static final String CONTRIB_SECRET = "RANDOM_SECRET";
 
   private long mLastPause = 0;
 
@@ -227,7 +226,7 @@ public class MyApplication extends Application implements
         Timber.plant(new TagFilterFileLoggingTree(this, PlanExecutor.TAG));
         Timber.plant(new TagFilterFileLoggingTree(this, SyncAdapter.TAG));
         Timber.plant(new TagFilterFileLoggingTree(this, LicenceHandler.TAG));
-        Timber.plant(new TagFilterFileLoggingTree(this, TransactionProvider.TAG));
+        Timber.plant(new TagFilterFileLoggingTree(this, BaseTransactionProvider.TAG));
         Timber.plant(new TagFilterFileLoggingTree(this, OcrFeature.TAG));
       } catch (Exception e) {
         CrashHandler.report(e);
@@ -339,15 +338,15 @@ public class MyApplication extends Application implements
           int syncEvents = c.getInt(1);
           if (syncEvents == 0) {
             String[] parts = found.split("/", 3);
-            if (parts[0].equals(PLANNER_ACCOUNT_NAME) && parts[1].equals(CalendarContractCompat.ACCOUNT_TYPE_LOCAL)) {
+            if (parts[0].equals(PLANNER_ACCOUNT_NAME) && parts[1].equals(CalendarContract.ACCOUNT_TYPE_LOCAL)) {
               Uri.Builder builder = Calendars.CONTENT_URI.buildUpon().appendEncodedPath(calendarId);
-              builder.appendQueryParameter(CalendarContractCompat.Calendars.ACCOUNT_NAME, PLANNER_ACCOUNT_NAME);
-              builder.appendQueryParameter(CalendarContractCompat.Calendars.ACCOUNT_TYPE,
-                  CalendarContractCompat.ACCOUNT_TYPE_LOCAL);
-              builder.appendQueryParameter(CalendarContractCompat.CALLER_IS_SYNCADAPTER,
+              builder.appendQueryParameter(CalendarContract.Calendars.ACCOUNT_NAME, PLANNER_ACCOUNT_NAME);
+              builder.appendQueryParameter(CalendarContract.Calendars.ACCOUNT_TYPE,
+                  CalendarContract.ACCOUNT_TYPE_LOCAL);
+              builder.appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER,
                   "true");
               ContentValues values = new ContentValues(1);
-              values.put(CalendarContractCompat.Calendars.SYNC_EVENTS, 1);
+              values.put(CalendarContract.Calendars.SYNC_EVENTS, 1);
               getContentResolver().update(builder.build(), values, null, null);
               Timber.i("Fixing sync_events for planning calendar ");
             }
@@ -391,7 +390,7 @@ public class MyApplication extends Application implements
 
   /**
    * check if we already have a calendar in Account {@link #PLANNER_ACCOUNT_NAME}
-   * of type {@link CalendarContractCompat#ACCOUNT_TYPE_LOCAL} with name
+   * of type {@link CalendarContract#ACCOUNT_TYPE_LOCAL} with name
    * {@link #PLANNER_ACCOUNT_NAME} if yes use it, otherwise create it
    *
    * @param persistToSharedPref if true id of the created calendar is stored in preferences
@@ -402,8 +401,8 @@ public class MyApplication extends Application implements
     String plannerCalendarId;
     builder.appendQueryParameter(Calendars.ACCOUNT_NAME, PLANNER_ACCOUNT_NAME);
     builder.appendQueryParameter(Calendars.ACCOUNT_TYPE,
-        CalendarContractCompat.ACCOUNT_TYPE_LOCAL);
-    builder.appendQueryParameter(CalendarContractCompat.CALLER_IS_SYNCADAPTER,
+        CalendarContract.ACCOUNT_TYPE_LOCAL);
+    builder.appendQueryParameter(CalendarContract.CALLER_IS_SYNCADAPTER,
         "true");
     Uri calendarUri = builder.build();
     Cursor c = getContentResolver().query(calendarUri,
@@ -422,7 +421,7 @@ public class MyApplication extends Application implements
       ContentValues values = new ContentValues();
       values.put(Calendars.ACCOUNT_NAME, PLANNER_ACCOUNT_NAME);
       values.put(Calendars.ACCOUNT_TYPE,
-          CalendarContractCompat.ACCOUNT_TYPE_LOCAL);
+          CalendarContract.ACCOUNT_TYPE_LOCAL);
       values.put(Calendars.NAME, PLANNER_CALENDAR_NAME);
       values.put(Calendars.CALENDAR_DISPLAY_NAME,
           Utils.getTextWithAppName(this, R.string.plan_calendar_name).toString());
@@ -458,8 +457,7 @@ public class MyApplication extends Application implements
   }
 
   public static String[] buildEventProjection() {
-    String[] projection = new String[android.os.Build.VERSION.SDK_INT >= 16 ? 10
-        : 8];
+    String[] projection = new String[10];
     projection[0] = Events.DTSTART;
     projection[1] = Events.DTEND;
     projection[2] = Events.RRULE;
@@ -468,10 +466,8 @@ public class MyApplication extends Application implements
     projection[5] = Events.EVENT_TIMEZONE;
     projection[6] = Events.DURATION;
     projection[7] = Events.DESCRIPTION;
-    if (android.os.Build.VERSION.SDK_INT >= 16) {
-      projection[8] = Events.CUSTOM_APP_PACKAGE;
-      projection[9] = Events.CUSTOM_APP_URI;
-    }
+    projection[8] = Events.CUSTOM_APP_PACKAGE;
+    projection[9] = Events.CUSTOM_APP_URI;
     return projection;
   }
 
@@ -499,10 +495,8 @@ public class MyApplication extends Application implements
     eventValues.put(Events.EVENT_TIMEZONE, eventCursor.getString(5));
     eventValues.put(Events.DURATION, duration);
     eventValues.put(Events.DESCRIPTION, eventCursor.getString(7));
-    if (android.os.Build.VERSION.SDK_INT >= 16) {
-      eventValues.put(Events.CUSTOM_APP_PACKAGE, eventCursor.getString(8));
-      eventValues.put(Events.CUSTOM_APP_URI, eventCursor.getString(9));
-    }
+    eventValues.put(Events.CUSTOM_APP_PACKAGE, eventCursor.getString(8));
+    eventValues.put(Events.CUSTOM_APP_URI, eventCursor.getString(9));
   }
 
   private boolean insertEventAndUpdatePlan(ContentValues eventValues,

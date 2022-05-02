@@ -3,17 +3,24 @@ package org.totschnig.myexpenses.activity
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import androidx.activity.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.BuildConfig
+import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.task.TaskExecutionFragment
-import org.totschnig.myexpenses.util.Result
-import org.totschnig.myexpenses.util.Utils
+import org.totschnig.myexpenses.viewmodel.LicenceValidationViewModel
 
 class DeepLinkActivity : ProtectedFragmentActivity() {
     private var isPdt = true //PayPalDataTransfer
+    private val licenceValidationViewModel: LicenceValidationViewModel by viewModels()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        (applicationContext as MyApplication).appComponent.inject(licenceValidationViewModel)
+        observeLicenceApiResult()
         if (savedInstanceState == null) {
             if (Intent.ACTION_VIEW == intent.action) {
                 val data = intent.data
@@ -35,7 +42,8 @@ class DeepLinkActivity : ProtectedFragmentActivity() {
                                 !licenceHandler.isContribEnabled) {
                             prefHandler.putString(PrefKey.NEW_LICENCE, key)
                             prefHandler.putString(PrefKey.LICENCE_EMAIL, email)
-                            startTaskExecution(TaskExecutionFragment.TASK_VALIDATE_LICENCE, arrayOf<String>(), null, R.string.progress_validating_licence)
+                            showSnackBarIndefinite( R.string.progress_validating_licence)
+                            licenceValidationViewModel.validateLicence()
                         } else {
                             showMessageWithPayPalInfo(String.format(
                                     "There is already a licence active on this device, key: %s", existingKey))
@@ -65,11 +73,19 @@ class DeepLinkActivity : ProtectedFragmentActivity() {
         finish()
     }
 
-    override fun onPostExecute(taskId: Int, o: Any?) {
-        super.onPostExecute(taskId, o)
-        if (taskId == TaskExecutionFragment.TASK_VALIDATE_LICENCE) {
-            if (o is Result<*>) {
-                showMessageWithPayPalInfo(o.print(this))
+    override fun getSnackBarContainerId(): Int {
+        return android.R.id.content
+    }
+
+    private fun observeLicenceApiResult() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                licenceValidationViewModel.result.collect { result ->
+                    result?.let {
+                        dismissSnackBar()
+                        showMessageWithPayPalInfo(it)
+                    }
+                }
             }
         }
     }
