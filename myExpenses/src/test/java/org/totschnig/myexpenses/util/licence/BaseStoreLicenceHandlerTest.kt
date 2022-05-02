@@ -58,7 +58,7 @@ class BaseStoreLicenceHandlerTest {
     @Test
     fun legacyUnlockShouldBeRegistered() {
         licenceHandler.registerUnlockLegacy()
-        Assert.assertTrue(licenceHandler!!.isContribEnabled)
-        Assert.assertFalse(licenceHandler!!.isExtendedEnabled)
+        Assert.assertTrue(licenceHandler.isContribEnabled)
+        Assert.assertFalse(licenceHandler.isExtendedEnabled)
     }
 }

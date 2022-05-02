@@ -3,7 +3,6 @@ package org.totschnig.myexpenses.util.licence
 import android.app.Application
 import android.content.Context
 import com.google.android.vending.licensing.PreferenceObfuscator
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contrib.Config
 import org.totschnig.myexpenses.preference.PrefHandler

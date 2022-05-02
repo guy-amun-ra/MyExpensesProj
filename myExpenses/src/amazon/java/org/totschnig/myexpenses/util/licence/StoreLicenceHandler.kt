@@ -1,12 +1,12 @@
 package org.totschnig.myexpenses.util.licence
 
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import com.amazon.device.iap.model.Product
 import com.amazon.device.iap.model.PurchaseResponse
 import com.amazon.device.iap.model.Receipt
 import com.google.android.vending.licensing.PreferenceObfuscator
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
 import org.totschnig.myexpenses.contrib.Config
@@ -15,7 +15,7 @@ import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
-class StoreLicenceHandler(context: MyApplication, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) :
+class StoreLicenceHandler(context: android.app.Application, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) :
         AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
 
     override fun initBillingManager(activity: Activity, query: Boolean): BillingManager {
