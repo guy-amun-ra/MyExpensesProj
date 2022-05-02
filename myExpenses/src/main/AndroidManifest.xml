@@ -298,7 +298,8 @@
 
         <service
             android:name=".service.MyService"
-            android:permission="org.totschnig.myexpenses.UNLOCK_PREMIUM" >
+            android:permission="org.totschnig.myexpenses.UNLOCK_PREMIUM"
+            android:exported="true">
             <intent-filter>
                 <action android:name="org.totschnig.myexpenses.service.MyService" />
             </intent-filter>
