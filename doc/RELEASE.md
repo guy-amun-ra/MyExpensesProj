@@ -6,7 +6,7 @@
 * if applicable publish announcement on Google+ and Facebook and add links
 * Test and assemble
   * ./gradlew lintPlayWithAdsInternRelease
-  * ./gradlew testPlayWithAdsInternBetaUnitTest (-PBETA=true)
+  * ./gradlew testPlayWithAdsInternDebugUnitTest (-PBETA=true)
   * ./gradlew clean connectedPlayWithAdsInternDebugAndroidTest
   * ./gradlew clean bundlePlayWithAdsInternRelease
 * test upgrade mechanism

@@ -16,6 +16,7 @@ import org.totschnig.myexpenses.sync.json.AccountMetaData
 import org.totschnig.myexpenses.sync.json.ChangeSet
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.io.StreamReader
+import org.totschnig.myexpenses.util.io.getMimeType
 import timber.log.Timber
 import java.io.FileNotFoundException
 import java.io.IOException
