@@ -1,5 +1,7 @@
 package org.totschnig.myexpenses.service;
 
+import static org.totschnig.myexpenses.util.TextUtils.concatResStrings;
+
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -11,13 +13,11 @@ import android.os.Message;
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.activity.MyExpenses;
+import org.totschnig.myexpenses.util.NotificationBuilderWrapper;
 import org.totschnig.myexpenses.util.distrib.DistributionHelper;
 import org.totschnig.myexpenses.util.licence.LicenceHandler;
 
-import androidx.core.app.NotificationCompat;
 import timber.log.Timber;
-
-import static org.totschnig.myexpenses.util.TextUtils.concatResStrings;
 
 /**
  * This handler is used in <s>two different</s> one scenario<s>s</s>:
@@ -65,15 +65,10 @@ public class UnlockHandler extends Handler {
     NotificationManager notificationManager =
         (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
     String title = concatResStrings(app, " ", R.string.app_name, R.string.contrib_key);
-    NotificationCompat.Builder builder =
-        new NotificationCompat.Builder(app)
-            .setSmallIcon(R.drawable.ic_stat_notification_sigma)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(new NotificationCompat.BigTextStyle()
-                .setBigContentTitle(title)
-                .bigText(text))
-            .setContentIntent(PendingIntent.getActivity(app, 0, new Intent(app, MyExpenses.class), 0));
+    //noinspection InlinedApi
+    NotificationBuilderWrapper builder =
+            NotificationBuilderWrapper.defaultBigTextStyleBuilder(app, title, text)
+            .setContentIntent(PendingIntent.getActivity(app, 0, new Intent(app, MyExpenses.class), PendingIntent.FLAG_IMMUTABLE));
     Notification notification = builder.build();
     notification.flags = Notification.FLAG_AUTO_CANCEL;
     notificationManager.notify(0, notification);
