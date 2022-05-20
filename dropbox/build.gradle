@@ -25,6 +25,7 @@ android {
             dimension "distribution"
         }
     }
+    namespace 'org.totschnig.dropbox'
 }
 
 dependencies {

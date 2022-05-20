@@ -74,13 +74,20 @@ abstract class BaseTransactionProvider : ContentProvider() {
             )
         }
 
+        fun shortenComment(projectionIn: Array<String>): Array<String> = projectionIn.map {
+            if (it == KEY_COMMENT)
+                "case when instr($KEY_COMMENT, X'0A') > 0 THEN substr($KEY_COMMENT, 1, instr($KEY_COMMENT, X'0A')-1) else $KEY_COMMENT end AS $KEY_COMMENT"
+            else
+                it
+        }.toTypedArray()
+
         const val KEY_DEBT_LABEL = "debt"
 
         const val DEBT_LABEL_EXPRESSION = "(SELECT $KEY_LABEL FROM $TABLE_DEBTS WHERE $KEY_ROWID = $KEY_DEBT_ID) AS $KEY_DEBT_LABEL"
         const val TAG = "TransactionProvider"
     }
 
-    open fun backup(context: Context, backupDir: File): Result<Unit> {
+    fun backup(context: Context, backupDir: File): Result<Unit> {
         val currentDb = File(transactionDatabase.readableDatabase.path)
         transactionDatabase.readableDatabase.beginTransaction()
         return try {
@@ -92,7 +99,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                 var sharedPrefFile =
                     File("/dbdata/databases/" + context.packageName + sharedPrefPath)
                 if (!sharedPrefFile.exists()) {
-                    sharedPrefFile = File(getInternalAppDir().getPath() + sharedPrefPath)
+                    sharedPrefFile = File(getInternalAppDir().path + sharedPrefPath)
                     log(sharedPrefFile.path)
                     if (!sharedPrefFile.exists()) {
                         val message = "Unable to find shared preference file at " +
@@ -107,12 +114,11 @@ abstract class BaseTransactionProvider : ContentProvider() {
                 } else {
                     val message = "Unable to copy preference file from  " +
                             sharedPrefFile.path + " to " + backupPrefFile.path
-                    CrashHandler.report(message)
                     throw Throwable(message)
                 }
             }
         } finally {
-            transactionDatabase.getReadableDatabase().endTransaction()
+            transactionDatabase.readableDatabase.endTransaction()
         }
     }
 
