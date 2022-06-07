@@ -46,6 +46,7 @@ import org.totschnig.myexpenses.viewmodel.OcrViewModel
 import org.totschnig.myexpenses.viewmodel.ShareViewModel
 import org.totschnig.myexpenses.viewmodel.data.EventObserver
 import timber.log.Timber
+import java.util.ArrayList
 import javax.inject.Inject
 
 abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener, EasyPermissions.PermissionCallbacks {
@@ -64,6 +65,15 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
             Timber.e(e)
             e.safeMessage
         })
+    }
+
+    fun sendEmail(recipient: String, subject: String, body: String, forResultRequestCode: Int? = null) {
+        startActivity(Intent(Intent.ACTION_SEND).apply {
+            putExtra(Intent.EXTRA_EMAIL, arrayOf(recipient))
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            putExtra(Intent.EXTRA_TEXT, body)
+            selector = Intent(Intent.ACTION_SENDTO).setData(Uri.parse("mailto:$recipient"))
+        }, R.string.no_app_handling_email_available, forResultRequestCode)
     }
 
 
@@ -382,7 +392,7 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         }
     }
 
-    fun showVersionDialog(prev_version: Int, showImportantUpgradeInfo: Boolean) {
+    fun showVersionDialog(prev_version: Int, showImportantUpgradeInfo: ArrayList<Int>) {
         lifecycleScope.launchWhenResumed {
             VersionDialogFragment.newInstance(prev_version, showImportantUpgradeInfo)
                 .show(supportFragmentManager, "VERSION_INFO")

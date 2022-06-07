@@ -11,7 +11,7 @@ buildscript {
         google()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.2.0'
+        classpath 'com.android.tools.build:gradle:7.2.1'
         //Drive
         classpath 'com.google.gms:google-services:4.3.10'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.8.1'
@@ -39,8 +39,8 @@ allprojects {
 }
 
 ext {
-    versionCode = 529
-    versionName = '3.4.0'
+    versionCode = 531
+    versionName = '3.4.1'
     compileSdkVersion = 31
     minSdkVersion = 21
     targetSdkVersion = 31

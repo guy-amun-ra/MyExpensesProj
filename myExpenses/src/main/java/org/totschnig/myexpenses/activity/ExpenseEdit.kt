@@ -25,14 +25,23 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.provider.CalendarContract
-import android.view.*
+import android.view.ContextMenu
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.Nullable
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.CursorLoader
 import androidx.loader.content.Loader
@@ -40,6 +49,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
 import com.theartofdev.edmodo.cropper.CropImageView
 import icepick.State
+import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ManageCategories.Companion.KEY_PROTECTION_INFO
@@ -48,33 +58,77 @@ import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
 import org.totschnig.myexpenses.databinding.OneExpenseBinding
-import org.totschnig.myexpenses.delegate.*
+import org.totschnig.myexpenses.delegate.CategoryDelegate
+import org.totschnig.myexpenses.delegate.MainDelegate
+import org.totschnig.myexpenses.delegate.SplitDelegate
+import org.totschnig.myexpenses.delegate.TransactionDelegate
+import org.totschnig.myexpenses.delegate.TransferDelegate
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.ConfirmationDialogListener
 import org.totschnig.myexpenses.feature.OcrResultFlat
 import org.totschnig.myexpenses.fragment.PlanMonthFragment
-import org.totschnig.myexpenses.fragment.SplitPartList
 import org.totschnig.myexpenses.fragment.TemplatesList
-import org.totschnig.myexpenses.model.*
+import org.totschnig.myexpenses.model.ContribFeature
+import org.totschnig.myexpenses.model.CrStatus
+import org.totschnig.myexpenses.model.ITransaction
+import org.totschnig.myexpenses.model.Model
+import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.Plan.Recurrence
 import org.totschnig.myexpenses.model.Template
+import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.disableAutoFill
 import org.totschnig.myexpenses.preference.enableAutoFill
-import org.totschnig.myexpenses.provider.DatabaseConstants.*
+import org.totschnig.myexpenses.provider.DatabaseConstants.CATEGORY_ICON
+import org.totschnig.myexpenses.provider.DatabaseConstants.CAT_AS_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COMMENT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ICON
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_INSTANCEID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHODID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEEID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PICTURE_URI
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID
+import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_NONE
 import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.task.TaskExecutionFragment
-import org.totschnig.myexpenses.ui.*
-import org.totschnig.myexpenses.util.*
+import org.totschnig.myexpenses.ui.AmountInput
+import org.totschnig.myexpenses.ui.ContextAwareRecyclerView
+import org.totschnig.myexpenses.ui.DateButton
+import org.totschnig.myexpenses.ui.DiscoveryHelper
+import org.totschnig.myexpenses.ui.ExchangeRateEdit
+import org.totschnig.myexpenses.ui.IDiscoveryHelper
+import org.totschnig.myexpenses.util.PermissionHelper
+import org.totschnig.myexpenses.util.PictureDirHelper
+import org.totschnig.myexpenses.util.Utils
+import org.totschnig.myexpenses.util.checkMenuIcon
+import org.totschnig.myexpenses.util.getEnumFromPreferencesWithDefault
 import org.totschnig.myexpenses.util.tracking.Tracker
-import org.totschnig.myexpenses.viewmodel.*
-import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.*
+import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
+import org.totschnig.myexpenses.viewmodel.ERROR_CALENDAR_INTEGRATION_NOT_AVAILABLE
+import org.totschnig.myexpenses.viewmodel.ERROR_EXTERNAL_STORAGE_NOT_AVAILABLE
+import org.totschnig.myexpenses.viewmodel.ERROR_PICTURE_SAVE_UNKNOWN
+import org.totschnig.myexpenses.viewmodel.ERROR_WHILE_SAVING_TAGS
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel
+import org.totschnig.myexpenses.viewmodel.TransactionViewModel
+import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.FROM_INTENT_EXTRAS
+import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TEMPLATE
+import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TRANSACTION
+import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TRANSACTION_FROM_TEMPLATE
 import org.totschnig.myexpenses.viewmodel.data.Account
+import org.totschnig.myexpenses.viewmodel.data.Currency
 import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET
 import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
 import javax.inject.Inject
+import kotlin.collections.set
 import org.totschnig.myexpenses.viewmodel.data.Template as DataTemplate
 
 /**
@@ -178,6 +232,10 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     val parentPayeeId: Long
         get() = intent.getLongExtra(KEY_PAYEEID, 0)
 
+    @Suppress("UNCHECKED_CAST")
+    val parentOriginalAmountExchangeRate: Pair<BigDecimal, Currency>?
+        get() = (intent.getSerializableExtra(KEY_PARENT_ORIGINAL_AMOUNT_EXCHANGE_RATE) as? Pair<BigDecimal, Currency>)
+
     private val isMainTransaction: Boolean
         get() = operationType != TYPE_TRANSFER && !isSplitPartOrTemplate
 
@@ -211,6 +269,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         dateEditBinding = DateEditBinding.bind(rootBinding.root)
         methodRowBinding = MethodRowBinding.bind(rootBinding.root)
         setContentView(rootBinding.root)
+        registerForContextMenu(rootBinding.list)
         setupToolbar()
         mManager = LoaderManager.getInstance(this)
         val viewModelProvider = ViewModelProvider(this)
@@ -240,6 +299,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                 null,
                 withAutoFill
             )
+            setHelpVariant(delegate.helpVariant)
             setTitle()
             refreshPlanData()
             floatingActionButton?.show()
@@ -392,12 +452,63 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         }
     }
 
+    override fun onCreateContextMenu(
+        menu: ContextMenu, v: View,
+        menuInfo: ContextMenu.ContextMenuInfo?
+    ) {
+        super.onCreateContextMenu(menu, v, menuInfo)
+        menu.add(0, R.id.EDIT_COMMAND, 0, R.string.menu_edit)
+        menu.add(0, R.id.DELETE_COMMAND, 0, R.string.menu_delete)
+    }
+
+    override fun onContextItemSelected(item: MenuItem): Boolean {
+        val info = item.menuInfo as ContextAwareRecyclerView.RecyclerContextMenuInfo
+        return when (item.itemId) {
+            R.id.EDIT_COMMAND -> {
+                startActivityForResult(Intent(this, ExpenseEdit::class.java).apply {
+                    putExtra(if (isTemplate) KEY_TEMPLATEID else KEY_ROWID, info.id)
+                }, EDIT_REQUEST)
+                true
+            }
+            R.id.DELETE_COMMAND -> {
+                val resultObserver = Observer { result: Int ->
+                    if (result > 0) {
+                        showSnackBar(
+                            resources.getQuantityString(
+                                R.plurals.delete_success,
+                                result,
+                                result
+                            )
+                        )
+                        setDirty()
+                    } else {
+                        showDeleteFailureFeedback(null)
+                    }
+                }
+                if (isTemplate) {
+                    viewModel.deleteTemplates(longArrayOf(info.id), false)
+                        .observe(this, resultObserver)
+                } else {
+                    viewModel.deleteTransactions(longArrayOf(info.id), false).observe(
+                        this, resultObserver
+                    )
+                }
+                true
+            }
+            else -> super.onContextItemSelected(item)
+        }
+    }
+
     private fun setupObservers(fromSavedState: Boolean) {
         loadAccounts(fromSavedState)
         loadTemplates()
         linkInputsWithLabels()
         loadTags()
         loadCurrencies()
+        viewModel.getSplitParts().observe(this) { transactions ->
+            (delegate as SplitDelegate).showSplits(transactions)
+        }
+        observeMoveResult()
     }
 
     private fun loadDebts() {
@@ -428,25 +539,30 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         }
     }
 
+    @VisibleForTesting
+    open fun setAccounts(accounts: List<Account>, fromSavedState: Boolean) {
+        if (accounts.isEmpty()) {
+            abortWithMessage(getString(R.string.warning_no_account))
+        } else if (accounts.size == 1 && operationType == TYPE_TRANSFER) {
+            abortWithMessage(getString(R.string.dialog_command_disabled_insert_transfer))
+        } else {
+            if (::delegate.isInitialized) {
+                delegate.setAccounts(
+                    accounts,
+                    if (fromSavedState) null else intent.getStringExtra(KEY_CURRENCY)
+                )
+                if (!isTemplate) {
+                    loadDebts()
+                }
+                accountsLoaded = true
+                if (mIsResumed) setupListeners()
+            }
+        }
+    }
+
     private fun loadAccounts(fromSavedState: Boolean) {
         viewModel.getAccounts().observe(this) { accounts ->
-            if (accounts.isEmpty()) {
-                abortWithMessage(getString(R.string.warning_no_account))
-            } else if (accounts.size == 1 && operationType == TYPE_TRANSFER) {
-                abortWithMessage(getString(R.string.dialog_command_disabled_insert_transfer))
-            } else {
-                if (::delegate.isInitialized) {
-                    delegate.setAccounts(
-                        accounts,
-                        if (fromSavedState) null else intent.getStringExtra(KEY_CURRENCY)
-                    )
-                    if (!isTemplate) {
-                        loadDebts()
-                    }
-                    accountsLoaded = true
-                    if (mIsResumed) setupListeners()
-                }
-            }
+            setAccounts(accounts, fromSavedState)
         }
     }
 
@@ -479,10 +595,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             }
         }
         if (::delegate.isInitialized) delegate.onDestroy()
-    }
-
-    fun updateSplitBalance() {
-        findSplitPartList()?.updateBalance()
     }
 
     private fun populateFromTask(
@@ -599,6 +711,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             updateFab()
         }
         invalidateOptionsMenu()
+        if (operationType == Transactions.TYPE_SPLIT) {
+            viewModel.loadSplitParts(transaction.id, isTemplate)
+        }
     }
 
     private val saveAndNewPrefKey: PrefKey
@@ -732,9 +847,19 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                 .setIcon(R.drawable.ic_menu_move)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         } else if (isMainTransaction) {
-            menu.add(Menu.NONE, R.id.ORIGINAL_AMOUNT_COMMAND, 0, R.string.menu_original_amount).isCheckable =
+            menu.add(
+                Menu.NONE,
+                R.id.ORIGINAL_AMOUNT_COMMAND,
+                0,
+                R.string.menu_original_amount
+            ).isCheckable =
                 true
-            menu.add(Menu.NONE, R.id.EQUIVALENT_AMOUNT_COMMAND, 0, R.string.menu_equivalent_amount).isCheckable =
+            menu.add(
+                Menu.NONE,
+                R.id.EQUIVALENT_AMOUNT_COMMAND,
+                0,
+                R.string.menu_equivalent_amount
+            ).isCheckable =
                 true
         }
         return true
@@ -776,16 +901,14 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     override fun doSave(andNew: Boolean) {
-        if (operationType == Transactions.TYPE_SPLIT) {
-            findSplitPartList()?.let {
-                if (!it.splitComplete) {
-                    showSnackBar(
-                        getString(R.string.unsplit_amount_greater_than_zero),
-                        Snackbar.LENGTH_SHORT
-                    )
-                    return
-                }
-            } ?: kotlin.run { return }
+        (delegate as? SplitDelegate)?.let {
+            if (!it.splitComplete) {
+                showSnackBar(
+                    getString(R.string.unsplit_amount_greater_than_zero),
+                    Snackbar.LENGTH_SHORT
+                )
+                return
+            }
         }
         super.doSave(andNew)
     }
@@ -855,6 +978,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             putExtra(KEY_ACCOUNTID, account.id)
             putExtra(KEY_PARENTID, delegate.rowId)
             putExtra(KEY_PARENT_HAS_DEBT, (delegate as? MainDelegate)?.debtId != null)
+            putExtra(KEY_PARENT_ORIGINAL_AMOUNT_EXCHANGE_RATE, delegate.originalAmountExchangeRate)
             putExtra(KEY_PAYEEID, (delegate as? MainDelegate)?.payeeId)
             putExtra(KEY_NEW_TEMPLATE, isMainTemplate)
             putExtra(KEY_INCOME, delegate.isIncome)
@@ -992,21 +1116,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             val amount = validateAmountInput(false)
             return if (amount == null) Money(a.currency, 0L) else Money(a.currency, amount)
         }
-/*
-
-    */
-/*
-   * callback of TaskExecutionFragment
-   */
-
-    override fun onPostExecute(taskId: Int, o: Any?) {
-        super.onPostExecute(taskId, o)
-        when (taskId) {
-            TaskExecutionFragment.TASK_MOVE_UNCOMMITED_SPLIT_PARTS -> {
-                (delegate as? SplitDelegate)?.onUncommitedSplitPartsMoved(o as Boolean)
-            }
-        }
-    }
 
     private fun unsetPicture() {
         setPicture(null)
@@ -1230,11 +1339,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         super.onPause()
     }
 
-    fun findSplitPartList() =
-        supportFragmentManager.findFragmentByTag(SPLIT_PART_LIST) as SplitPartList?
-
-    override fun getCurrentFragment() = findSplitPartList()
-
     @SuppressLint("NewApi")
     fun showPicturePopupMenu(v: View) {
         val popup = PopupMenu(this, v)
@@ -1334,34 +1438,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         )
     }
 
-    fun addSplitPartList(rowId: Long) {
-        val fm = supportFragmentManager
-        if (findSplitPartList() == null && !fm.isStateSaved) {
-            fm.beginTransaction()
-                .add(
-                    R.id.scrollableContent,
-                    SplitPartList.newInstance(rowId, isTemplate, currentAccount!!.currency),
-                    SPLIT_PART_LIST
-                )
-                .commit()
-            fm.executePendingTransactions()
-        }
-    }
-
-    open fun updateSplitPartList(account: Account, rowId: Long) {
-        findSplitPartList()?.let {
-            it.updateAccount(account)
-            if (it.splitCount > 0) { //call background task for moving parts to new account
-                startTaskExecution(
-                    TaskExecutionFragment.TASK_MOVE_UNCOMMITED_SPLIT_PARTS, arrayOf(rowId),
-                    account.id,
-                    R.string.progress_dialog_updating_split_parts
-                )
-                return
-            }
-        }
-    }
-
     fun observePlan(planId: Long) {
         if (pObserver == null) {
             pObserver = PlanObserver().also {
@@ -1381,7 +1457,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     companion object {
-        private const val SPLIT_PART_LIST = "SPLIT_PART_LIST"
         const val KEY_NEW_TEMPLATE = "newTemplate"
         const val KEY_CLONE = "clone"
         private const val KEY_CACHED_DATA = "cachedData"
@@ -1393,6 +1468,11 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         const val AUTOFILL_CURSOR = 8
         const val KEY_INCOME = "income"
         const val KEY_PARENT_HAS_DEBT = "parentHasSplit"
+
+        /**
+         * holds pair of rate and currency
+         */
+        const val KEY_PARENT_ORIGINAL_AMOUNT_EXCHANGE_RATE = "parentOriginalAmountExchangeRate"
     }
 
     fun loadActiveTags(id: Long) {
@@ -1406,8 +1486,27 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     fun copyUnsplitAmount(@Suppress("UNUSED_PARAMETER") view: View) {
-        findSplitPartList()?.unsplitAmountFormatted?.let {
+        (delegate as? SplitDelegate)?.unsplitAmountFormatted?.let {
             copyToClipboard(it)
+        }
+    }
+
+    fun startMoveSplitParts(rowId: Long, accountId: Long) {
+        showSnackBarIndefinite(R.string.progress_dialog_updating_split_parts)
+        viewModel.moveUnCommittedSplitParts(rowId, accountId)
+    }
+
+    private fun observeMoveResult() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.moveResult.collect { result ->
+                    result?.let {
+                        dismissSnackBar()
+                        (delegate as? SplitDelegate)?.onUncommitedSplitPartsMoved(it)
+                        viewModel.moveResultProcessed()
+                    }
+                }
+            }
         }
     }
 }

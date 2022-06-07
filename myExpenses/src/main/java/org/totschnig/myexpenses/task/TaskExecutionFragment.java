@@ -53,13 +53,11 @@ public class TaskExecutionFragment<T> extends Fragment {
   public static final String KEY_FILE_PATH = "filePath";
   public static final String KEY_DATE_FORMAT = "dateFormat";
   public static final String KEY_ENCODING = "encoding";
-  public static final String KEY_FORMAT = "format";
 
   public static final int TASK_DELETE_PAYMENT_METHODS = 8;
   public static final int TASK_INSTANTIATE_PLAN = 15;
   public static final int TASK_GRISBI_IMPORT = 19;
   public static final int TASK_QIF_IMPORT = 20;
-  public static final int TASK_EXPORT = 21;
   public static final int TASK_RESTORE = 23;
   public static final int TASK_BALANCE = 24;
   public static final int TASK_PRINT = 25;
@@ -68,10 +66,8 @@ public class TaskExecutionFragment<T> extends Fragment {
   public static final int TASK_SPLIT = 30;
   public static final int TASK_REVOKE_SPLIT = 31;
   public static final int TASK_SWAP_SORT_KEY = 39;
-  public static final int TASK_MOVE_UNCOMMITED_SPLIT_PARTS = 40;
   public static final int TASK_REPAIR_PLAN = 41;
 
-  public static final int TASK_VALIDATE_LICENCE = 55;
   public static final int TASK_ACCOUNT_SORT = 60;
   public static final int TASK_SET_ACCOUNT_HIDDEN = 63;
 
@@ -198,9 +194,6 @@ public class TaskExecutionFragment<T> extends Fragment {
         break;
       case TASK_QIF_IMPORT:
         new QifImportTask(this, args).execute();
-        break;
-      case TASK_EXPORT:
-        new ExportTask(this, args).execute();
         break;
       case TASK_RESTORE:
         new RestoreTask(this, args).execute();

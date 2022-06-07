@@ -2,10 +2,7 @@ package org.totschnig.myexpenses.fragment
 
 import android.app.KeyguardManager
 import android.appwidget.AppWidgetProvider
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.*
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.graphics.Bitmap
 import android.icu.text.ListFormatter
@@ -24,6 +21,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.viewModels
 import androidx.preference.*
+import com.google.android.material.snackbar.Snackbar
 import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.form.Input
@@ -59,16 +57,10 @@ import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.licence.Package
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
 import org.totschnig.myexpenses.util.tracking.Tracker
-import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
-import org.totschnig.myexpenses.viewmodel.SettingsViewModel
-import org.totschnig.myexpenses.viewmodel.ShareViewModel
+import org.totschnig.myexpenses.viewmodel.*
 import org.totschnig.myexpenses.viewmodel.ShareViewModel.Companion.parseUri
-import org.totschnig.myexpenses.viewmodel.WebUiViewModel
 import org.totschnig.myexpenses.viewmodel.data.Currency
-import org.totschnig.myexpenses.widget.AccountWidget
-import org.totschnig.myexpenses.widget.TemplateWidget
-import org.totschnig.myexpenses.widget.WIDGET_CONTEXT_CHANGED
-import org.totschnig.myexpenses.widget.updateWidgets
+import org.totschnig.myexpenses.widget.*
 import timber.log.Timber
 import java.io.File
 import java.net.URI
@@ -943,7 +935,23 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                             prefHandler.getString(PrefKey.CRASHLYTICS_USER_ID, null).toString()
                     }
                 }
+                viewModel.dataCorrupted().observe(this) {
+                    if (it > 0) {
+                        with(requirePreference<Preference>(PrefKey.DEBUG_REPAIR_987)) {
+                            isVisible = true
+                            title = "Repair Corrupted Data ($it)"
+                        }
+                    }
+                }
             }
+        }
+    }
+
+    fun repairBug987() {
+        preferenceActivity.showSnackBar("Repair. Please wait ...", Snackbar.LENGTH_INDEFINITE)
+        viewModel.repairBug987().observe(this) {
+            preferenceActivity.dismissSnackBar()
+            preferenceActivity.showSnackBar("$it split transactions have been repaired.")
         }
     }
 
@@ -1173,6 +1181,31 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             }
             matches(preference, PrefKey.PERSONALIZED_AD_CONSENT) -> {
                 preferenceActivity.checkGdprConsent(true)
+                true
+            }
+            matches(preference, PrefKey.DEBUG_REPAIR_987) -> {
+                ConfirmationDialogFragment.newInstance(Bundle().apply {
+                    putString(
+                        ConfirmationDialogFragment.KEY_TITLE_STRING,
+                        "Repair Corrupted Data"
+                    )
+                    putString(
+                        ConfirmationDialogFragment.KEY_MESSAGE,
+                        "Please create a backup of the database before calling Repair."
+                    )
+                    putInt(ConfirmationDialogFragment.KEY_COMMAND_POSITIVE, R.id.REPAIR_COMMAND)
+                    putInt(
+                        ConfirmationDialogFragment.KEY_POSITIVE_BUTTON_LABEL,
+                        R.string.button_label_repair
+                    )
+                })
+                    .show(parentFragmentManager, "Repair")
+                true
+            }
+            matches(preference, PrefKey.EXCHANGE_RATES_CLEAR_CACHE) -> {
+                viewModel.clearExchangeRateCache().observe(this) {
+                    preferenceActivity.showSnackBar("${getString(R.string.clear_cache)} ($it)")
+                }
                 true
             }
             else -> false

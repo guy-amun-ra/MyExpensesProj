@@ -2,8 +2,6 @@ package org.totschnig.myexpenses.di;
 
 import android.content.Context;
 
-import androidx.annotation.Nullable;
-
 import com.google.gson.Gson;
 import com.google.gson.JsonDeserializer;
 import com.squareup.picasso.Picasso;
@@ -46,7 +44,6 @@ import org.totschnig.myexpenses.fragment.OnboardingUiFragment;
 import org.totschnig.myexpenses.fragment.PartiesList;
 import org.totschnig.myexpenses.fragment.PlannerFragment;
 import org.totschnig.myexpenses.fragment.SettingsFragment;
-import org.totschnig.myexpenses.fragment.SplitPartList;
 import org.totschnig.myexpenses.fragment.StaleImagesList;
 import org.totschnig.myexpenses.fragment.SyncBackendList;
 import org.totschnig.myexpenses.fragment.TemplatesList;
@@ -57,7 +54,6 @@ import org.totschnig.myexpenses.retrofit.ExchangeRateService;
 import org.totschnig.myexpenses.service.AutoBackupService;
 import org.totschnig.myexpenses.service.PlanExecutor;
 import org.totschnig.myexpenses.service.SyncNotificationDismissHandler;
-import org.totschnig.myexpenses.task.ExportTask;
 import org.totschnig.myexpenses.task.GrisbiImportTask;
 import org.totschnig.myexpenses.task.QifImportTask;
 import org.totschnig.myexpenses.util.CurrencyFormatter;
@@ -75,10 +71,12 @@ import org.totschnig.myexpenses.viewmodel.DebtViewModel;
 import org.totschnig.myexpenses.viewmodel.DistributionViewModel;
 import org.totschnig.myexpenses.viewmodel.EditCurrencyViewModel;
 import org.totschnig.myexpenses.viewmodel.ExchangeRateViewModel;
+import org.totschnig.myexpenses.viewmodel.ExportViewModel;
 import org.totschnig.myexpenses.viewmodel.FeatureViewModel;
 import org.totschnig.myexpenses.viewmodel.LicenceValidationViewModel;
 import org.totschnig.myexpenses.viewmodel.OcrViewModel;
 import org.totschnig.myexpenses.viewmodel.RoadmapViewModel;
+import org.totschnig.myexpenses.viewmodel.SettingsViewModel;
 import org.totschnig.myexpenses.viewmodel.ShareViewModel;
 import org.totschnig.myexpenses.viewmodel.UpgradeHandlerViewModel;
 import org.totschnig.myexpenses.widget.AbstractWidget;
@@ -90,6 +88,7 @@ import java.util.Locale;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
+import androidx.annotation.Nullable;
 import dagger.BindsInstance;
 import dagger.Component;
 import okhttp3.OkHttpClient;
@@ -185,8 +184,6 @@ public interface AppComponent {
 
   void inject(BaseTransactionList transactionList);
 
-  void inject(SplitPartList splitPartList);
-
   void inject(TransactionListDialogFragment transactionListDialogFragment);
 
   void inject(BaseAdHandler adHandler);
@@ -226,6 +223,8 @@ public interface AppComponent {
   void inject(ContentResolvingAndroidViewModel contentResolvingAndroidViewModel);
 
   void inject(CurrencyViewModel contentResolvingAndroidViewModel);
+
+  void inject(SettingsViewModel settingsViewModel);
 
   void inject(UpgradeHandlerViewModel upgradeHandlerViewModel);
 
@@ -277,7 +276,7 @@ public interface AppComponent {
 
   void inject(TransferDelegate transactionDelegate);
 
-  void inject(ExportTask exportTask);
+  void inject(ExportViewModel exportViewModel);
 
   void inject(PartiesList partiesList);
 

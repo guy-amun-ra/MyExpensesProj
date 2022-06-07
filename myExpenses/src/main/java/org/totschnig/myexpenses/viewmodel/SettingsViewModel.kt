@@ -9,13 +9,19 @@ import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.exception.ExternalStorageNotAvailableException
 import org.totschnig.myexpenses.provider.DbUtils
+import org.totschnig.myexpenses.provider.ExchangeRateRepository
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.util.AppDirHelper
 import org.totschnig.myexpenses.util.io.FileUtils
 import java.io.File
 import java.io.IOException
+import javax.inject.Inject
 
 class SettingsViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
+
+    @Inject
+    lateinit var exchangeRateRepository: ExchangeRateRepository
+
     private val _appDirInfo: MutableLiveData<Result<Pair<String, Boolean>>> = MutableLiveData()
     val appDirInfo: LiveData<Result<Pair<String, Boolean>>> = _appDirInfo
     val hasStaleImages: LiveData<Boolean> by lazy {
@@ -39,6 +45,24 @@ class SettingsViewModel(application: Application) : ContentResolvingAndroidViewM
                     emit(it.toTypedArray())
                 }
         }
+    }
+
+    fun dataCorrupted() = liveData(context = coroutineContext()) {
+        contentResolver.call(
+            TransactionProvider.DUAL_URI,
+            TransactionProvider.METHOD_CHECK_CORRUPTED_DATA_987, null, null
+        )?.getInt(TransactionProvider.KEY_RESULT)?.let {
+            emit(it)
+        }
+    }
+
+    fun repairBug987() = liveData(context = coroutineContext()) {
+        emit(
+            contentResolver.call(
+                TransactionProvider.DUAL_URI,
+                TransactionProvider.METHOD_REPAIR_CORRUPTED_DATA_987, null, null
+            )?.getInt(TransactionProvider.KEY_RESULT) ?: 0
+        )
     }
 
     fun loadAppDirInfo() {
@@ -76,5 +100,9 @@ class SettingsViewModel(application: Application) : ContentResolvingAndroidViewM
             )
                 ?.getInt(TransactionProvider.KEY_RESULT)
         )
+    }
+
+    fun clearExchangeRateCache() = liveData(context = coroutineContext()) {
+        emit(exchangeRateRepository.deleteAll())
     }
 }
