@@ -7,28 +7,50 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
+import androidx.core.database.getLongOrNull
 import com.google.gson.Gson
-import com.google.gson.JsonDeserializer
-import io.ktor.application.*
-import io.ktor.features.*
-import io.ktor.gson.*
 import io.ktor.http.*
-import io.ktor.request.*
-import io.ktor.response.*
-import io.ktor.routing.*
+import io.ktor.serialization.gson.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.cio.*
 import io.ktor.server.engine.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.statuspages.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import org.apache.commons.text.StringSubstitutor
-import org.apache.commons.text.StringSubstitutor.*
+import org.apache.commons.text.StringSubstitutor.DEFAULT_ESCAPE
+import org.apache.commons.text.StringSubstitutor.DEFAULT_PREFIX
+import org.apache.commons.text.StringSubstitutor.DEFAULT_SUFFIX
 import org.apache.commons.text.lookup.StringLookup
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.db2.Repository
-import org.totschnig.myexpenses.feature.*
+import org.totschnig.myexpenses.di.LocalDateAdapter
+import org.totschnig.myexpenses.di.LocalTimeAdapter
+import org.totschnig.myexpenses.feature.IWebInputService
+import org.totschnig.myexpenses.feature.START_ACTION
+import org.totschnig.myexpenses.feature.STOP_ACTION
+import org.totschnig.myexpenses.feature.ServerStateObserver
+import org.totschnig.myexpenses.feature.WebUiBinder
+import org.totschnig.myexpenses.model.CurrencyContext
+import org.totschnig.myexpenses.model2.Transaction
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.provider.DatabaseConstants.*
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNT_TPYE_LIST
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_IS_NUMBERED
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LEVEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TYPE
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.asSequence
 import org.totschnig.myexpenses.ui.ContextHelper
@@ -40,14 +62,12 @@ import org.totschnig.myexpenses.util.locale.UserLocaleProvider
 import java.io.IOException
 import java.net.ServerSocket
 import java.time.LocalDate
+import java.time.LocalTime
 import javax.inject.Inject
 
 private const val STOP_CLICK_ACTION = "STOP_CLICK_ACTION"
 
 class WebInputService : Service(), IWebInputService {
-
-    @Inject
-    lateinit var localDateJsonDeserializer: JsonDeserializer<LocalDate>
 
     @Inject
     lateinit var repository: Repository
@@ -61,13 +81,14 @@ class WebInputService : Service(), IWebInputService {
     @Inject
     lateinit var userLocaleProvider: UserLocaleProvider
 
+    @Inject
+    lateinit var currencyContext: CurrencyContext
+
     private lateinit var wrappedContext: Context
 
     private val binder = LocalBinder()
 
     private var serverStateObserver: ServerStateObserver? = null
-
-    private var count = 0
 
     private var port: Int = 0
 
@@ -104,10 +125,14 @@ class WebInputService : Service(), IWebInputService {
         get() = "http://${getWifiIpAddress(this)}:$port"
 
 
-    private fun readFromAssets(fileName: String) = assets.open(fileName).bufferedReader()
+    private fun readTextFromAssets(fileName: String) = assets.open(fileName).bufferedReader()
         .use {
             it.readText()
         }
+
+    private fun readBytesFromAssets(fileName: String) = assets.open(fileName).use {
+        it.readBytes()
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
@@ -121,7 +146,10 @@ class WebInputService : Service(), IWebInputService {
                 }
             }
             START_ACTION -> {
-                if (server == null && try {
+                if (server != null) {
+                    stopServer()
+                }
+                if (try {
                         (9000..9050).first { isAvailable(it) }
                     } catch (e: NoSuchElementException) {
                         serverStateObserver?.postException(IOException("No available port found in range 9000..9050"))
@@ -133,12 +161,33 @@ class WebInputService : Service(), IWebInputService {
                             gson {
                                 registerTypeAdapter(
                                     LocalDate::class.java,
-                                    localDateJsonDeserializer
+                                    LocalDateAdapter
+                                )
+                                registerTypeAdapter(
+                                    LocalTime::class.java,
+                                    LocalTimeAdapter
                                 )
                             }
                         }
+                        val passWord = prefHandler.getString(PrefKey.WEBUI_PASSWORD, "")
+                            .takeIf { !it.isNullOrBlank() }
+                        passWord?.let {
+                            install(Authentication) {
+                                basic("auth-basic") {
+                                    realm = getString(R.string.app_name)
+                                    validate { credentials ->
+                                        if (credentials.password == it) {
+                                            UserIdPrincipal(credentials.name)
+                                        } else {
+                                            null
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
                         install(StatusPages) {
-                            exception<Throwable> { cause ->
+                            exception<Throwable> { call, cause ->
                                 call.respond(
                                     HttpStatusCode.InternalServerError,
                                     "Internal Server Error"
@@ -147,126 +196,57 @@ class WebInputService : Service(), IWebInputService {
                                 throw cause
                             }
                         }
+
                         routing {
-                            post("/") {
-                                if (repository.createTransaction(call.receive()) != null) {
-                                    count++
-                                    call.respond(
-                                        HttpStatusCode.Created,
-                                        "${getString(R.string.save_transaction_and_new_success)} ($count)"
-                                    )
-                                } else {
-                                    call.respond(
-                                        HttpStatusCode.Conflict,
-                                        "Error while saving transaction."
-                                    )
-                                }
-                            }
+
                             get("/styles.css") {
-                                call.respondText(readFromAssets("styles.css"), ContentType.Text.CSS)
+                                call.respondText(
+                                    readTextFromAssets("styles.css"),
+                                    ContentType.Text.CSS
+                                )
                             }
-                            get("/") {
-                                val data = mapOf(
-                                    "accounts" to contentResolver.query(
-                                        TransactionProvider.ACCOUNTS_BASE_URI,
-                                        arrayOf(KEY_ROWID, KEY_LABEL, KEY_TYPE),
-                                        KEY_SEALED + " = 0", null, null
-                                    )?.use {
-                                        it.asSequence.map {
-                                            mapOf(
-                                                "id" to it.getLong(0),
-                                                "label" to it.getString(1),
-                                                "type" to it.getString(2)
-                                            )
-                                        }.toList()
-                                    },
-                                    "payees" to contentResolver.query(
-                                        TransactionProvider.PAYEES_URI,
-                                        arrayOf(KEY_ROWID, KEY_PAYEE_NAME),
-                                        null, null, null
-                                    )?.use {
-                                        it.asSequence.map {
-                                            mapOf(
-                                                "id" to it.getLong(0),
-                                                "name" to it.getString(1)
-                                            )
-                                        }
-                                            .toList()
-                                    },
-                                    "categories" to contentResolver.query(
-                                        TransactionProvider.CATEGORIES_URI,
-                                        arrayOf(KEY_ROWID, KEY_PARENTID, KEY_LABEL),
-                                        null, null, null
-                                    )?.use {
-                                        it.asSequence.map {
-                                            mapOf(
-                                                "id" to it.getLong(0),
-                                                "parent" to it.getLong(1),
-                                                "label" to it.getString(2)
-                                            )
-                                        }
-                                            .toList()
-                                    },
-                                    "tags" to contentResolver.query(
-                                        TransactionProvider.TAGS_URI,
-                                        arrayOf(KEY_ROWID, KEY_LABEL),
-                                        null, null, null
-                                    )?.use {
-                                        it.asSequence.map {
-                                            mapOf(
-                                                "id" to it.getLong(0),
-                                                "label" to it.getString(1)
-                                            )
-                                        }
-                                            .toList()
-                                    },
-                                    "methods" to contentResolver.query(
-                                        TransactionProvider.METHODS_URI,
-                                        arrayOf(
-                                            KEY_ROWID,
-                                            KEY_LABEL,
-                                            KEY_IS_NUMBERED,
-                                            KEY_TYPE,
-                                            KEY_ACCOUNT_TPYE_LIST
-                                        ),
-                                        null, null, null
-                                    )?.use {
-                                        it.asSequence.map {
-                                            mapOf(
-                                                "id" to it.getLong(0),
-                                                "label" to it.getString(1),
-                                                "isNumbered" to (it.getInt(2) > 0),
-                                                "type" to it.getInt(3),
-                                                "accountTypes" to it.getString(4)?.split(',')
-                                            )
-                                        }.toList()
-                                    },
+                            get("/favicon.ico") {
+                                call.respondBytes(
+                                    readBytesFromAssets("favicon.ico"),
+                                    ContentType.Image.XIcon
                                 )
-                                val lookup = StringLookup { key ->
-                                    when (key) {
-                                        "i18n_title" -> "${t(R.string.app_name)} ${getString(R.string.title_webui)}"
-                                        "i18n_account" -> t(R.string.account)
-                                        "i18n_amount" -> t(R.string.amount)
-                                        "i18n_date" -> t(R.string.date)
-                                        "i18n_payee" -> t(R.string.payer_or_payee)
-                                        "i18n_category" -> t(R.string.category)
-                                        "i18n_tags" -> t(R.string.tags)
-                                        "i18n_notes" -> t(R.string.comment)
-                                        "i18n_method" -> t(R.string.method)
-                                        "i18n_submit" -> t(R.string.menu_save)
-                                        "i18n_number" -> t(R.string.reference_number)
-                                        "data" -> gson.toJson(data)
-                                        else -> throw IllegalStateException("Unknown substitution key $key")
-                                    }
+                            }
+                            get("messages.js") {
+                                call.respondText("""
+                                    let messages = {
+                                    ${i18nJson("app_name")},
+                                    ${i18nJson("title_webui")},
+                                    ${i18nJson("account")},
+                                    ${i18nJson("amount")},
+                                    ${i18nJson("date")},
+                                    ${i18nJson("time")},
+                                    ${i18nJson("booking_date")},
+                                    ${i18nJson("value_date")},
+                                    ${i18nJson("payer_or_payee")},
+                                    ${i18nJson("category")},
+                                    ${i18nJson("tags")},
+                                    ${i18nJson("comment")},
+                                    ${i18nJson("method")},
+                                    ${i18nJson("menu_save")},
+                                    ${i18nJson("menu_create_transaction")},
+                                    ${i18nJson("menu_edit_transaction")},
+                                    ${i18nJson("reference_number")},
+                                    ${i18nJson("menu_edit")},
+                                    ${i18nJson("dialog_confirm_discard_changes")},
+                                    ${i18nJson("menu_clone_transaction")},
+                                    ${i18nJson("menu_delete")},
+                                    ${i18nJson("no_expenses")},
+                                    ${i18nJson("webui_warning_move_transaction")}                                    ,
+                                    ${i18nJsonPlurals("warning_delete_transaction")}
+                                    };
+                                """.trimIndent(), ContentType.Text.JavaScript)
+                            }
+                            if (passWord == null) {
+                                serve()
+                            } else {
+                                authenticate("auth-basic") {
+                                    serve()
                                 }
-                                val stringSubstitutor = StringSubstitutor(
-                                    lookup,
-                                    DEFAULT_PREFIX,
-                                    DEFAULT_SUFFIX,
-                                    DEFAULT_ESCAPE
-                                )
-                                val text = stringSubstitutor.replace(readFromAssets("form.html"))
-                                call.respondText(text, ContentType.Text.Html)
                             }
                         }
                     }.also {
@@ -287,7 +267,12 @@ class WebInputService : Service(), IWebInputService {
                                 0,
                                 getString(R.string.stop),
                                 //noinspection InlinedApi
-                                PendingIntent.getService(this, 0, stopIntent, FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE)
+                                PendingIntent.getService(
+                                    this,
+                                    0,
+                                    stopIntent,
+                                    FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+                                )
                             )
                             .build()
 
@@ -299,6 +284,181 @@ class WebInputService : Service(), IWebInputService {
         return START_NOT_STICKY
     }
 
+    private fun Route.serve() {
+
+        get("data.js") {
+            val categories = contentResolver.query(
+                TransactionProvider.CATEGORIES_URI.buildUpon()
+                    .appendQueryParameter(
+                        TransactionProvider.QUERY_PARAMETER_HIERARCHICAL,
+                        "1"
+                    ).build(),
+                arrayOf(KEY_ROWID, KEY_PARENTID, KEY_LABEL, KEY_LEVEL),
+                null, null, null
+            )?.use { cursor ->
+                cursor.asSequence.map {
+                    mapOf(
+                        "id" to it.getLong(0),
+                        "parent" to it.getLongOrNull(1),
+                        "label" to it.getString(2),
+                        "level" to it.getInt(3)
+                    )
+                }
+                    .toList()
+            }
+            val data = mapOf(
+                "accounts" to contentResolver.query(
+                    TransactionProvider.ACCOUNTS_BASE_URI,
+                    arrayOf(KEY_ROWID, KEY_LABEL, KEY_TYPE, KEY_CURRENCY),
+                    "$KEY_SEALED = 0", null, null
+                )?.use { cursor ->
+                    cursor.asSequence.map {
+                        mapOf(
+                            "id" to it.getLong(0),
+                            "label" to it.getString(1),
+                            "type" to it.getString(2),
+                            "currency" to currencyContext[it.getString(3)].symbol
+                        )
+                    }.toList()
+                },
+                "payees" to contentResolver.query(
+                    TransactionProvider.PAYEES_URI,
+                    arrayOf(KEY_ROWID, KEY_PAYEE_NAME),
+                    null, null, null
+                )?.use { cursor ->
+                    cursor.asSequence.map {
+                        mapOf(
+                            "id" to it.getLong(0),
+                            "name" to it.getString(1)
+                        )
+                    }
+                        .toList()
+                },
+                "categories" to categories,
+                "tags" to contentResolver.query(
+                    TransactionProvider.TAGS_URI,
+                    arrayOf(KEY_ROWID, KEY_LABEL),
+                    null, null, null
+                )?.use { cursor ->
+                    cursor.asSequence.map {
+                        mapOf(
+                            "id" to it.getLong(0),
+                            "label" to it.getString(1)
+                        )
+                    }
+                        .toList()
+                },
+                "methods" to contentResolver.query(
+                    TransactionProvider.METHODS_URI,
+                    arrayOf(
+                        KEY_ROWID,
+                        KEY_LABEL,
+                        KEY_IS_NUMBERED,
+                        KEY_TYPE,
+                        KEY_ACCOUNT_TPYE_LIST
+                    ),
+                    null, null, null
+                )?.use { cursor ->
+                    cursor.asSequence.map {
+                        mapOf(
+                            "id" to it.getLong(0),
+                            "label" to it.getString(1),
+                            "isNumbered" to (it.getInt(2) > 0),
+                            "type" to it.getInt(3),
+                            "accountTypes" to it.getString(4)?.split(',')
+                        )
+                    }.toList()
+                },
+            )
+            val categoryTreeDepth =
+                categories?.map { it["level"] as Int }?.maxOrNull() ?: 0
+            val categoryWatchers = if (categoryTreeDepth > 1) {
+                (0..categoryTreeDepth - 2).joinToString(separator = "\n") {
+                    "this.\$watch('categoryPath[$it].id', value => { this.categoryPath[${it + 1}].id=0 } );"
+                }
+            } else ""
+            val lookup = StringLookup { key ->
+                when (key) {
+                    "category_tree_depth" -> categoryTreeDepth.toString()
+                    "data" -> gson.toJson(data)
+                    "categoryWatchers" -> categoryWatchers
+                    "withValueDate" -> prefHandler.getBoolean(
+                        PrefKey.TRANSACTION_WITH_VALUE_DATE,
+                        false
+                    ).toString()
+                    "withTime" -> prefHandler.getBoolean(
+                        PrefKey.TRANSACTION_WITH_TIME,
+                        false
+                    ).toString()
+                    else -> throw IllegalStateException("Unknown substitution key $key")
+                }
+            }
+            val stringSubstitutor = StringSubstitutor(
+                lookup,
+                DEFAULT_PREFIX,
+                DEFAULT_SUFFIX,
+                DEFAULT_ESCAPE
+            )
+            val text = stringSubstitutor.replace(readTextFromAssets("data.js"))
+            call.respondText(text, ContentType.Text.JavaScript)
+        }
+
+        delete("/transactions/{id}") {
+            if (repository.deleteTransaction(call.parameters["id"]!!.toLong())) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    getString(R.string.transaction_deleted)
+                )
+            } else {
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    "Error while deleting transaction."
+                )
+            }
+        }
+
+        put("/transactions/{id}") {
+            val transaction = call.receive<Transaction>()
+            val updated = repository.updateTransaction(call.parameters["id"]!!, transaction)
+            if (updated != null && updated > 0) {
+                call.respond(
+                    HttpStatusCode.OK,
+                    getString(R.string.save_transaction_and_new_success)
+                )
+            } else {
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    "Error while saving transaction."
+                )
+            }
+        }
+
+        post("/transactions") {
+            val transaction = call.receive<Transaction>()
+            val id = repository.createTransaction(transaction)
+            if (id != null) {
+                call.response.headers.append(HttpHeaders.Location, "/transactions/$id")
+                call.respond(
+                    HttpStatusCode.Created,
+                    getString(R.string.save_transaction_and_new_success)
+                )
+            } else {
+                call.respond(
+                    HttpStatusCode.Conflict,
+                    "Error while saving transaction."
+                )
+            }
+        }
+
+        get("/") {
+            call.respondText(readTextFromAssets("form.html"), ContentType.Text.Html)
+        }
+
+        get("/transactions") {
+            call.respond(repository.loadTransactions(call.request.queryParameters["account_id"]!!.toLong()))
+        }
+    }
+
     private fun isAvailable(portNr: Int) = try {
         ServerSocket(portNr).let {
             it.close()
@@ -308,7 +468,15 @@ class WebInputService : Service(), IWebInputService {
         false
     }
 
-    private fun t(@StringRes resId: Int) = wrappedContext.getString(resId)
+    private fun i18nJsonPlurals(resourceName: String, quantity: Int = 1) =
+        "$resourceName : '${tqPlurals(resources.getIdentifier(resourceName, "plurals", packageName), quantity)}'"
+
+    private fun i18nJson(resourceName: String) =
+        "$resourceName : '${tq(resources.getIdentifier(resourceName, "string", packageName))}'"
+
+    private fun tq(@StringRes resId: Int) = wrappedContext.getString(resId).replace("'", "\\'")
+
+    private fun tqPlurals(@PluralsRes resId: Int, quantity: Int) = wrappedContext.resources.getQuantityString(resId, quantity, quantity).replace("'", "\\'")
 
     override fun onDestroy() {
         stopServer()
