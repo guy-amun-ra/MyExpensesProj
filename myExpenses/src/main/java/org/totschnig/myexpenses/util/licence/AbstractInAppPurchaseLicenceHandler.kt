@@ -65,6 +65,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(context: Application, prefere
                 LicenceStatus.CONTRIB -> registerPurchase(false)
                 LicenceStatus.EXTENDED -> registerPurchase(true)
                 LicenceStatus.PROFESSIONAL -> registerSubscription(sku, purchaseToken)
+                else -> {}
             }
         }
     }
@@ -124,20 +125,9 @@ abstract class AbstractInAppPurchaseLicenceHandler(context: Application, prefere
                 else -> 0
             }.takeIf { it != 0 }?.let { context.getString(it) }
 
-    /**
-     * do not call on main thread
-     */
-    override fun buildRoadmapVoteKey(): String {
-        return if (isProfessionalEnabled) {
-            purchaseExtraInfo ?: super.buildRoadmapVoteKey()
-        } else {
-            try {
-                AdvertisingIdClient.getAdvertisingIdInfo(context).id
-            } catch (e: Exception) {
-                super.buildRoadmapVoteKey()
-            }
-        }
-    }
+    override fun buildRoadmapVoteKey() =
+        purchaseExtraInfo.takeIf { isProfessionalEnabled } ?: super.buildRoadmapVoteKey()
+
 
     override val purchaseExtraInfo: String?
         get() = licenseStatusPrefs.getString(KEY_ORDER_ID, null)
