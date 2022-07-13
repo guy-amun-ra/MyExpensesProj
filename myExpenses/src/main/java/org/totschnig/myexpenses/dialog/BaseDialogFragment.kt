@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
-import androidx.fragment.app.FragmentManager
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import org.totschnig.myexpenses.MyApplication
@@ -53,14 +52,6 @@ abstract class BaseDialogFragment : DialogFragment() {
             Timber.w("Activity is null")
         }
         CrashHandler.report(e)
-    }
-
-    override fun show(manager: FragmentManager, tag: String?) {
-        if (activity?.isFinishing == false) {
-            super.show(manager, tag)
-        } else {
-            report(IllegalStateException())
-        }
     }
 
     override fun dismiss() {
