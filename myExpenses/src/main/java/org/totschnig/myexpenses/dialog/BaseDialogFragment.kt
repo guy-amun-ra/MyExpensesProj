@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
-import androidx.viewbinding.ViewBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import org.totschnig.myexpenses.MyApplication
@@ -47,11 +46,10 @@ abstract class BaseDialogFragment : DialogFragment() {
     }
 
     fun report(e: IllegalStateException?) {
-        val activity = activity
-        if (activity == null) {
+        activity?.also {
+            Timber.w("Activity is finishing?: %b", it.isFinishing)
+        } ?: run {
             Timber.w("Activity is null")
-        } else {
-            Timber.w("Activity is finishing?: %b", activity.isFinishing)
         }
         CrashHandler.report(e)
     }

@@ -65,6 +65,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(context: Application, prefere
                 LicenceStatus.CONTRIB -> registerPurchase(false)
                 LicenceStatus.EXTENDED -> registerPurchase(true)
                 LicenceStatus.PROFESSIONAL -> registerSubscription(sku, purchaseToken)
+                else -> {}
             }
         }
     }

@@ -1,6 +1,5 @@
 package org.totschnig.myexpenses.util.ads
 
-import android.app.Activity
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
@@ -11,8 +10,8 @@ import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
@@ -44,7 +43,7 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
             return
         }
         admobView = AdView(activity).apply {
-            adSize = calculateAdSize
+            setAdSize(calculateAdSize)
             adUnitId = context.getString(if (isTest) R.string.admob_unitid_test_banner else bannerUnitId)
             adContainer.addView(this)
             adListener = object : AdListener() {
