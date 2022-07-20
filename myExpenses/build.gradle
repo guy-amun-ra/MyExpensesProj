@@ -267,13 +267,12 @@ dependencies {
 
     api "com.jakewharton.timber:timber:$timberVersion"
 
-    withAdsImplementation 'com.google.android.gms:play-services-ads:21.0.0'
+    withAdsImplementation 'com.google.android.gms:play-services-ads:21.1.0'
     //noinspection GradleDynamicVersion
     //withAdsImplementation 'com.amazon.android:mobile-ads:5.+'
 
-    implementation platform('com.google.firebase:firebase-bom:30.2.0')
-    //https://github.com/firebase/firebase-android-sdk/issues/3757
-    implementation 'com.google.firebase:firebase-config:21.0.2!!'
+    implementation platform('com.google.firebase:firebase-bom:30.3.0')
+    implementation 'com.google.firebase:firebase-config'
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
 
