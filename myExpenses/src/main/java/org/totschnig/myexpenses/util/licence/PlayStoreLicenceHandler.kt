@@ -100,6 +100,7 @@ open class PlayStoreLicenceHandler(context: Application, preferenceObfuscator: P
             if (it.purchaseState == Purchase.PurchaseState.PURCHASED) {
                 handlePurchaseForLicence(it.sku, it.orderId, it.purchaseToken)
             } else {
+                //TODO handle pending
                 CrashHandler.reportWithTag(String.format("Found purchase in state %s", it.purchaseState), TAG)
             }
         } ?: run {
