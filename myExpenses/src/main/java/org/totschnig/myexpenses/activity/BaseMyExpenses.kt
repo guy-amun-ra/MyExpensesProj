@@ -158,9 +158,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
-    private val progressDialogFragment: ProgressDialogFragment?
-        get() = (supportFragmentManager.findFragmentByTag(PROGRESS_TAG) as? ProgressDialogFragment)
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         with((applicationContext as MyApplication).appComponent) {
@@ -192,7 +189,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 exportViewModel.publishProgress.collect { progress ->
                     progress?.let {
                         progressDialogFragment?.appendToMessage(progress)
-                        exportViewModel.messageShown()
                     }
                 }
             }
@@ -205,14 +201,11 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         if (result.second.isNotEmpty()) {
                             shareExport(result.first, result.second)
                         }
+                        exportViewModel.resultProcessed()
                     }
                 }
             }
         }
-    }
-
-    override fun onProgressDialogDismiss() {
-        exportViewModel.resultDismissed()
     }
 
     override fun injectDependencies() {

@@ -24,7 +24,9 @@
     <string name="add_widget">"ウィジェットを追加します"</string>
     <string name="calendar">"カレンダー"</string>
     <string name="permissions_label">"権限"</string>
+    <string name="time_format">"時刻の表示形式"</string>
     <string name="setup">"設定"</string>
     <string name="clear_cache">"キャッシュを削除"</string>
+    <string name="customize">"カスタマイズ"</string>
 </resources>
 
