@@ -2,6 +2,7 @@ WITH now as (select cast(strftime('%s', 'now', 'localtime', 'start of day','+1 d
 amounts AS (select
  amount,
  transfer_peer,
+ cr_status,
  date,
  Coalesce(exchange_rate, 1) as exchange_rate,
  Coalesce(
@@ -32,7 +33,7 @@ amounts AS (select
                                                                                       AND currency_self =
                                                                                           transactions_with_account.currency
                                                                                       AND currency_other = 'EUR'
-   WHERE (cat_id IS NULL OR cat_id != 0 ) AND cr_status != 'VOID'),
+   WHERE parent_id is null AND cr_status != 'VOID'),
    aggregates AS (SELECT
         account_id,
         exchange_rate,
@@ -45,6 +46,9 @@ amounts AS (select
         sum(case when transfer_peer is NULL then 0 else amount end) as transfer,
         sum(case when date <= (select now from now) then amount else 0 end ) as current,
         sum(case when date <= (select now from now) then equivalent_amount else 0 end ) as equivalent_current,
+        sum(case when cr_status IN ( 'RECONCILED', 'CLEARED' ) then amount else 0 end) as cleared,
+        sum(case when cr_status = 'RECONCILED' then amount else 0 end) as reconciled,
+        max(case when cr_status = 'CLEARED' then 1 else 0 end) as has_cleared,
         max(date) > (select now from now) as has_future
    from amounts group by account_id)
 
@@ -69,29 +73,12 @@ amounts AS (select
           expense AS sum_expenses,
           transfer AS sum_transfers,
           opening_balance + total AS total,
-          opening_balance
-          + (SELECT Coalesce(Sum(amount), 0)
-             FROM   transactions_committed
-             WHERE  account_id = accounts._id
-                    AND cr_status != 'VOID'
-                    AND parent_id IS NULL
-                    AND cr_status IN ( 'RECONCILED', 'CLEARED' )) AS cleared_total,
-          opening_balance
-          + (SELECT Coalesce(Sum(amount), 0)
-             FROM   transactions_committed
-             WHERE  account_id = accounts._id
-                    AND cr_status != 'VOID'
-                    AND parent_id IS NULL
-                    AND cr_status = 'RECONCILED')                 AS
-          reconciled_total,
+          opening_balance + cleared AS cleared_total,
+          opening_balance + reconciled AS reconciled_total,
           usages,
           0  AS is_aggregate,
           has_future,
-          (SELECT EXISTS(SELECT 1
-                         FROM   transactions
-                         WHERE  account_id = accounts._id
-                                AND cr_status = 'CLEARED'
-                         LIMIT  1))                               AS has_cleared,
+          has_cleared,
           CASE type
             WHEN 'CASH' THEN 0
             WHEN 'BANK' THEN 1
@@ -176,5 +163,5 @@ amounts AS (select
          ORDER  BY is_aggregate,
                    sort_key_type,
                    sort_key,
-                   label COLLATE localized  limit 10;
+                   label COLLATE localized;
 
