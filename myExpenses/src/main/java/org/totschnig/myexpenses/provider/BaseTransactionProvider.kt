@@ -3,14 +3,20 @@ package org.totschnig.myexpenses.provider
 import android.content.ContentProvider
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import android.database.sqlite.SQLiteQueryBuilder
 import android.os.Bundle
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.di.AppComponent
+import org.totschnig.myexpenses.model.Account
+import org.totschnig.myexpenses.model.AccountGrouping
+import org.totschnig.myexpenses.model.AccountType
+import org.totschnig.myexpenses.model.AggregateAccount
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider.KEY_RESULT
 import org.totschnig.myexpenses.util.ResultUnit
+import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.io.FileCopyUtils
 import timber.log.Timber
@@ -91,6 +97,224 @@ abstract class BaseTransactionProvider : ContentProvider() {
         const val TAG = "TransactionProvider"
     }
 
+    val accountsWithExchangeRate: String
+        get() = exchangeRateJoin(
+            TABLE_ACCOUNTS, KEY_ROWID, Utils.getHomeCurrency(
+                context, prefHandler
+            )
+        )
+
+
+    private val fullAccountProjection =
+        Account.PROJECTION_BASE.copyOf(Account.PROJECTION_BASE.size + 13).also {
+            val baseLength = Account.PROJECTION_BASE.size
+            it[baseLength] = "$KEY_OPENING_BALANCE + $KEY_CURRENT AS $KEY_CURRENT_BALANCE"
+            it[baseLength + 1] = KEY_SUM_INCOME
+            it[baseLength + 2] = KEY_SUM_EXPENSES
+            it[baseLength + 3] = KEY_SUM_TRANSFERS
+            it[baseLength + 4] = "$KEY_OPENING_BALANCE + $KEY_TOTAL AS $KEY_TOTAL"
+            it[baseLength + 5] = "$KEY_OPENING_BALANCE + $KEY_CLEARED_TOTAL AS $KEY_CLEARED_TOTAL"
+            it[baseLength + 6] =
+                "$KEY_OPENING_BALANCE + $KEY_RECONCILED_TOTAL AS $KEY_RECONCILED_TOTAL"
+            it[baseLength + 7] = KEY_USAGES
+            it[baseLength + 8] =
+                "0 AS $KEY_IS_AGGREGATE"//this is needed in the union with the aggregates to sort real accounts first
+            it[baseLength + 9] = KEY_HAS_FUTURE
+            it[baseLength + 10] = KEY_HAS_CLEARED
+            it[baseLength + 11] = AccountType.sqlOrderExpression()
+            it[baseLength + 12] = KEY_LAST_USED
+        }
+
+    fun buildAccountQuery(
+        qb: SQLiteQueryBuilder,
+        minimal: Boolean,
+        mergeAggregate: String?,
+        selection: String?,
+        sortOrder: String?
+    ): String {
+
+        val homeCurrency = Utils.getHomeCurrency(context, prefHandler)
+        val aggregateFunction = TransactionProvider.aggregateFunction(
+            prefHandler.getBoolean(
+                PrefKey.DB_SAFE_MODE,
+                false
+            )
+        )
+        val cte = accountQueryCTE(
+            homeCurrency,
+            prefHandler.getString(PrefKey.CRITERION_FUTURE, "end_of_day") == "current",
+            aggregateFunction
+        )
+        val joinWithAggregates =
+            "$TABLE_ACCOUNTS LEFT JOIN aggregates ON $TABLE_ACCOUNTS.$KEY_ROWID = $KEY_ACCOUNTID"
+        qb.tables = if (minimal) TABLE_ACCOUNTS else joinWithAggregates
+        val query = if (mergeAggregate == null) {
+            qb.buildQuery(
+                fullAccountProjection, selection, null,
+                null, null, null
+            )
+        } else {
+            val subQueries: MutableList<String> = ArrayList()
+            if (mergeAggregate == "1") {
+                subQueries.add(
+                    qb.buildQuery(
+                        if (minimal) arrayOf(
+                            KEY_ROWID,
+                            KEY_LABEL,
+                            KEY_CURRENCY,
+                            "0 AS $KEY_IS_AGGREGATE"
+                        ) else fullAccountProjection, selection, null,
+                        null, null, null
+                    )
+                )
+            }
+            //Currency query
+            if (mergeAggregate != Account.HOME_AGGREGATE_ID.toString()) {
+                qb.tables =
+                    "$joinWithAggregates LEFT JOIN $TABLE_CURRENCIES on $KEY_CODE = $KEY_CURRENCY"
+
+                val rowIdColumn = "0 - $TABLE_CURRENCIES.$KEY_ROWID AS $KEY_ROWID"
+                val labelColumn = "$KEY_CURRENCY AS $KEY_LABEL"
+                val aggregateColumn = "1 AS $KEY_IS_AGGREGATE"
+                val currencyProjection = if (minimal) arrayOf(
+                    rowIdColumn,
+                    labelColumn,
+                    KEY_CURRENCY,
+                    aggregateColumn
+                ) else {
+                    val openingBalanceSum = "$aggregateFunction($KEY_OPENING_BALANCE)"
+                    arrayOf(
+                        rowIdColumn,  //we use negative ids for aggregate accounts
+                        labelColumn,
+                        "'' AS $KEY_DESCRIPTION",
+                        "$openingBalanceSum AS $KEY_OPENING_BALANCE",
+                        KEY_CURRENCY,
+                        "-1 AS $KEY_COLOR",
+                        "$TABLE_CURRENCIES.$KEY_GROUPING",
+                        "'AGGREGATE' AS $KEY_TYPE",
+                        "0 AS $KEY_SORT_KEY",
+                        "0 AS $KEY_EXCLUDE_FROM_TOTALS",
+                        "null AS $KEY_SYNC_ACCOUNT_NAME",
+                        "null AS $KEY_UUID",
+                        "'DESC' AS $KEY_SORT_DIRECTION",
+                        "1 AS $KEY_EXCHANGE_RATE",
+                        "0 AS $KEY_CRITERION",
+                        "0 AS $KEY_SEALED",
+                        "$openingBalanceSum + $aggregateFunction($KEY_CURRENT) AS $KEY_CURRENT_BALANCE",
+                        "$aggregateFunction($KEY_SUM_INCOME) AS $KEY_SUM_INCOME",
+                        "$aggregateFunction($KEY_SUM_EXPENSES) AS $KEY_SUM_EXPENSES",
+                        "$aggregateFunction($KEY_SUM_TRANSFERS) AS $KEY_SUM_TRANSFERS",
+                        "$openingBalanceSum + $aggregateFunction($KEY_TOTAL) AS $KEY_TOTAL",
+                        "0 AS $KEY_CLEARED_TOTAL",  //we do not calculate cleared and reconciled totals for aggregate accounts
+                        "0 AS $KEY_RECONCILED_TOTAL",
+                        "0 AS $KEY_USAGES",
+                        aggregateColumn,
+                        "max($KEY_HAS_FUTURE) AS $KEY_HAS_FUTURE",
+                        "0 AS $KEY_HAS_CLEARED",
+                        "0 AS $KEY_SORT_KEY_TYPE",
+                        "0 AS $KEY_LAST_USED"
+                    )
+                }
+                subQueries.add(
+                    qb.buildQuery(
+                        currencyProjection,
+                        "$KEY_EXCLUDE_FROM_TOTALS = 0",
+                        KEY_CURRENCY,
+                        if (mergeAggregate == "1") "count(*) > 1" else "$TABLE_CURRENCIES.$KEY_ROWID = " +
+                                mergeAggregate.substring(1),
+                        null,
+                        null
+                    )
+                )
+            }
+            //home query
+            if (mergeAggregate == Account.HOME_AGGREGATE_ID.toString() || mergeAggregate == "1") {
+                qb.tables = joinWithAggregates
+
+                val grouping = prefHandler.getString(AggregateAccount.GROUPING_AGGREGATE, "NONE")
+                val rowIdColumn = Account.HOME_AGGREGATE_ID.toString() + " AS " + KEY_ROWID
+                val labelColumn = "'' AS $KEY_LABEL"
+                val currencyColumn =
+                    "'" + AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE + "' AS " + KEY_CURRENCY
+                val aggregateColumn =
+                    AggregateAccount.AGGREGATE_HOME.toString() + " AS " + KEY_IS_AGGREGATE
+                val homeProjection = if (minimal) {
+                    arrayOf(
+                        rowIdColumn,
+                        labelColumn,
+                        currencyColumn,
+                        aggregateColumn
+                    )
+                } else {
+                    val openingBalanceSum =
+                        "$aggregateFunction($KEY_OPENING_BALANCE * $KEY_EXCHANGE_RATE)"
+                    arrayOf(
+                        rowIdColumn,
+                        labelColumn,
+                        "'' AS $KEY_DESCRIPTION",
+                        "$openingBalanceSum AS $KEY_OPENING_BALANCE",
+                        currencyColumn,
+                        "-1 AS $KEY_COLOR",
+                        "'$grouping' AS $KEY_GROUPING",
+                        "'AGGREGATE' AS $KEY_TYPE",
+                        "0 AS $KEY_SORT_KEY",
+                        "0 AS $KEY_EXCLUDE_FROM_TOTALS",
+                        "null AS $KEY_SYNC_ACCOUNT_NAME",
+                        "null AS $KEY_UUID",
+                        "'DESC' AS $KEY_SORT_DIRECTION",
+                        "1 AS $KEY_EXCHANGE_RATE",
+                        "0 AS $KEY_CRITERION",
+                        "0 AS $KEY_SEALED",
+                        "$openingBalanceSum + $aggregateFunction(equivalent_current) AS $KEY_CURRENT_BALANCE",
+                        "$aggregateFunction(equivalent_income) AS $KEY_SUM_INCOME",
+                        "$aggregateFunction(equivalent_expense) AS $KEY_SUM_EXPENSES",
+                        "0 AS $KEY_SUM_TRANSFERS",
+                        "$openingBalanceSum + $aggregateFunction(equivalent_total) AS $KEY_TOTAL",
+                        "0 AS $KEY_CLEARED_TOTAL",  //we do not calculate cleared and reconciled totals for aggregate accounts
+                        "0 AS $KEY_RECONCILED_TOTAL",
+                        "0 AS $KEY_USAGES",
+                        aggregateColumn,
+                        "max($KEY_HAS_FUTURE) AS $KEY_HAS_FUTURE",
+                        "0 AS $KEY_HAS_CLEARED",
+                        "0 AS $KEY_SORT_KEY_TYPE",
+                        "0 AS $KEY_LAST_USED"
+                    )
+                }
+                subQueries.add(
+                    qb.buildQuery(
+                        homeProjection,
+                        "$KEY_EXCLUDE_FROM_TOTALS = 0",
+                        "1",
+                        "(select count(distinct $KEY_CURRENCY) from $TABLE_ACCOUNTS WHERE $KEY_CURRENCY != '$homeCurrency') > 0",
+                        null,
+                        null
+                    )
+                )
+            }
+            val grouping = if (!minimal) {
+                when (try {
+                    AccountGrouping.valueOf(
+                        prefHandler.getString(
+                            PrefKey.ACCOUNT_GROUPING, AccountGrouping.TYPE.name
+                        )!!
+                    )
+                } catch (e: IllegalArgumentException) {
+                    AccountGrouping.TYPE
+                }) {
+                    AccountGrouping.CURRENCY -> "$KEY_CURRENCY,$KEY_IS_AGGREGATE"
+                    AccountGrouping.TYPE -> "$KEY_IS_AGGREGATE,$KEY_SORT_KEY_TYPE"
+                    else -> KEY_IS_AGGREGATE
+                }
+            } else KEY_IS_AGGREGATE
+            qb.buildUnionQuery(
+                subQueries.toTypedArray(),
+                "$grouping,$sortOrder",
+                null
+            )
+        }
+        return "$cte\n$query"
+    }
+
     fun backup(context: Context, backupDir: File): Result<Unit> {
         val currentDb = File(transactionDatabase.readableDatabase.path)
         transactionDatabase.readableDatabase.beginTransaction()
@@ -108,7 +332,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                     if (!sharedPrefFile.exists()) {
                         val message = "Unable to find shared preference file at " +
                                 sharedPrefFile.path
-                        CrashHandler.report(message)
+                        report(message)
                         throw Throwable(message)
                     }
                 }
@@ -130,26 +354,11 @@ abstract class BaseTransactionProvider : ContentProvider() {
      * @return number of corrupted entries
      */
     fun checkCorruptedData987() = Bundle(1).apply {
-        putInt(KEY_RESULT, transactionDatabase.readableDatabase.rawQuery(
-            "select count(distinct transactions.parent_id) from transactions left join transactions parent on transactions.parent_id = parent._id where transactions.parent_id is not null and parent.account_id != transactions.account_id",
+        putLongArray(KEY_RESULT, transactionDatabase.readableDatabase.rawQuery(
+            "select distinct transactions.parent_id from transactions left join transactions parent on transactions.parent_id = parent._id where transactions.parent_id is not null and parent.account_id != transactions.account_id",
             null
-        ).use {
-            it.moveToFirst()
-            it.getInt(0)
-        })
-    }
-
-    fun repairCorruptedData987(db: SQLiteDatabase) = Bundle(1).apply {
-        putInt(KEY_RESULT, with (transactionDatabase.writableDatabase) {
-            beginTransaction()
-            try {
-                execSQL("update transactions set account_id = (select account_id from transactions children where children.parent_id = transactions._id) where account_id != (select account_id from transactions children where children.parent_id = transactions._id)")
-                val result = db.compileStatement("SELECT changes()").simpleQueryForLong().toInt()
-                setTransactionSuccessful()
-                result
-            } finally {
-                endTransaction()
-            }
+        ).use { cursor ->
+            cursor.asSequence.map { it.getLong(0) }.toList().toLongArray()
         })
     }
 
@@ -173,5 +382,9 @@ abstract class BaseTransactionProvider : ContentProvider() {
 
     fun log(message: String, vararg args: Any) {
         Timber.tag(TAG).i(message, *args)
+    }
+
+    fun report(e: String) {
+        CrashHandler.report(e, TAG)
     }
 }

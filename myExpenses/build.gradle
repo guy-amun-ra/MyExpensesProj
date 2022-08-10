@@ -41,7 +41,7 @@ android {
 
         buildConfigField "String", "DISTRIBUTION", "\"GITHUB\""
         buildConfigField "boolean", "UNLOCK_SWITCH", getPropertyIfDefined("UNLOCK", "false")
-        buildConfigField "String[]", "CATEGORY_ICONS", "{" + categoryIcons() + "}"
+
         testInstrumentationRunner "org.totschnig.myexpenses.MyTestRunner"
 
         vectorDrawables.useSupportLibrary = true
@@ -138,10 +138,6 @@ android {
         }
     }
 
-    sourceSets {
-        main.res.srcDirs += 'src/main/categoryIcons'
-    }
-
     packagingOptions {
         resources {
             //excludes += ['/META-INF/{AL2.0,LGPL2.1}', 'META-INF/*', '**/attach_hotspot_windows.dll', 'META-INF/licenses/**', 'META-INF/AL2.0', 'META-INF/LGPL2.1']
@@ -206,6 +202,11 @@ configurations.all {
     exclude group: "com.google.android.material", module: "material"
 }
 
+//uncomment if you want to have Android log in stdout
+tasks.withType(Test) {
+    systemProperty "robolectric.logging", "stdout"
+}
+
 dependencies {
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugarVersion"
     implementation project(':transactionscontract')
@@ -214,8 +215,8 @@ dependencies {
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation 'androidx.activity:activity-compose:1.5.0'
-    implementation "com.google.android.material:compose-theme-adapter:1.1.14"
+    implementation 'androidx.activity:activity-compose:1.5.1'
+    implementation "com.google.android.material:compose-theme-adapter:1.1.15"
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
@@ -362,6 +363,7 @@ dependencies {
     // Lifecycle components
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$archLifecycleVersion"
     implementation "androidx.lifecycle:lifecycle-common-java8:$archLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$archLifecycleVersion"
 
     androidTestImplementation "androidx.arch.core:core-testing:$androidxArchVersion"
 
@@ -414,11 +416,3 @@ task echoPublishTag() {
     }
 }
 
-def categoryIcons() {
-    return new File("${projectDir}/src/main/categoryIcons/drawable")
-            .listFiles()
-            .collect { it.name }
-            .collect { it.take(it.lastIndexOf('.')) }
-            .collect { "\"" + it + "\"" }
-            .join(", ")
-}

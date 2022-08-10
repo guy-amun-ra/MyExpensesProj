@@ -6,15 +6,27 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteConstraintException
 import android.net.Uri
 import androidx.annotation.StringRes
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi
+import androidx.lifecycle.viewmodel.compose.saveable
 import app.cash.copper.Query
 import app.cash.copper.flow.observeQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.MyApplication
@@ -23,10 +35,16 @@ import org.totschnig.myexpenses.export.CategoryExporter
 import org.totschnig.myexpenses.export.createFileFailure
 import org.totschnig.myexpenses.model.ExportFormat
 import org.totschnig.myexpenses.model.Sort
-import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
+import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.filter.KEY_FILTER
 import org.totschnig.myexpenses.provider.filter.WhereFilter
+import org.totschnig.myexpenses.provider.getInt
+import org.totschnig.myexpenses.provider.getIntOrNull
+import org.totschnig.myexpenses.provider.getLong
+import org.totschnig.myexpenses.provider.getLongOrNull
+import org.totschnig.myexpenses.provider.getString
+import org.totschnig.myexpenses.provider.getStringOrNull
 import org.totschnig.myexpenses.util.AppDirHelper
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
@@ -50,6 +68,20 @@ open class CategoryViewModel(
     val exportResult: StateFlow<Result<Pair<Uri, String>>?> = _exportResult
     val defaultSort = Sort.USAGES
 
+    sealed class DialogState
+    object NoShow : DialogState()
+    data class Show(
+        val id: Long? = null,
+        val parentId: Long? = null,
+        val label: String? = null,
+        val icon: String? = null,
+        val saving: Boolean = false,
+        val error: Boolean = false
+    ): DialogState()
+
+    @OptIn(SavedStateHandleSaveableApi::class)
+    var dialogState: DialogState by savedStateHandle.saveable { mutableStateOf(NoShow) }
+
     sealed class DeleteResult {
         class OperationPending(
             val ids: List<Long>,
@@ -66,11 +98,9 @@ open class CategoryViewModel(
 
     val sortOrder = MutableStateFlow(Sort.LABEL)
 
-    fun setFilter(filter: String) {
-        savedStateHandle[KEY_FILTER] = filter
-    }
-
-    fun getFilter() = savedStateHandle.get<String>(KEY_FILTER)
+    var filter: String?
+        get() = savedStateHandle.get<String>(KEY_FILTER)
+        set(value) { savedStateHandle[KEY_FILTER] = value }
 
     fun setSortOrder(sort: Sort) {
         sortOrder.tryEmit(sort)
@@ -125,7 +155,7 @@ open class CategoryViewModel(
 
     private fun categoryUri(queryParameter: String?): Uri =
         TransactionProvider.CATEGORIES_URI.buildUpon()
-                .appendQueryParameter(TransactionProvider.QUERY_PARAMETER_HIERARCHICAL, "1")
+            .appendQueryParameter(TransactionProvider.QUERY_PARAMETER_HIERARCHICAL, "1")
             .apply {
                 queryParameter?.let {
                     appendQueryParameter(it, "1")
@@ -163,10 +193,28 @@ open class CategoryViewModel(
         }
     }
 
-    fun saveCategory(category: Category) =
-        liveData(context = coroutineContext()) {
-            emit(repository.saveCategory(category))
+    fun saveCategory(label: String, icon: String?) {
+        viewModelScope.launch(context = coroutineContext()) {
+            dialogState.let {
+                if (it is Show) {
+                    val category = Category(
+                        id = it.id ?: 0,
+                        label = label,
+                        icon = icon,
+                        parentId = it.parentId
+                    )
+                    dialogState = it.copy(saving = true)
+                    dialogState = if (repository.saveCategory(category) == null) {
+                        it.copy(error = true)
+                    } else {
+                        NoShow
+                    }
+                } else {
+                    throw java.lang.IllegalStateException("SaveCategory called without dialogState")
+                }
+            }
         }
+    }
 
     fun deleteCategories(ids: List<Long>) {
         viewModelScope.launch(context = coroutineContext()) {
@@ -307,10 +355,11 @@ open class CategoryViewModel(
                     CategoryExporter.export(getApplication(), encoding,
                         lazy {
                             Result.success(
-                                AppDirHelper.timeStampedFile(destDir,
+                                AppDirHelper.timeStampedFile(
+                                    destDir,
                                     fileName,
                                     ExportFormat.QIF.mimeType, "qif"
-                                )  ?: throw createFileFailure(context, destDir, fileName)
+                                ) ?: throw createFileFailure(context, destDir, fileName)
                             )
                         }
                     ).mapCatching {
