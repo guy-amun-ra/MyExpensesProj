@@ -15,7 +15,7 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
     private var crashReportingTree: CrashReportingTree? = null
 
     override fun onAttachBaseContext(application: MyApplication) {}
-    public override fun setupLoggingDo(context: Context) {
+    override fun setupLoggingDo(context: Context) {
         if (crashReportingTree == null) {
             crashReportingTree = CrashReportingTree().also {
                 Timber.plant(it)
