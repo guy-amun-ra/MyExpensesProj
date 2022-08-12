@@ -54,7 +54,7 @@ fun CategoryEdit(
             if (shouldValidate) {
                 when {
                     dialogState.error -> context.getString(R.string.already_defined, label)
-                    label.isEmpty() -> context.getString(R.string.required) //TODO search AOSP for translation
+                    label.isEmpty() -> context.getString(R.string.required)
                     else -> null
                 }
             } else null
@@ -101,7 +101,7 @@ fun CategoryEdit(
                     Text(stringResource(id = R.string.icon))
                     Button(onClick = { showIconSelection = true }) {
                         icon?.let {
-                            Icon(IIconInfo.resolveIcon(it))
+                            Icon(it)
                         } ?: Text(stringResource(id = R.string.select))
                     }
 
