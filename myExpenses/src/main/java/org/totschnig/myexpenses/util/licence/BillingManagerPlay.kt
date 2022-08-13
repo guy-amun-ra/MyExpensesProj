@@ -85,9 +85,7 @@ class BillingManagerPlay(
             log().d("Setup successful.")
             productDetailsResponseListener?.let {
                 queryPurchases()
-                querySkuDetailsAsync(playInAppSkus, playSubsSkus) { result, productList ->
-                    it.onProductDetailsResponse(result, productList)
-                }
+                querySkuDetailsAsync(playInAppSkus, playSubsSkus, it)
             }
             (this.activity as? BillingListener)?.onBillingSetupFinished()
         }
@@ -185,19 +183,21 @@ class BillingManagerPlay(
                 .setProductType(productType)
                 .build()
 
-        val queryRequest = suspend {
-            val productList = inAppList.map {
-                it.mapToProduct(ProductType.INAPP)
-            } + subList.map {
-                it.mapToProduct(ProductType.SUBS)
+        suspend fun List<String>.query(productType: String) {
+            val result = billingClient.queryProductDetails(
+                QueryProductDetailsParams.newBuilder().setProductList(this.map { it.mapToProduct(productType) }).build()
+            )
+            result.productDetailsList?.let {
+                listener.onProductDetailsResponse(result.billingResult, it)
+            } ?: run {
+                log().w("Querying $productType returned empty productDetailsList???")
             }
-
-            val params = QueryProductDetailsParams.newBuilder().setProductList(productList)
-
-            billingClient.queryProductDetailsAsync(params.build(), listener)
         }
 
-        executeServiceRequest(queryRequest)
+        executeServiceRequest(suspend {
+            inAppList.query(ProductType.INAPP)
+            subList.query(ProductType.SUBS)
+        })
     }
 
     private fun acknowledgePurchase(purchaseToken: String) {
