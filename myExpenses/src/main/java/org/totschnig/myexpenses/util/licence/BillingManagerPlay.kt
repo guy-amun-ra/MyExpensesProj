@@ -310,7 +310,7 @@ class BillingManagerPlay(
                         }
 
                         override fun onBillingServiceDisconnected() {
-                            continuation.resume(false)
+                            isServiceConnected = false
                         }
                     })
                 }
