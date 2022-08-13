@@ -70,10 +70,6 @@ abstract class AbstractInAppPurchaseLicenceHandler(context: Application, prefere
         }
     }
 
-    fun persistOrderIdForAddOn(addOnPackage: AddOnPackage, orderId: String) {
-        licenseStatusPrefs.putString(KEY_ORDER_ID + "_" + addOnPackage.sku, orderId)
-    }
-
     /**
      * @param extended if true user has purchase extended licence
      */
@@ -111,7 +107,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(context: Application, prefere
             Package.Upgrade -> Config.SKU_PREMIUM2EXTENDED
             Package.Extended -> Config.SKU_EXTENDED
             ProfessionalPackage.Professional_1 -> Config.SKU_PROFESSIONAL_1
-            ProfessionalPackage.Professional_12 -> if (hasExtended) Config.SKU_EXTENDED2PROFESSIONAL_12 else Config.SKU_PROFESSIONAL_12
+            ProfessionalPackage.Professional_12 -> Config.SKU_PROFESSIONAL_12
             ProfessionalPackage.Amazon -> if (hasExtended) Config.SKU_EXTENDED2PROFESSIONAL_PARENT else Config.SKU_PROFESSIONAL_PARENT
             is AddOnPackage -> aPackage.sku
             else -> throw IllegalStateException("Did not find sku for package $aPackage")

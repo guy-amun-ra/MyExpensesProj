@@ -1,11 +1,6 @@
 package org.totschnig.myexpenses.activity
 
-import android.content.Intent
-import android.content.Intent.ACTION_SEND
-import android.content.Intent.ACTION_SENDTO
-import android.net.Uri
 import android.os.Bundle
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.MyApplication.INVOICES_EMAIL
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.util.Utils

@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.apache.commons.lang3.time.DateUtils
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.model.CurrencyUnit
@@ -367,7 +368,7 @@ open class LicenceHandler(
         )
     }
 
-    open fun initBillingManager(activity: Activity, query: Boolean): BillingManager? {
+    open fun initBillingManager(activity: IapActivity, query: Boolean): BillingManager? {
         return null
     }
 

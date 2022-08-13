@@ -248,7 +248,7 @@ dependencies {
     implementation "ch.acra:acra-mail:$acraVersion"
     implementation "ch.acra:acra-dialog:$acraVersion"
     implementation "org.apache.commons:commons-lang3:$commonsLang"
-    implementation 'com.android.billingclient:billing:3.0.3'
+    implementation("com.android.billingclient:billing-ktx:$billingVersion")
     playImplementation 'com.google.android.play:core:1.10.3'
     playImplementation "com.google.android.play:core-ktx:1.8.1"
     amazonImplementation fileTree(dir: 'libs', include: ['in-app-purchasing-2.0.76.jar'])
