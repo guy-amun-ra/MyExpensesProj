@@ -30,7 +30,7 @@ class StoreLicenceHandlerTest {
     }
 
     private fun m(sku: String) = mock(Purchase::class.java).also {
-        `when`(it.sku).thenReturn(sku)
+        `when`(it.products).thenReturn(listOf(sku))
     }
 
     @Test
