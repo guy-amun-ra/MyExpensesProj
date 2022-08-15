@@ -318,9 +318,11 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         }
 
     fun configureOcrEnginePrefs() {
-        val tesseract = requirePreference<ListPreference>(PrefKey.TESSERACT_LANGUAGE)
-        val mlkit = requirePreference<ListPreference>(PrefKey.MLKIT_SCRIPT)
-        preferenceActivity.ocrViewModel.configureOcrEnginePrefs(tesseract, mlkit)
+        val tesseract = findPreference<ListPreference>(PrefKey.TESSERACT_LANGUAGE)
+        val mlkit = findPreference<ListPreference>(PrefKey.MLKIT_SCRIPT)
+        if (tesseract != null && mlkit != null) {
+            preferenceActivity.ocrViewModel.configureOcrEnginePrefs(tesseract, mlkit)
+        }
     }
 
     fun requireApplication(): MyApplication {
@@ -855,11 +857,6 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                     onPreferenceChangeListener = this@BaseSettingsFragment
                 }
             }
-            getKey(PrefKey.AUTO_BACKUP) -> {
-                requirePreference<Preference>(PrefKey.AUTO_BACKUP_INFO).summary =
-                    (getString(R.string.pref_auto_backup_summary) + " " +
-                            ContribFeature.AUTO_BACKUP.buildRequiresString(requireActivity()))
-            }
             getKey(PrefKey.GROUPING_START_SCREEN) -> {
                 var startPref = requirePreference<ListPreference>(PrefKey.GROUP_WEEK_STARTS)
                 val locale = Locale.getDefault()
@@ -1059,17 +1056,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 )
                 actionBar.customView = actionBarSwitch
                 actionBarSwitch.isChecked = status
-                actionBarSwitch.setOnCheckedChangeListener { buttonView, isChecked ->
-                    //TODO factor out to call site
-                    if (prefKey == PrefKey.AUTO_BACKUP) {
-                        if (isChecked && !licenceHandler.hasAccessTo(ContribFeature.AUTO_BACKUP)) {
-                            preferenceActivity.showContribDialog(ContribFeature.AUTO_BACKUP, null)
-                            if (ContribFeature.AUTO_BACKUP.usagesLeft(prefHandler) <= 0) {
-                                buttonView.isChecked = false
-                                return@setOnCheckedChangeListener
-                            }
-                        }
-                    }
+                actionBarSwitch.setOnCheckedChangeListener { _, isChecked ->
                     prefHandler.putBoolean(prefKey, isChecked)
                     updateDependents(isChecked)
                 }
