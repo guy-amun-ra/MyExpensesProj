@@ -14,16 +14,7 @@ class StoreLicenceHandler(context: Application, preferenceObfuscator: Preference
     override val proPackages: Array<ProfessionalPackage>
         get() = arrayOf(ProfessionalPackage.Professional_1, ProfessionalPackage.Professional_12)
 
-    override fun getExtendedUpgradeGoodyMessage(selectedPackage: ProfessionalPackage): String? {
-        /*if (selectedPackage == ProfessionalPackage.Professional_12) {
-            val skuDetails = getSkuDetailsFromPrefs(Config.SKU_EXTENDED2PROFESSIONAL_12)
-            if (skuDetails != null) {
-                return context.getString(R.string.extended_upgrade_goodie_subscription, skuDetails.price)
-            }
-        }*/
-        //TODO
-        return null
-    }
+    override fun getExtendedUpgradeGoodyMessage(selectedPackage: ProfessionalPackage): String? = null
 
     override val proPackagesForExtendOrSwitch: Array<ProfessionalPackage>?
         get() = getPackageForSwitch()?.let { arrayOf(it) }
