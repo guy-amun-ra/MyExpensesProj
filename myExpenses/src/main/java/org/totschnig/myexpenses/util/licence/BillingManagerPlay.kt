@@ -132,7 +132,7 @@ class BillingManagerPlay(
                             .build()
                     )
                 ).build()
-            ).productDetailsList?.get(0)?.let {
+            ).productDetailsList?.getOrNull(0)?.let {
                 val purchaseParams = BillingFlowParams.newBuilder()
                 val productDetailsParams =
                     BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(it)
@@ -152,6 +152,8 @@ class BillingManagerPlay(
                     )
                 }
                 billingClient.launchBillingFlow(activity, purchaseParams.build())
+            } ?: run {
+                throw java.lang.IllegalStateException("Unable to retrieve product details for $sku ($type) ${oldPurchase?.let { "($it)" } ?: ""}")
             }
             Unit
         }
