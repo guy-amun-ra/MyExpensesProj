@@ -32,15 +32,11 @@ import com.android.billingclient.api.QueryPurchasesParams
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.contrib.Config.playInAppSkus
 import org.totschnig.myexpenses.contrib.Config.playSubsSkus
 import org.totschnig.myexpenses.util.licence.LicenceHandler.Companion.log
 import java.util.*
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 private const val BILLING_MANAGER_NOT_INITIALIZED = Int.MIN_VALUE
 
@@ -286,39 +282,34 @@ class BillingManagerPlay(
     }
 
     private fun startServiceConnection(executeOnSuccess: suspend () -> Unit) {
-        scope.launch {
-            isServiceConnected = withContext(Dispatchers.IO) {
-                suspendCoroutine { continuation ->
-                    billingClient.startConnection(object : BillingClientStateListener {
-                        override fun onBillingSetupFinished(billingResult: BillingResult) {
-                            val billingResponseCode = billingResult.responseCode
-                            d("Setup finished", billingResult)
-                            billingClientResponseCode = billingResponseCode
-                            if (billingResponseCode == BillingResponseCode.OK) {
-                                continuation.resume(true)
-                            } else {
-                                (activity as? BillingListener)?.onBillingSetupFailed(
-                                    String.format(
-                                        Locale.ROOT,
-                                        "%d (%s)",
-                                        billingResponseCode,
-                                        billingResult.debugMessage
-                                    )
-                                )
-                                continuation.resume(false)
-                            }
-                        }
-
-                        override fun onBillingServiceDisconnected() {
-                            isServiceConnected = false
-                        }
-                    })
+        billingClient.startConnection(object : BillingClientStateListener {
+            override fun onBillingSetupFinished(billingResult: BillingResult) {
+                val billingResponseCode = billingResult.responseCode
+                d("Setup finished", billingResult)
+                billingClientResponseCode = billingResponseCode
+                if (billingResponseCode == BillingResponseCode.OK) {
+                    isServiceConnected = true
+                    scope.launch {
+                        executeOnSuccess()
+                    }
+                } else {
+                    (activity as? BillingListener)?.onBillingSetupFailed(
+                        String.format(
+                            Locale.ROOT,
+                            "%d (%s)",
+                            billingResponseCode,
+                            billingResult.debugMessage
+                        )
+                    )
+                    isServiceConnected = false
                 }
             }
-            if (isServiceConnected) {
-                executeOnSuccess()
+
+            override fun onBillingServiceDisconnected() {
+                isServiceConnected = false
             }
-        }
+        })
+
     }
 
 
