@@ -262,10 +262,10 @@ class BillingManagerPlay(
                 "Querying purchases result code: %d, res: %d",
                 purchasesResult.billingResult.responseCode, purchasesResult.purchasesList.size
             )
-            purchasesResult.purchasesList.let { resultList.addAll(it) }
+            resultList.addAll(purchasesResult.purchasesList)
             // If there are subscriptions supported, we add subscription rows as well
             if (areSubscriptionsSupported()) {
-                val subscriptionResult = billingClient.queryPurchasesAsync(
+                val subscriptionResult: PurchasesResult = billingClient.queryPurchasesAsync(
                     QueryPurchasesParams.newBuilder()
                         .setProductType(ProductType.SUBS)
                         .build()
@@ -274,7 +274,7 @@ class BillingManagerPlay(
                     "Querying subscriptions result code: %d, res: %d",
                     subscriptionResult.billingResult.responseCode, subscriptionResult.purchasesList.size
                 )
-                subscriptionResult.purchasesList.let { resultList.addAll(it) }
+                resultList.addAll(subscriptionResult.purchasesList)
             } else {
                 log().i("Skipped subscription purchases query since they are not supported")
             }
@@ -308,6 +308,7 @@ class BillingManagerPlay(
             }
 
             override fun onBillingServiceDisconnected() {
+                log().d("Service disconnected")
                 isServiceConnected = false
             }
         })
