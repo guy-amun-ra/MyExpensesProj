@@ -29,16 +29,16 @@ import com.android.billingclient.api.PurchasesResult
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.android.billingclient.api.acknowledgePurchase
 import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.contrib.Config.playInAppSkus
 import org.totschnig.myexpenses.contrib.Config.playSubsSkus
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.licence.LicenceHandler.Companion.log
 import java.util.*
-
-private const val BILLING_MANAGER_NOT_INITIALIZED = Int.MIN_VALUE
 
 /**
  * Handles all the interactions with Play Store (via Billing library), maintains connection to
@@ -60,13 +60,6 @@ class BillingManagerPlay(
     private var isServiceConnected: Boolean = false
 
     private var tokensToBeConsumed: MutableSet<String> = HashSet()
-
-    /**
-     * Returns the value Billing client response code or BILLING_MANAGER_NOT_INITIALIZED if the
-     * client connection response was not received yet.
-     */
-    var billingClientResponseCode = BILLING_MANAGER_NOT_INITIALIZED
-        private set
 
     init {
         log().d("Creating Billing client.")
@@ -105,7 +98,9 @@ class BillingManagerPlay(
         if (billingUpdatesListener.onPurchasesUpdated(purchases, newPurchase)) {
             purchases?.forEach { purchase ->
                 if (!purchase.isAcknowledged && purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                    acknowledgePurchase(purchase.purchaseToken)
+                    scope.launch {
+                        acknowledgePurchase(purchase.purchaseToken)
+                    }
                 }
             }
         }
@@ -115,50 +110,47 @@ class BillingManagerPlay(
      * Start a purchase or subscription replace flow
      * @param oldPurchase: Pair of sku and purchaseToken
      */
-    fun initiatePurchaseFlow(
+    suspend fun initiatePurchaseFlow(
         sku: String,
         type: String,
         oldPurchase: String?
     ) {
-        check(billingClientResponseCode > BILLING_MANAGER_NOT_INITIALIZED) { "Billing manager not yet initialized" }
-        val purchaseFlowRequest = suspend {
-            log().d("Launching in-app purchase flow. Replace old SKU? %s", oldPurchase != null)
-            billingClient.queryProductDetails(
-                QueryProductDetailsParams.newBuilder().setProductList(
-                    listOf(
-                        QueryProductDetailsParams.Product.newBuilder()
-                            .setProductId(sku)
-                            .setProductType(type)
-                            .build()
-                    )
-                ).build()
-            ).productDetailsList?.getOrNull(0)?.let {
-                val purchaseParams = BillingFlowParams.newBuilder()
-                val productDetailsParams =
-                    BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(it)
-                if (type == ProductType.SUBS) {
-                    productDetailsParams.setOfferToken(
-                        it.subscriptionOfferDetails!![0].offerToken
-                    )
-                }
-
-                purchaseParams.setProductDetailsParamsList(listOf(productDetailsParams.build()))
-
-                if (oldPurchase != null) {
-                    purchaseParams.setSubscriptionUpdateParams(
-                        BillingFlowParams.SubscriptionUpdateParams.newBuilder()
-                            .setOldPurchaseToken(oldPurchase)
-                            .build()
-                    )
-                }
-                billingClient.launchBillingFlow(activity, purchaseParams.build())
-            } ?: run {
-                throw java.lang.IllegalStateException("Unable to retrieve product details for $sku ($type) ${oldPurchase?.let { "($it)" } ?: ""}")
-            }
-            Unit
+        if (!billingClient.isReady || !isServiceConnected) {
+            throw IllegalStateException("Billing Client: isReady: ${billingClient.isReady}, isServiceConnected: $isServiceConnected")
         }
+        log().d("Launching in-app purchase flow. Replace old SKU? %s", oldPurchase != null)
+        billingClient.queryProductDetails(
+            QueryProductDetailsParams.newBuilder().setProductList(
+                listOf(
+                    QueryProductDetailsParams.Product.newBuilder()
+                        .setProductId(sku)
+                        .setProductType(type)
+                        .build()
+                )
+            ).build()
+        ).productDetailsList?.getOrNull(0)?.let {
+            val purchaseParams = BillingFlowParams.newBuilder()
+            val productDetailsParams =
+                BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(it)
+            if (type == ProductType.SUBS) {
+                productDetailsParams.setOfferToken(
+                    it.subscriptionOfferDetails!![0].offerToken
+                )
+            }
 
-        executeServiceRequest(purchaseFlowRequest)
+            purchaseParams.setProductDetailsParamsList(listOf(productDetailsParams.build()))
+
+            if (oldPurchase != null) {
+                purchaseParams.setSubscriptionUpdateParams(
+                    BillingFlowParams.SubscriptionUpdateParams.newBuilder()
+                        .setOldPurchaseToken(oldPurchase)
+                        .build()
+                )
+            }
+            billingClient.launchBillingFlow(activity, purchaseParams.build())
+        } ?: run {
+            throw IllegalStateException("Unable to retrieve product details for $sku ($type) ${oldPurchase?.let { "($it)" } ?: ""}")
+        }
     }
 
     /**
@@ -171,7 +163,7 @@ class BillingManagerPlay(
         }
     }
 
-    private fun querySkuDetailsAsync(
+    private suspend fun querySkuDetailsAsync(
         inAppList: List<String>, subList: List<String>,
         listener: ProductDetailsResponseListener
     ) {
@@ -191,17 +183,13 @@ class BillingManagerPlay(
                 log().w("Querying $productType returned empty productDetailsList???")
             }
         }
-
-        executeServiceRequest(suspend {
-            inAppList.query(ProductType.INAPP)
-            subList.query(ProductType.SUBS)
-        })
+        inAppList.query(ProductType.INAPP)
+        subList.query(ProductType.SUBS)
     }
 
-    private fun acknowledgePurchase(purchaseToken: String) {
-        // If we've already scheduled to consume this token - no action is needed (this could happen
-        // if you received the token when querying purchases inside onReceive() and later from
-        // onActivityResult()
+    private suspend fun acknowledgePurchase(purchaseToken: String) {
+        // onPurchaseUpdate is called twice for each purchase
+        // We remember which tokens we requested to acknowledge
         if (tokensToBeConsumed.contains(purchaseToken)) {
             log().i("Token was already scheduled to be consumed - skipping...")
             return
@@ -211,10 +199,13 @@ class BillingManagerPlay(
         // Creating a runnable from the request to use it inside our connection retry policy below
         val consumeRequest = suspend {
             // Consume the purchase async
-            billingClient.acknowledgePurchase(
+            val result = billingClient.acknowledgePurchase(
                 AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchaseToken).build()
             )
-            { billingResult -> d("acknowledgePurchase", billingResult) }
+            d("acknowledgePurchase", result)
+            if (result.responseCode != BillingResponseCode.OK) {
+                CrashHandler.report("acknowledgePurchase failed with responseCode ${result.responseCode}")
+            }
         }
 
         executeServiceRequest(consumeRequest)
@@ -251,36 +242,33 @@ class BillingManagerPlay(
      * a listener
      */
     private suspend fun queryPurchases() {
-        val queryToExecute = suspend {
-            val resultList = mutableListOf<Purchase>()
-            val purchasesResult: PurchasesResult = billingClient.queryPurchasesAsync(
-                QueryPurchasesParams.newBuilder()
+        val resultList = mutableListOf<Purchase>()
+        val purchasesResult: PurchasesResult = billingClient.queryPurchasesAsync(
+            QueryPurchasesParams.newBuilder()
                 .setProductType(ProductType.INAPP)
                 .build()
+        )
+        log().i(
+            "Querying purchases result code: %d, res: %d",
+            purchasesResult.billingResult.responseCode, purchasesResult.purchasesList.size
+        )
+        resultList.addAll(purchasesResult.purchasesList)
+        // If there are subscriptions supported, we add subscription rows as well
+        if (areSubscriptionsSupported()) {
+            val subscriptionResult: PurchasesResult = billingClient.queryPurchasesAsync(
+                QueryPurchasesParams.newBuilder()
+                    .setProductType(ProductType.SUBS)
+                    .build()
             )
             log().i(
-                "Querying purchases result code: %d, res: %d",
-                purchasesResult.billingResult.responseCode, purchasesResult.purchasesList.size
+                "Querying subscriptions result code: %d, res: %d",
+                subscriptionResult.billingResult.responseCode, subscriptionResult.purchasesList.size
             )
-            resultList.addAll(purchasesResult.purchasesList)
-            // If there are subscriptions supported, we add subscription rows as well
-            if (areSubscriptionsSupported()) {
-                val subscriptionResult: PurchasesResult = billingClient.queryPurchasesAsync(
-                    QueryPurchasesParams.newBuilder()
-                        .setProductType(ProductType.SUBS)
-                        .build()
-                )
-                log().i(
-                    "Querying subscriptions result code: %d, res: %d",
-                    subscriptionResult.billingResult.responseCode, subscriptionResult.purchasesList.size
-                )
-                resultList.addAll(subscriptionResult.purchasesList)
-            } else {
-                log().i("Skipped subscription purchases query since they are not supported")
-            }
-            onQueryPurchasesFinished(resultList)
+            resultList.addAll(subscriptionResult.purchasesList)
+        } else {
+            log().i("Skipped subscription purchases query since they are not supported")
         }
-        executeServiceRequest(queryToExecute)
+        onQueryPurchasesFinished(resultList)
     }
 
     private fun startServiceConnection(executeOnSuccess: suspend () -> Unit) {
@@ -288,7 +276,6 @@ class BillingManagerPlay(
             override fun onBillingSetupFinished(billingResult: BillingResult) {
                 val billingResponseCode = billingResult.responseCode
                 d("Setup finished", billingResult)
-                billingClientResponseCode = billingResponseCode
                 if (billingResponseCode == BillingResponseCode.OK) {
                     isServiceConnected = true
                     scope.launch {
@@ -316,11 +303,9 @@ class BillingManagerPlay(
     }
 
 
-    private fun executeServiceRequest(runnable: suspend () -> Unit) {
+    private suspend fun executeServiceRequest(runnable: suspend () -> Unit) {
         if (isServiceConnected) {
-            scope.launch {
-                runnable()
-            }
+            runnable()
         } else {
             // If billing service was disconnected, we try to reconnect 1 time.
             startServiceConnection(runnable)

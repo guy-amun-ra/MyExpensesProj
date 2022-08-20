@@ -61,10 +61,10 @@ open class PlayStoreLicenceHandler(
             ): Boolean {
                 if (purchases != null) {
                     val oldStatus = licenceStatus
-                    val oldFeatures = addOnFeatures
+                    val oldFeatures = addOnFeatures.size
                     registerInventory(purchases, newPurchase)
 
-                    if (newPurchase || oldStatus != licenceStatus || addOnFeatures.size > oldFeatures.size) {
+                    if (newPurchase || oldStatus != licenceStatus || addOnFeatures.size > oldFeatures) {
                         (activity as? BillingListener)?.onLicenceStatusSet(
                             prettyPrintStatus(
                                 activity
@@ -140,7 +140,7 @@ open class PlayStoreLicenceHandler(
         maybeUpgradeAddonFeatures(features.map { it.feature }, newPurchase)
     }
 
-    override fun launchPurchase(
+    override suspend fun launchPurchase(
         aPackage: Package,
         shouldReplaceExisting: Boolean,
         billingManager: BillingManager
