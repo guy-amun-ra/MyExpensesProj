@@ -1,6 +1,5 @@
 package org.totschnig.myexpenses.util.licence
 
-import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.net.Uri
@@ -93,7 +92,7 @@ open class LicenceHandler(
     }
 
     open fun isEnabledFor(licenceStatus: LicenceStatus) =
-        this.licenceStatus?.compareTo(licenceStatus) ?: -1 >= 0
+        (this.licenceStatus?.compareTo(licenceStatus) ?: -1) >= 0
 
     val isUpgradeable: Boolean
         get() = licenceStatus?.isUpgradeable ?: true
@@ -372,7 +371,7 @@ open class LicenceHandler(
         return null
     }
 
-    open fun launchPurchase(
+    open suspend fun launchPurchase(
         aPackage: Package,
         shouldReplaceExisting: Boolean,
         billingManager: BillingManager
