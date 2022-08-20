@@ -2,11 +2,13 @@ package org.totschnig.myexpenses.util.licence
 
 import android.app.Application
 import androidx.annotation.VisibleForTesting
-import androidx.lifecycle.lifecycleScope
-import com.android.billingclient.api.*
+import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClient.ProductType
+import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.ProductDetails
+import com.android.billingclient.api.ProductDetailsResponseListener
+import com.android.billingclient.api.Purchase
 import com.google.android.vending.licensing.PreferenceObfuscator
-import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
 import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
@@ -65,10 +67,7 @@ open class PlayStoreLicenceHandler(
                     registerInventory(purchases, newPurchase)
 
                     if (newPurchase || oldStatus != licenceStatus || addOnFeatures.size > oldFeatures) {
-                        (activity as? BillingListener)?.onLicenceStatusSet(
-                            prettyPrintStatus(
-                                activity
-                            )
+                        activity.onLicenceStatusSet(prettyPrintStatus(activity)
                         )
                     }
                 }
@@ -77,12 +76,12 @@ open class PlayStoreLicenceHandler(
 
             override fun onPurchaseCanceled() {
                 log().i("onPurchasesUpdated() - user cancelled the purchase flow - skipping")
-                (activity as? ContribInfoDialogActivity)?.onPurchaseCancelled()
+                activity.onPurchaseCancelled()
             }
 
             override fun onPurchaseFailed(resultCode: Int) {
                 log().w("onPurchasesUpdated() got unknown resultCode: %s", resultCode)
-                (activity as? ContribInfoDialogActivity)?.onPurchaseFailed(resultCode)
+                activity.onPurchaseFailed(resultCode)
             }
         }
         val skuDetailsResponseListener =
@@ -93,7 +92,7 @@ open class PlayStoreLicenceHandler(
                     log().w("skuDetails response %d", result.responseCode)
                 }
             } else null
-        return BillingManagerPlay(activity, activity.lifecycleScope, billingUpdatesListener, skuDetailsResponseListener)
+        return BillingManagerPlay(activity, billingUpdatesListener, skuDetailsResponseListener)
     }
 
     @VisibleForTesting

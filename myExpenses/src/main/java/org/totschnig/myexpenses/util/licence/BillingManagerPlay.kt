@@ -16,7 +16,7 @@
  */
 package org.totschnig.myexpenses.util.licence
 
-import android.app.Activity
+import androidx.lifecycle.lifecycleScope
 import com.android.billingclient.api.AcknowledgePurchaseParams
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClient.*
@@ -34,6 +34,7 @@ import com.android.billingclient.api.queryProductDetails
 import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.contrib.Config.playInAppSkus
 import org.totschnig.myexpenses.contrib.Config.playSubsSkus
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
@@ -45,11 +46,12 @@ import java.util.*
  * it through BillingClient and caches temporary states/data if needed
  */
 class BillingManagerPlay(
-    private val activity: Activity,
-    private val scope: CoroutineScope,
+    private val activity: IapActivity,
     private val billingUpdatesListener: BillingUpdatesListener,
     private val productDetailsResponseListener: ProductDetailsResponseListener?
 ) : PurchasesUpdatedListener, BillingManager {
+
+    private val scope: CoroutineScope = activity.lifecycleScope
 
     /** A reference to BillingClient  */
     private var billingClient: BillingClient
