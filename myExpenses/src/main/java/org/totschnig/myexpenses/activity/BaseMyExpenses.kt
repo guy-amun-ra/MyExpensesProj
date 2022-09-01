@@ -59,19 +59,7 @@ import org.totschnig.myexpenses.preference.enableAutoFill
 import org.totschnig.myexpenses.preference.requireString
 import org.totschnig.myexpenses.provider.CheckSealedHandler
 import org.totschnig.myexpenses.provider.DatabaseConstants
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENT_BALANCE
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_GROUPING
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_IS_AGGREGATE
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PICTURE_URI
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SECOND_GROUP
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_YEAR
+import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.filter.Criteria
 import org.totschnig.myexpenses.provider.getInt
@@ -596,26 +584,24 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         invalidateOptionsMenu()
     }
 
+    private fun Intent.fillIntentForGroupingFromTag(tag: Int) {
+        val year = (tag / 1000).toInt()
+        val groupingSecond = (tag % 1000).toInt()
+        putExtra(KEY_YEAR, year)
+        putExtra(KEY_SECOND_GROUP, groupingSecond)
+    }
+
     override fun contribFeatureCalled(feature: ContribFeature, tag: Serializable?) {
         @Suppress("NON_EXHAUSTIVE_WHEN")
         when (feature) {
             ContribFeature.DISTRIBUTION -> {
-                accountsCursor?.let {
-                    it.moveToPosition(currentPosition)
+                ensureAccountCursorAtCurrentPosition()?.let {
                     recordUsage(feature)
-                    val i = Intent(this, DistributionActivity::class.java)
-                    i.putExtra(KEY_ACCOUNTID, accountId)
-                    i.putExtra(
-                        KEY_GROUPING,
-                        it.getString(KEY_GROUPING)
-                    )
-                    if (tag != null) {
-                        val year = ((tag as Long?)!! / 1000).toInt()
-                        val groupingSecond = ((tag as Long?)!! % 1000).toInt()
-                        i.putExtra(KEY_YEAR, year)
-                        i.putExtra(KEY_SECOND_GROUP, groupingSecond)
-                    }
-                    startActivity(i)
+                    startActivity(Intent(this, DistributionActivity::class.java).apply {
+                        putExtra(KEY_ACCOUNTID, accountId)
+                        putExtra(KEY_GROUPING, it.getString(KEY_GROUPING))
+                        (tag as? Int)?.let { tag -> fillIntentForGroupingFromTag(tag) }
+                    })
                 }
             }
             ContribFeature.HISTORY -> {
@@ -686,7 +672,13 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 }
             }
             ContribFeature.BUDGET -> {
-                if (accountId != 0L && currentCurrency != null) {
+                if (tag != null) {
+                    val (budgetId, headerId) = tag as Pair<Long, Int>
+                    startActivity(Intent(this, BudgetActivity::class.java).apply {
+                        putExtra(KEY_ROWID, budgetId)
+                        fillIntentForGroupingFromTag(headerId)
+                    })
+                } else if (accountId != 0L && currentCurrency != null) {
                     recordUsage(feature)
                     val i = Intent(this, ManageBudgets::class.java)
                     startActivity(i)
@@ -932,6 +924,16 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         if ("-1" != prefHandler.getString(PrefKey.PLANNER_CALENDAR_ID, "-1")) {
             if (!PermissionHelper.PermissionGroup.CALENDAR.hasPermission(this)) {
                 requestPermission(PermissionHelper.PermissionGroup.CALENDAR)
+            }
+        }
+    }
+
+    fun balance(accountId: Long, reset: Boolean) {
+        viewModel.balanceAccount(accountId, reset).observe(
+            this
+        ) { result ->
+            result.onFailure {
+                showSnackBar(it.safeMessage)
             }
         }
     }

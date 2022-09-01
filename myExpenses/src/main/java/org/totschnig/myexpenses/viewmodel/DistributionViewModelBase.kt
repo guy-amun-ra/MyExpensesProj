@@ -1,17 +1,30 @@
 package org.totschnig.myexpenses.viewmodel
 
 import android.app.Application
+import android.os.Parcelable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import app.cash.copper.flow.observeQuery
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transform
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.parcelize.Parcelize
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.Grouping
@@ -20,8 +33,15 @@ import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.asSequence
 import org.totschnig.myexpenses.provider.filter.FilterPersistence
-import org.totschnig.myexpenses.viewmodel.data.*
+import org.totschnig.myexpenses.viewmodel.data.Budget
+import org.totschnig.myexpenses.viewmodel.data.Category
+import org.totschnig.myexpenses.viewmodel.data.DateInfo
+import org.totschnig.myexpenses.viewmodel.data.DateInfo2
+import org.totschnig.myexpenses.viewmodel.data.DateInfo3
+import org.totschnig.myexpenses.viewmodel.data.DistributionAccountInfo
 import java.util.*
+
+private const val KEY_GROUPING_INFO = "groupingInfo"
 
 abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
     application: Application,
@@ -39,7 +59,8 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
 
     protected val _aggregateTypes = MutableStateFlow(true)
     private val _incomeType = MutableStateFlow(false)
-    val _groupingInfo = MutableStateFlow<GroupingInfo?>(null)
+    val groupingInfoFlow: Flow<GroupingInfo?>
+        get() = savedStateHandle.getLiveData<GroupingInfo?>(KEY_GROUPING_INFO, null).asFlow()
 
     val aggregateTypes: Boolean
         get() = _aggregateTypes.value
@@ -48,7 +69,7 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
         get() = _incomeType.value
 
     val grouping: Grouping
-        get() = _groupingInfo.value?.grouping ?: Grouping.NONE
+        get() = groupingInfo?.grouping ?: Grouping.NONE
 
     fun setAggregateTypes(newValue: Boolean) {
         _aggregateTypes.tryEmit(newValue)
@@ -58,84 +79,76 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
         _incomeType.tryEmit(newValue)
     }
 
-    fun setGroupingInfo(groupingInfo: GroupingInfo) {
-        _groupingInfo.tryEmit(groupingInfo)
-    }
+    var groupingInfo: GroupingInfo?
+        get() = savedStateHandle.get<GroupingInfo>(KEY_GROUPING_INFO)
+        set(value) {
+            savedStateHandle[KEY_GROUPING_INFO] = value
+        }
 
     fun setGrouping(grouping: Grouping) {
         if (grouping == Grouping.NONE) {
-            _groupingInfo.tryEmit(GroupingInfo(grouping, 0, 0))
+            groupingInfo = GroupingInfo(grouping, 0, 0)
         } else {
             viewModelScope.launch {
                 dateInfo.filterNotNull().collect {
-                    _groupingInfo.tryEmit(
-                        GroupingInfo(
-                            grouping = grouping,
-                            year = when (grouping) {
-                                Grouping.WEEK -> it.yearOfWeekStart
-                                Grouping.MONTH -> it.yearOfMonthStart
-                                else -> it.year
-                            },
-                            second = when (grouping) {
-                                Grouping.DAY -> it.day
-                                Grouping.WEEK -> it.week
-                                Grouping.MONTH -> it.month
-                                else -> 0
-                            }
-                        )
+                    groupingInfo = GroupingInfo(
+                        grouping = grouping,
+                        year = when (grouping) {
+                            Grouping.WEEK -> it.yearOfWeekStart
+                            Grouping.MONTH -> it.yearOfMonthStart
+                            else -> it.year
+                        },
+                        second = when (grouping) {
+                            Grouping.DAY -> it.day
+                            Grouping.WEEK -> it.week
+                            Grouping.MONTH -> it.month
+                            else -> 0
+                        }
                     )
                 }
             }
         }
     }
 
+    fun GroupingInfo.next(dateInfo: DateInfo3): GroupingInfo {
+        val nextSecond = second + 1
+        val overflow = nextSecond > dateInfo.maxValue
+        return copy(
+            year = if (overflow) year + 1 else year,
+            second = if (overflow) grouping.minValue else nextSecond
+        )
+    }
+
+    fun GroupingInfo.previous(dateInfo: DateInfo3): GroupingInfo {
+        val nextSecond = second - 1
+        val underflow = nextSecond < grouping.minValue
+        return copy(
+            year = if (underflow) year - 1 else year,
+            second = if (underflow) dateInfo.maxValue else nextSecond
+        )
+    }
+
     fun forward() {
-        _groupingInfo.value?.let { groupingInfo ->
-            if (groupingInfo.grouping == Grouping.YEAR) {
-                _groupingInfo.tryEmit(
-                    groupingInfo.copy(
-                        year = groupingInfo.year + 1
-                    )
-                )
+        groupingInfo?.let { info ->
+            if (info.grouping == Grouping.YEAR) {
+                groupingInfo = info.copy(year = info.year + 1)
             } else {
                 viewModelScope.launch {
-                    dateInfoExtra.filterNotNull().take(1).collect {
-                        val nextSecond = groupingInfo.second + 1
-                        val currentYear = groupingInfo.year
-                        val overflow = nextSecond > it.maxValue
-                        _groupingInfo.tryEmit(
-                            groupingInfo.copy(
-                                year = if (overflow) currentYear + 1 else currentYear,
-                                second = if (overflow) grouping.minValue else nextSecond
-                            )
-                        )
-                    }
+                    val dateInfo = dateInfoExtra.filterNotNull().first()
+                    groupingInfo = info.next(dateInfo)
                 }
             }
         }
     }
 
     fun backward() {
-        _groupingInfo.value?.let { groupingInfo ->
-            if (groupingInfo.grouping == Grouping.YEAR) {
-                _groupingInfo.tryEmit(
-                    groupingInfo.copy(
-                        year = groupingInfo.year - 1
-                    )
-                )
+        groupingInfo?.let { info ->
+            if (info.grouping == Grouping.YEAR) {
+                groupingInfo = info.copy(year = info.year - 1)
             } else {
                 viewModelScope.launch {
-                    dateInfoExtra.filterNotNull().take(1).collect {
-                        val nextSecond = groupingInfo.second - 1
-                        val currentYear = groupingInfo.year
-                        val underflow = nextSecond < grouping.minValue
-                        _groupingInfo.tryEmit(
-                            groupingInfo.copy(
-                                year = if (underflow) currentYear - 1 else currentYear,
-                                second = if (underflow) it.maxValue else nextSecond
-                            )
-                        )
-                    }
+                    val dateInfo = dateInfoExtra.filterNotNull().first()
+                    groupingInfo = info.previous(dateInfo)
                 }
             }
         }
@@ -165,7 +178,7 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val dateInfoExtra: StateFlow<DateInfo3?> =
-        _groupingInfo.filterNotNull().flatMapLatest { grouping ->
+        groupingInfoFlow.filterNotNull().flatMapLatest { grouping ->
             //if we are at the beginning of the year we are interested in the max of the previous year
             val maxYearToLookUp = if (grouping.second <= 1) grouping.year - 1 else grouping.year
             val maxValueExpression = when (grouping.grouping) {
@@ -218,7 +231,7 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
         }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     val displaySubTitle: Flow<String> = combine(
-        _groupingInfo.filterNotNull(),
+        groupingInfoFlow.filterNotNull(),
         dateInfo,
         dateInfoExtra
     ) { groupingInfo, dateInfo, dateInfoExtra ->
@@ -250,27 +263,38 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
         _accountInfo.filterNotNull(),
         _aggregateTypes,
         _incomeType,
-        _groupingInfo.filterNotNull()
+        groupingInfoFlow.filterNotNull()
     ) { accountInfo, aggregateTypes, incomeType, grouping ->
         Triple(accountInfo, if (aggregateTypes) null else incomeType, grouping)
     }.flatMapLatest { (accountInfo, incomeType, grouping) ->
-        categoryTreeWithSum(accountInfo, incomeType, grouping) { it.sum != 0L }
+        categoryTreeWithSum(
+            accountInfo = accountInfo,
+            incomeType = incomeType,
+            groupingInfo = grouping,
+            keepCriteria = { it.sum != 0L }
+        )
     }.map { it.sortChildrenBySumRecursive() }
 
     fun categoryTreeWithSum(
         accountInfo: T,
         incomeType: Boolean?,
         groupingInfo: GroupingInfo,
-        queryParameter: String? = null,
+        queryParameter: Map<String, String> = emptyMap(),
         filterPersistence: FilterPersistence? = null,
+        selection: String? = null,
         keepCriteria: ((Category) -> Boolean)? = null
     ): Flow<Category> =
         categoryTree(
-            filter = null,
+            selection = selection,
             projection = buildList {
                 add("$TREE_CATEGORIES.*")
                 add(sumColumn(accountInfo, incomeType, groupingInfo, filterPersistence))
-                if (accountInfo is Budget) add(FQCN_CATEGORIES_BUDGET)
+                if (accountInfo is Budget) {
+                    add(KEY_BUDGET)
+                    add(KEY_BUDGET_ROLLOVER_PREVIOUS)
+                    add(KEY_BUDGET_ROLLOVER_NEXT)
+                    add(KEY_ONE_TIME)
+                }
             }.toTypedArray(),
             additionalSelectionArgs = (filterPersistence?.whereFilter?.getSelectionArgs(true)
                 ?: emptyArray<String>()) +
@@ -315,7 +339,7 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
     }
 
     val filterClause: String
-        get() = buildFilterClause(_groupingInfo.value!!, _filterPersistence.value, VIEW_EXTENDED)
+        get() = buildFilterClause(groupingInfo!!, _filterPersistence.value, VIEW_EXTENDED)
 
     private fun buildFilterClause(
         groupingInfo: GroupingInfo,
@@ -348,7 +372,7 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
     @OptIn(ExperimentalCoroutinesApi::class)
     val sums: Flow<Pair<Long, Long>> = combine(
         _accountInfo.filterNotNull(),
-        _groupingInfo,
+        groupingInfoFlow,
         _filterPersistence
     ) { accountInfo, grouping, filterPersistence ->
         grouping?.let {
@@ -400,9 +424,10 @@ abstract class DistributionViewModelBase<T : DistributionAccountInfo>(
             }
         }
 
+    @Parcelize
     data class GroupingInfo(
-        val grouping: Grouping,
+        val grouping: Grouping = Grouping.NONE,
         val year: Int = -1,
         val second: Int = -1
-    )
+    ) : Parcelable
 }
