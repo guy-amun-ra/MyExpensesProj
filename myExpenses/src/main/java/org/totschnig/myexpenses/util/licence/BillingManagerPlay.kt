@@ -206,7 +206,7 @@ class BillingManagerPlay(
             )
             d("acknowledgePurchase", result)
             if (result.responseCode != BillingResponseCode.OK) {
-                CrashHandler.report("acknowledgePurchase failed with responseCode ${result.responseCode}")
+                CrashHandler.report(Exception("acknowledgePurchase failed with responseCode ${result.responseCode}"))
             }
         }
 

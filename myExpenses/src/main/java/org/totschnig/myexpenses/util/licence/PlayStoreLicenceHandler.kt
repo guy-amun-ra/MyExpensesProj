@@ -116,7 +116,7 @@ open class PlayStoreLicenceHandler(
             } else {
                 //TODO handle pending
                 CrashHandler.report(
-                    String.format("Found purchase in state %s", it.purchaseState),
+                    Exception("Found purchase in state ${it.purchaseState}"),
                     TAG
                 )
             }
