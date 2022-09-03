@@ -126,7 +126,7 @@ open class PlayStoreLicenceHandler(
             }
         }
         handlePurchaseForAddOns(
-            inventory.flatMap { it.products }.mapNotNull { Licence.parseFeature(it) },
+            inventory.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }.flatMap { it.products }.mapNotNull { Licence.parseFeature(it) },
             newPurchase
         )
         licenseStatusPrefs.commit()
