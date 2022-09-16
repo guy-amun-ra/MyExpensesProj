@@ -315,7 +315,7 @@ class BillingManagerPlay(
     }
 
     private fun d(message: String, result: BillingResult) {
-        log().d(
+        log().w(
             "%s - Response code: %d, Debug message: %s",
             message,
             result.responseCode,
