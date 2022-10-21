@@ -56,6 +56,9 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
         override fun isLoggable(tag: String?, priority: Int): Boolean {
             return priority == Log.ERROR || priority == Log.WARN
         }
+
+        override fun formatMessage(message: String, args: Array<out Any?>) =
+            message.format(Locale.ROOT, *args)
     }
 
     override fun initProcess(context: Context, syncService: Boolean) {
