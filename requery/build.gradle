@@ -8,7 +8,21 @@ android {
 
     defaultConfig {
         minSdk 21
-        missingDimensionStrategy 'textRecognition', 'extern'
+        missingDimensionStrategy 'textRecognition', 'intern'
+    }
+
+    flavorDimensions 'distribution'
+
+    productFlavors {
+        play {
+            dimension "distribution"
+        }
+        amazon {
+            dimension "distribution"
+        }
+        huawei {
+            dimension "distribution"
+        }
     }
 }
 
