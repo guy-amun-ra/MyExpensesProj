@@ -618,7 +618,6 @@
     <string name="onboarding_restore_from_cloud_backup">备份文件</string>
     <string name="onboarding_restore_from_local">恢复本地备份文件</string>
     <string name="dialog_button_add">添加</string>
-    <string name="template_create_error">保存模板时出错</string>
     <string name="contributed_by">由%s贡献</string>
     <string name="pref_sync_notification_summary">通知同步进度</string>
     <string name="pref_debug_logging_summary">将调试信息写入系统日志</string>
@@ -628,7 +627,6 @@
     <string name="progress_validating_licence">验证许可证</string>
     <string name="licence_validation_error_expired">许可证已过期</string>
     <string name="licence_validation_error_device_limit_exceeded">超出设备限制。请从其他设备上删除许可证。</string>
-    <string name="error">错误（%s）</string>
     <string name="button_validate">验证</string>
     <string name="licence_key">许可证密钥</string>
     <string name="licence_removal_information">如果您不再需要此设备上的高级功能，则可以删除许可证密钥。这样可以释放密钥，以便在另一台设备上激活。该密钥最多可以在%d台设备上激活。</string>
@@ -680,14 +678,9 @@
     <string name="warning_ungroup_split_transactions">您所选的拆分交易将被取消分组，也就是说，它们的拆分款项将各自成为一般交易。</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">解散拆分交易的组合</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="other">已成功将 %1$d 笔分拆交易变为未分组状态。</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">解散拆分交易组合时，拆分交易%2$d中的%1$d解散失败。</string>
+    <string name="ungroup_split_transaction_success">已成功将 1 笔分拆交易变为未分组状态。</string>
     <string name="split_transaction_one_success">已成功将交易转换为拆分款项。</string>
-    <string name="split_transaction_one_error">不能将交易转换为拆分款项。</string>
     <string name="split_transaction_group_success">%1$d数笔交易已成功地组成一个拆分交易。</string>
-    <string name="split_transaction_group_error">无法将这些交易组成一个拆分交易。</string>
     <string name="split_transaction_not_possible">只有具有相同账户、收款人和状态的交易，才能被组成一个拆分交易。</string>
     <string name="pref_transaction_time_summary">允许设置确切的交易时间。</string>
     <string name="pref_value_date_summary">除了\"账面交易日期(booking date)\"外，还可以设置\"生效日期(value date)\"。交易时间将被隐藏。此设置不适用于现金账户。</string>
@@ -767,7 +760,6 @@
     <string name="button_label_no_encryption">没有加密</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">或</string>
-    <string name="pref_account_list_fast_scroll_summary">启用账户列表快速滚动。在某些设备上可能导致显示不正确</string>
     <string name="menu_hide">隐藏</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">关闭</string>
@@ -998,4 +990,14 @@
     <string name="debt_owes_me">欠债人 %s</string>
     <string name="warning_party_delete_debt">删除该交易对象时，相关的债务也将一并删除。</string>
     <string name="whats_new_340">支持多行备注</string>
+    <string name="webui_warning_move_transaction">交易将移至账户 {account}</string>
+    <string name="pref_csv_export_split_date_time_summary">日期和时间单独一列</string>
+    <string name="pref_csv_export_split_amount_summary">收入和支出单独一列</string>
+    <string name="budget_only_current_period">仅为“%s”设置</string>
+    <string name="rollover_edit_invalid">分配给一个类别的展期数额和分配给子类别的展期数额之和不能超过余额</string>
+    <string name="budget_table_header_rollover">展期</string>
+    <string name="required">必填</string>
+    <string name="dialog_confirm_rollover_delete">此期间的所有展期金额将被删除</string>
+    <string name="whats_new_344">类别图标</string>
+    <string name="pref_csv_export_split_categories_summary">每个类别层次结构级别单独一列</string>
 </resources>

@@ -15,6 +15,27 @@
 
 package org.totschnig.myexpenses.activity;
 
+import static org.totschnig.myexpenses.MyApplication.FEEDBACK_EMAIL;
+import static org.totschnig.myexpenses.activity.ConstantsKt.CALCULATOR_REQUEST;
+import static org.totschnig.myexpenses.activity.ConstantsKt.CONFIRM_DEVICE_CREDENTIALS_UNLOCK_REQUEST;
+import static org.totschnig.myexpenses.activity.ConstantsKt.CONTRIB_REQUEST;
+import static org.totschnig.myexpenses.activity.ConstantsKt.PREFERENCES_REQUEST;
+import static org.totschnig.myexpenses.activity.ConstantsKt.RESTORE_REQUEST;
+import static org.totschnig.myexpenses.activity.ContribInfoDialogActivity.KEY_FEATURE;
+import static org.totschnig.myexpenses.preference.PrefKey.CUSTOM_DATE_FORMAT;
+import static org.totschnig.myexpenses.preference.PrefKey.DB_SAFE_MODE;
+import static org.totschnig.myexpenses.preference.PrefKey.GROUP_MONTH_STARTS;
+import static org.totschnig.myexpenses.preference.PrefKey.GROUP_WEEK_STARTS;
+import static org.totschnig.myexpenses.preference.PrefKey.HOME_CURRENCY;
+import static org.totschnig.myexpenses.preference.PrefKey.PROTECTION_DEVICE_LOCK_SCREEN;
+import static org.totschnig.myexpenses.preference.PrefKey.PROTECTION_LEGACY;
+import static org.totschnig.myexpenses.preference.PrefKey.UI_FONTSIZE;
+import static org.totschnig.myexpenses.preference.PrefKey.UI_LANGUAGE;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT;
+import static org.totschnig.myexpenses.util.TextUtils.concatResStrings;
+import static org.totschnig.myexpenses.util.distrib.DistributionHelper.getMarketSelfUri;
+import static org.totschnig.myexpenses.util.distrib.DistributionHelper.getVersionInfo;
+
 import android.app.KeyguardManager;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
@@ -38,8 +59,19 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.util.Pair;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+
 import com.annimon.stream.Optional;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.R;
@@ -81,40 +113,7 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.util.Pair;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentActivity;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import icepick.Icepick;
-
-import static org.totschnig.myexpenses.MyApplication.FEEDBACK_EMAIL;
-import static org.totschnig.myexpenses.activity.ConstantsKt.CALCULATOR_REQUEST;
-import static org.totschnig.myexpenses.activity.ConstantsKt.CONFIRM_DEVICE_CREDENTIALS_UNLOCK_REQUEST;
-import static org.totschnig.myexpenses.activity.ConstantsKt.CONTRIB_REQUEST;
-import static org.totschnig.myexpenses.activity.ConstantsKt.PREFERENCES_REQUEST;
-import static org.totschnig.myexpenses.activity.ConstantsKt.RESTORE_REQUEST;
-import static org.totschnig.myexpenses.activity.ContribInfoDialogActivity.KEY_FEATURE;
-import static org.totschnig.myexpenses.preference.PrefKey.CRITERION_FUTURE;
-import static org.totschnig.myexpenses.preference.PrefKey.CUSTOM_DATE_FORMAT;
-import static org.totschnig.myexpenses.preference.PrefKey.DB_SAFE_MODE;
-import static org.totschnig.myexpenses.preference.PrefKey.GROUP_MONTH_STARTS;
-import static org.totschnig.myexpenses.preference.PrefKey.GROUP_WEEK_STARTS;
-import static org.totschnig.myexpenses.preference.PrefKey.HOME_CURRENCY;
-import static org.totschnig.myexpenses.preference.PrefKey.PROTECTION_DEVICE_LOCK_SCREEN;
-import static org.totschnig.myexpenses.preference.PrefKey.PROTECTION_LEGACY;
-import static org.totschnig.myexpenses.preference.PrefKey.UI_FONTSIZE;
-import static org.totschnig.myexpenses.preference.PrefKey.UI_LANGUAGE;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT;
-import static org.totschnig.myexpenses.util.TextUtils.concatResStrings;
-import static org.totschnig.myexpenses.util.distrib.DistributionHelper.getMarketSelfUri;
-import static org.totschnig.myexpenses.util.distrib.DistributionHelper.getVersionInfo;
 
 public abstract class ProtectedFragmentActivity extends BaseActivity
     implements OnSharedPreferenceChangeListener,
@@ -133,8 +132,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
   private boolean scheduledRestart = false;
   private Optional<Boolean> confirmCredentialResult = Optional.empty();
   protected ColorStateList textColorSecondary;
-  @Nullable
-  protected FloatingActionButton floatingActionButton;
 
   @Inject
   protected AdHandlerFactory adHandlerFactory;
@@ -229,30 +226,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
     ((MyApplication) getApplicationContext()).getAppComponent().inject(this);
   }
 
-  protected void configureFloatingActionButton(int fabDescription) {
-    configureFloatingActionButton(fabDescription, 0);
-  }
-
-  protected void configureFloatingActionButton(int fabDescription, int icon) {
-    if (!requireFloatingActionButtonWithContentDescription(getString(fabDescription))) return;
-    if (icon != 0) {
-      floatingActionButton.setImageResource(icon);
-    }
-  }
-
-  protected boolean requireFloatingActionButton() {
-    floatingActionButton = findViewById(R.id.CREATE_COMMAND);
-    return floatingActionButton != null;
-  }
-
-  protected boolean requireFloatingActionButtonWithContentDescription(String fabDescription) {
-    boolean found = requireFloatingActionButton();
-    if (found) {
-      floatingActionButton.setContentDescription(fabDescription);
-    }
-    return found;
-  }
-
   protected Toolbar setupToolbar(boolean withHome) {
     Toolbar toolbar = findViewById(R.id.toolbar);
     setSupportActionBar(toolbar);
@@ -339,7 +312,7 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                         String key) {
     if (prefHandler.matches(key, UI_LANGUAGE, UI_FONTSIZE, PROTECTION_LEGACY, DB_SAFE_MODE,
-        PROTECTION_DEVICE_LOCK_SCREEN, GROUP_MONTH_STARTS, GROUP_WEEK_STARTS, HOME_CURRENCY, CUSTOM_DATE_FORMAT, CRITERION_FUTURE)) {
+        PROTECTION_DEVICE_LOCK_SCREEN, GROUP_MONTH_STARTS, GROUP_WEEK_STARTS, HOME_CURRENCY, CUSTOM_DATE_FORMAT)) {
       userLocaleProvider.invalidate();
       scheduledRestart = true;
     }
@@ -498,7 +471,7 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
 
   public void tintSystemUiAndFab(int color) {
     tintSystemUi(color);
-    UiUtils.setBackgroundTintListOnFab(floatingActionButton, color);
+    UiUtils.setBackgroundTintListOnFab(getFloatingActionButton(), color);
   }
 
   public void tintSystemUi(int color) {
@@ -651,20 +624,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
     f.recordUsage(prefHandler, licenceHandler);
   }
 
-  /*
-   * @see android.support.v7.app.ActionBarActivity#onBackPressed()
-   * https://code.google.com/p/android/issues/detail?id=25517
-   */
-  @Override
-  public void onBackPressed() {
-    try {
-      super.onBackPressed();
-    } catch (IllegalStateException e) {
-      CrashHandler.report(e);
-      finish();
-    }
-  }
-
   @Override
   protected void onActivityResult(int requestCode, int resultCode,
                                   Intent intent) {
@@ -719,14 +678,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
   }
 
   @Override
-  public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-    if (floatingActionButton != null) {
-      floatingActionButton.setEnabled(true);
-    }
-    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-  }
-
-  @Override
   public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
     if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR) {
       DailyScheduler.updatePlannerAlarms(this, false, true);
@@ -735,14 +686,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
 
   public void requestCalendarPermission() {
     requestPermission(PermissionGroup.CALENDAR);
-  }
-
-  @Override
-  public void requestPermission(@NonNull PermissionGroup permissionGroup) {
-    if (floatingActionButton != null) {
-      floatingActionButton.setEnabled(false);
-    }
-    super.requestPermission(permissionGroup);
   }
 
   @Override

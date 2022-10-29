@@ -24,20 +24,15 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.viewModels
-import androidx.preference.EditTextPreference
-import androidx.preference.ListPreference
-import androidx.preference.MultiSelectListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceCategory
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceGroup
-import androidx.preference.SwitchPreferenceCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.*
 import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.form.Input
 import eltos.simpledialogfragment.form.SimpleFormDialog
 import eltos.simpledialogfragment.list.CustomListDialog
 import eltos.simpledialogfragment.list.SimpleListDialog
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.MyApplication.FEEDBACK_EMAIL
 import org.totschnig.myexpenses.R
@@ -53,32 +48,23 @@ import org.totschnig.myexpenses.exception.ExternalStorageNotAvailableException
 import org.totschnig.myexpenses.feature.Feature
 import org.totschnig.myexpenses.feature.FeatureManager
 import org.totschnig.myexpenses.model.ContribFeature
-import org.totschnig.myexpenses.preference.AccountPreference
-import org.totschnig.myexpenses.preference.LocalizedFormatEditTextPreference
+import org.totschnig.myexpenses.preference.*
 import org.totschnig.myexpenses.preference.LocalizedFormatEditTextPreference.OnValidationErrorListener
-import org.totschnig.myexpenses.preference.PopupMenuPreference
-import org.totschnig.myexpenses.preference.PrefHandler
-import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.preference.requireString
+import org.totschnig.myexpenses.preference.PreferenceDataStore
+import org.totschnig.myexpenses.retrofit.ExchangeRateSource
 import org.totschnig.myexpenses.service.DailyScheduler
 import org.totschnig.myexpenses.sync.BackendService
 import org.totschnig.myexpenses.sync.GenericAccountService
+import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.util.AppDirHelper.getContentUriForFile
-import org.totschnig.myexpenses.util.CurrencyFormatter
-import org.totschnig.myexpenses.util.ShortcutHelper
 import org.totschnig.myexpenses.util.TextUtils.concatResStrings
-import org.totschnig.myexpenses.util.UiUtils
-import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.ads.AdHandlerFactory
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.distrib.DistributionHelper
-import org.totschnig.myexpenses.util.enumValueOrNull
 import org.totschnig.myexpenses.util.io.isConnectedWifi
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.licence.Package
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
-import org.totschnig.myexpenses.util.safeMessage
-import org.totschnig.myexpenses.util.setNightMode
 import org.totschnig.myexpenses.util.tracking.Tracker
 import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
 import org.totschnig.myexpenses.viewmodel.SettingsViewModel
@@ -130,6 +116,9 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
     @Inject
     lateinit var crashHandler: CrashHandler
 
+    @Inject
+    lateinit var preferenceDataStore: PreferenceDataStore
+
     private val webUiViewModel: WebUiViewModel by viewModels()
     private val currencyViewModel: CurrencyViewModel by viewModels()
     private val viewModel: SettingsViewModel by viewModels()
@@ -180,6 +169,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             super.onCreate(savedInstanceState)
             inject(this@BaseSettingsFragment)
         }
+
         viewModel.appDirInfo.observe(this) { result ->
             val pref = requirePreference<Preference>(PrefKey.APP_DIR)
             result.onSuccess { appDirInfo ->
@@ -360,14 +350,23 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         key: String
     ) {
         when (key) {
+            getKey(PrefKey.CRASHREPORT_USEREMAIL) -> {
+                crashHandler.setUserEmail(sharedPreferences.getString(key, null))
+            }
+            getKey(PrefKey.CRASHREPORT_ENABLED) -> {
+                preferenceActivity.showSnackBar(R.string.app_restart_required)
+            }
+            getKey(PrefKey.EXCHANGE_RATE_PROVIDER) -> {
+                configureOpenExchangeRatesPreference(sharedPreferences.getString(key, ExchangeRateSource.defaultSource.name))
+            }
+            getKey(PrefKey.CUSTOM_DECIMAL_FORMAT) -> {
+                currencyFormatter.invalidateAll(requireContext().contentResolver)
+            }
             getKey(PrefKey.UI_LANGUAGE) -> {
                 featureManager.requestLocale(preferenceActivity)
             }
-            getKey(PrefKey.GROUP_MONTH_STARTS), getKey(PrefKey.GROUP_WEEK_STARTS), getKey(PrefKey.CRITERION_FUTURE) -> {
+            getKey(PrefKey.GROUP_MONTH_STARTS), getKey(PrefKey.GROUP_WEEK_STARTS) -> {
                 preferenceActivity.rebuildDbConstants()
-            }
-            getKey(PrefKey.DB_SAFE_MODE) -> {
-                preferenceActivity.rebuildAccountProjection()
             }
             getKey(PrefKey.UI_FONTSIZE) -> {
                 updateAllWidgets()
@@ -488,18 +487,6 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                     }
                 }
             }
-            matches(pref, PrefKey.CUSTOM_DECIMAL_FORMAT) -> {
-                currencyFormatter.invalidateAll(requireContext().contentResolver)
-            }
-            matches(pref, PrefKey.EXCHANGE_RATE_PROVIDER) -> {
-                configureOpenExchangeRatesPreference((value as String))
-            }
-            matches(pref, PrefKey.CRASHREPORT_USEREMAIL) -> {
-                crashHandler.setUserEmail(value as String)
-            }
-            matches(pref, PrefKey.CRASHREPORT_ENABLED) -> {
-                preferenceActivity.showSnackBar(R.string.app_restart_required)
-            }
             matches(pref, PrefKey.OCR_DATE_FORMATS) -> {
                 if (!isEmpty(value as String)) {
                     try {
@@ -538,10 +525,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             }
             matches(pref, PrefKey.UI_WEB) -> {
                 return if (value as Boolean) {
-                   /* if (!isConnectedWifi(requireContext())) {
+                    if (!isConnectedWifi(requireContext())) {
                         preferenceActivity.showSnackBar(getString(R.string.no_network) + " (WIFI)")
                         return false
-                    }*/
+                    }
                     if (licenceHandler.hasAccessTo(ContribFeature.WEB_UI) && preferenceActivity.featureViewModel.isFeatureAvailable(
                             preferenceActivity,
                             Feature.WEBUI
@@ -747,6 +734,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         }
     var pickFolderRequestStart: Long = 0
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
 
@@ -759,6 +747,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         unsetIconSpaceReservedRecursive(preferenceScreen)
 
         when (rootKey) {
+
             null -> { //ROOT screen
                 requirePreference<Preference>(PrefKey.HOME_CURRENCY).onPreferenceChangeListener =
                     this
@@ -775,6 +764,18 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
 
                 requirePreference<LocalizedFormatEditTextPreference>(PrefKey.CUSTOM_DATE_FORMAT).onValidationErrorListener =
                     this
+
+                lifecycleScope.launchWhenStarted {
+                    preferenceDataStore.handleToggle(requirePreference(PrefKey.GROUP_HEADER))
+                }
+
+                lifecycleScope.launchWhenStarted {
+                    preferenceDataStore.handleList(requirePreference(PrefKey.UI_ITEM_RENDERER))
+                }
+
+                lifecycleScope.launchWhenStarted {
+                    preferenceDataStore.handleList(requirePreference(PrefKey.CRITERION_FUTURE))
+                }
 
                 loadAppDirSummary()
 
@@ -901,10 +902,6 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                     context,
                     R.string.crash_reports_user_info
                 )
-                requirePreference<Preference>(PrefKey.CRASHREPORT_ENABLED).onPreferenceChangeListener =
-                    this
-                requirePreference<Preference>(PrefKey.CRASHREPORT_USEREMAIL).onPreferenceChangeListener =
-                    this
             }
             getKey(PrefKey.OCR) -> {
                 if ("" == prefHandler.getString(PrefKey.OCR_TOTAL_INDICATORS, "")) {
@@ -964,12 +961,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 configureUninstallPrefs()
             }
             getKey(PrefKey.EXCHANGE_RATES) -> {
-                requirePreference<Preference>(PrefKey.EXCHANGE_RATE_PROVIDER).onPreferenceChangeListener =
-                    this
                 configureOpenExchangeRatesPreference(
                     prefHandler.requireString(
                         PrefKey.EXCHANGE_RATE_PROVIDER,
-                        "EXCHANGE_RATE_HOST"
+                        ExchangeRateSource.defaultSource.name
                     )
                 )
             }
@@ -1006,7 +1001,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         return preferenceActivity.getTranslatorsArrayResId(language, country)
     }
 
-    private fun configureOpenExchangeRatesPreference(provider: String) {
+    private fun configureOpenExchangeRatesPreference(provider: String?) {
         requirePreference<Preference>(PrefKey.OPEN_EXCHANGE_RATES_APP_ID).isEnabled =
             provider == "OPENEXCHANGERATES"
     }

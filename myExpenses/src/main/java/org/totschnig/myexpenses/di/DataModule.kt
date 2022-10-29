@@ -1,8 +1,12 @@
 package org.totschnig.myexpenses.di
 
 import android.content.SharedPreferences
-import android.database.sqlite.SQLiteDatabase
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.preference.PreferenceManager
+import androidx.sqlite.db.SupportSQLiteOpenHelper
 import com.squareup.sqlbrite3.SqlBrite
 import dagger.Module
 import dagger.Provides
@@ -36,5 +40,15 @@ open class DataModule {
 
     @Singleton
     @Provides
-    open fun provideCursorFactory() : SQLiteDatabase.CursorFactory? = null //TrackingCursorFactory()
+    fun providePreferencesDataStore(appContext: MyApplication): DataStore<Preferences> {
+        return PreferenceDataStoreFactory.create(
+            produceFile = { appContext.preferencesDataStoreFile("UI-Settings") }
+        )
+    }
+
+    @Singleton
+    @Provides
+    open fun provideSQLiteOpenHelperFactory() =
+        Class.forName("io.requery.android.database.sqlite.RequerySQLiteOpenHelperFactory")
+            .getConstructor().newInstance() as SupportSQLiteOpenHelper.Factory
 }

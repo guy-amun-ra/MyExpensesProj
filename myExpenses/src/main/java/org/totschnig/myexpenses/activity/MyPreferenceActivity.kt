@@ -239,6 +239,10 @@ class MyPreferenceActivity : ProtectedFragmentActivity(), ContribIFace,
         }
     }
 
+    fun showRestartInfo() {
+        showSnackBar(R.string.app_restart_required)
+    }
+
     private fun activateWebUi() {
         fragment.activateWebUi()
     }

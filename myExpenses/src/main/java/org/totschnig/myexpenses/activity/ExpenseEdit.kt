@@ -25,15 +25,9 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.provider.CalendarContract
-import android.view.ContextMenu
-import android.view.LayoutInflater
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.TextView
 import android.widget.Toast
-import androidx.annotation.Nullable
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.view.ViewCompat
@@ -58,70 +52,27 @@ import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
 import org.totschnig.myexpenses.databinding.OneExpenseBinding
-import org.totschnig.myexpenses.delegate.CategoryDelegate
-import org.totschnig.myexpenses.delegate.MainDelegate
-import org.totschnig.myexpenses.delegate.SplitDelegate
-import org.totschnig.myexpenses.delegate.TransactionDelegate
-import org.totschnig.myexpenses.delegate.TransferDelegate
+import org.totschnig.myexpenses.delegate.*
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.ConfirmationDialogListener
 import org.totschnig.myexpenses.feature.OcrResultFlat
 import org.totschnig.myexpenses.fragment.PlanMonthFragment
 import org.totschnig.myexpenses.fragment.TemplatesList
-import org.totschnig.myexpenses.model.ContribFeature
-import org.totschnig.myexpenses.model.CrStatus
-import org.totschnig.myexpenses.model.ITransaction
-import org.totschnig.myexpenses.model.Model
-import org.totschnig.myexpenses.model.Money
+import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.Plan.Recurrence
 import org.totschnig.myexpenses.model.Template
-import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.disableAutoFill
 import org.totschnig.myexpenses.preference.enableAutoFill
-import org.totschnig.myexpenses.provider.DatabaseConstants.CATEGORY_ICON
-import org.totschnig.myexpenses.provider.DatabaseConstants.CAT_AS_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COMMENT
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ICON
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_INSTANCEID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHODID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEEID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PICTURE_URI
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID
-import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_NONE
+import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.ui.AmountInput
-import org.totschnig.myexpenses.ui.ContextAwareRecyclerView
-import org.totschnig.myexpenses.ui.DateButton
-import org.totschnig.myexpenses.ui.DiscoveryHelper
-import org.totschnig.myexpenses.ui.ExchangeRateEdit
-import org.totschnig.myexpenses.ui.IDiscoveryHelper
-import org.totschnig.myexpenses.util.PermissionHelper
-import org.totschnig.myexpenses.util.PictureDirHelper
-import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.checkMenuIcon
+import org.totschnig.myexpenses.ui.*
+import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import org.totschnig.myexpenses.util.getEnumFromPreferencesWithDefault
 import org.totschnig.myexpenses.util.tracking.Tracker
-import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
-import org.totschnig.myexpenses.viewmodel.ERROR_CALENDAR_INTEGRATION_NOT_AVAILABLE
-import org.totschnig.myexpenses.viewmodel.ERROR_EXTERNAL_STORAGE_NOT_AVAILABLE
-import org.totschnig.myexpenses.viewmodel.ERROR_PICTURE_SAVE_UNKNOWN
-import org.totschnig.myexpenses.viewmodel.ERROR_WHILE_SAVING_TAGS
-import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel
-import org.totschnig.myexpenses.viewmodel.TransactionViewModel
-import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.FROM_INTENT_EXTRAS
-import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TEMPLATE
-import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TRANSACTION
-import org.totschnig.myexpenses.viewmodel.TransactionViewModel.InstantiationTask.TRANSACTION_FROM_TEMPLATE
+import org.totschnig.myexpenses.viewmodel.*
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask.*
 import org.totschnig.myexpenses.viewmodel.data.Account
 import org.totschnig.myexpenses.viewmodel.data.Currency
 import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET
@@ -189,6 +140,10 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     @State
     var areDatesLinked = false
 
+    @JvmField
+    @State
+    var withTypeSpinner = false
+
     private var mIsResumed = false
     private var accountsLoaded = false
     private var pObserver: ContentObserver? = null
@@ -246,7 +201,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         get() = mNewInstance && !isClone && planInstanceId == 0L
 
     private val planInstanceId: Long
-        get() = intent.getLongExtra(KEY_INSTANCEID, 0)
+        get() = intent.getLongExtra(KEY_INSTANCEID, 0L)
 
     public override fun getDiscardNewMessage(): Int {
         return if (isTemplate) R.string.dialog_confirm_discard_new_template else R.string.dialog_confirm_discard_new_transaction
@@ -258,7 +213,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
 
     override fun onEnterAnimationComplete() {
         super.onEnterAnimationComplete()
-        floatingActionButton?.show()
+        floatingActionButton.show()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -269,7 +224,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         dateEditBinding = DateEditBinding.bind(rootBinding.root)
         methodRowBinding = MethodRowBinding.bind(rootBinding.root)
         setContentView(rootBinding.root)
-        registerForContextMenu(rootBinding.list)
         setupToolbar()
         mManager = LoaderManager.getInstance(this)
         val viewModelProvider = ViewModelProvider(this)
@@ -294,7 +248,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             setupObservers(true)
             delegate.bind(
                 null,
-                mNewInstance,
+                withTypeSpinner,
                 savedInstanceState,
                 null,
                 withAutoFill
@@ -302,27 +256,34 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
             setHelpVariant(delegate.helpVariant)
             setTitle()
             refreshPlanData()
-            floatingActionButton?.show()
+            floatingActionButton.show()
         } else {
             areDatesLinked = prefHandler.getBoolean(PrefKey.DATES_ARE_LINKED, false)
             updateDateLink()
             val extras = intent.extras
             var mRowId = Utils.getFromExtra(extras, KEY_ROWID, 0L)
-            var task: TransactionViewModel.InstantiationTask? = null
+            var task: InstantiationTask? = null
             if (mRowId == 0L) {
                 mRowId = intent.getLongExtra(KEY_TEMPLATEID, 0L)
                 if (mRowId != 0L) {
-                    if (planInstanceId != 0L) {
-                        task = TRANSACTION_FROM_TEMPLATE
+                    task = if (planInstanceId != 0L) {
+                        TRANSACTION_FROM_TEMPLATE
                     } else {
                         isTemplate = true
-                        task = TEMPLATE
+                        TEMPLATE
                     }
                 }
             } else {
-                task = TRANSACTION
+                task = if (intent.getBooleanExtra(KEY_TEMPLATE_FROM_TRANSACTION, false)) {
+                    isTemplate = true
+                    TEMPLATE_FROM_TRANSACTION
+                } else {
+                    TRANSACTION
+                }
             }
-            mNewInstance = mRowId == 0L || task == TRANSACTION_FROM_TEMPLATE
+            mNewInstance =
+                mRowId == 0L || task == TRANSACTION_FROM_TEMPLATE || task == TEMPLATE_FROM_TRANSACTION
+            withTypeSpinner = mRowId == 0L
             //were we called from a notification
             val notificationId = intent.getIntExtra(MyApplication.KEY_NOTIFICATION_ID, 0)
             if (notificationId > 0) {
@@ -508,7 +469,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         viewModel.getSplitParts().observe(this) { transactions ->
             (delegate as? SplitDelegate)?.also {
                 it.showSplits(transactions)
-            } ?: run { CrashHandler.report(java.lang.IllegalStateException("expected SplitDelegate, found ${delegate::class.java.name}")) }
+            }
+                ?: run { CrashHandler.report(java.lang.IllegalStateException("expected SplitDelegate, found ${delegate::class.java.name}")) }
         }
         observeMoveResult()
     }
@@ -520,7 +482,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     private fun loadTags() {
-        viewModel.getTags().observe(this) { tags ->
+        viewModel.tagsLiveData.observe(this) { tags ->
             if (::delegate.isInitialized) {
                 delegate.showTags(tags) { tag ->
                     viewModel.removeTag(tag)
@@ -604,7 +566,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
 
     private fun populateFromTask(
         transaction: Transaction?,
-        task: TransactionViewModel.InstantiationTask
+        task: InstantiationTask
     ) {
         transaction?.let {
             if (transaction.isSealed) {
@@ -619,6 +581,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                     TRANSACTION, TEMPLATE -> "Object has been deleted from db"
                     TRANSACTION_FROM_TEMPLATE -> getString(R.string.save_transaction_template_deleted)
                     FROM_INTENT_EXTRAS -> "Unable to build transaction from extras"
+                    TEMPLATE_FROM_TRANSACTION -> "Unable to build template from transaction"
                 }
             )
         }
@@ -700,7 +663,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         setupObservers(false)
         delegate.bindUnsafe(
             transaction,
-            mNewInstance,
+            withTypeSpinner,
             null,
             intent.getSerializableExtra(KEY_CACHED_RECURRENCE) as? Recurrence,
             withAutoFill
@@ -722,10 +685,10 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         get() = if (isSplitPart) PrefKey.EXPENSE_EDIT_SAVE_AND_NEW_SPLIT_PART else PrefKey.EXPENSE_EDIT_SAVE_AND_NEW
 
     private fun setTitle() {
-        if (mNewInstance) {
+        if (withTypeSpinner) {
             supportActionBar!!.setDisplayShowTitleEnabled(false)
         } else {
-            title = delegate.title
+            title = delegate.title(mNewInstance)
         }
     }
 
@@ -891,14 +854,13 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     private fun loadTemplate(id: Long) {
-        viewModel.transaction(
-            id,
-            TRANSACTION_FROM_TEMPLATE,
-            clone = false,
-            forEdit = true,
-            extras = null
-        ).observe(this) {
-            populateFromTask(it, TRANSACTION_FROM_TEMPLATE)
+        cleanup {
+            val restartIntent = Intent(this, ExpenseEdit::class.java).apply {
+                putExtra(KEY_TEMPLATEID, id)
+                putExtra(KEY_INSTANCEID, -1L)
+            }
+            finish()
+            startActivity(restartIntent)
         }
     }
 
@@ -918,8 +880,20 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     override fun doHome() {
-        cleanup { finish() }
+        cleanup {
+            backwardCanceledTagsIntent()?.let {
+                setResult(RESULT_CANCELED, it)
+            }
+            finish()
+        }
     }
+
+    private fun backwardCanceledTagsIntent() =
+        viewModel.deletedTagIds.takeIf { it.isNotEmpty() }?.let {
+            Intent().apply {
+                putExtra(TagBaseViewModel.KEY_DELETED_IDS, it)
+            }
+        }
 
     override fun dispatchCommand(command: Int, tag: Any?): Boolean {
         if (super.dispatchCommand(command, tag)) {
@@ -1050,7 +1024,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                 (delegate as? CategoryDelegate)?.setCategory(
                     intent.getStringExtra(KEY_LABEL),
                     intent.getStringExtra(KEY_ICON),
-                    intent.getLongExtra(KEY_CATID, 0)
+                    intent.getLongExtra(KEY_ROWID, 0)
                 )
                 setDirty()
             }
@@ -1144,19 +1118,20 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         bundle.putInt(Tracker.EVENT_PARAM_OPERATION_TYPE, newType)
         logEvent(Tracker.EVENT_SELECT_OPERATION_TYPE, bundle)
         cleanup {
-            val restartIntent = intent
-            restartIntent.putExtra(Transactions.OPERATION_TYPE, newType)
-            if (isDirty) {
-                delegate.syncStateAndValidate(false)?.let {
-                    restartIntent.putExtra(KEY_CACHED_DATA, it)
-                    if (it.pictureUri != null) {
-                        restartIntent.putExtra(KEY_CACHED_PICTURE_URI, it.pictureUri)
+            val restartIntent = Intent(this, ExpenseEdit::class.java).apply {
+                putExtra(Transactions.OPERATION_TYPE, newType)
+                if (isDirty) {
+                    delegate.syncStateAndValidate(false)?.let {
+                        putExtra(KEY_CACHED_DATA, it)
+                        if (it.pictureUri != null) {
+                            putExtra(KEY_CACHED_PICTURE_URI, it.pictureUri)
+                        }
                     }
+                    putExtra(
+                        KEY_CACHED_RECURRENCE,
+                        delegate.recurrenceSpinner.selectedItem as? Recurrence
+                    )
                 }
-                restartIntent.putExtra(
-                    KEY_CACHED_RECURRENCE,
-                    delegate.recurrenceSpinner.selectedItem as? Recurrence
-                )
             }
             finish()
             startActivity(restartIntent)
@@ -1201,7 +1176,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                     }?.let { launchPlanView(true, it) }
                 } else { //make sure soft keyboard is closed
                     hideKeyboard()
-                    setResult(RESULT_OK)
+                    setResult(RESULT_OK, backwardCanceledTagsIntent())
                     finish()
                     //no need to call super after finish
                     return
@@ -1365,7 +1340,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         startMediaChooserDo()
     }
 
-    override fun contribFeatureRequested(feature: ContribFeature, @Nullable tag: Serializable?) {
+    override fun contribFeatureRequested(feature: ContribFeature, tag: Serializable?) {
         hideKeyboard()
         super.contribFeatureRequested(feature, tag)
     }
@@ -1409,7 +1384,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     private fun updateFab() {
-        floatingActionButton?.let {
+        floatingActionButton.let {
             it.setImageResource(if (createNew) R.drawable.ic_action_save_new else R.drawable.ic_menu_done)
             it.contentDescription =
                 getString(if (createNew) R.string.menu_save_and_new_content_description else R.string.menu_save_help_text)
@@ -1457,6 +1432,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     companion object {
         const val KEY_NEW_TEMPLATE = "newTemplate"
         const val KEY_CLONE = "clone"
+        const val KEY_TEMPLATE_FROM_TRANSACTION = "templateFromTransaction"
         private const val KEY_CACHED_DATA = "cachedData"
         private const val KEY_CACHED_RECURRENCE = "cachedRecurrence"
         private const val KEY_CACHED_PICTURE_URI = "cachedPictureUri"
@@ -1506,5 +1482,17 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
                 }
             }
         }
+    }
+
+    override fun handleDeletedTagIds(ids: LongArray) {
+        super.handleDeletedTagIds(ids)
+        if (isSplitPart) {
+            viewModel.deletedTagIds = ids
+        }
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        doHome()
     }
 }

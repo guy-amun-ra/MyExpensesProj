@@ -1,8 +1,5 @@
 package org.totschnig.myexpenses.util;
 
-import static org.totschnig.myexpenses.preference.PrefKey.TRANSACTION_WITH_TIME;
-import static org.totschnig.myexpenses.preference.PrefKey.TRANSACTION_WITH_VALUE_DATE;
-
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -17,6 +14,14 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.github.lzyzsd.circleprogress.DonutProgress;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
+
+import org.totschnig.myexpenses.R;
+import org.totschnig.myexpenses.model.AccountType;
+import org.totschnig.myexpenses.preference.PrefHandler;
+
 import androidx.annotation.AttrRes;
 import androidx.annotation.ColorInt;
 import androidx.annotation.NonNull;
@@ -26,13 +31,8 @@ import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.widget.ImageViewCompat;
 
-import com.github.lzyzsd.circleprogress.DonutProgress;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.android.material.snackbar.Snackbar;
-
-import org.totschnig.myexpenses.R;
-import org.totschnig.myexpenses.model.AccountType;
-import org.totschnig.myexpenses.preference.PrefHandler;
+import static org.totschnig.myexpenses.preference.PrefKey.TRANSACTION_WITH_TIME;
+import static org.totschnig.myexpenses.preference.PrefKey.TRANSACTION_WITH_VALUE_DATE;
 
 public class UiUtils {
 
@@ -102,16 +102,6 @@ public class UiUtils {
     DATE, DATE_TIME, BOOKING_VALUE
   }
 
-  public static @NonNull DateMode getDateMode(AccountType accountType, PrefHandler prefHandler) {
-    if (!(accountType == AccountType.CASH)) {
-      if (prefHandler.getBoolean(TRANSACTION_WITH_VALUE_DATE, false)) {
-        return DateMode.BOOKING_VALUE;
-      }
-    }
-    return prefHandler.getBoolean(TRANSACTION_WITH_TIME, true) ?
-        DateMode.DATE_TIME : DateMode.DATE;
-  }
-
   public static void configureProgress(DonutProgress donutProgress, int progress) {
     donutProgress.setProgress(Math.min(progress, 100));
     donutProgress.setText(progress < 1000 ? String.valueOf(progress) : ">1k");
@@ -129,10 +119,6 @@ public class UiUtils {
     return (int) (px / Resources.getSystem().getDisplayMetrics().density);
   }
 
-  public static int resolveIcon(Context context, String resourceName) {
-    return context.getResources().getIdentifier(resourceName, "drawable", context.getPackageName());
-  }
-
   /**
    * Returns the value of the desired theme integer attribute
    * @throws android.content.res.Resources.NotFoundException if the given ID
@@ -143,12 +129,5 @@ public class UiUtils {
     TypedValue typedValue = new TypedValue();
     context.getTheme().resolveAttribute(attr, typedValue, true);
     return ContextCompat.getColor(context, typedValue.resourceId);
-  }
-
-  public static boolean themeBoolAttr(Context context, int attr) {
-    TypedArray themeArray = context.getTheme().obtainStyledAttributes(new int[]{attr});
-    boolean result = themeArray.getBoolean(0, false);
-    themeArray.recycle();
-    return result;
   }
 }

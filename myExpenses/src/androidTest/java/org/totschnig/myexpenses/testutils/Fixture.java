@@ -9,12 +9,8 @@ import android.net.Uri;
 
 import junit.framework.Assert;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.db2.Repository;
-import org.totschnig.myexpenses.provider.DatabaseConstants;
-import org.totschnig.myexpenses.test.R;
 import org.totschnig.myexpenses.model.Account;
 import org.totschnig.myexpenses.model.AccountType;
 import org.totschnig.myexpenses.model.CrStatus;
@@ -26,12 +22,16 @@ import org.totschnig.myexpenses.model.SplitTransaction;
 import org.totschnig.myexpenses.model.Template;
 import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.model.Transfer;
+import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.TransactionProvider;
+import org.totschnig.myexpenses.test.R;
 import org.totschnig.myexpenses.util.Utils;
 import org.totschnig.myexpenses.viewmodel.data.Budget;
 import org.totschnig.myexpenses.viewmodel.data.Tag;
 
 import java.io.File;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -42,6 +42,7 @@ import timber.log.Timber;
 
 import static org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSACTION;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_BUDGET;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_NONE;
 
 @SuppressLint("InlinedApi")
@@ -125,7 +126,7 @@ public class Fixture {
     //set up categories
     setUpCategories(appContext);
     //set up transactions
-    long offset = System.currentTimeMillis();
+    long offset = System.currentTimeMillis() - 1000;
     //are used twice
     long mainCat1 = findCat(testContext.getString(R.string.testData_transaction1MainCat), null);
     long mainCat2 = findCat(testContext.getString(R.string.testData_transaction2MainCat), null);
@@ -134,7 +135,6 @@ public class Fixture {
 
     for (int i = 0; i < 15; i++) {
       //Transaction 1
-      final File file = new File(appContext.getExternalFilesDir(null), "screenshot.jpg");
       final TransactionBuilder builder = new TransactionBuilder(testContext)
           .accountId(account1.getId())
           .amount(defaultCurrency, -random(12000))
@@ -143,10 +143,10 @@ public class Fixture {
       if (withPicture) {
         builder.pictureUri(Uri.fromFile(new File(appContext.getExternalFilesDir(null), "screenshot.jpg")));
       }
-      Transaction op1 = builder.persist();
+      builder.persist();
 
       //Transaction 2
-      Transaction op2 = new TransactionBuilder(testContext)
+      new TransactionBuilder(testContext)
           .accountId(account1.getId())
           .amount(defaultCurrency, -random(2200L))
           .catId(findCat(R.string.testData_transaction2SubCat, mainCat2))
@@ -155,7 +155,7 @@ public class Fixture {
           .persist();
 
       //Transaction 3 Cleared
-      Transaction op3 = new TransactionBuilder(testContext)
+      new TransactionBuilder(testContext)
           .accountId(account1.getId())
           .amount(defaultCurrency, -random(2500L))
           .catId(findCat(R.string.testData_transaction3SubCat, mainCat3))
@@ -164,7 +164,7 @@ public class Fixture {
           .persist();
 
       //Transaction 4 Cleared
-      Transaction op4 = new TransactionBuilder(testContext)
+      new TransactionBuilder(testContext)
           .accountId(account1.getId())
           .amount(defaultCurrency, -random(5000L))
           .catId(findCat(R.string.testData_transaction4SubCat, mainCat2))
@@ -174,7 +174,7 @@ public class Fixture {
           .persist();
 
       //Transaction 5 Reconciled
-      Transaction op5 = new TransactionBuilder(testContext)
+      new TransactionBuilder(testContext)
           .accountId(account1.getId())
           .amount(defaultCurrency, -random(10000L))
           .date(offset - 100390000)
@@ -182,7 +182,7 @@ public class Fixture {
           .persist();
 
       //Transaction 6 Gift Reconciled
-      Transaction op6 = new TransactionBuilder(testContext)
+      new TransactionBuilder(testContext)
           .accountId(account1.getId())
           .amount(defaultCurrency, -10000L)
           .catId(mainCat6)
@@ -191,10 +191,10 @@ public class Fixture {
           .persist();
 
       //Salary
-      Transaction op8 = new TransactionBuilder(testContext)
+      new TransactionBuilder(testContext)
           .accountId(account3.getId())
           .amount(defaultCurrency, 200000)
-          .date(offset)
+          .date(offset - 100000)
           .persist();
 
       //Transfer
@@ -218,8 +218,8 @@ public class Fixture {
     split.setAmount(new Money(defaultCurrency, -8967L));
     split.setStatus(STATUS_NONE);
     split.save(true);
-    split.save(true);
-    List<Tag> tagList = Collections.singletonList(new Tag(-1, testContext.getString(R.string.testData_tag_project), false, 0));
+    String label = testContext.getString(R.string.testData_tag_project);
+    List<Tag> tagList = Collections.singletonList(new Tag(saveTag(label), label, 0));
     split.saveTags(tagList);
 
     new TransactionBuilder(testContext)
@@ -384,5 +384,12 @@ public class Fixture {
       transaction.save();
       return transaction;
     }
+  }
+
+  long saveTag(String label) {
+    ContentValues values = new ContentValues();
+    values.put(KEY_LABEL, label);
+    Uri uri = appContext.getContentResolver().insert(TransactionProvider.TAGS_URI, values);
+    return ContentUris.parseId(uri);
   }
 }
