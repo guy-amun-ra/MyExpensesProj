@@ -73,7 +73,6 @@ import org.totschnig.myexpenses.model.Account.HOME_AGGREGATE_ID
 import org.totschnig.myexpenses.model.Sort.Companion.fromCommandId
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.enableAutoFill
-import org.totschnig.myexpenses.preference.requireString
 import org.totschnig.myexpenses.provider.CheckSealedHandler
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionDatabase.SQLiteDowngradeFailedException
@@ -648,9 +647,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
             }
         } else null
 
-        val data =
-            remember(account.sortDirection) { viewModel.loadData(account) }
-        val headerData = viewModel.headerData(account)
+        val data = remember(account.sortDirection) { viewModel.loadData(account) }
+        val headerData = remember(account.grouping) { viewModel.headerData(account) }
         if (index == currentPage) {
             LaunchedEffect(selectionState.size) {
                 if (selectionState.isNotEmpty()) {

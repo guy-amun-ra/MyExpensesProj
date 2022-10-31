@@ -4,6 +4,8 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.os.Parcelable
+import androidx.compose.runtime.Immutable
+import androidx.compose.ui.graphics.vector.ImageVector
 import kotlinx.parcelize.Parcelize
 import org.totschnig.myexpenses.model.AccountType
 import org.totschnig.myexpenses.model.CrStatus
@@ -30,6 +32,7 @@ import java.io.File
 import java.time.ZonedDateTime
 
 @Parcelize
+@Immutable
 data class Transaction2(
     val id: Long,
     val date: ZonedDateTime,
@@ -72,7 +75,7 @@ data class Transaction2(
     /**
      * pair of localized label and icon
      */
-    val methodInfo: Pair<String, String?>?
+    val methodInfo: Pair<String, ImageVector?>?
         get() = methodLabel?.let {
             enumValueOrNull<PreDefinedPaymentMethod>(it)?.let { predefined ->
                 predefined.localizedLabel to predefined.icon
