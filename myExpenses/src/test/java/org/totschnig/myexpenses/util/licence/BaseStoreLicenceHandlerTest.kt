@@ -8,7 +8,9 @@ import org.junit.Before
 import org.junit.Test
 import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
-import org.totschnig.myexpenses.preference.PrefHandler
+import org.mockito.kotlin.any
+import org.mockito.kotlin.whenever
+import org.totschnig.myexpenses.prefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 class BaseStoreLicenceHandlerTest {
@@ -27,8 +29,8 @@ class BaseStoreLicenceHandlerTest {
                 SharedPreferences::class.java
             )
         )
-        val prefHandler = Mockito.mock(PrefHandler::class.java)
-        Mockito.`when`(prefHandler.getKey(ArgumentMatchers.any())).thenReturn("key")
+
+        whenever(prefHandler.getKey(any())).thenReturn("key")
         val obfuscator = Mockito.mock(
             PreferenceObfuscator::class.java
         )
