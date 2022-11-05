@@ -137,7 +137,6 @@
     <string name="help_heading_credits">Hazırlayanlar</string>
     <string name="help_heading_license">Lisans</string>
     <string name="help_heading_whats_new">Yenilikler</string>
-    <string name="important_upgrade_information_heading">Önemli bilgi</string>
     <string name="import_select_transactions">Muameleler</string>
     <string name="income">gelirler</string>
     <string name="invalid_number_format">Yerel ayarlarınız ondalık biçimi tanımıyor. Lütfen şunu kullanınız: %1$s</string>
@@ -1020,4 +1019,5 @@
     <string name="budget_table_header_rollover">Devreden</string>
     <string name="content_description_attachment">Ek</string>
     <string name="redesign">Yeniden tasarla</string>
+    <string name="upgrade_info_557">Yeni tasarımı nasıl buldunuz\? Lütfen bize bildirin. Eski tasarıma daha yakın bir görünüm Ayarlar (%1$s -&gt; %2$s) kısmında etkinleştirilebilir.</string>
 </resources>

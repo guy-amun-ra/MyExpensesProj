@@ -137,7 +137,6 @@
     <string name="help_heading_credits">Abspann</string>
     <string name="help_heading_license">Lizenz</string>
     <string name="help_heading_whats_new">Neue Funktionen</string>
-    <string name="important_upgrade_information_heading">Wichtige Information</string>
     <string name="import_select_transactions">Buchungen</string>
     <string name="income">Einnahme</string>
     <string name="invalid_number_format">Zahlenformat wird von Ihrer Locale nicht unterstützt. Bitte verwenden Sie %1$s</string>
@@ -1018,4 +1017,7 @@
     <string name="dialog_confirm_rollover_delete">Für diesen Zeitraum werden alle Überträge gelöscht.</string>
     <string name="budget_only_current_period">Nur für %s einstellen</string>
     <string name="rollover_edit_invalid">Die Summe der einer Kategorie zugewiesenen Überträge und der Unterkategorien zugewiesenen Überträge darf den Restbetrag nicht überschreiten.</string>
+    <string name="upgrade_info_557">Wie gefällt Ihnen das neue Design\? Bitte lassen Sie es uns wissen. Eine Variante, die dem alten Design näher kommt, kann in den Einstellungen (%1$s -&gt; %2$s) aktiviert werden.</string>
+    <string name="content_description_attachment">Anhang</string>
+    <string name="redesign">Neugestaltung</string>
 </resources>
