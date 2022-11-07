@@ -59,6 +59,7 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit.Companion.KEY_OCR_RESULT
 import org.totschnig.myexpenses.activity.FilterHandler.Companion.FILTER_COMMENT_DIALOG
+import org.totschnig.myexpenses.adapter.TransactionPagingSource
 import org.totschnig.myexpenses.compose.*
 import org.totschnig.myexpenses.compose.MenuEntry.Companion.delete
 import org.totschnig.myexpenses.compose.MenuEntry.Companion.edit
@@ -118,23 +119,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         get() = viewModel.accountData.value?.getOrNull() ?: emptyList()
 
     var accountId: Long
-        get() = viewModel.selectedAccount.value
+        get() = viewModel.selectedAccount
         set(value) {
-            viewModel.selectedAccount.value = value
-            moveToAccount()
+            viewModel.selectedAccount = value
         }
-
-    private fun moveToAccount() {
-        val position =
-            accountData.indexOfFirst { it.id == accountId }.takeIf { it > -1 } ?: 0
-        if (viewModel.pagerState.currentPage != position) {
-            lifecycleScope.launch {
-                viewModel.pagerState.scrollToPage(position)
-            }
-        } else {
-            setCurrentAccount(position)
-        }
-    }
 
     val currentAccount: FullAccount?
         get() = accountData.getOrNull(viewModel.pagerState.currentPage)
@@ -150,7 +138,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
 
     lateinit var toolbar: Toolbar
 
-    var drawerToggle: ActionBarDrawerToggle? = null
+    private var drawerToggle: ActionBarDrawerToggle? = null
 
     private var currentBalance: String? = null
 
@@ -333,7 +321,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         if (item.itemId == R.id.SHOW_STATUS_HANDLE_COMMAND) {
             currentAccount?.let {
                 lifecycleScope.launch {
-                    viewModel.persistShowStatusHandleForAccount(it.id, !item.isChecked)
+                    viewModel.persistShowStatusHandle(!item.isChecked)
                     invalidateOptionsMenu()
                 }
             }
@@ -477,9 +465,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             },
                             onEdit = {
                                 closeDrawer()
-                                startActivityForResult(Intent(this, AccountEdit::class.java).apply {
-                                    putExtra(KEY_ROWID, it)
-                                }, EDIT_ACCOUNT_REQUEST)
+                                editAccount(it)
                             },
                             onDelete = {
                                 closeDrawer()
@@ -488,8 +474,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             onHide = {
                                 viewModel.setAccountVisibility(true, it)
                             },
-                            onToggleSealed = { id, isSealed ->
-                                setAccountSealed(id, isSealed)
+                            onToggleSealed = {
+                                toggleAccountSealed(it)
                             },
                             expansionHandlerGroups = viewModel.expansionHandler("collapsedHeadersDrawer_${accountGrouping.value}"),
                             expansionHandlerAccounts = viewModel.expansionHandler("collapsedAccounts")
@@ -573,11 +559,18 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
+    private fun editAccount(accountId: Long) {
+        startActivityForResult(Intent(this, AccountEdit::class.java).apply {
+            putExtra(KEY_ROWID, accountId)
+        }, EDIT_ACCOUNT_REQUEST)
+
+    }
+
     @Composable
     private fun MainContent() {
 
         LaunchedEffect(viewModel.pagerState.currentPage) {
-            if (setCurrentAccount(viewModel.pagerState.currentPage)) {
+            if (setCurrentAccount()) {
                 finishActionMode()
                 sumInfo = SumInfoUnknown
                 viewModel.sumInfo(currentAccount!!).collect {
@@ -592,10 +585,15 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
             AppTheme(context = this@BaseMyExpenses) {
                 LaunchedEffect(accountData) {
                     if (accountData.isNotEmpty()) {
-                        moveToAccount()
-                        viewModel.sumInfo(currentAccount!!).collect {
-                            sumInfo = it
+                        currentAccount?.let {
+                            lifecycleScope.launch {
+                                viewModel.sumInfo(it).collect {
+                                    sumInfo = it
+                                }
+                            }
                         }
+                        viewModel.deferredLoad()
+                        setCurrentAccount()
                     } else {
                         setTitle(R.string.app_name)
                         toolbar.subtitle = null
@@ -625,6 +623,15 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
+    open fun buildTransactionPagingSourceFactory(account: PageAccount): () -> TransactionPagingSource = {
+        TransactionPagingSource(
+            this,
+            account,
+            viewModel.filterPersistence.getValue(account.id).whereFilterAsFlow,
+            lifecycleScope
+        )
+    }
+
     @Composable
     fun PagerScope.Page(
         index: Int,
@@ -633,7 +640,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         val showStatusHandle = if (account.type == AccountType.CASH)
             false
         else
-            viewModel.showStatusHandleForAccount(account.id).collectAsState(initial = false).value
+            viewModel.showStatusHandle().collectAsState(initial = true).value
 
         val onToggleCrStatus: ((Long) -> Unit)? = if (showStatusHandle) {
             {
@@ -643,7 +650,9 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
             }
         } else null
 
-        val data = remember(account) { viewModel.loadData(account) }
+        val data: () -> TransactionPagingSource = remember(account) {
+           buildTransactionPagingSourceFactory(account)
+        }
         val headerData = remember(account) { viewModel.headerData(account) }
         if (index == currentPage) {
             LaunchedEffect(selectionState.size) {
@@ -1147,9 +1156,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
             }
             R.id.DELETE_ACCOUNT_COMMAND_DO -> {
                 val accountIds = tag as LongArray
-                if (accountIds.any { it == accountId }) {
-                    accountId = 0L
-                }
                 val manageHiddenFragment =
                     supportFragmentManager.findFragmentByTag(MANAGE_HIDDEN_FRAGMENT_TAG)
                 if (manageHiddenFragment != null) {
@@ -1167,6 +1173,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 accountIds.size
                             )
                         )
+                        if (accountIds.any { it == accountId }) {
+                            accountId = 0
+                        }
+
                     }.onFailure {
                         if (it is AccountSealedException) {
                             showSnackBar(R.string.object_sealed_debt)
@@ -1212,11 +1222,15 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                 }
             }
-            R.id.SYNC_COMMAND -> {
-                currentAccount?.takeIf { it.syncAccountName != null }?.let {
-                    requestSync(accountName = it.syncAccountName!!, uuid = it.uuid)
-                }
+            R.id.SYNC_COMMAND -> currentAccount?.takeIf { it.syncAccountName != null }?.let {
+                requestSync(accountName = it.syncAccountName!!, uuid = it.uuid)
             }
+            R.id.EDIT_ACCOUNT_COMMAND -> currentAccount?.let { editAccount(it.id) }
+            R.id.DELETE_ACCOUNT_COMMAND -> currentAccount?.let { confirmAccountDelete(it) }
+            R.id.HIDE_ACCOUNT_COMMAND -> currentAccount?.let {
+                viewModel.setAccountVisibility(true, it.id)
+            }
+            R.id.TOGGLE_SEALED_COMMAND -> currentAccount?.let { toggleAccountSealed(it) }
             else -> return false
         }
         return true
@@ -1284,17 +1298,30 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 }
 
                 menu.findItem(R.id.BALANCE_COMMAND)?.let {
-                    Utils.menuItemSetEnabledAndVisible(it, reconciliationAvailable)
+                    Utils.menuItemSetEnabledAndVisible(it, reconciliationAvailable && !isAggregate)
                 }
+
                 menu.findItem(R.id.SHOW_STATUS_HANDLE_COMMAND)?.let {
                     Utils.menuItemSetEnabledAndVisible(it, reconciliationAvailable)
-                    lifecycleScope.launch {
-                        it.isChecked = viewModel.showStatusHandleForAccount(this@with.id).first()
+                    if (reconciliationAvailable) {
+                        lifecycleScope.launch {
+                            it.isChecked = viewModel.showStatusHandle().first()
+                        }
                     }
                 }
 
                 menu.findItem(R.id.SYNC_COMMAND)?.let {
                     Utils.menuItemSetEnabledAndVisible(it, syncAccountName != null)
+                }
+
+                menu.findItem(R.id.MANAGE_ACCOUNTS_COMMAND)?.let {
+                    Utils.menuItemSetEnabledAndVisible(it, !isAggregate)
+                    if (!isAggregate) {
+                        it.title = label
+                        it.subMenu?.findItem(R.id.TOGGLE_SEALED_COMMAND)?.setTitle(
+                            if (sealed) R.string.menu_reopen else R.string.menu_close
+                        )
+                    }
                 }
             }
             filterHandler.configureSearchMenu(menu.findItem(R.id.SEARCH_COMMAND))
@@ -1310,7 +1337,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 R.id.SORT_DIRECTION_COMMAND,
                 R.id.PRINT_COMMAND,
                 R.id.GROUPING_COMMAND,
-                R.id.SHOW_STATUS_HANDLE_COMMAND
+                R.id.SHOW_STATUS_HANDLE_COMMAND,
+                R.id.MANAGE_ACCOUNTS_COMMAND
             )) {
                 Utils.menuItemSetEnabledAndVisible(menu.findItem(item), false)
             }
@@ -1356,14 +1384,9 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     /**
      *  @return true if we have moved to a new account
      */
-    private fun setCurrentAccount(position: Int) =
-        accountData.getOrNull(position)?.let { account ->
-            val newAccountId = account.id
-            val changed = if (accountId != newAccountId) {
-                accountId = account.id
-                prefHandler.putLong(PrefKey.CURRENT_ACCOUNT, newAccountId)
-                true
-            } else false
+    private fun setCurrentAccount() =
+        accountData.getOrNull(viewModel.pagerState.currentPage)?.let { account ->
+            prefHandler.putLong(PrefKey.CURRENT_ACCOUNT, account.id)
             tintSystemUiAndFab(account.color(resources))
             setBalance(account)
             if (account.sealed) {
@@ -1372,7 +1395,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 floatingActionButton.show()
             }
             invalidateOptionsMenu()
-            changed
+            true
         } ?: false
 
     private fun setBalance(account: FullAccount) {
@@ -1536,44 +1559,40 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
-    private fun confirmAccountDelete(accountId: Long) {
-        viewModel.account(accountId, once = true).observe(this) { account ->
-            MessageDialogFragment.newInstance(
-                resources.getQuantityString(
-                    R.plurals.dialog_title_warning_delete_account,
-                    1,
-                    1
-                ),
-                getString(
-                    R.string.warning_delete_account,
-                    account.label
-                ) + " " + getString(R.string.continue_confirmation),
-                MessageDialogFragment.Button(
-                    R.string.menu_delete,
-                    R.id.DELETE_ACCOUNT_COMMAND_DO,
-                    longArrayOf(accountId)
-                ),
-                null,
-                MessageDialogFragment.noButton(), 0
-            )
-                .show(supportFragmentManager, "DELETE_ACCOUNT")
-        }
+    private fun confirmAccountDelete(account: FullAccount) {
+        MessageDialogFragment.newInstance(
+            resources.getQuantityString(
+                R.plurals.dialog_title_warning_delete_account,
+                1,
+                1
+            ),
+            getString(
+                R.string.warning_delete_account,
+                account.label
+            ) + " " + getString(R.string.continue_confirmation),
+            MessageDialogFragment.Button(
+                R.string.menu_delete,
+                R.id.DELETE_ACCOUNT_COMMAND_DO,
+                longArrayOf(accountId)
+            ),
+            null,
+            MessageDialogFragment.noButton(), 0
+        )
+            .show(supportFragmentManager, "DELETE_ACCOUNT")
     }
 
-    private fun setAccountSealed(accountId: Long, isSealed: Boolean) {
-        if (isSealed) {
-            viewModel.account(accountId, once = true).observe(this) { account ->
-                if (account.syncAccountName == null) {
-                    viewModel.setSealed(accountId, true)
-                } else {
-                    showSnackBar(
-                        getString(R.string.warning_synced_account_cannot_be_closed),
-                        Snackbar.LENGTH_LONG, null, null, binding.accountPanel.accountList
-                    )
-                }
-            }
-        } else {
+    private fun toggleAccountSealed(account: FullAccount) {
+        if (account.sealed) {
             viewModel.setSealed(accountId, false)
+        } else {
+            if (account.syncAccountName == null) {
+                viewModel.setSealed(accountId, true)
+            } else {
+                showSnackBar(
+                    getString(R.string.warning_synced_account_cannot_be_closed),
+                    Snackbar.LENGTH_LONG, null, null, binding.accountPanel.accountList
+                )
+            }
         }
     }
 

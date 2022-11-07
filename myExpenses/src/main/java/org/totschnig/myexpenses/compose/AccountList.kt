@@ -2,19 +2,31 @@ package org.totschnig.myexpenses.compose
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.Divider
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -39,6 +51,7 @@ import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.util.convAmount
 import org.totschnig.myexpenses.viewmodel.data.Currency
 import org.totschnig.myexpenses.viewmodel.data.FullAccount
+import timber.log.Timber
 import kotlin.math.roundToInt
 
 @Composable
@@ -48,41 +61,46 @@ fun AccountList(
     selectedAccount: Long,
     onSelected: (Int) -> Unit,
     onEdit: (Long) -> Unit,
-    onDelete: (Long) -> Unit,
+    onDelete: (FullAccount) -> Unit,
     onHide: (Long) -> Unit,
-    onToggleSealed: (Long, Boolean) -> Unit,
+    onToggleSealed: (FullAccount) -> Unit,
     expansionHandlerGroups: ExpansionHandler,
     expansionHandlerAccounts: ExpansionHandler
 ) {
     val context = LocalContext.current
-    val collapsedIds = expansionHandlerGroups.collapsedIds().value
+    val collapsedGroupIds = expansionHandlerGroups.collapsedIds.collectAsState(initial = null).value
+    val collapsedAccountIds =
+        expansionHandlerAccounts.collapsedIds.collectAsState(initial = null).value
 
-    LazyColumn(
-        modifier = Modifier.testTag(TEST_TAG_ACCOUNTS),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        var isGroupHidden by mutableStateOf(false)
-        accountData.forEachIndexed { index, account ->
-            getHeader(context, grouping, account, accountData.getOrNull(index - 1))?.let {
-                item {
-                    Header(it.second) {
-                        expansionHandlerGroups.toggle(it.first)
+    if (collapsedGroupIds != null && collapsedAccountIds != null) {
+        LazyColumn(
+            modifier = Modifier.testTag(TEST_TAG_ACCOUNTS),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            var isGroupHidden by mutableStateOf(false)
+            accountData.forEachIndexed { index, account ->
+                getHeader(context, grouping, account, accountData.getOrNull(index - 1))?.let {
+                    item {
+                        Header(it.second) {
+                            expansionHandlerGroups.toggle(it.first)
+                        }
                     }
+                    isGroupHidden = collapsedGroupIds.contains(it.first)
                 }
-                isGroupHidden = collapsedIds.contains(it.first)
-            }
-            if (!isGroupHidden) {
-                item {
-                    AccountCard(
-                        account = account,
-                        expansionHandler = expansionHandlerAccounts,
-                        isSelected = account.id == selectedAccount,
-                        onSelected = { onSelected(index) },
-                        onEdit = onEdit,
-                        onDelete = onDelete,
-                        onHide = onHide,
-                        onToggleSealed = onToggleSealed
-                    )
+                if (!isGroupHidden) {
+                    item {
+                        AccountCard(
+                            account = account,
+                            isCollapsed = collapsedAccountIds.contains(account.id.toString()),
+                            isSelected = account.id == selectedAccount,
+                            onSelected = { onSelected(index) },
+                            onEdit = onEdit,
+                            onDelete = onDelete,
+                            onHide = onHide,
+                            onToggleSealed = onToggleSealed,
+                            toggleExpansion = { expansionHandlerAccounts.toggle(account.id.toString()) }
+                        )
+                    }
                 }
             }
         }
@@ -122,12 +140,14 @@ private fun getHeader(
         when (grouping) {
             AccountGrouping.NONE -> {
                 val id = if (account.id > 0) "0" else "1"
-                val title = context.getString(if (account.id > 0) R.string.pref_manage_accounts_title else R.string.menu_aggregates)
+                val title =
+                    context.getString(if (account.id > 0) R.string.pref_manage_accounts_title else R.string.menu_aggregates)
                 id to title
             }
             AccountGrouping.TYPE -> {
                 val id = account.type?.ordinal ?: AccountType.values().size
-                val title = context.getString(account.type?.toStringResPlural() ?: R.string.menu_aggregates)
+                val title =
+                    context.getString(account.type?.toStringResPlural() ?: R.string.menu_aggregates)
                 id.toString() to title
             }
             AccountGrouping.CURRENCY -> {
@@ -140,34 +160,34 @@ private fun getHeader(
     } else null
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun AccountCard(
     account: FullAccount,
-    expansionHandler: ExpansionHandler,
+    isCollapsed: Boolean = false,
     isSelected: Boolean = false,
     onSelected: () -> Unit = {},
     onEdit: (Long) -> Unit = {},
-    onDelete: (Long) -> Unit = {},
+    onDelete: (FullAccount) -> Unit = {},
     onHide: (Long) -> Unit = {},
-    onToggleSealed: (Long, Boolean) -> Unit = { _, _ -> }
+    onToggleSealed: (FullAccount) -> Unit = { _ -> },
+    toggleExpansion: () -> Unit = { }
 ) {
     val format = LocalCurrencyFormatter.current
     val showMenu = remember { mutableStateOf(false) }
-    val collapsedAccounts = expansionHandler.collapsedIds()
+    val activatedBackgroundColor = colorResource(id = R.color.activatedBackground)
 
-    val isCollapsed = remember {
-        derivedStateOf {
-            collapsedAccounts.value.contains(account.id.toString())
-        }
-    }.value
+    Timber.i("Account %s isCollapsed: %b", account.label, isCollapsed)
 
     Column(
-        modifier = (if (isSelected)
-            Modifier.background(colorResource(id = R.color.activatedBackground))
-        else Modifier)
-            .clickable {
-                showMenu.value = true
+        modifier = Modifier
+            .conditional(isSelected) {
+                background(activatedBackgroundColor)
             }
+            .combinedClickable(
+                onClick = { onSelected() },
+                onLongClick = { showMenu.value = true }
+            )
             .padding(start = dimensionResource(id = R.dimen.drawer_padding))
 
     ) {
@@ -213,22 +233,14 @@ fun AccountCard(
                 }
 
             }
-            ExpansionHandle(isExpanded = !isCollapsed) {
-                expansionHandler.toggle(account.id.toString())
-            }
+            ExpansionHandle(isExpanded = !isCollapsed, toggle = toggleExpansion)
             val menu: Menu<FullAccount> = Menu(
                 buildList {
-                    add(MenuEntry(
-                        icon = Icons.Filled.List,
-                        label = R.string.menu_show_transactions
-                    ) {
-                        onSelected()
-                    })
                     if (account.id > 0) {
                         if (!account.sealed) {
                             add(edit { onEdit(it.id) })
                         }
-                        add(delete { onDelete(it.id) })
+                        add(delete { onDelete(it) })
                         add(MenuEntry(
                             icon = Icons.Filled.VisibilityOff,
                             label = R.string.menu_hide
@@ -238,7 +250,7 @@ fun AccountCard(
                         )
                         add(
                             toggle(account.sealed) {
-                                onToggleSealed(it.id, !it.sealed)
+                                onToggleSealed(it)
                             }
                         )
                     }
@@ -247,7 +259,9 @@ fun AccountCard(
             HierarchicalMenu(showMenu, menu, account)
         }
 
-        AnimatedVisibility(visible = !isCollapsed) {
+        val visibleState = remember { MutableTransitionState(!isCollapsed) }
+        visibleState.targetState = !isCollapsed
+        AnimatedVisibility(visibleState) {
             Column(modifier = Modifier.padding(end = 16.dp)) {
 
                 account.description?.let { Text(it) }
@@ -270,14 +284,10 @@ fun AccountCard(
                         format.convAmount(account.sumTransfer, account.currency)
                     )
                 }
-                SumRow(
-                    R.string.sum_transfer,
-                    format.convAmount(account.sumTransfer, account.currency)
-                )
                 val borderColor = MaterialTheme.colors.onSurface
                 SumRow(
                     R.string.current_balance,
-                    format.convAmount(account.sumTransfer, account.currency),
+                    format.convAmount(account.currentBalance, account.currency),
                     Modifier.drawBehind {
                         val strokeWidth = 2 * density
                         drawLine(
@@ -315,6 +325,7 @@ fun AccountCard(
         }
     }
 }
+
 @Composable
 fun SumRow(label: Int, formattedAmount: String, modifier: Modifier = Modifier) {
     Row(
@@ -343,16 +354,6 @@ fun AccountPreview() {
             sealed = true,
             type = AccountType.CASH,
             criterion = 5000
-        ),
-        expansionHandler = object: ExpansionHandler {
-
-            @Composable
-            override fun collapsedIds(): State<Set<String>>  = remember { mutableStateOf(emptySet()) }
-
-            override fun toggle(id: String) {
-
-            }
-
-        }
+        )
     )
 }
