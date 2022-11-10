@@ -9,6 +9,7 @@ import com.google.android.play.core.splitinstall.SplitInstallManagerFactory
 import com.google.android.play.core.splitinstall.SplitInstallRequest
 import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListener
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
+import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.MyApplication.DEFAULT_LANGUAGE
 import org.totschnig.myexpenses.feature.*
@@ -17,7 +18,10 @@ import timber.log.Timber
 import java.util.*
 
 @Keep
-class PlatformSplitManager(private val userLocaleProvider: UserLocaleProvider, private val prefHandler: PrefHandler) : FeatureManager() {
+class PlatformSplitManager(
+    private val userLocaleProvider: UserLocaleProvider,
+    private val prefHandler: PrefHandler
+) : FeatureManager() {
     private lateinit var manager: SplitInstallManager
     private var mySessionId = 0
     var listener: SplitInstallStateUpdatedListener? = null
@@ -40,17 +44,18 @@ class PlatformSplitManager(private val userLocaleProvider: UserLocaleProvider, p
         } else {
             val userPreferredLocale = userLocaleProvider.getUserPreferredLocale()
             if (userPreferredLocale.language.equals("en") ||
-                    manager.installedLanguages.contains(userPreferredLocale.language)) {
+                manager.installedLanguages.contains(userPreferredLocale.language)
+            ) {
                 Timber.i("Already installed")
                 callback?.onLanguageAvailable()
             } else {
                 callback?.onAsyncStartedLanguage(userPreferredLocale.displayLanguage)
                 val request = SplitInstallRequest.newBuilder()
-                        .addLanguage(userPreferredLocale)
-                        .build()
+                    .addLanguage(userPreferredLocale)
+                    .build()
                 manager.startInstall(request)
-                        .addOnSuccessListener { sessionId -> mySessionId = sessionId }
-                        .addOnFailureListener { exception -> callback?.onError(exception) }
+                    .addOnSuccessListener { sessionId -> mySessionId = sessionId }
+                    .addOnFailureListener { exception -> callback?.onError(exception) }
 
             }
         }
@@ -78,12 +83,14 @@ class PlatformSplitManager(private val userLocaleProvider: UserLocaleProvider, p
     }
 
     override fun isFeatureInstalled(feature: Feature, context: Context) =
-             areModulesInstalled(feature, context) && super.isFeatureInstalled(feature, context)
+        areModulesInstalled(feature, context) && super.isFeatureInstalled(feature, context)
 
-    private fun areModulesInstalled(feature: Feature, context: Context) = isModuleInstalled(feature) &&
-            subFeatures(feature, context).all { isModuleInstalled(it) }
+    private fun areModulesInstalled(feature: Feature, context: Context) =
+        isModuleInstalled(feature) &&
+                subFeatures(feature, context).all { isModuleInstalled(it) }
 
-    private fun isModuleInstalled(feature: Feature) = manager.installedModules.contains(feature.moduleName)
+    private fun isModuleInstalled(feature: Feature) =
+        manager.installedModules.contains(feature.moduleName)
 
     override fun requestFeature(feature: Feature, context: Context) {
         val isModuleInstalled = isModuleInstalled(feature)
@@ -93,35 +100,49 @@ class PlatformSplitManager(private val userLocaleProvider: UserLocaleProvider, p
         } else {
             callback?.onAsyncStartedFeature(feature)
             val request = SplitInstallRequest
-                    .newBuilder()
-                    .apply {
-                        if (!isModuleInstalled) {
-                            addModule(feature.moduleName)
-                        }
-                        subFeatureToInstall.forEach { addModule(it.moduleName) }
+                .newBuilder()
+                .apply {
+                    if (!isModuleInstalled) {
+                        addModule(feature.moduleName)
                     }
-                    .build()
+                    subFeatureToInstall.forEach { addModule(it.moduleName) }
+                }
+                .build()
 
             manager.startInstall(request)
-                    .addOnSuccessListener { sessionId -> mySessionId = sessionId }
-                    .addOnFailureListener { exception ->
-                        callback?.onError(exception)
-                    }
+                .addOnSuccessListener { sessionId -> mySessionId = sessionId }
+                .addOnFailureListener { exception ->
+                    callback?.onError(exception)
+                }
         }
     }
 
     private fun subFeatures(feature: Feature, context: Context) = buildList {
-            if (feature == Feature.OCR) {
-                getUserConfiguredOcrEngine(context, prefHandler).also {
-                    add(it)
-                    if (it == Feature.MLKIT) {
-                        add(getUserConfiguredMlkitScriptModule(context, prefHandler))
-                    }
+        if (feature == Feature.OCR) {
+            getUserConfiguredOcrEngine(context, prefHandler).also {
+                add(it)
+                if (it == Feature.MLKIT) {
+                    add(getUserConfiguredMlkitScriptModule(context, prefHandler))
                 }
             }
         }
+    }
 
-    override fun installedFeatures(): MutableSet<String> = manager.installedModules
+    private val installedModules: Set<String>
+        get() = if (BuildConfig.DEBUG) Feature.values()
+            .mapTo(mutableSetOf()) { it.moduleName } else manager.installedModules
+
+    override fun installedFeatures(
+        context: Context,
+        prefHandler: PrefHandler,
+        onlyUninstallable: Boolean
+    ) =
+        with(installedModules) {
+            if (onlyUninstallable) this.filterTo(mutableSetOf()) {
+                Feature.fromModuleName(it)?.canUninstall(context, prefHandler) ?: false
+            }
+            else this
+        }
 
     override fun installedLanguages(): MutableSet<String> = manager.installedLanguages
 
