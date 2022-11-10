@@ -99,6 +99,7 @@ android {
             dimension "distribution"
             buildConfigField "String", "DISTRIBUTION", "\"PLAY\""
             ext.gitTagSuffix = 'gp'
+            isDefault true
         }
         amazon {
             dimension "distribution"
@@ -118,6 +119,7 @@ android {
 
         intern {
             dimension "textRecognition"
+            isDefault true
         }
         extern {
             dimension "textRecognition"
