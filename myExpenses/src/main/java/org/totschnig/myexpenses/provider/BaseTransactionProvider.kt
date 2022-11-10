@@ -74,7 +74,8 @@ abstract class BaseTransactionProvider : ContentProvider() {
     @Inject
     lateinit var openHelperFactory: SupportSQLiteOpenHelper.Factory
 
-    lateinit var wrappedContext: Context
+    val wrappedContext: Context
+        get() = userLocaleProvider.wrapContext(context!!)
 
     private var shouldLog = false
 
@@ -476,7 +477,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
     }
 
     fun hiddenAccountCount(db: SupportSQLiteDatabase): Bundle = Bundle(1).apply {
-        putInt(KEY_COUNT, db.query("select exists (select 1 from $TABLE_ACCOUNTS where $KEY_HIDDEN = 1)").use {
+        putInt(KEY_COUNT, db.query("select count(*) from $TABLE_ACCOUNTS where $KEY_HIDDEN = 1").use {
             it.moveToFirst()
             it.getInt(0) }
         )
@@ -580,7 +581,6 @@ abstract class BaseTransactionProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         MyApplication.getInstance().appComponent.inject(this)
         shouldLog = prefHandler.getBoolean(PrefKey.DEBUG_LOGGING, BuildConfig.DEBUG)
-        wrappedContext = userLocaleProvider.wrapContext(context!!)
         initOpenHelper()
         return true
     }
