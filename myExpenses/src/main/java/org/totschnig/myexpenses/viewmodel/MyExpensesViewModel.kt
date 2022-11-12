@@ -17,6 +17,10 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.lifecycle.*
 import androidx.lifecycle.viewmodel.compose.SavedStateHandleSaveableApi
 import androidx.lifecycle.viewmodel.compose.saveable
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import app.cash.copper.flow.mapToOne
 import app.cash.copper.flow.observeQuery
 import com.google.accompanist.pager.ExperimentalPagerApi
@@ -26,6 +30,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.adapter.TransactionPagingSource
 import org.totschnig.myexpenses.compose.ExpansionHandler
 import org.totschnig.myexpenses.compose.FutureCriterion
@@ -50,7 +55,7 @@ import org.totschnig.myexpenses.viewmodel.data.*
 import java.util.*
 import javax.inject.Inject
 
-class MyExpensesViewModel(
+open class MyExpensesViewModel(
     application: Application,
     private val savedStateHandle: SavedStateHandle
 ) : ContentResolvingAndroidViewModel(application) {
@@ -146,6 +151,20 @@ class MyExpensesViewModel(
         }
     }
 
+    val items: Map<PageAccount, Flow<PagingData<Transaction2>>> =
+        lazyMap {
+            Pager(
+                PagingConfig(
+                    initialLoadSize = if (BuildConfig.DEBUG) 1500 else 150,
+                    pageSize = if (BuildConfig.DEBUG) 1500 else 150,
+                    prefetchDistance = 1,
+                    enablePlaceholders = true
+                ),
+                pagingSourceFactory = buildTransactionPagingSourceFactory(it)
+            )
+                .flow.cachedIn(viewModelScope)
+        }
+
     @OptIn(ExperimentalPagerApi::class, SavedStateHandleSaveableApi::class)
     val pagerState = savedStateHandle.saveable("pagerState",
         saver = Saver(
@@ -155,6 +174,17 @@ class MyExpensesViewModel(
     ) {
         PagerState()
     }
+
+    open fun buildTransactionPagingSourceFactory(account: PageAccount): () -> TransactionPagingSource =
+        {
+            TransactionPagingSource(
+                getApplication(),
+                account,
+                filterPersistence.getValue(account.id).whereFilterAsFlow,
+                viewModelScope
+            )
+        }
+
 
     val currentFilter: FilterPersistence
         get() = filterPersistence.getValue(selectedAccount)
