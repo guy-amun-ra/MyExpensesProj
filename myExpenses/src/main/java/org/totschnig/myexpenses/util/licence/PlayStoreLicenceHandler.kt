@@ -67,7 +67,8 @@ open class PlayStoreLicenceHandler(
                     registerInventory(purchases, newPurchase)
 
                     if (newPurchase || oldStatus != licenceStatus || addOnFeatures.size > oldFeatures) {
-                        activity.onLicenceStatusSet(prettyPrintStatus(activity)
+                        activity.onLicenceStatusSet(
+                            prettyPrintStatus(activity)
                         )
                     }
                 }
@@ -126,7 +127,8 @@ open class PlayStoreLicenceHandler(
             }
         }
         handlePurchaseForAddOns(
-            inventory.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }.flatMap { it.products }.mapNotNull { Licence.parseFeature(it) },
+            inventory.filter { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+                .flatMap { it.products }.mapNotNull { Licence.parseFeature(it) },
             newPurchase
         )
         licenseStatusPrefs.commit()
