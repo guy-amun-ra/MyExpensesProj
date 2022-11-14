@@ -13,6 +13,7 @@ import com.squareup.sqlbrite3.SqlBrite
 import dagger.Module
 import dagger.Provides
 import io.reactivex.schedulers.Schedulers
+import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefHandlerImpl
@@ -21,7 +22,7 @@ import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
-open class DataModule(private val frameWorkSqlite: Boolean = false) {
+open class DataModule(private val frameWorkSqlite: Boolean = BuildConfig.DEBUG) {
     @Provides
     @Named(AppComponent.DATABASE_NAME)
     @Singleton
@@ -68,12 +69,11 @@ open class DataModule(private val frameWorkSqlite: Boolean = false) {
 
     @Singleton
     @Provides
-    fun providePeekHelper(): DatabaseVersionPeekHelper = if (frameWorkSqlite) {
-        object : DatabaseVersionPeekHelper {
-            override fun peekVersion(path: String) =
-                SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY).use {
-                    it.version
-                }
+    open fun providePeekHelper(): DatabaseVersionPeekHelper = if (frameWorkSqlite) {
+        DatabaseVersionPeekHelper { path ->
+            SQLiteDatabase.openDatabase(path, null, SQLiteDatabase.OPEN_READONLY).use {
+                it.version
+            }
         }
     } else {
        Class.forName("org.totschnig.requery.DatabaseVersionPeekHelper").kotlin.objectInstance as DatabaseVersionPeekHelper

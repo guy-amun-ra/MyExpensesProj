@@ -33,13 +33,13 @@ import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.enumValueOrDefault
 import org.totschnig.myexpenses.util.io.FileCopyUtils
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
-import org.totschnig.myexpenses.viewmodel.data.FullAccount
 import timber.log.Timber
 import java.io.File
 import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Named
+import kotlin.math.abs
 
 fun Uri.Builder.appendBooleanQueryParameter(key: String): Uri.Builder =
     appendQueryParameter(key, "1")
@@ -154,11 +154,12 @@ abstract class BaseTransactionProvider : ContentProvider() {
             "(SELECT $KEY_LABEL FROM $TABLE_DEBTS WHERE $KEY_ROWID = $KEY_DEBT_ID) AS $KEY_DEBT_LABEL"
         const val TAG = "TransactionProvider"
 
-        fun defaultBudgetAllocationUri(accountId: Long, grouping: Grouping): Uri = TransactionProvider.BUDGETS_URI.buildUpon()
-            .appendPath(TransactionProvider.URI_SEGMENT_DEFAULT_BUDGET_ALLOCATIONS)
-            .appendPath(accountId.toString())
-            .appendPath(grouping.name)
-            .build()
+        fun defaultBudgetAllocationUri(accountId: Long, grouping: Grouping): Uri =
+            TransactionProvider.BUDGETS_URI.buildUpon()
+                .appendPath(TransactionProvider.URI_SEGMENT_DEFAULT_BUDGET_ALLOCATIONS)
+                .appendPath(accountId.toString())
+                .appendPath(grouping.name)
+                .build()
     }
 
     val homeCurrency: String
@@ -203,7 +204,13 @@ abstract class BaseTransactionProvider : ContentProvider() {
         val aggregateFunction = this.aggregateFunction
 
         val futureStartsNow = runBlocking {
-            enumValueOrDefault(dataStore.data.first()[stringPreferencesKey(prefHandler.getKey(PrefKey.CRITERION_FUTURE))], FutureCriterion.EndOfDay)
+            enumValueOrDefault(
+                dataStore.data.first()[stringPreferencesKey(
+                    prefHandler.getKey(
+                        PrefKey.CRITERION_FUTURE
+                    )
+                )], FutureCriterion.EndOfDay
+            )
         } == FutureCriterion.Current
 
         val cte = accountQueryCTE(homeCurrency, futureStartsNow, aggregateFunction)
@@ -260,7 +267,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                         "0 AS $KEY_EXCLUDE_FROM_TOTALS",
                         "null AS $KEY_SYNC_ACCOUNT_NAME",
                         "null AS $KEY_UUID",
-                        "'DESC' AS $KEY_SORT_DIRECTION",
+                        "$TABLE_CURRENCIES.$KEY_SORT_DIRECTION",
                         "1 AS $KEY_EXCHANGE_RATE",
                         "0 AS $KEY_CRITERION",
                         "0 AS $KEY_SEALED",
@@ -294,8 +301,11 @@ abstract class BaseTransactionProvider : ContentProvider() {
                 val qb = SupportSQLiteQueryBuilder.builder(joinWithAggregates)
 
                 val grouping = prefHandler.getString(AggregateAccount.GROUPING_AGGREGATE, "NONE")
+                val sortDirection =
+                    prefHandler.getString(AggregateAccount.SORT_DIRECTION_AGGREGATE, "DESC")
                 val rowIdColumn = Account.HOME_AGGREGATE_ID.toString() + " AS " + KEY_ROWID
-                val labelColumn = "'${wrappedContext.getString(R.string.grand_total)}' AS $KEY_LABEL"
+                val labelColumn =
+                    "'${wrappedContext.getString(R.string.grand_total)}' AS $KEY_LABEL"
                 val currencyColumn =
                     "'" + AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE + "' AS " + KEY_CURRENCY
                 val aggregateColumn = "${AggregateAccount.AGGREGATE_HOME} AS $KEY_IS_AGGREGATE"
@@ -322,7 +332,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                         "0 AS $KEY_EXCLUDE_FROM_TOTALS",
                         "null AS $KEY_SYNC_ACCOUNT_NAME",
                         "null AS $KEY_UUID",
-                        "'DESC' AS $KEY_SORT_DIRECTION",
+                        "'$sortDirection' AS $KEY_SORT_DIRECTION",
                         "1 AS $KEY_EXCHANGE_RATE",
                         "0 AS $KEY_CRITERION",
                         "0 AS $KEY_SEALED",
@@ -472,14 +482,22 @@ abstract class BaseTransactionProvider : ContentProvider() {
             accountId == AggregateAccount.HOME_AGGREGATE_ID -> "$KEY_CURRENCY = ?" to AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE
             else -> "$KEY_CURRENCY = (select $KEY_CURRENCY from $TABLE_CURRENCIES where $KEY_ROWID = ?)" to accountId
         }
-        return db.query(TABLE_BUDGETS, arrayOf(KEY_ROWID), "$KEY_IS_DEFAULT = 1 AND $KEY_GROUPING = ? AND $accountSelection", arrayOf(group, accountSelectionArg))
+        return db.query(
+            TABLE_BUDGETS,
+            arrayOf(KEY_ROWID),
+            "$KEY_IS_DEFAULT = 1 AND $KEY_GROUPING = ? AND $accountSelection",
+            arrayOf(group, accountSelectionArg)
+        )
             .use { it.takeIf { it.moveToFirst() }?.getLong(0) }
     }
 
     fun hiddenAccountCount(db: SupportSQLiteDatabase): Bundle = Bundle(1).apply {
-        putInt(KEY_COUNT, db.query("select count(*) from $TABLE_ACCOUNTS where $KEY_HIDDEN = 1").use {
-            it.moveToFirst()
-            it.getInt(0) }
+        putInt(
+            KEY_COUNT,
+            db.query("select count(*) from $TABLE_ACCOUNTS where $KEY_HIDDEN = 1").use {
+                it.moveToFirst()
+                it.getInt(0)
+            }
         )
     }
 
@@ -586,12 +604,33 @@ abstract class BaseTransactionProvider : ContentProvider() {
     }
 
     fun wrapWithResultCompat(cursor: Cursor, extras: Bundle) = when {
-            extras.isEmpty -> cursor
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> cursor.apply {
-                setExtras(extras)
-            }
-            else -> object: CursorWrapper(cursor) {
-                override fun getExtras() = extras
-            }
+        extras.isEmpty -> cursor
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> cursor.apply {
+            setExtras(extras)
         }
+        else -> object : CursorWrapper(cursor) {
+            override fun getExtras() = extras
+        }
+    }
+
+    fun handleAccountProperty(
+        db: SupportSQLiteDatabase,
+        uri: Uri,
+        key: String
+    ): Int {
+        val subject = uri.pathSegments[1]
+        val id: Long? = subject.toLongOrNull()
+        val isAggregate = id == null || id < 0
+        val contentValues = ContentValues(1).apply {
+            put(key, uri.pathSegments[2])
+        }
+        return db.update(
+            if (isAggregate) TABLE_CURRENCIES else TABLE_ACCOUNTS,
+            contentValues,
+            (if (id == null) KEY_CODE else KEY_ROWID) + " = ?",
+            arrayOf(
+                if (id == null) subject else abs(id).toString()
+            )
+        )
+    }
 }

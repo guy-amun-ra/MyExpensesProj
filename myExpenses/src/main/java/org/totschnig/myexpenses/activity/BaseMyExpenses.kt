@@ -339,16 +339,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     protected open fun handleSortDirection(item: MenuItem) =
         Utils.getSortDirectionFromMenuItemId(item.itemId)?.let { newSortDirection ->
             if (!item.isChecked) {
-                if (accountId == HOME_AGGREGATE_ID) {
-                    viewModel.persistSortDirectionHomeAggregate(newSortDirection)
-                } else if (accountId < 0) {
-                    viewModel.persistSortDirectionAggregate(
-                        currentAccount!!.currency.code,
-                        newSortDirection
-                    )
-                } else {
-                    viewModel.persistSortDirection(accountId, newSortDirection)
-                }
+                viewModel.persistSortDirection(accountId, newSortDirection)
             }
             true
         } ?: false
@@ -770,10 +761,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 onToggleCrStatus
                             )
                         },
-                        scrollToCurrentDate = prefHandler.getBoolean(
-                            PrefKey.SCROLL_TO_CURRENT_DATE,
-                            false
-                        )
+                        scrollToCurrentDate = viewModel.scrollToCurrentDate.getValue(account.id),
+                        listState = viewModel.listState.getValue(account.id)
                     )
                 }
             }

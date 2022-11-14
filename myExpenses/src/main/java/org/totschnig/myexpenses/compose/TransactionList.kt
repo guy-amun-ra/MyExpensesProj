@@ -5,12 +5,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.Divider
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -52,21 +53,24 @@ import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 
 private fun LazyPagingItems<Transaction2>.getCurrentPosition(
-    startIndex: Int = 0,
-    sortDirection: SortDirection
-): Pair<Int?, Boolean> {
-    var index = startIndex
+    startIndex: Pair<Int, Int>,
+    sortDirection: SortDirection,
+    isVisible:  (Transaction2) -> Boolean
+): Pair<Pair<Int, Int>?, Boolean> {
+    var (index, visibleIndex) = startIndex
+
     when (sortDirection) {
         SortDirection.ASC -> {
             val startOfToday = localDateTime2Epoch(LocalDateTime.now().truncatedTo(ChronoUnit.DAYS))
             while (index < itemCount) {
                 val transaction2 = get(index) ?: return null to true
                 if (transaction2._date > startOfToday) {
-                    return index to true
+                    return (index to visibleIndex) to true
                 }
                 index++
+                if (isVisible(transaction2)) visibleIndex++
             }
-            return index to false
+            return (index to visibleIndex) to false
         }
         SortDirection.DESC -> {
             val endOfDay =
@@ -74,11 +78,12 @@ private fun LazyPagingItems<Transaction2>.getCurrentPosition(
             while (index < itemCount) {
                 val transaction2 = get(index) ?: return null to true
                 if (transaction2._date < endOfDay) {
-                    return index to true
+                    return (index to visibleIndex) to true
                 }
                 index++
+                if (isVisible(transaction2)) visibleIndex++
             }
-            return index to false
+            return (index to visibleIndex) to false
         }
     }
 }
@@ -102,28 +107,27 @@ fun TransactionList(
     expansionHandler: ExpansionHandler,
     onBudgetClick: (Long, Int) -> Unit,
     showSumDetails: Boolean,
-    scrollToCurrentDate: Boolean = false,
-    renderer: ItemRenderer
+    scrollToCurrentDate: MutableState<Boolean>,
+    renderer: ItemRenderer,
+    listState: LazyListState
 ) {
 
     val lazyPagingItems = pageFlow.collectAsLazyPagingItems()
-    Timber.i("collectAsLazyPagingItems %d", lazyPagingItems.itemCount)
     val collapsedIds = expansionHandler.collapsedIds.collectAsState(initial = null).value
 
-    if (lazyPagingItems.itemCount == 0 && lazyPagingItems.loadState.refresh != LoadState.Loading) {
-        Text(
-            modifier = modifier
-                .fillMaxWidth()
-                .wrapContentSize(), text = stringResource(id = R.string.no_expenses)
-        )
+    if (lazyPagingItems.itemCount == 0) {
+        if (lazyPagingItems.loadState.refresh != LoadState.Loading) {
+            Text(
+                modifier = modifier
+                    .fillMaxWidth()
+                    .wrapContentSize(), text = stringResource(id = R.string.no_expenses)
+            )
+        }
     } else {
         val futureBackgroundColor = colorResource(id = R.color.future_background)
         val showOnlyDelta = headerData.account.isHomeAggregate || headerData.isFiltered
-        val listState = rememberLazyListState()
         val scrollToCurrentDateStartIndex = remember {
-            mutableStateOf(
-                if (scrollToCurrentDate && listState.firstVisibleItemIndex == 0) 0 else null
-            )
+            mutableStateOf(if (scrollToCurrentDate.value) 0 to 0 else null)
         }
         val scrollToCurrentDateResultIndex = remember {
             mutableStateOf(0)
@@ -131,21 +135,22 @@ fun TransactionList(
         LaunchedEffect(lazyPagingItems.loadState.append.endOfPaginationReached) {
             if(lazyPagingItems.loadState.append.endOfPaginationReached) {
                 scrollToCurrentDateStartIndex.value?.let {
-                    scrollToCurrentDateResultIndex.value = it
+                    scrollToCurrentDateResultIndex.value = it.second
                     scrollToCurrentDateStartIndex.value = null
                 }
             }
         }
-        if (lazyPagingItems.itemCount > 0) {
+        if (lazyPagingItems.itemCount > 0 && collapsedIds != null) {
             scrollToCurrentDateStartIndex.value?.let {
                 LaunchedEffect(lazyPagingItems.itemCount) {
                     val scrollCalculationResult = lazyPagingItems.getCurrentPosition(
                         startIndex = it,
-                        sortDirection = headerData.account.sortDirection
+                        sortDirection = headerData.account.sortDirection,
+                        isVisible = { !collapsedIds.contains(headerData.calculateGroupId(it).toString()) }
                     )
                     scrollToCurrentDateStartIndex.value =
                         if (scrollCalculationResult.second || lazyPagingItems.loadState.append.endOfPaginationReached) {
-                            scrollToCurrentDateResultIndex.value = scrollCalculationResult.first ?: 0
+                            scrollToCurrentDateResultIndex.value = scrollCalculationResult.first?.second ?: 0
                             null
                         } else scrollCalculationResult.first
                 }
@@ -153,8 +158,12 @@ fun TransactionList(
         }
 
         if (scrollToCurrentDateStartIndex.value == null) {
-            LaunchedEffect(Unit) {
-                listState.scrollToItem(scrollToCurrentDateResultIndex.value)
+            if (scrollToCurrentDate.value) {
+                LaunchedEffect(Unit) {
+                    Timber.i("Scroll to current date result: %d", scrollToCurrentDateResultIndex.value)
+                    listState.scrollToItem(scrollToCurrentDateResultIndex.value)
+                    scrollToCurrentDate.value = false
+                }
             }
             LazyColumn(
                 modifier = modifier

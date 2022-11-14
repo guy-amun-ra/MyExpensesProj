@@ -7,6 +7,7 @@ import android.content.ContentValues
 import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteException
 import android.os.Bundle
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.Saver
 import androidx.datastore.core.DataStore
@@ -200,6 +201,16 @@ open class MyExpensesViewModel(
             )
         }
 
+    val listState: Map<Long, LazyListState> =
+        lazyMap { LazyListState(0, 0) }
+
+    val scrollToCurrentDate: Map<Long, MutableState<Boolean>> =
+        lazyMap {
+            mutableStateOf(
+                prefHandler.getBoolean(PrefKey.SCROLL_TO_CURRENT_DATE, false)
+            )
+        }
+
     val accountData: StateFlow<Result<List<FullAccount>>?> = contentResolver.observeQuery(
         uri = ACCOUNTS_URI.buildUpon()
             .appendBooleanQueryParameter(QUERY_PARAMETER_MERGE_CURRENCY_AGGREGATES)
@@ -298,21 +309,21 @@ open class MyExpensesViewModel(
 
     fun persistSortDirection(accountId: Long, sortDirection: SortDirection) {
         viewModelScope.launch(context = coroutineContext()) {
-            contentResolver.update(
-                ContentUris.withAppendedId(Account.CONTENT_URI, accountId).buildUpon()
-                    .appendPath(URI_SEGMENT_SORT_DIRECTION)
-                    .appendPath(sortDirection.name).build(),
-                null, null, null
-            )
+            if (accountId == Account.HOME_AGGREGATE_ID) {
+                persistSortDirectionHomeAggregate(sortDirection)
+                triggerAccountListRefresh()
+            } else {
+                contentResolver.update(
+                    ContentUris.withAppendedId(SORT_DIRECTION_URI, accountId)
+                        .buildUpon()
+                        .appendPath(sortDirection.name).build(),
+                    null, null, null
+                )
+            }
         }
     }
 
-    fun persistSortDirectionAggregate(currency: String, sortDirection: SortDirection) {
-        AggregateAccount.persistSortDirectionAggregate(prefHandler, currency, sortDirection)
-        triggerAccountListRefresh()
-    }
-
-    fun persistSortDirectionHomeAggregate(sortDirection: SortDirection) {
+    private fun persistSortDirectionHomeAggregate(sortDirection: SortDirection) {
         AggregateAccount.persistSortDirectionHomeAggregate(prefHandler, sortDirection)
         triggerAccountListRefresh()
     }
