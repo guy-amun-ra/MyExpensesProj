@@ -10,19 +10,19 @@ import org.totschnig.myexpenses.util.licence.LicenceStatus
 
 @Keep
 class PlatformTracker : Tracker {
-    private var firebaseAnalytics: FirebaseAnalytics? = null
+    lateinit var firebaseAnalytics: FirebaseAnalytics
     override fun init(context: Context, licenceStatus: LicenceStatus?) {
         firebaseAnalytics = FirebaseAnalytics.getInstance(context)
-        firebaseAnalytics!!.setUserProperty("Distribution", distribution.name)
-        firebaseAnalytics!!.setUserProperty("Licence", licenceStatus!!.name)
+        firebaseAnalytics.setUserProperty("Distribution", distribution.name)
+        firebaseAnalytics.setUserProperty("Licence", licenceStatus?.name ?: "null")
     }
 
     override fun logEvent(eventName: String, params: Bundle?) {
         Preconditions.checkNotNull(firebaseAnalytics)
-        firebaseAnalytics!!.logEvent(eventName, params)
+        firebaseAnalytics.logEvent(eventName, params)
     }
 
     override fun setEnabled(enabled: Boolean) {
-        firebaseAnalytics!!.setAnalyticsCollectionEnabled(enabled)
+        firebaseAnalytics.setAnalyticsCollectionEnabled(enabled)
     }
 }
