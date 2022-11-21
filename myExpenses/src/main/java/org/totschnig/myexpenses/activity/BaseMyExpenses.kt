@@ -20,12 +20,14 @@ import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.LocalTextStyle
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.collectionInfo
@@ -98,6 +100,7 @@ import timber.log.Timber
 import java.io.File
 import java.io.Serializable
 import java.math.BigDecimal
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.*
@@ -572,10 +575,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     private fun MainContent() {
 
         LaunchedEffect(viewModel.pagerState.currentPage) {
-            if (setCurrentAccount()) {
+            setCurrentAccount()?.let {
                 finishActionMode()
                 sumInfo = SumInfoUnknown
-                viewModel.sumInfo(currentAccount!!).collect {
+                viewModel.sumInfo(it).collect {
                     sumInfo = it
                 }
             }
@@ -630,7 +633,9 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         index: Int,
         account: PageAccount
     ) {
-
+        LaunchedEffect(key1 = account.sealed) {
+            if (account.sealed) finishActionMode()
+        }
         if ((currentPage - index).absoluteValue <= 1) {
 
             val showStatusHandle = if (account.type == AccountType.CASH)
@@ -669,12 +674,14 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         FilterCard(it, ::clearFilter)
                     }
                 headerData.collectAsState(null).value?.let { headerData ->
+                    val withCategoryIcon =
+                        viewModel.withCategoryIcon.collectAsState(initial = true).value
                     TransactionList(
                         modifier = Modifier.weight(1f),
                         pageFlow = viewModel.items.getValue(account),
                         headerData = headerData,
                         budgetData = viewModel.budgetData(account).collectAsState(null),
-                        selectionHandler = object : SelectionHandler {
+                        selectionHandler = if (account.sealed) null else object : SelectionHandler {
                             override fun toggle(transaction: Transaction2) {
                                 viewModel.selectionState.toggle(transaction)
                             }
@@ -686,7 +693,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 get() = selectionState.size
 
                         },
-                        menuGenerator = remember {
+                        menuGenerator = remember(account.sealed) {
                             { transaction ->
                                 Menu(
                                     buildList {
@@ -749,14 +756,31 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         },
                         showSumDetails = viewModel.showSumDetails.collectAsState(initial = true).value,
                         renderer = when (viewModel.renderer.collectAsState(initial = RenderType.New).value) {
-                            RenderType.New -> NewTransactionRenderer(
-                                dateTimeFormatter(account, prefHandler, this@BaseMyExpenses),
-                                onToggleCrStatus
-                            )
-                            RenderType.Legacy -> LegacyTransactionRenderer(
-                                dateTimeFormatterLegacy(account, prefHandler, this@BaseMyExpenses),
-                                onToggleCrStatus
-                            )
+                            RenderType.New -> {
+                                NewTransactionRenderer(
+                                    dateTimeFormatter(account, prefHandler, this@BaseMyExpenses),
+                                    withCategoryIcon,
+                                    onToggleCrStatus
+                                )
+                            }
+                            RenderType.Legacy -> {
+                                CompactTransactionRenderer(
+                                    dateTimeFormatterLegacy(
+                                        account,
+                                        prefHandler,
+                                        this@BaseMyExpenses
+                                    )?.let {
+                                        Pair(
+                                            (it.first as SimpleDateFormat).asDateTimeFormatter,
+                                            with(LocalDensity.current) {
+                                                LocalTextStyle.current.fontSize.toDp()
+                                            } * it.second
+                                        )
+                                    },
+                                    withCategoryIcon,
+                                    onToggleCrStatus
+                                )
+                            }
                         },
                         scrollToCurrentDate = viewModel.scrollToCurrentDate.getValue(account.id),
                         listState = viewModel.listState.getValue(account.id)
@@ -1393,7 +1417,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
      *  @return true if we have moved to a new account
      */
     private fun setCurrentAccount() =
-        accountData.getOrNull(viewModel.pagerState.currentPage)?.let { account ->
+        accountData.getOrNull(viewModel.pagerState.currentPage)?.also { account ->
             prefHandler.putLong(PrefKey.CURRENT_ACCOUNT, account.id)
             tintSystemUiAndFab(account.color(resources))
             setBalance(account)
@@ -1403,8 +1427,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 floatingActionButton.show()
             }
             invalidateOptionsMenu()
-            true
-        } ?: false
+        }
 
     private fun setBalance(account: FullAccount) {
         val isHome = account.id == HOME_AGGREGATE_ID
