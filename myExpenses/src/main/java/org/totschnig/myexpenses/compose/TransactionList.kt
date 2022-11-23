@@ -34,6 +34,8 @@ import androidx.paging.LoadState
 import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import com.google.accompanist.flowlayout.FlowMainAxisAlignment
+import com.google.accompanist.flowlayout.FlowRow
 import kotlinx.coroutines.flow.Flow
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.model.Grouping
@@ -55,37 +57,35 @@ import kotlin.math.roundToInt
 private fun LazyPagingItems<Transaction2>.getCurrentPosition(
     startIndex: Pair<Int, Int>,
     sortDirection: SortDirection,
-    isVisible:  (Transaction2) -> Boolean
+    headerData: HeaderData,
+    collapsedIds: Set<String>
 ): Pair<Pair<Int, Int>?, Boolean> {
     var (index, visibleIndex) = startIndex
-
-    when (sortDirection) {
-        SortDirection.ASC -> {
-            val startOfToday = localDateTime2Epoch(LocalDateTime.now().truncatedTo(ChronoUnit.DAYS))
-            while (index < itemCount) {
-                val transaction2 = get(index) ?: return null to true
-                if (transaction2._date > startOfToday) {
-                    return (index to visibleIndex) to true
-                }
-                index++
-                if (isVisible(transaction2)) visibleIndex++
-            }
-            return (index to visibleIndex) to false
-        }
-        SortDirection.DESC -> {
-            val endOfDay =
-                localDateTime2Epoch(LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1))
-            while (index < itemCount) {
-                val transaction2 = get(index) ?: return null to true
-                if (transaction2._date < endOfDay) {
-                    return (index to visibleIndex) to true
-                }
-                index++
-                if (isVisible(transaction2)) visibleIndex++
-            }
-            return (index to visibleIndex) to false
-        }
+    var lastHeader: Int? = null
+    val limit = when (sortDirection) {
+        SortDirection.ASC -> localDateTime2Epoch(
+            LocalDateTime.now().truncatedTo(ChronoUnit.DAYS)
+        ) //startOfToday
+        SortDirection.DESC -> localDateTime2Epoch(
+            LocalDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1)
+        ) //endOfToday
     }
+    while (index < itemCount) {
+        val transaction2 = get(index) ?: return null to true
+        val comparisonResult = transaction2._date.compareTo(limit)
+        if ((sortDirection == SortDirection.ASC && comparisonResult > 0) || sortDirection == SortDirection.DESC && comparisonResult < 0) {
+            return (index to visibleIndex) to true
+        }
+        val headerId = headerData.calculateGroupId(transaction2)
+        if (headerId != lastHeader) {
+            visibleIndex++
+            lastHeader = headerId
+        }
+        val isVisible = !collapsedIds.contains(headerId.toString())
+        index++
+        if (isVisible) visibleIndex++
+    }
+    return (index to visibleIndex) to false
 }
 
 const val COMMENT_SEPARATOR = " / "
@@ -133,7 +133,7 @@ fun TransactionList(
             mutableStateOf(0)
         }
         LaunchedEffect(lazyPagingItems.loadState.append.endOfPaginationReached) {
-            if(lazyPagingItems.loadState.append.endOfPaginationReached) {
+            if (lazyPagingItems.loadState.append.endOfPaginationReached) {
                 scrollToCurrentDateStartIndex.value?.let {
                     scrollToCurrentDateResultIndex.value = it.second
                     scrollToCurrentDateStartIndex.value = null
@@ -146,11 +146,13 @@ fun TransactionList(
                     val scrollCalculationResult = lazyPagingItems.getCurrentPosition(
                         startIndex = it,
                         sortDirection = headerData.account.sortDirection,
-                        isVisible = { !collapsedIds.contains(headerData.calculateGroupId(it).toString()) }
+                        headerData = headerData,
+                        collapsedIds = collapsedIds
                     )
                     scrollToCurrentDateStartIndex.value =
                         if (scrollCalculationResult.second || lazyPagingItems.loadState.append.endOfPaginationReached) {
-                            scrollToCurrentDateResultIndex.value = scrollCalculationResult.first?.second ?: 0
+                            scrollToCurrentDateResultIndex.value =
+                                scrollCalculationResult.first?.second ?: 0
                             null
                         } else scrollCalculationResult.first
                 }
@@ -160,7 +162,10 @@ fun TransactionList(
         if (scrollToCurrentDateStartIndex.value == null) {
             if (scrollToCurrentDate.value) {
                 LaunchedEffect(Unit) {
-                    Timber.i("Scroll to current date result: %d", scrollToCurrentDateResultIndex.value)
+                    Timber.i(
+                        "Scroll to current date result: %d",
+                        scrollToCurrentDateResultIndex.value
+                    )
                     listState.scrollToItem(scrollToCurrentDateResultIndex.value)
                     scrollToCurrentDate.value = false
                 }
@@ -248,11 +253,13 @@ fun TransactionList(
             }
         } else {
             Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text(text = listOf(
-                    stringResource(id = R.string.pref_scroll_to_current_date_summary),
-                    stringResource(id = R.string.progress_dialog_loading),
-                    "(${scrollToCurrentDateStartIndex.value})"
-                ).joinToString("\n"), textAlign = TextAlign.Center)
+                Text(
+                    text = listOf(
+                        stringResource(id = R.string.pref_scroll_to_current_date_summary),
+                        stringResource(id = R.string.progress_dialog_loading),
+                        "(${scrollToCurrentDateStartIndex.value?.first})"
+                    ).joinToString("\n"), textAlign = TextAlign.Center
+                )
             }
         }
     }
@@ -298,9 +305,9 @@ fun HeaderData(
                     headerRow.delta.amountMinor.absoluteValue
                 )
             )
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = if (alignStart) Arrangement.Start else Arrangement.Center
+            mainAxisAlignment = if (alignStart) FlowMainAxisAlignment.Start else FlowMainAxisAlignment.Center
         ) {
             if (!showOnlyDelta) {
                 Text(amountFormatter.formatMoney(headerRow.previousBalance))
@@ -318,9 +325,9 @@ fun HeaderData(
             }
         }
         if (showSumDetailsState.value) {
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = if (alignStart) Arrangement.Start else Arrangement.SpaceEvenly
+                mainAxisAlignment = if (alignStart) FlowMainAxisAlignment.Start else FlowMainAxisAlignment.Center
             ) {
                 Text(
                     "⊕ " + amountFormatter.formatMoney(headerRow.incomeSum),
