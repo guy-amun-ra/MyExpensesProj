@@ -157,20 +157,20 @@ abstract class ItemRenderer(
         val voidStatus = stringResource(id = R.string.status_void)
         Row(modifier = modifier
             .height()
-            .conditional(selectionHandler != null,
-                ifTrue = {
+            .optional(selectionHandler,
+                ifPresent = {
                     combinedClickable(
-                        onLongClick = { selectionHandler!!.toggle(transaction) },
+                        onLongClick = { it.toggle(transaction) },
                         onClick = {
-                            if (selectionHandler!!.selectionCount == 0) {
+                            if (it.selectionCount == 0) {
                                 showMenu.value = true
                             } else {
-                                selectionHandler.toggle(transaction)
+                                it.toggle(transaction)
                             }
                         }
                     )
                 },
-                ifFalse = {
+                ifAbsent = {
                     clickable { showMenu.value = true }
                 }
             )
@@ -243,6 +243,19 @@ abstract class ItemRenderer(
     }
 
     @Composable
+    protected fun Transaction2.AccountColor() {
+        color?.let {
+            Divider(
+                color = Color(it),
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .width(2.dp)
+            )
+            Spacer(modifier = Modifier.width(5.dp))
+        }
+    }
+
+    @Composable
     fun TextWithInlineContent(
         modifier: Modifier = Modifier,
         text: AnnotatedString,
@@ -283,15 +296,7 @@ class CompactTransactionRenderer(
                 append(it)
             }
         }
-        transaction.color?.let {
-            Divider(
-                color = Color(it),
-                modifier = Modifier
-                    .fillMaxHeight()
-                    .width(2.dp)
-            )
-            Spacer(modifier = Modifier.width(5.dp))
-        }
+        transaction.AccountColor()
         dateTimeFormatInfo?.let {
             Text(
                 modifier = Modifier.width(it.second),
@@ -309,7 +314,7 @@ class CompactTransactionRenderer(
             text = description,
             icons = secondaryInfo.second
         )
-        ColoredAmountText(money = transaction.amount, neutral = transaction.isTransferAggregate)
+        ColoredAmountText(money = transaction.equivalentAmount ?:  transaction.amount, neutral = transaction.isTransferAggregate)
     }
 
     override fun Modifier.height() = this.height(IntrinsicSize.Min)
@@ -333,7 +338,10 @@ class NewTransactionRenderer(
                 .weight(1f)
         ) {
             if (!transaction.isTransfer && transaction.accountLabel != null) {
-                Text(text = transaction.accountLabel)
+                Row(modifier = Modifier.height(IntrinsicSize.Min)) {
+                    transaction.AccountColor()
+                    Text(text = transaction.accountLabel)
+                }
             }
             primaryInfo.takeIf { it.isNotEmpty() }
                 ?.let { info ->
@@ -357,7 +365,7 @@ class NewTransactionRenderer(
         }
         Column(horizontalAlignment = Alignment.End) {
             ColoredAmountText(
-                money = transaction.amount,
+                money = transaction.equivalentAmount ?:  transaction.amount,
                 style = MaterialTheme.typography.body1,
                 neutral = transaction.isTransferAggregate
             )
@@ -393,13 +401,7 @@ fun Modifier.tagBorder() = composed {
 fun RenderNew(@PreviewParameter(SampleProvider::class) transaction: Transaction2) {
     NewTransactionRenderer(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT)).Render(
         transaction = transaction,
-        selectionHandler = object : SelectionHandler {
-            override fun toggle(transaction: Transaction2) {}
-
-            override fun isSelected(transaction: Transaction2) = false
-
-            override val selectionCount: Int = 0
-        },
+        selectionHandler = null,
         menuGenerator = { null }
     )
 }
@@ -412,13 +414,7 @@ fun RenderCompact(@PreviewParameter(SampleProvider::class) transaction: Transact
         onToggleCrStatus = {}
     ).Render(
         transaction = transaction,
-        selectionHandler = object : SelectionHandler {
-            override fun toggle(transaction: Transaction2) {}
-
-            override fun isSelected(transaction: Transaction2) = false
-
-            override val selectionCount: Int = 0
-        },
+        selectionHandler = null,
         menuGenerator = { null }
     )
 }

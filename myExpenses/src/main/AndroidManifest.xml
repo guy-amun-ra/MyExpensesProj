@@ -296,6 +296,7 @@
                 android:resource="@xml/searchable" />
         </activity>
         <activity android:name=".activity.HistoryActivity" />
+        <activity android:name=".activity.SafSetup" android:theme="@style/Translucent" />
 
         <service
             android:name=".service.MyService"
@@ -377,8 +378,7 @@
         <service
             android:name=".sync.SyncService"
             android:exported="true"
-            android:process=":sync"
-            tools:ignore="ExportedService">
+            android:process=":sync">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>

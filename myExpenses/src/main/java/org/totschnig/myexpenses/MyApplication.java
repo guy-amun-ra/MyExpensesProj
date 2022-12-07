@@ -15,6 +15,13 @@
 
 package org.totschnig.myexpenses;
 
+import static org.totschnig.myexpenses.feature.WebUiFeatureKt.START_ACTION;
+import static org.totschnig.myexpenses.feature.WebUiFeatureKt.STOP_ACTION;
+import static org.totschnig.myexpenses.preference.PrefKey.DEBUG_LOGGING;
+import static org.totschnig.myexpenses.preference.PrefKey.UI_WEB;
+import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_HTTPS;
+import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_PASSWORD;
+
 import android.app.ActivityManager;
 import android.app.Application;
 import android.content.ComponentName;
@@ -35,6 +42,15 @@ import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
+import androidx.preference.PreferenceManager;
+
+import org.acra.util.StreamReader;
 import org.totschnig.myexpenses.activity.OnboardingActivity;
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
 import org.totschnig.myexpenses.di.AppComponent;
@@ -62,7 +78,6 @@ import org.totschnig.myexpenses.util.NotificationBuilderWrapper;
 import org.totschnig.myexpenses.util.Utils;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 import org.totschnig.myexpenses.util.io.NetworkUtilsKt;
-import org.totschnig.myexpenses.util.io.StreamReader;
 import org.totschnig.myexpenses.util.licence.LicenceHandler;
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider;
 import org.totschnig.myexpenses.util.log.TagFilterFileLoggingTree;
@@ -75,21 +90,7 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.ProcessLifecycleOwner;
-import androidx.preference.PreferenceManager;
 import timber.log.Timber;
-
-import static org.totschnig.myexpenses.feature.WebUiFeatureKt.START_ACTION;
-import static org.totschnig.myexpenses.feature.WebUiFeatureKt.STOP_ACTION;
-import static org.totschnig.myexpenses.preference.PrefKey.DEBUG_LOGGING;
-import static org.totschnig.myexpenses.preference.PrefKey.UI_WEB;
-import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_HTTPS;
-import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_PASSWORD;
 
 public class MyApplication extends Application implements
     OnSharedPreferenceChangeListener, DefaultLifecycleObserver {

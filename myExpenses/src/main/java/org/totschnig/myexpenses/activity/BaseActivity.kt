@@ -11,8 +11,10 @@ import android.content.IntentFilter
 import android.content.res.Resources
 import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.viewModels
@@ -29,6 +31,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
+import eltos.simpledialogfragment.form.AmountInputHostDialog
 import icepick.State
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
@@ -53,7 +56,9 @@ import org.totschnig.myexpenses.viewmodel.FeatureViewModel
 import org.totschnig.myexpenses.viewmodel.OcrViewModel
 import org.totschnig.myexpenses.viewmodel.ShareViewModel
 import org.totschnig.myexpenses.viewmodel.data.EventObserver
+import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET_DATA_ENTRY
 import timber.log.Timber
+import java.math.BigDecimal
 import javax.inject.Inject
 
 abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener, EasyPermissions.PermissionCallbacks {
@@ -71,6 +76,26 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         if (icon != 0) {
             floatingActionButton.setImageResource(icon)
         }
+    }
+
+    open fun showCalculator(amount: BigDecimal?, id: Int) {
+        val intent = Intent(this, CalculatorInput::class.java).apply {
+            forwardDataEntryFromWidget(this)
+            if (amount != null) {
+                putExtra(DatabaseConstants.KEY_AMOUNT, amount)
+            }
+            putExtra(CalculatorInput.EXTRA_KEY_INPUT_ID, id)
+        }
+        (supportFragmentManager.findFragmentById(0) as? AmountInputHostDialog)?.also {
+            it.startActivityForResult(intent, CALCULATOR_REQUEST)
+        } ?: kotlin.run { startActivityForResult(intent, CALCULATOR_REQUEST) }
+    }
+
+    protected open fun forwardDataEntryFromWidget(intent: Intent) {
+        intent.putExtra(
+            EXTRA_START_FROM_WIDGET_DATA_ENTRY,
+            getIntent().getBooleanExtra(EXTRA_START_FROM_WIDGET_DATA_ENTRY, false)
+        )
     }
 
     protected fun configureFloatingActionButton(fabDescription: String?) {
@@ -343,12 +368,9 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         get() = findViewById(snackBarContainerId) ?: findViewById(android.R.id.content)
 
     fun showProgressSnackBar(message: CharSequence, total: Int = 0, progress: Int = 0, container: View? = null) {
-        //without ?: null the Compiler assumes findViewById(snackBarContainerId) to return non null
-        (container ?: snackBarContainer)?.let {
+        (container ?: snackBarContainer)?.also {
             val displayMessage = if (total > 0) "$message ($progress/$total)" else message
-            if (progress > 0) {
-                snackBar?.setText(displayMessage)
-            } else {
+            if (snackBar == null) {
                 snackBar = Snackbar.make(it, displayMessage, Snackbar.LENGTH_INDEFINITE).apply {
                     (view.findViewById<View>(com.google.android.material.R.id.snackbar_text).parent as ViewGroup)
                         .addView(
@@ -357,10 +379,24 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                                     this@BaseActivity,
                                     R.style.SnackBarTheme
                                 )
-                            )
+                            ).apply {
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                ).apply {
+                                    gravity = Gravity.CENTER_VERTICAL
+                                }
+                            }
                         )
+                    addCallback(object: Snackbar.Callback() {
+                        override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                            snackBar = null
+                        }
+                    })
                     show()
                 }
+            } else {
+                snackBar?.setText(displayMessage)
             }
         } ?: showSnackBarFallBack(message)
     }
@@ -383,6 +419,11 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
             if (callback != null) {
                 addCallback(callback)
             }
+            addCallback(object: Snackbar.Callback() {
+                override fun onDismissed(transientBottomBar: Snackbar?, event: Int) {
+                    snackBar = null
+                }
+            })
             show()
         }
 
@@ -455,8 +496,11 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         showMessage(getString(resId))
     }
 
+    fun deleteFailureMessage(message: String?) =
+        "There was an error deleting the object${message?.let { " ($it)" } ?: ""}. Please contact support@myexenses.mobi !"
+
     fun showDeleteFailureFeedback(message: String? = null, callback: Snackbar.Callback? = null) {
-        showDismissibleSnackBar("There was an error deleting the object${message?.let { " ($it)" } ?: ""}. Please contact support@myexenses.mobi !", callback)
+        showDismissibleSnackBar(deleteFailureMessage(message), callback)
     }
 
     protected open fun doHelp(variant: String?): Boolean {

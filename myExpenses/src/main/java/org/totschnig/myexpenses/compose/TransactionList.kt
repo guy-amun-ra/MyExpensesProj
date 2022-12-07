@@ -28,16 +28,16 @@ import androidx.compose.ui.semantics.CollectionInfo
 import androidx.compose.ui.semantics.collectionInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.paging.LoadState
-import androidx.paging.PagingData
 import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
 import com.google.accompanist.flowlayout.FlowMainAxisAlignment
 import com.google.accompanist.flowlayout.FlowRow
-import kotlinx.coroutines.flow.Flow
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.model.AccountType
+import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.SortDirection
@@ -98,13 +98,13 @@ enum class FutureCriterion {
 @Composable
 fun TransactionList(
     modifier: Modifier,
-    pageFlow: Flow<PagingData<Transaction2>>,
+    lazyPagingItems: LazyPagingItems<Transaction2>,
     headerData: HeaderData,
     budgetData: State<BudgetData?>,
     selectionHandler: SelectionHandler?,
     menuGenerator: (Transaction2) -> Menu<Transaction2>? = { null },
     futureCriterion: FutureCriterion,
-    expansionHandler: ExpansionHandler,
+    expansionHandler: ExpansionHandler?,
     onBudgetClick: (Long, Int) -> Unit,
     showSumDetails: Boolean,
     scrollToCurrentDate: MutableState<Boolean>,
@@ -112,8 +112,9 @@ fun TransactionList(
     listState: LazyListState
 ) {
 
-    val lazyPagingItems = pageFlow.collectAsLazyPagingItems()
-    val collapsedIds = expansionHandler.collapsedIds.collectAsState(initial = null).value
+    val collapsedIds = if (expansionHandler != null)
+        expansionHandler.collapsedIds.collectAsState(initial = null).value
+    else emptySet()
 
     if (lazyPagingItems.itemCount == 0) {
         if (lazyPagingItems.loadState.refresh != LoadState.Loading) {
@@ -203,8 +204,8 @@ fun TransactionList(
                                         dateInfo = headerData.dateInfo,
                                         budget = budget,
                                         isExpanded = !isGroupHidden,
-                                        toggle = {
-                                            expansionHandler.toggle(headerId.toString())
+                                        toggle = expansionHandler?.let {
+                                            { expansionHandler.toggle(headerId.toString()) }
                                         },
                                         onBudgetClick = onBudgetClick,
                                         showSumDetails = showSumDetails,
@@ -256,7 +257,7 @@ fun TransactionList(
                 Text(
                     text = listOf(
                         stringResource(id = R.string.pref_scroll_to_current_date_summary),
-                        stringResource(id = R.string.progress_dialog_loading),
+                        stringResource(id = R.string.loading),
                         "(${scrollToCurrentDateStartIndex.value?.first})"
                     ).joinToString("\n"), textAlign = TextAlign.Center
                 )
@@ -355,7 +356,7 @@ fun HeaderRenderer(
     dateInfo: DateInfo2,
     budget: Pair<Long, Long>?,
     isExpanded: Boolean,
-    toggle: () -> Unit,
+    toggle: (() -> Unit)?,
     onBudgetClick: (Long, Int) -> Unit,
     showSumDetails: Boolean,
     showOnlyDelta: Boolean
@@ -363,7 +364,7 @@ fun HeaderRenderer(
 
     Box(modifier = Modifier.background(MaterialTheme.colors.background)) {
         GroupDivider()
-        if (account.grouping != Grouping.NONE) {
+        toggle?.let {
             ExpansionHandle(
                 modifier = Modifier.align(Alignment.TopEnd),
                 isExpanded = isExpanded,
@@ -408,5 +409,54 @@ val mainScreenPadding
 interface SelectionHandler {
     fun toggle(transaction: Transaction2)
     fun isSelected(transaction: Transaction2): Boolean
+    fun select(transaction: Transaction2)
     val selectionCount: Int
+}
+
+
+@Preview(locale = "ar")
+@Composable
+fun RowRTL() {
+    Column() {
+        Row {
+            Text("1")
+            Text("2")
+            Text("3")
+        }
+        FlowRow {
+            Text("1")
+            Text("2")
+            Text("3")
+        }
+    }
+}
+
+@Preview(locale = "ar")
+@Composable
+fun Header() {
+    val amount = Money(CurrencyUnit.DebugInstance, 1234)
+    val headerRow = HeaderRow(
+        2022, 11, amount, amount, amount, amount, amount, amount, false, 0, 0
+    )
+    HeaderRenderer(
+        account = PageAccount(
+            1,
+            AccountType.CASH,
+            SortDirection.DESC,
+            Grouping.NONE,
+            CurrencyUnit.DebugInstance,
+            false,
+            1234,
+            0
+        ),
+        headerId = 2022001,
+        headerRow = headerRow,
+        dateInfo = DateInfo2.EMPTY,
+        budget = null,
+        isExpanded = true,
+        toggle = { },
+        onBudgetClick = { _, _ -> },
+        showSumDetails = true,
+        showOnlyDelta = false
+    )
 }
