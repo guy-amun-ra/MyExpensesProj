@@ -1,5 +1,6 @@
 package org.totschnig.myexpenses.util.ads
 
+import android.os.Build
 import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
@@ -32,6 +33,9 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
         new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build();
     MobileAds.setRequestConfiguration(configuration);*/
     }
+
+    override val shouldHideBanner: Boolean
+        get() = super.shouldHideBanner || Build.VERSION.SDK_INT == Build.VERSION_CODES.R
 
     override fun startBannerInternal() {
         showBannerAdmob()
@@ -119,7 +123,7 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
     override fun onResume() {
         if (mAdMobBannerShown) {
             //activity might have been resumed after user has bought contrib key
-            if (shouldHideAd()) {
+            if (shouldHideBanner) {
                 admobView?.destroy()
                 hide()
                 mAdMobBannerShown = false
