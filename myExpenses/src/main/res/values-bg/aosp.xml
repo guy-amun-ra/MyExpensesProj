@@ -32,5 +32,6 @@
     <string name="clear_cache">"Изчистване на кеша"</string>
     <string name="customize">"Персонализиране"</string>
     <string name="compact">компактна</string>
+    <string name="storage_description">"Локално хранилище"</string>
+    <string name="encryption">"Шифроване"</string>
 </resources>
-
