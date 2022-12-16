@@ -48,9 +48,6 @@ class UpgradeHandlerViewModel(application: Application) :
     @Inject
     lateinit var discoveryHelper: IDiscoveryHelper
 
-    @Inject
-    lateinit var dataStore: DataStore<Preferences>
-
     private var upgradeInfoShowIndex: Int = -1
     private val upgradeInfoList: MutableList<String> = mutableListOf()
 
@@ -169,7 +166,7 @@ class UpgradeHandlerViewModel(application: Application) :
                 dateFilterList.forEach { key ->
                     prefHandler.getString(key, null)?.let { legacy ->
                         try {
-                            DateCriterion.fromLegacy(legacy).toStringExtra().also { new ->
+                            DateCriterion.fromLegacy(legacy).toString().also { new ->
                                 prefHandler.putString(key, new)
                             }
                         } catch (e: Exception) {
@@ -194,7 +191,7 @@ class UpgradeHandlerViewModel(application: Application) :
 
             if (fromVersion < 417) {
                 prefHandler.getString(PrefKey.CUSTOM_DATE_FORMAT, null)?.let {
-                    if (validateDateFormat(it) != null) {
+                    if (validateDateFormat(getApplication(), it) != null) {
                         Timber.d("Removed erroneous dateFormat %s ", it)
                         prefHandler.remove(PrefKey.CUSTOM_DATE_FORMAT)
                     }

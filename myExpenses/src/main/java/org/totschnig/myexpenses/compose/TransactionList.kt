@@ -226,12 +226,12 @@ fun TransactionList(
                             lazyPagingItems[index]?.let {
                                 if (!isGroupHidden) {
                                     renderer.Render(
+                                        transaction = it,
                                         modifier = Modifier
                                             .animateItemPlacement()
                                             .conditional(it.date >= futureCriterionDate) {
                                                 background(futureBackgroundColor)
                                             },
-                                        transaction = it,
                                         selectionHandler = selectionHandler,
                                         menuGenerator = menuGenerator
                                     )
@@ -399,7 +399,7 @@ fun HeaderRenderer(
 }
 
 @Composable
-private fun GroupDivider(modifier: Modifier = Modifier) {
+fun GroupDivider(modifier: Modifier = Modifier) {
     Divider(modifier = modifier, color = colorResource(id = R.color.emphasis))
 }
 
