@@ -9,4 +9,9 @@
             </intent-filter>
         </receiver>
     </application>
+
+    <queries>
+        <package android:name="com.amazon.venezia"/>
+        <package android:name="com.amazon.sdktestclient" />
+    </queries>
 </manifest>
