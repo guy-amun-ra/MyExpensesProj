@@ -59,6 +59,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(context: Application, prefere
     }
 
     fun handlePurchaseForLicence(sku: String, orderId: String, purchaseToken: String? = null) {
+        log().i("handling $sku")
         licenseStatusPrefs.putString(KEY_ORDER_ID, orderId)
         extractLicenceStatusFromSku(sku).also {
             when (it) {

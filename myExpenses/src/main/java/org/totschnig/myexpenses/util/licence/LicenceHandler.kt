@@ -53,6 +53,7 @@ open class LicenceHandler(
 
     //called from PlayStoreLicenceHandler
     fun maybeUpgradeAddonFeatures(features: List<ContribFeature>, newPurchase: Boolean) {
+        log().i("maybeUpgradeAddonFeatures ${features.joinToString()}, newPurchase: $newPurchase")
         if (!hasOurLicence && !newPurchase) {
             addOnFeatures.clear()
         }

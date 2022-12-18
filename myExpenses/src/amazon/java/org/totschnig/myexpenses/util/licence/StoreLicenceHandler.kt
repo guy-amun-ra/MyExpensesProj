@@ -56,13 +56,13 @@ class StoreLicenceHandler(context: Application, preferenceObfuscator: Preference
         return BillingManagerAmazon(activity.applicationContext, billingUpdatesListener)
     }
 
-    private fun registerInventory(purchases: MutableList<Receipt>, maybeCancel: Boolean) {
+    private fun registerInventory(purchases: MutableList<Receipt>, initialFullRequest: Boolean) {
         findHighestValidPurchase(purchases)?.let {
             handlePurchaseForLicence(it.sku, it.receiptId)
-        } ?: kotlin.run { if (maybeCancel) maybeCancel() }
+        } ?: kotlin.run { if (initialFullRequest) maybeCancel() }
         handlePurchaseForAddOns(
             purchases.mapNotNull { Licence.parseFeature(it.sku) },
-            false
+            !initialFullRequest
         )
     }
 
