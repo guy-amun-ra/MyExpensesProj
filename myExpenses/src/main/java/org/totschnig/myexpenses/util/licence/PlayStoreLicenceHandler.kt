@@ -67,9 +67,7 @@ open class PlayStoreLicenceHandler(
                     registerInventory(purchases, newPurchase)
 
                     if (newPurchase || oldStatus != licenceStatus || addOnFeatures.size > oldFeatures) {
-                        activity.onLicenceStatusSet(
-                            prettyPrintStatus(activity)
-                        )
+                        activity.onLicenceStatusSet(prettyPrintStatus(activity))
                     }
                 }
                 return licenceStatus != null || addOnFeatures.isNotEmpty()
@@ -132,13 +130,6 @@ open class PlayStoreLicenceHandler(
             newPurchase
         )
         licenseStatusPrefs.commit()
-    }
-
-    private fun handlePurchaseForAddOns(
-        features: List<AddOnPackage>,
-        newPurchase: Boolean
-    ) {
-        maybeUpgradeAddonFeatures(features.map { it.feature }, newPurchase)
     }
 
     override suspend fun launchPurchase(

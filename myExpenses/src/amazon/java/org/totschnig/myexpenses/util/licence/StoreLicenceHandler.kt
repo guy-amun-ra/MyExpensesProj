@@ -5,6 +5,7 @@ import android.content.Context
 import com.amazon.device.iap.model.Product
 import com.amazon.device.iap.model.PurchaseResponse
 import com.amazon.device.iap.model.Receipt
+import com.android.billingclient.api.Purchase
 import com.google.android.vending.licensing.PreferenceObfuscator
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
 import org.totschnig.myexpenses.activity.IapActivity
@@ -19,6 +20,10 @@ class StoreLicenceHandler(context: Application, preferenceObfuscator: Preference
         val billingUpdatesListener = object : AmazonBillingUpdatesListener {
             override fun onPurchase(receipt: Receipt): Boolean {
                 handlePurchaseForLicence(receipt.sku, receipt.receiptId)
+                handlePurchaseForAddOns(
+                    listOfNotNull(Licence.parseFeature(receipt.sku)),
+                    true
+                )
                 (activity as? BillingListener)?.onLicenceStatusSet(prettyPrintStatus(activity))
                 return licenceStatus != null
             }
@@ -55,6 +60,10 @@ class StoreLicenceHandler(context: Application, preferenceObfuscator: Preference
         findHighestValidPurchase(purchases)?.let {
             handlePurchaseForLicence(it.sku, it.receiptId)
         } ?: kotlin.run { if (maybeCancel) maybeCancel() }
+        handlePurchaseForAddOns(
+            purchases.mapNotNull { Licence.parseFeature(it.sku) },
+            false
+        )
     }
 
     private fun findHighestValidPurchase(purchases: List<Receipt>) =

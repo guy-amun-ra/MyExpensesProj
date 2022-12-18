@@ -124,6 +124,13 @@ abstract class AbstractInAppPurchaseLicenceHandler(context: Application, prefere
     override fun buildRoadmapVoteKey() =
         purchaseExtraInfo.takeIf { isProfessionalEnabled } ?: super.buildRoadmapVoteKey()
 
+    protected fun handlePurchaseForAddOns(
+        features: List<AddOnPackage>,
+        newPurchase: Boolean
+    ) {
+        maybeUpgradeAddonFeatures(features.map { it.feature }, newPurchase)
+    }
+
     override val purchaseExtraInfo: String?
         get() = licenseStatusPrefs.getString(KEY_ORDER_ID, null)
 
