@@ -52,6 +52,7 @@
         <item>kn</item>
         <item>ko</item>
         <item>ms</item>
+        <item>nl</item>
         <item>pl</item>
         <item>pt-BR</item>
         <item>pt-PT</item>
@@ -75,7 +76,7 @@
     </string-array>
 
     <string-array name="contributors_348" tools:ignore="UnusedResources">
-        <item>Erik Paelman, Marc, Rudi Timmermans</item>
+        <item>Erik Paelman, Birdibird, Rudi Timmermans</item>
     </string-array>
 
     <string-array name="contributors_335" tools:ignore="UnusedResources">
