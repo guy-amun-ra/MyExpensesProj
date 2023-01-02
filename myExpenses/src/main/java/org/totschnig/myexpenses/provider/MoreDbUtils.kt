@@ -1,6 +1,7 @@
 package org.totschnig.myexpenses.provider
 
 import android.accounts.AccountManager
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -9,6 +10,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteDatabase
 import android.provider.CalendarContract
+import android.provider.CalendarContract.Calendars
 import android.text.TextUtils
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getLongOrNull
@@ -261,13 +263,15 @@ val Cursor.asSequence: Sequence<Cursor>
         return generateSequence { takeIf { it.moveToNext() } }
     }
 
-fun Cursor.getString(column: String) = getStringOrNull(getColumnIndexOrThrow(column)) ?: ""
+fun Cursor.requireString(columnIndex: Int) = getStringOrNull(columnIndex) ?: ""
+fun Cursor.getString(column: String) = requireString(getColumnIndexOrThrow(column))
 fun Cursor.getInt(column: String) = getInt(getColumnIndexOrThrow(column))
 fun Cursor.getLong(column: String) = getLong(getColumnIndexOrThrow(column))
 fun Cursor.getDouble(column: String) = getDouble(getColumnIndexOrThrow(column))
 fun Cursor.getStringOrNull(column: String) = getStringOrNull(getColumnIndexOrThrow(column))?.takeIf { it.isNotEmpty() }
 fun Cursor.getIntOrNull(column: String) = getIntOrNull(getColumnIndexOrThrow(column))
 fun Cursor.getLongOrNull(column: String) = getLongOrNull(getColumnIndexOrThrow(column))
+fun Cursor.requireLong(column: String) = getLongOrNull(getColumnIndexOrThrow(column)) ?: 0L
 fun Cursor.getIntIfExists(column: String) = getColumnIndex(column).takeIf { it != -1 }?.let { getInt(it) }
 fun Cursor.getIntIfExistsOr0(column: String) = getIntIfExists(column) ?: 0
 fun Cursor.getLongIfExists(column: String) = getColumnIndex(column).takeIf { it != -1 }?.let { getLong(it) }
@@ -318,6 +322,20 @@ fun cacheSyncState(context: Context) {
     }
 }
 
+const val CALENDAR_FULL_PATH_PROJECTION: String = ("ifnull("
+        + Calendars.ACCOUNT_NAME + ",'') || '/' ||" + "ifnull("
+        + Calendars.ACCOUNT_TYPE + ",'') || '/' ||" + "ifnull(" + Calendars.NAME
+        + ",'')")
+
+fun getCalendarPath(contentResolver: ContentResolver, calendarId: String) =
+    contentResolver.query(
+        Calendars.CONTENT_URI,
+        arrayOf("$CALENDAR_FULL_PATH_PROJECTION AS path"),
+        Calendars._ID + " = ?",
+        arrayOf(calendarId),
+        null
+    )?.use { if (it.moveToFirst()) it.requireString(0) else "" }
+
 fun cacheEventData(context: Context, prefHandler: PrefHandler) {
     if (!PermissionGroup.CALENDAR.hasPermission(context)) {
         return
@@ -336,7 +354,7 @@ fun cacheEventData(context: Context, prefHandler: PrefHandler) {
         Template.CONTENT_URI, arrayOf(
             KEY_PLANID
         ),
-        KEY_PLANID + " IS NOT null", null, null
+        "$KEY_PLANID IS NOT null", null, null
     )?.use { planCursor ->
         if (planCursor.moveToFirst()) {
             val projection = MyApplication.buildEventProjection()

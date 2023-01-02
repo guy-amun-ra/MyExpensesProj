@@ -111,7 +111,7 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
     implements OnSharedPreferenceChangeListener,
     ConfirmationDialogFragment.ConfirmationDialogListener,
     TaskExecutionFragment.TaskCallbacks, DbWriteFragment.TaskCallbacks,
-    ProgressDialogFragment.ProgressDialogListener, AmountInput.Host {
+    ProgressDialogFragment.ProgressDialogListener {
 
   public static final String SAVE_TAG = "SAVE_TASK";
   public static final int RESULT_RESTORE_OK = RESULT_FIRST_USER + 1;
@@ -126,9 +126,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
   protected ColorStateList textColorSecondary;
 
   @Inject
-  protected AdHandlerFactory adHandlerFactory;
-
-  @Inject
   protected CurrencyContext currencyContext;
 
   @Inject
@@ -136,8 +133,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
 
   @Inject
   protected SharedPreferences settings;
-
-  private Pair<Integer, Integer> focusAfterRestoreInstanceState;
 
   public ColorStateList getTextColorSecondary() {
     return textColorSecondary;
@@ -386,21 +381,8 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
     } else if (command == android.R.id.home) {
       doHome();
       return true;
-    } else if (command == R.id.GDPR_CONSENT_COMMAND) {
-      adHandlerFactory.setConsent(this, (Boolean) tag);
-      return true;
-    } else if (command == R.id.GDPR_NO_CONSENT_COMMAND) {
-      adHandlerFactory.clearConsent();
-      contribFeatureRequested(ContribFeature.AD_FREE, null);
-      return true;
     }
     return false;
-  }
-
-  public void showContribDialog(@Nullable ContribFeature feature, @Nullable Serializable tag) {
-    Intent i = ContribInfoDialogActivity.Companion.getIntentFor(this, feature);
-    i.putExtra(ContribInfoDialogActivity.KEY_TAG, tag);
-    startActivityForResult(i, CONTRIB_REQUEST);
   }
 
   protected void doHome() {
@@ -643,14 +625,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
     }
   }
 
-  public void contribFeatureRequested(@NonNull ContribFeature feature, @Nullable Serializable tag) {
-    if (licenceHandler.hasAccessTo(feature)) {
-      ((ContribIFace) this).contribFeatureCalled(feature, tag);
-    } else {
-      showContribDialog(feature, tag);
-    }
-  }
-
   @Override
   public void onPermissionsGranted(int requestCode, @NonNull List<String> perms) {
     if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR) {
@@ -699,11 +673,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
   }
 
   @Override
-  public void setFocusAfterRestoreInstanceState(Pair<Integer, Integer> focusView) {
-    this.focusAfterRestoreInstanceState = focusView;
-  }
-
-  @Override
   public void onCurrencySelectionChanged(CurrencyUnit currencyUnit) {
   }
 
@@ -714,14 +683,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
 
   public CurrencyFormatter getCurrencyFormatter() {
     return currencyFormatter;
-  }
-
-  @Override
-  protected void onRestoreInstanceState(@NonNull Bundle savedInstanceState) {
-    super.onRestoreInstanceState(savedInstanceState);
-    if (focusAfterRestoreInstanceState != null) {
-      findViewById(focusAfterRestoreInstanceState.first).findViewById(focusAfterRestoreInstanceState.second).requestFocus();
-    }
   }
 
   public enum ThemeType {

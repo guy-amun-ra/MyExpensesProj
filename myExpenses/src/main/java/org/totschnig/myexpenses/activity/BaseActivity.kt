@@ -36,18 +36,22 @@ import icepick.State
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.activity.ContribInfoDialogActivity.Companion.getIntentFor
 import org.totschnig.myexpenses.dialog.HelpDialogFragment
 import org.totschnig.myexpenses.dialog.MessageDialogFragment
 import org.totschnig.myexpenses.dialog.ProgressDialogFragment
 import org.totschnig.myexpenses.dialog.VersionDialogFragment
 import org.totschnig.myexpenses.feature.Feature
 import org.totschnig.myexpenses.feature.FeatureManager
+import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.provider.DatabaseConstants
+import org.totschnig.myexpenses.ui.AmountInput
 import org.totschnig.myexpenses.ui.SnackbarAction
 import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.UiUtils
+import org.totschnig.myexpenses.util.ads.AdHandlerFactory
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
@@ -59,11 +63,26 @@ import org.totschnig.myexpenses.viewmodel.ShareViewModel
 import org.totschnig.myexpenses.viewmodel.data.EventObserver
 import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET_DATA_ENTRY
 import timber.log.Timber
+import java.io.Serializable
 import java.math.BigDecimal
 import javax.inject.Inject
 
-abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener, EasyPermissions.PermissionCallbacks {
+abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener,
+    EasyPermissions.PermissionCallbacks, AmountInput.Host {
     private var snackBar: Snackbar? = null
+
+    private var _focusAfterRestoreInstanceState: Pair<Int, Int>? = null
+
+    override fun setFocusAfterRestoreInstanceState(focusView: Pair<Int, Int>?) {
+        _focusAfterRestoreInstanceState = focusView
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        _focusAfterRestoreInstanceState?.let {
+            findViewById<View>(it.first)?.findViewById<View>(it.second)?.requestFocus()
+        }
+    }
 
     val floatingActionButton: FloatingActionButton
         get() = _floatingActionButton!!
@@ -79,7 +98,7 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         }
     }
 
-    open fun showCalculator(amount: BigDecimal?, id: Int) {
+    override fun showCalculator(amount: BigDecimal?, id: Int) {
         val intent = Intent(this, CalculatorInput::class.java).apply {
             forwardDataEntryFromWidget(this)
             if (amount != null) {
@@ -171,6 +190,9 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
 
     @Inject
     lateinit var featureManager: FeatureManager
+
+    @Inject
+    lateinit var adHandlerFactory: AdHandlerFactory
 
     val ocrViewModel: OcrViewModel by viewModels()
     val featureViewModel: FeatureViewModel by viewModels()
@@ -538,6 +560,29 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
             it.isEnabled = true
         }
         EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
+    fun gdprConsent(personalized: Boolean) {
+        adHandlerFactory.setConsent(this, personalized)
+    }
+
+    fun gdprNoConsent() {
+        adHandlerFactory.clearConsent()
+        contribFeatureRequested(ContribFeature.AD_FREE, null)
+    }
+
+    open fun contribFeatureRequested(feature: ContribFeature, tag: Serializable?) {
+        if (licenceHandler.hasAccessTo(feature)) {
+            (this as ContribIFace).contribFeatureCalled(feature, tag)
+        } else {
+            showContribDialog(feature, tag)
+        }
+    }
+
+    open fun showContribDialog(feature: ContribFeature?, tag: Serializable?) {
+        startActivityForResult(getIntentFor(this, feature).apply {
+            putExtra(ContribInfoDialogActivity.KEY_TAG, tag)
+        }, CONTRIB_REQUEST)
     }
 
     open fun requestPermission(permissionGroup: PermissionHelper.PermissionGroup) {
