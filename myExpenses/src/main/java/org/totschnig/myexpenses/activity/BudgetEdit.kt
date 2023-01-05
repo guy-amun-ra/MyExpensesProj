@@ -46,7 +46,6 @@ class BudgetEdit : EditActivity(), AdapterView.OnItemSelectedListener, DatePicke
 
     private lateinit var viewModel: BudgetEditViewModel
     private lateinit var binding: OneBudgetBinding
-    override fun getDiscardNewMessage() = R.string.dialog_confirm_discard_new_budget
     private var pendingBudgetLoad = 0L
     private var resumedP = false
     private var budget: Budget? = null
@@ -123,7 +122,7 @@ class BudgetEdit : EditActivity(), AdapterView.OnItemSelectedListener, DatePicke
                         .show(supportFragmentManager, "METHOD_FILTER")
             }
             R.id.FILTER_STATUS_COMMAND -> {
-                SelectCrStatusDialogFragment.newInstance()
+                SelectCrStatusDialogFragment.newInstance(false)
                         .show(supportFragmentManager, "STATUS_FILTER")
             }
             R.id.FILTER_ACCOUNT_COMMAND -> {
