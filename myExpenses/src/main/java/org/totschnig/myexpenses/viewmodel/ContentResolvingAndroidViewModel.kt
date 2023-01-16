@@ -43,7 +43,6 @@ import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.TransactionProvider.*
 import org.totschnig.myexpenses.provider.checkForSealedDebt
 import org.totschnig.myexpenses.provider.filter.WhereFilter
@@ -83,6 +82,9 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
     @Inject
     lateinit var dataStore: DataStore<Preferences>
 
+    val collate: String
+        get() = prefHandler.collate
+
     private val bulkDeleteStateInternal: MutableStateFlow<DeleteState?> = MutableStateFlow(null)
     val bulkDeleteState: StateFlow<DeleteState?> = bulkDeleteStateInternal
 
@@ -114,7 +116,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
 
     val dateInfo: Flow<DateInfo2> = flow {
         contentResolver.query(
-            TransactionProvider.DUAL_URI,
+            DUAL_URI,
             arrayOf(
                 "${getThisYearOfWeekStart()} AS $KEY_THIS_YEAR_OF_WEEK_START",
                 "${getThisYearOfMonthStart()} AS $KEY_THIS_YEAR_OF_MONTH_START",
@@ -155,7 +157,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
     fun getDebts(): LiveData<List<Debt>> = debts
 
     fun accountsMinimal(withHidden: Boolean = true) = contentResolver.observeQuery(
-        TransactionProvider.ACCOUNTS_MINIMAL_URI, null,
+        ACCOUNTS_MINIMAL_URI, null,
         if (withHidden) null else "$KEY_HIDDEN = 0",
         null, null, false
     )
@@ -173,7 +175,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
 
     fun account(accountId: Long, once: Boolean = false) = liveData(context = coroutineContext()) {
         val base =
-            if (accountId > 0) TransactionProvider.ACCOUNTS_URI else TransactionProvider.ACCOUNTS_AGGREGATE_URI
+            if (accountId > 0) ACCOUNTS_URI else ACCOUNTS_AGGREGATE_URI
         val flow = contentResolver.observeQuery(
             ContentUris.withAppendedId(base, accountId),
             Account.PROJECTION_BASE, null, null, null, true
@@ -278,7 +280,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
     fun loadDebts(rowId: Long? = null) {
         viewModelScope.launch {
             contentResolver.observeQuery(
-                uri = with(TransactionProvider.DEBTS_URI.buildUpon()) {
+                uri = with(DEBTS_URI.buildUpon()) {
                     rowId?.let {
                         appendQueryParameter(KEY_TRANSACTIONID, rowId.toString())
                     }
@@ -339,7 +341,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
         )
         //needs to be last, otherwise helper transaction would be deleted
         if (handleDeleteOperation != null) ops.add(handleDeleteOperation)
-        contentResolver.applyBatch(TransactionProvider.AUTHORITY, ops)
+        contentResolver.applyBatch(AUTHORITY, ops)
     }
 
 /*    fun loadDebugDebts(count: Int = 10) {

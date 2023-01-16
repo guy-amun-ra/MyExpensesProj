@@ -36,9 +36,7 @@ import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
 import org.totschnig.myexpenses.service.SyncNotificationDismissHandler
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.deactivateSync
 import org.totschnig.myexpenses.sync.SequenceNumber.Companion.parse
-import org.totschnig.myexpenses.sync.SyncBackendProvider.AuthException
-import org.totschnig.myexpenses.sync.SyncBackendProvider.EncryptionException
-import org.totschnig.myexpenses.sync.SyncBackendProvider.SyncParseException
+import org.totschnig.myexpenses.sync.SyncBackendProvider.*
 import org.totschnig.myexpenses.sync.json.AccountMetaData
 import org.totschnig.myexpenses.sync.json.TransactionChange
 import org.totschnig.myexpenses.util.NotificationBuilderWrapper
@@ -793,20 +791,18 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
     }
 
     private fun getStringSetting(provider: ContentProviderClient, prefKey: String): String? {
-        var result: String? = null
-        try {
-            val cursor = provider.query(
+        val result: String? = try {
+            provider.query(
                 TransactionProvider.SETTINGS_URI, arrayOf(DatabaseConstants.KEY_VALUE),
                 DatabaseConstants.KEY_KEY + " = ?", arrayOf(prefKey), null
-            )
-            if (cursor != null) {
-                if (cursor.moveToFirst()) {
-                    result = cursor.getString(0)
-                }
-                cursor.close()
+            )?.use {
+                if (it.moveToFirst()) {
+                    it.getString(0)
+                } else null
             }
         } catch (remoteException: RemoteException) {
             CrashHandler.report(remoteException)
+            null
         }
         return result
     }

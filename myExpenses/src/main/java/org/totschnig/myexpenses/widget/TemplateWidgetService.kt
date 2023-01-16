@@ -27,7 +27,6 @@ import org.totschnig.myexpenses.util.formatMoney
 import java.util.*
 import javax.inject.Inject
 
-
 class TemplateWidgetService : RemoteViewsService() {
 
     override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
@@ -50,13 +49,13 @@ class TemplateRemoteViewsFactory(
         return context.contentResolver.query(
                 TransactionProvider.TEMPLATES_URI, null, String.format(Locale.ROOT, "%s is null AND %s is null AND %s = 0",
                 KEY_PLANID, KEY_PARENTID, KEY_SEALED),
-                null, preferredOrderByForTemplates(prefHandler, Sort.TITLE))
+                null, preferredOrderByForTemplates(prefHandler, Sort.TITLE, prefHandler.collate))
     }
 
     override fun RemoteViews.populate(cursor: Cursor) {
         setBackgroundColorSave(R.id.divider3, cursor.getInt(cursor.getColumnIndexOrThrow(KEY_COLOR)))
         val title = cursor.getString(KEY_TITLE)
-        val currencyContext = MyApplication.getInstance().appComponent.currencyContext()
+        val currencyContext = (context.applicationContext as MyApplication).appComponent.currencyContext()
         val currency = currencyContext.get(cursor.getString(KEY_CURRENCY))
         val amount = Money(currency, cursor.requireLong(KEY_AMOUNT))
         val isTransfer = !(cursor.isNull(cursor.getColumnIndexOrThrow(KEY_TRANSFER_ACCOUNT)))

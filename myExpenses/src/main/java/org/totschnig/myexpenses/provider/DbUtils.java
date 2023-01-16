@@ -47,7 +47,7 @@ public class DbUtils {
   private DbUtils() {
   }
 
-  public static boolean restore(File backupFile) {
+  public static boolean restore(File backupFile, boolean encrypt) {
     boolean result = false;
     MyApplication app = MyApplication.getInstance();
     try {
@@ -59,7 +59,7 @@ public class DbUtils {
         ContentResolver resolver = app.getContentResolver();
         ContentProviderClient client = resolver.acquireContentProviderClient(TransactionProvider.AUTHORITY);
         TransactionProvider provider = (TransactionProvider) client.getLocalContentProvider();
-        result = provider.restore(backupFile);
+        result = provider.restore(backupFile, encrypt);
         client.release();
       }
     } catch (Exception e) {
@@ -175,23 +175,5 @@ public class DbUtils {
       cursor.close();
     }
     return result;
-  }
-
-  @Nullable
-  private static String[] getArraySave(Resources resources, int resId) {
-    try {
-      return resources.getStringArray(resId);
-    } catch (Resources.NotFoundException e) {//if resource does exist in an alternate locale, but not in the default one
-      return null;
-    }
-  }
-
-  @Nullable
-  private static String getStringSafe(Resources resources, int resId) {
-    try {
-      return resources.getString(resId);
-    } catch (Resources.NotFoundException e) {//if resource does exist in an alternate locale, but not in the default one
-      return null;
-    }
   }
 }

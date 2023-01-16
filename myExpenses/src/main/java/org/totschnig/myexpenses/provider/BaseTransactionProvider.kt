@@ -14,7 +14,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.SupportSQLiteQueryBuilder
-import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.totschnig.myexpenses.BuildConfig
@@ -22,6 +21,8 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.compose.FutureCriterion
 import org.totschnig.myexpenses.di.AppComponent
+import org.totschnig.myexpenses.di.DataModule
+import org.totschnig.myexpenses.di.SqlCryptProvider
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
@@ -40,6 +41,7 @@ import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Named
+import javax.inject.Provider
 import kotlin.math.abs
 
 fun Uri.Builder.appendBooleanQueryParameter(key: String): Uri.Builder =
@@ -54,11 +56,15 @@ abstract class BaseTransactionProvider : ContentProvider() {
             field = value
         }
 
-    lateinit var helper: SupportSQLiteOpenHelper
+    var _helper: SupportSQLiteOpenHelper? = null
+
+    val helper: SupportSQLiteOpenHelper
+        get() = requireHelper()
 
     @Inject
     @Named(AppComponent.DATABASE_NAME)
-    lateinit var databaseName: String
+    @JvmSuppressWildcards
+    lateinit var provideDatabaseName: (Boolean) -> String
 
     @Inject
     lateinit var userLocaleProvider: UserLocaleProvider
@@ -73,7 +79,10 @@ abstract class BaseTransactionProvider : ContentProvider() {
     lateinit var dataStore: DataStore<Preferences>
 
     @Inject
-    lateinit var openHelperFactory: SupportSQLiteOpenHelper.Factory
+    lateinit var openHelperProvider: Provider<SupportSQLiteOpenHelper>
+
+    val collate: String
+        get() = prefHandler.collate
 
     val wrappedContext: Context
         get() = userLocaleProvider.wrapContext(context!!)
@@ -88,6 +97,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
         notifyChange(TransactionProvider.ACCOUNTS_BASE_URI, false)
         notifyChange(TransactionProvider.ACCOUNTS_MINIMAL_URI, false)
     }
+
     fun notifyChange(uri: Uri, syncToNetwork: Boolean) {
         if (!bulkInProgress && callerIsNotInBulkOperation(uri)) {
             notifyChangeDo(uri, syncToNetwork)
@@ -401,9 +411,10 @@ abstract class BaseTransactionProvider : ContentProvider() {
 
     fun backup(context: Context, backupDir: File): Result<Unit> {
         val currentDb = File(helper.readableDatabase.path)
-        helper.readableDatabase.beginTransaction()
-        return try {
-            backupDb(getBackupDbFile(backupDir), currentDb).mapCatching {
+        helper.readableDatabase.close()
+        _helper = null
+        return (if (prefHandler.encryptDatabase) decrypt(currentDb, backupDir) else backupDb(currentDb, backupDir))
+            .mapCatching {
                 val backupPrefFile = getBackupPrefFile(backupDir)
                 // Samsung has special path on some devices
                 // http://stackoverflow.com/questions/5531289/copy-the-shared-preferences-xml-file-from-data-on-samsung-device-failed
@@ -429,9 +440,25 @@ abstract class BaseTransactionProvider : ContentProvider() {
                     throw Throwable(message)
                 }
             }
+    }
+
+    open fun restore(backupFile: File, encrypt: Boolean): Boolean {
+        val dataDir = File(getInternalAppDir(), "databases")
+        dataDir.mkdir()
+        val currentDb = File(dataDir, provideDatabaseName(encrypt))
+        helper.close()
+        val result: Boolean = try {
+            if (encrypt) {
+                DataModule.cryptProvider.encrypt(context!!, backupFile, currentDb)
+                true
+            } else {
+                FileCopyUtils.copy(backupFile, currentDb)
+            }
         } finally {
-            helper.readableDatabase.endTransaction()
+            prefHandler.putBoolean(PrefKey.ENCRYPT_DATABASE, encrypt)
+            _helper = null
         }
+        return result
     }
 
     fun budgetCategoryUpsert(db: SupportSQLiteDatabase, uri: Uri, values: ContentValues): Int {
@@ -543,7 +570,14 @@ abstract class BaseTransactionProvider : ContentProvider() {
         })
     }
 
-    private fun backupDb(backupDb: File, currentDb: File): Result<Unit> {
+    private fun decrypt(currentDb: File, backupDir: File): Result<Unit> {
+        val backupDb = getBackupDbFile(backupDir)
+        DataModule.cryptProvider.decrypt(context!!, currentDb, backupDb)
+        return ResultUnit
+    }
+
+    private fun backupDb(currentDb: File, backupDir: File): Result<Unit> {
+        val backupDb = getBackupDbFile(backupDir)
         if (currentDb.exists()) {
             if (FileCopyUtils.copy(currentDb, backupDb)) {
                 return ResultUnit
@@ -553,16 +587,11 @@ abstract class BaseTransactionProvider : ContentProvider() {
         return Result.failure(Throwable("Could not find database at ${currentDb.path}"))
     }
 
-    fun initOpenHelper() {
-        helper = openHelperFactory.create(
-            SupportSQLiteOpenHelper.Configuration.builder(context!!)
-                .name(databaseName).callback(
-                    //Robolectric uses native Sqlite which as of now does not include Json extension
-                    TransactionDatabase(openHelperFactory !is FrameworkSQLiteOpenHelperFactory)
-                ).build()
-        ).also {
-            it.setWriteAheadLoggingEnabled(false)
+    private fun requireHelper(): SupportSQLiteOpenHelper {
+        if (_helper == null) {
+            _helper = openHelperProvider.get()
         }
+        return _helper!!
     }
 
     fun getInternalAppDir(): File {
@@ -619,7 +648,6 @@ abstract class BaseTransactionProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         MyApplication.getInstance().appComponent.inject(this)
         shouldLog = prefHandler.getBoolean(PrefKey.DEBUG_LOGGING, BuildConfig.DEBUG)
-        initOpenHelper()
         return true
     }
 

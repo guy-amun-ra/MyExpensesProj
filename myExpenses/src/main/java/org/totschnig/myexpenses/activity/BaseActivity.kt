@@ -176,6 +176,9 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     @Inject
     lateinit var prefHandler: PrefHandler
 
+    val collate: String
+        get() = prefHandler.collate
+
     @Inject
     lateinit var tracker: Tracker
 
@@ -329,13 +332,19 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     @CallSuper
     override fun dispatchCommand(command: Int, tag: Any?): Boolean {
         trackCommand(command)
-        if (command == R.id.TESSERACT_DOWNLOAD_COMMAND) {
-            ocrViewModel.downloadTessData().observe(this) {
-                downloadPending = it
+        return when (command) {
+            R.id.TESSERACT_DOWNLOAD_COMMAND -> {
+                ocrViewModel.downloadTessData().observe(this) {
+                    downloadPending = it
+                }
+                true
             }
-            return true
+            R.id.QUIT_COMMAND -> {
+                finish()
+                true
+            }
+            else -> false
         }
-        return false
     }
 
     fun processImageCaptureError(resultCode: Int, activityResult: CropImage.ActivityResult?) {
@@ -509,10 +518,11 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         }
     }
 
-    fun unencryptedBackupWarning() = getString(
-        R.string.warning_unencrypted_backup,
-        getString(R.string.pref_security_export_passphrase_title)
-    )
+    val unencryptedBackupWarning
+        get() = getString(
+            R.string.warning_unencrypted_backup,
+            getString(R.string.pref_security_export_passphrase_title)
+        )
 
     override fun onMessageDialogDismissOrCancel() {}
 

@@ -72,7 +72,8 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
             defaultSortOrder = Sort.ALLOCATED,
             prefKey = PrefKey.SORT_ORDER_BUDGET_CATEGORIES,
             options = arrayOf(Sort.LABEL, Sort.ALLOCATED, Sort.SPENT),
-            prefHandler = prefHandler
+            prefHandler = prefHandler,
+            collate = collate
         )
         viewModel.setSortOrder(sortDelegate.currentSortOrder)
         val budgetId: Long = intent.getLongExtra(DatabaseConstants.KEY_ROWID, 0)
@@ -217,7 +218,7 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
                 EDIT_BUDGET_DIALOG -> {
                     val amount = Money(
                         budget.currency,
-                        (extras.getSerializable(DatabaseConstants.KEY_AMOUNT) as BigDecimal?)!!
+                        (extras.getSerializable(DatabaseConstants.KEY_AMOUNT) as BigDecimal)
                     )
                     viewModel.updateBudget(
                         budget.id,

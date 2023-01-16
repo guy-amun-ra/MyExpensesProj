@@ -399,7 +399,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
                 null,
                 DatabaseConstants.KEY_PARENTID + " is null",
                 null,
-                preferredOrderByForTemplatesWithPlans(prefHandler, Sort.USAGES)
+                preferredOrderByForTemplatesWithPlans(prefHandler, Sort.USAGES, prefHandler.collate)
             )
         } else throw IllegalArgumentException()
     }
