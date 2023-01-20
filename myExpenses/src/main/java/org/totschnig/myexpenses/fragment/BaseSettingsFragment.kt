@@ -53,6 +53,7 @@ import org.totschnig.myexpenses.preference.LocalizedFormatEditTextPreference.OnV
 import org.totschnig.myexpenses.preference.PreferenceDataStore
 import org.totschnig.myexpenses.retrofit.ExchangeRateSource
 import org.totschnig.myexpenses.service.DailyScheduler
+import org.totschnig.myexpenses.service.PlanExecutor
 import org.totschnig.myexpenses.sync.BackendService
 import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.util.*
@@ -420,7 +421,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 preferenceActivity.setTrackingEnabled(sharedPreferences.getBoolean(key, false))
             }
             getKey(PrefKey.PLANNER_EXECUTION_TIME) -> {
-                DailyScheduler.updatePlannerAlarms(preferenceActivity, false, false)
+                PlanExecutor.enqueueSelf(preferenceActivity, prefHandler)
             }
             getKey(PrefKey.TESSERACT_LANGUAGE) -> {
                 preferenceActivity.checkTessDataDownload()
@@ -788,8 +789,11 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 csvPref.summary = getString(R.string.pref_import_summary, "CSV")
                 csvPref.title = getString(R.string.pref_import_title, "CSV")
 
-                viewModel.hasStaleImages.observe(this) { result ->
-                    requirePreference<Preference>(PrefKey.MANAGE_STALE_IMAGES).isVisible = result
+                lifecycleScope.launchWhenStarted {
+                    viewModel.hasStaleImages.collect { result ->
+                        requirePreference<Preference>(PrefKey.MANAGE_STALE_IMAGES).isVisible =
+                            result
+                    }
                 }
 
                 val privacyCategory =
