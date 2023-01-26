@@ -14,10 +14,12 @@ plugins {
     id 'com.google.gms.google-services' version '4.3.14' apply false
     id 'com.google.firebase.crashlytics' version '2.9.2' apply false
     id 'com.android.dynamic-feature' version "$agp_version" apply false
+    //drive
+    //id 'com.google.gms.google-services' version '4.3.15' apply false
 }
 
 ext {
-    versionCode = 578
+    versionCode = 579
     versionName = '3.5.0'
     compileSdkVersion = 33
     minSdkVersion = 21
@@ -41,7 +43,7 @@ ext {
     appcompatVersion = "1.6.0"
     picassoVersion = "2.8"
     recyclerview = "1.2.1"
-    materialComponents = "1.7.0"
+    materialComponents = "1.8.0"
     junitVersion = "4.13.2"
     timberVersion = "5.0.1"
     assertjVersion = "3.19.0"

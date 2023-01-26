@@ -1004,7 +1004,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
-    fun showConfirmationDialog(bundle: Bundle?, tag: String) {
+    fun showConfirmationDialog(bundle: Bundle, tag: String) {
         lifecycleScope.launchWhenResumed {
             ConfirmationDialogFragment.newInstance(bundle).show(supportFragmentManager, tag)
         }
@@ -1444,13 +1444,18 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     Utils.menuItemSetEnabledAndVisible(it, syncAccountName != null)
                 }
 
-                menu.findItem(R.id.MANAGE_ACCOUNTS_COMMAND)?.let {
-                    Utils.menuItemSetEnabledAndVisible(it, !isAggregate)
+                menu.findItem(R.id.MANAGE_ACCOUNTS_COMMAND)?.let { item ->
+                    Utils.menuItemSetEnabledAndVisible(item, !isAggregate)
                     if (!isAggregate) {
-                        it.title = label
-                        it.subMenu?.findItem(R.id.TOGGLE_SEALED_COMMAND)?.setTitle(
-                            if (sealed) R.string.menu_reopen else R.string.menu_close
-                        )
+                        with(item) {
+                            title = label
+                            subMenu?.findItem(R.id.TOGGLE_SEALED_COMMAND)?.setTitle(
+                                if (sealed) R.string.menu_reopen else R.string.menu_close
+                            )
+                            subMenu?.findItem(R.id.EDIT_ACCOUNT_COMMAND)?.let { subItem ->
+                                Utils.menuItemSetEnabledAndVisible(subItem, !sealed)
+                            }
+                        }
                     }
                 }
             }
@@ -1470,7 +1475,9 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 R.id.SHOW_STATUS_HANDLE_COMMAND,
                 R.id.MANAGE_ACCOUNTS_COMMAND
             )) {
-                Utils.menuItemSetEnabledAndVisible(menu.findItem(item), false)
+                menu.findItem(item)?.let {
+                    Utils.menuItemSetEnabledAndVisible(it, false)
+                }
             }
         }
 

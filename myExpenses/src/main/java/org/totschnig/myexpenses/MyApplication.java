@@ -71,7 +71,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.DbUtils;
 import org.totschnig.myexpenses.provider.MoreDbUtilsKt;
 import org.totschnig.myexpenses.provider.TransactionProvider;
-import org.totschnig.myexpenses.service.DailyScheduler;
+import org.totschnig.myexpenses.service.AutoBackupWorker;
 import org.totschnig.myexpenses.service.PlanExecutor;
 import org.totschnig.myexpenses.sync.SyncAdapter;
 import org.totschnig.myexpenses.ui.ContextHelper;
@@ -167,7 +167,6 @@ public class MyApplication extends Application implements
     if (!syncService) {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
       mSettings.registerOnSharedPreferenceChangeListener(this);
-      PlanExecutor.Companion.enqueueSelf(this, prefHandler, false);
       WidgetObserver.Companion.register(this);
     }
     licenceHandler.init();
@@ -383,7 +382,7 @@ public class MyApplication extends Application implements
    */
   @Nullable
   public String checkPlanner() {
-    mPlannerCalendarId = prefHandler.getString(PrefKey.PLANNER_CALENDAR_ID, INVALID_CALENDAR_ID);
+    mPlannerCalendarId = prefHandler.requireString(PrefKey.PLANNER_CALENDAR_ID, INVALID_CALENDAR_ID);
     if (!mPlannerCalendarId.equals(INVALID_CALENDAR_ID)) {
       final String checkedId = checkPlannerInternal(mPlannerCalendarId);
       if (INVALID_CALENDAR_ID.equals(checkedId)) {
@@ -749,7 +748,7 @@ public class MyApplication extends Application implements
   public void markDataDirty() {
     try {
       prefHandler.putBoolean(PrefKey.AUTO_BACKUP_DIRTY, true);
-      DailyScheduler.updateAutoBackupAlarms(this);
+      AutoBackupWorker.Companion.enqueueOrCancel(this, prefHandler);
     } catch (Exception e) {
       CrashHandler.report(e);
     }
