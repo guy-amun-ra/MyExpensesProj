@@ -40,14 +40,13 @@
     <string name="color">Cor</string>
     <string name="comment">Notas</string>
     <string name="confirmation_dialog_dont_show_again">Não exibir novamente</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">Sem anúncios</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Número ilimitado de contas</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Anexar imagem à transação</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Gráfico de pizza (distribuição por categoria)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Número ilimitado de planos</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Exportar lista de transações para PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Widget de modelos</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Importação CSV</string>
+    <string name="contrib_feature_ad_free_label">Sem anúncios</string>
+    <string name="contrib_feature_accounts_unlimited_label">Número ilimitado de contas</string>
+    <string name="contrib_feature_attach_picture_label">Anexar imagem à transação</string>
+    <string name="contrib_feature_distribution_label">Gráfico de pizza (distribuição por categoria)</string>
+    <string name="contrib_feature_plans_unlimited_label">Número ilimitado de planos</string>
+    <string name="contrib_feature_print_label">Exportar lista de transações para PDF</string>
+    <string name="contrib_feature_csv_import_label">Importação CSV</string>
     <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Número ilimitado de modelos de divisão de transações</string>
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>Suporte por e-mail</b> com garantia de resposta em até 2 dias úteis</string>
     <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">Direito de voto no <b>roteiro de desenvolvimento</b></string>
@@ -286,8 +285,8 @@
     <string name="pref_contrib_purchase_title_in_app">Pagamentos no app</string>
     <string name="pref_custom_currency_title">Personalizar moedas</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Caso tenha recebido uma chave, obtenha acesso aos recursos premium.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Digite a chave</string>
+    <string name="pref_enter_licence_summary">Caso tenha recebido uma chave, obtenha acesso aos recursos premium.</string>
+    <string name="pref_enter_licence_title">Digite a chave</string>
     <string name="pref_export_format_title">Formato dos dados</string>
     <string name="pref_import_from_grisbi_summary">Importa categorias e parceiros do ficheiro XML do Grisbi</string>
     <string name="pref_import_from_grisbi_title">Importar do Grisbi</string>
@@ -467,7 +466,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">A compra falhou ou foi cancelada.</string>
     <string name="hint_auto_fill">Os dados devem ser automaticamente preenchidos baseados na última transação para o mesmo beneficiário/pagador? Esse comportamento pode ser alterado nas configurações.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d contas com a moeda %2$s foram atualizadas.</string>
-    <string name="learn_more">Saiba Mais</string>
     <string name="import_source_file">Arquivo</string>
     <string name="restore_calendar_handling">Manipulação de dados da agenda</string>
     <string name="restore_calendar_handling_configured">Restaurar os planos para a agenda configurada atualmente</string>

@@ -43,6 +43,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.R;
+import org.totschnig.myexpenses.activity.BaseActivity;
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
 import org.totschnig.myexpenses.adapter.AccountTypeAdapter;
 import org.totschnig.myexpenses.adapter.CurrencyAdapter;
@@ -85,7 +86,7 @@ public class DialogUtils {
         .setNegativeButton(R.string.response_no, (dialog, id) -> ctx.dismissDialog(R.id.FTP_DIALOG)).create();
   }
 
-  public static void showPasswordDialog(final ProtectedFragmentActivity ctx, AlertDialog dialog,
+  public static void showPasswordDialog(final BaseActivity ctx, AlertDialog dialog,
                                         PasswordDialogUnlockedCallback callback) {
     dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
     dialog.show();
@@ -186,10 +187,10 @@ public class DialogUtils {
 
   static class PasswordDialogListener implements View.OnClickListener {
     private final AlertDialog dialog;
-    private final ProtectedFragmentActivity ctx;
+    private final BaseActivity ctx;
     private final PasswordDialogUnlockedCallback callback;
 
-    public PasswordDialogListener(ProtectedFragmentActivity ctx, AlertDialog dialog,
+    public PasswordDialogListener(BaseActivity ctx, AlertDialog dialog,
                                   PasswordDialogUnlockedCallback callback) {
       this.dialog = dialog;
       this.ctx = ctx;
