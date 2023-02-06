@@ -15,7 +15,7 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
     private var crashReportingTree: CrashReportingTree? = null
 
     override fun onAttachBaseContext(application: MyApplication) {}
-    override fun setupLoggingDo(context: Context) {
+    override fun setupLogging(context: Context) {
         if (crashReportingTree == null) {
             crashReportingTree = CrashReportingTree().also {
                 Timber.plant(it)
@@ -23,7 +23,6 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
         }
         Handler().apply {
             postDelayed({
-                instance?.setCrashlyticsCollectionEnabled(true)
                 setKeys(context)
             }, 5000)
         }
@@ -35,13 +34,17 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
         instance?.setUserId(userId)
     }
 
+    override fun setEnabled(enabled: Boolean) {
+        instance?.setCrashlyticsCollectionEnabled(enabled)
+    }
+
     private val userId: String
         get() = prefHandler.getString(PrefKey.CRASHLYTICS_USER_ID, null) ?: UUID.randomUUID().toString().also {
             prefHandler.putString(PrefKey.CRASHLYTICS_USER_ID, it)
         }
 
-    override fun putCustomData(key: String, value: String?) {
-        value?.let { instance?.setCustomKey(key, it) }
+    override fun putCustomData(key: String, value: String) {
+        instance?.setCustomKey(key, value)
     }
 
     private class CrashReportingTree : Timber.Tree() {
