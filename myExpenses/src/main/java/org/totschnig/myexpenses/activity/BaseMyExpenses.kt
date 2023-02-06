@@ -16,7 +16,6 @@ import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.view.ActionMode
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
-import androidx.appcompat.widget.Toolbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -158,8 +157,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
 
     @Inject
     lateinit var modelClass: Class<out MyExpensesViewModel>
-
-    lateinit var toolbar: Toolbar
 
     private var drawerToggle: ActionBarDrawerToggle? = null
 
@@ -410,7 +407,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        toolbar = setupToolbar(false)
+        setupToolbar(false)
         toolbar.isVisible = false
         if (savedInstanceState == null) {
             selectedAccountId = prefHandler.getLong(PrefKey.CURRENT_ACCOUNT, 0L)
@@ -885,12 +882,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     )
                 }
             }
-        }
-    }
-
-    fun showDetails(transactionId: Long) {
-        lifecycleScope.launchWhenResumed {
-            TransactionDetailFragment.show(transactionId, supportFragmentManager)
         }
     }
 
@@ -1528,10 +1519,13 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
             prefHandler.putLong(PrefKey.CURRENT_ACCOUNT, account.id)
             tintSystemUiAndFab(account.color(resources))
             setBalance(account)
-            if (account.sealed) {
-                floatingActionButton.hide()
-            } else {
-                floatingActionButton.show()
+            with(floatingActionButton) {
+                show()
+                isEnabled = !account.sealed
+                alpha = if (account.sealed) 0.5f else 1f
+                setImageResource(
+                    if (account.sealed) R.drawable.ic_lock else R.drawable.ic_menu_add_fab
+                )
             }
             invalidateOptionsMenu()
         }
@@ -1542,13 +1536,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 currencyFormatter.formatMoney(Money(account.currency, account.currentBalance))
         title = if (isHome) getString(R.string.grand_total) else account.label
         toolbar.subtitle = currentBalance
-        toolbar.setSubtitleTextColor(
-            ResourcesCompat.getColor(
-                resources,
-                if (account.currentBalance < 0) R.color.colorExpense else R.color.colorIncome,
-                null
-            )
-        )
+        setSignedToolbarColor(account.currentBalance)
     }
 
     private fun copyToClipBoard() {

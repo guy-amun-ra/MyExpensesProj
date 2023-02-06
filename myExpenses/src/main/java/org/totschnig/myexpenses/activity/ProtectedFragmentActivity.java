@@ -30,6 +30,7 @@ import static org.totschnig.myexpenses.preference.PrefKey.PROTECTION_LEGACY;
 import static org.totschnig.myexpenses.preference.PrefKey.UI_FONTSIZE;
 import static org.totschnig.myexpenses.preference.PrefKey.UI_LANGUAGE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT;
+import static org.totschnig.myexpenses.util.MoreUiUtilsKt.setBackgroundTintList;
 import static org.totschnig.myexpenses.util.distrib.DistributionHelper.getMarketSelfUri;
 import static org.totschnig.myexpenses.util.distrib.DistributionHelper.getVersionInfo;
 
@@ -79,7 +80,6 @@ import org.totschnig.myexpenses.util.ColorUtils;
 import org.totschnig.myexpenses.util.CurrencyFormatter;
 import org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup;
 import org.totschnig.myexpenses.util.Result;
-import org.totschnig.myexpenses.util.UiUtils;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 import org.totschnig.myexpenses.util.licence.LicenceStatus;
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider;
@@ -182,16 +182,6 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
   @Override
   protected void injectDependencies() {
     ((MyApplication) getApplicationContext()).getAppComponent().inject(this);
-  }
-
-  protected Toolbar setupToolbar(boolean withHome) {
-    Toolbar toolbar = findViewById(R.id.toolbar);
-    setSupportActionBar(toolbar);
-    if (withHome) {
-      final ActionBar actionBar = getSupportActionBar();
-      actionBar.setDisplayHomeAsUpEnabled(true);
-    }
-    return toolbar;
   }
 
   @Override
@@ -344,7 +334,7 @@ public abstract class ProtectedFragmentActivity extends BaseActivity
 
   public void tintSystemUiAndFab(int color) {
     tintSystemUi(color);
-    UiUtils.setBackgroundTintListOnFab(getFloatingActionButton(), color);
+    setBackgroundTintList(getFloatingActionButton(), color);
   }
 
   public void tintSystemUi(int color) {

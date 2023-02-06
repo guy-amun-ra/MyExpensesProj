@@ -24,7 +24,10 @@ import androidx.annotation.IdRes
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.appcompat.widget.Toolbar
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -47,6 +50,7 @@ import org.totschnig.myexpenses.dialog.DialogUtils.PasswordDialogUnlockedCallbac
 import org.totschnig.myexpenses.dialog.HelpDialogFragment
 import org.totschnig.myexpenses.dialog.MessageDialogFragment
 import org.totschnig.myexpenses.dialog.ProgressDialogFragment
+import org.totschnig.myexpenses.dialog.TransactionDetailFragment
 import org.totschnig.myexpenses.dialog.VersionDialogFragment
 import org.totschnig.myexpenses.feature.Feature
 import org.totschnig.myexpenses.feature.FeatureManager
@@ -65,6 +69,7 @@ import org.totschnig.myexpenses.util.ads.AdHandlerFactory
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
+import org.totschnig.myexpenses.util.readPrimaryTextColor
 import org.totschnig.myexpenses.util.safeMessage
 import org.totschnig.myexpenses.util.tracking.Tracker
 import org.totschnig.myexpenses.viewmodel.FeatureViewModel
@@ -76,6 +81,7 @@ import timber.log.Timber
 import java.io.Serializable
 import java.math.BigDecimal
 import javax.inject.Inject
+import kotlin.math.sign
 
 abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener,
     ConfirmationDialogListener, EasyPermissions.PermissionCallbacks, AmountInput.Host {
@@ -86,6 +92,8 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
 
     var scheduledRestart = false
     private var confirmCredentialResult: Boolean? = null
+
+    lateinit var toolbar: Toolbar
 
     override fun setFocusAfterRestoreInstanceState(focusView: Pair<Int, Int>?) {
         _focusAfterRestoreInstanceState = focusView
@@ -110,6 +118,33 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         if (icon != 0) {
             floatingActionButton.setImageResource(icon)
         }
+    }
+
+    @JvmOverloads
+    protected open fun setupToolbar(withHome: Boolean = true, homeAsUpIndicator: Int? = null) {
+        toolbar = ActivityCompat.requireViewById<Toolbar>(this, R.id.toolbar).also {
+            setSupportActionBar(it)
+        }
+        if (withHome) {
+            supportActionBar?.apply {
+                setDisplayHomeAsUpEnabled(true)
+                homeAsUpIndicator?.let {
+                    setHomeAsUpIndicator(it)
+                }
+            }
+        }
+    }
+
+    fun setSignedToolbarColor(amount: Long) {
+        val sign = amount.sign
+        toolbar.setSubtitleTextColor(
+            if (sign == 0) readPrimaryTextColor(this) else
+                ResourcesCompat.getColor(
+                    resources,
+                    if (sign == -1) R.color.colorExpense else R.color.colorIncome,
+                    null
+                )
+        )
     }
 
     fun enqueuePlanner(forceImmediate: Boolean) {
@@ -752,6 +787,12 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                         .permissionRequestRationale(this)
                 )
                 .build().show()
+        }
+    }
+
+    fun showDetails(transactionId: Long) {
+        lifecycleScope.launchWhenResumed {
+            TransactionDetailFragment.show(transactionId, supportFragmentManager)
         }
     }
 

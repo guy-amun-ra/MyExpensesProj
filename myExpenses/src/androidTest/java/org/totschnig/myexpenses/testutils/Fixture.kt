@@ -6,6 +6,7 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Debug
 import com.google.common.truth.Truth
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
@@ -47,17 +48,23 @@ class Fixture(inst: Instrumentation) {
     lateinit var account3: Account
         private set
     private lateinit var account4: Account
-    val syncAccount1: String
-        get() = "Drive - " + appContext.getString(R.string.content_description_encrypted)
-    val syncAccount2: String
-        get() = "Dropbox - " + testContext.getString(RT.string.testData_sync_backend_2_name)
-    val syncAccount3: String
-        get() = "WebDAV - https://my.private.cloud/webdav/MyExpenses"
     var planId: Long = 0L
 
     init {
         testContext = inst.context
         appContext = inst.targetContext.applicationContext as MyApplication
+    }
+
+    val syncAccount1 by lazy {
+        "Drive - " + appContext.getString(R.string.content_description_encrypted)
+    }
+
+    val syncAccount2 by lazy {
+        "Dropbox - " + testContext.getString(RT.string.testData_sync_backend_2_name)
+    }
+
+    val syncAccount3 by lazy {
+        "WebDAV - https://my.private.cloud/webdav/MyExpenses"
     }
 
     fun cleanup() {
