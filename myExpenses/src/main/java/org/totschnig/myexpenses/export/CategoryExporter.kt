@@ -1,12 +1,12 @@
 package org.totschnig.myexpenses.export
 
 import android.content.Context
-import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.documentfile.provider.DocumentFile
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
 import org.totschnig.myexpenses.util.failure
 import java.io.IOException
 import java.io.OutputStreamWriter
@@ -17,7 +17,7 @@ object CategoryExporter {
         context: Context,
         encoding: String,
         outputStream: Lazy<Result<DocumentFile>>
-    ): Result<Uri> {
+    ): Result<DocumentFile> {
         fun <T> failure(
             @StringRes resId: Int,
             vararg formatArgs: Any?
@@ -25,7 +25,7 @@ object CategoryExporter {
 
         return context.contentResolver.query(
             TransactionProvider.CATEGORIES_URI.buildUpon()
-                .appendQueryParameter(TransactionProvider.QUERY_PARAMETER_HIERARCHICAL, "1")
+                .appendBooleanQueryParameter(TransactionProvider.QUERY_PARAMETER_HIERARCHICAL)
                 .appendQueryParameter(
                     TransactionProvider.QUERY_PARAMETER_CATEGORY_SEPARATOR,
                     ":"
@@ -50,7 +50,7 @@ object CategoryExporter {
                             }
                         }
                     }
-                    documentFile.uri
+                    documentFile
                 }
             }
         } ?: failure(R.string.db_error_cursor_null)

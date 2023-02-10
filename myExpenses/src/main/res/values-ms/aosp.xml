@@ -13,13 +13,17 @@
     <string name="toast_text_copied">Teks disalin</string>
     <string name="copy_text">Salin ke papan keratan</string>
     <string name="stop">Berhenti</string>
+    <string name="style">"Gaya"</string>
+    <string name="loading">"Memuatkan…"</string>
     <string name="no_network">Tiada sambungan rangkaian.</string>
     <string name="button_label_continue">Teruskan</string>
     <string name="autofill">"Autolengkap"</string>
     <string name="discard">"Buang"</string>
     <string name="dialog_dismiss">"Ketepikan"</string>
+    <string name="details">"Butiran"</string>
     <string name="response_yes">"Ya"</string>
     <string name="response_no">"Tidak"</string>
+     <string name="experimental">"Percubaan"</string>
     <string name="add_widget">"Tambah widget"</string>
     <string name="calendar">"Kalendar"</string>
     <string name="permissions_label">"Kebenaran"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"Persediaan"</string>
     <string name="clear_cache">"Kosongkan cache"</string>
     <string name="customize">"Sesuaikan"</string>
+    <string name="compact">Sarat</string>
+    <string name="storage_description">"Storan setempat"</string>
+    <string name="encryption">"Penyulitan"</string>
+    <string name="learn_more">"Ketahui lebih lanjut"</string>
+    <string name="show_all">"Tunjukkan semua"</string>
 </resources>
 

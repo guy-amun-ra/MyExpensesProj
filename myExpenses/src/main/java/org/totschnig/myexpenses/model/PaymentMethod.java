@@ -22,7 +22,6 @@ import android.database.DatabaseUtils;
 import android.net.Uri;
 
 import org.totschnig.myexpenses.MyApplication;
-import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.provider.TransactionProvider;
 
 import java.util.ArrayList;
@@ -53,7 +52,7 @@ public class PaymentMethod extends Model {
   public static final int INCOME = 1;
   private int paymentType;
   public boolean isNumbered = false;
-  private PreDefined preDefined = null;
+  private PreDefinedPaymentMethod preDefined = null;
 
   public static String[] PROJECTION(Context ctx) {
     return new String[]{
@@ -72,34 +71,12 @@ public class PaymentMethod extends Model {
    */
   private ArrayList<AccountType> accountTypes = new ArrayList<>();
 
-  public enum PreDefined {
-    CHEQUE(-1, true, R.string.pm_cheque),
-    CREDITCARD(-1, false, R.string.pm_creditcard),
-    DEPOSIT(1, false, R.string.pm_deposit),
-    DIRECTDEBIT(-1, false, R.string.pm_directdebit);
-
-    public final int paymentType;
-    public final boolean isNumbered;
-    public final int resId;
-
-    PreDefined(int paymentType, boolean isNumbered, int resId) {
-      this.isNumbered = isNumbered;
-      this.paymentType = paymentType;
-      this.resId = resId;
-    }
-
-    public String getLocalizedLabel() {
-      //TODO use proper context
-      return MyApplication.getInstance().getString(resId);
-    }
-  }
-
   public static String localizedLabelSqlColumn(Context ctx, String keyLabel) {
     StringBuilder sb = new StringBuilder();
     sb.append("CASE ").append(keyLabel);
-    for (PreDefined method : PreDefined.values()) {
+    for (PreDefinedPaymentMethod method : PreDefinedPaymentMethod.values()) {
       sb.append(" WHEN '").append(method.name()).append("' THEN ");
-      DatabaseUtils.appendEscapedSQLString(sb, ctx.getString(method.resId));
+      DatabaseUtils.appendEscapedSQLString(sb, ctx.getString(method.getResId()));
     }
     sb.append(" ELSE ").append(keyLabel).append(" END");
     return sb.toString();
@@ -107,7 +84,7 @@ public class PaymentMethod extends Model {
 
   public static String preDefinedName() {
     StringBuilder result = new StringBuilder("CASE " + KEY_LABEL);
-    for (PreDefined method : PreDefined.values()) {
+    for (PreDefinedPaymentMethod method : PreDefinedPaymentMethod.values()) {
       result.append(" WHEN '").append(method.name()).append("' THEN '").append(method.name()).append("'");
     }
     result.append(" ELSE null END");
@@ -137,7 +114,7 @@ public class PaymentMethod extends Model {
     method.isNumbered = c.getInt(c.getColumnIndexOrThrow(KEY_IS_NUMBERED)) > 0;
     int columnIndexPreDefined = c.getColumnIndexOrThrow(KEY_PREDEFINED_METHOD_NAME);
     if (!c.isNull(columnIndexPreDefined)) {
-      method.preDefined = PreDefined.valueOf(
+      method.preDefined = PreDefinedPaymentMethod.valueOf(
           c.getString(columnIndexPreDefined));
     }
     c.close();
@@ -176,7 +153,7 @@ public class PaymentMethod extends Model {
   }
 
   @VisibleForTesting
-  public PreDefined getPreDefined() {
+  public PreDefinedPaymentMethod getPreDefined() {
     return preDefined;
   }
 
@@ -211,7 +188,7 @@ public class PaymentMethod extends Model {
   public Uri save() {
     Uri uri;
     ContentValues initialValues = new ContentValues();
-    if (preDefined == null || !preDefined.getLocalizedLabel().equals(label)) {
+    if (preDefined == null || !preDefined.getLocalizedLabel(MyApplication.getInstance()).equals(label)) {
       initialValues.put(KEY_LABEL, label);
     }
     initialValues.put(KEY_TYPE, paymentType);

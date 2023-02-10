@@ -19,7 +19,6 @@ import butterknife.ButterKnife
 import butterknife.OnClick
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
-import org.totschnig.myexpenses.fragment.BaseTransactionList.COMMENT_SEPARATOR
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.AccountType
 import org.totschnig.myexpenses.model.CrStatus
@@ -29,17 +28,13 @@ import org.totschnig.myexpenses.model.Transfer
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.getInt
 import org.totschnig.myexpenses.provider.getLong
 import org.totschnig.myexpenses.provider.getLongOrNull
 import org.totschnig.myexpenses.provider.getString
+import org.totschnig.myexpenses.provider.getStringListFromJson
 import org.totschnig.myexpenses.provider.getStringOrNull
-import org.totschnig.myexpenses.util.CurrencyFormatter
-import org.totschnig.myexpenses.util.UiUtils
-import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.convAmount
-import org.totschnig.myexpenses.util.enumValueOrDefault
+import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.viewmodel.data.Category
 import java.text.DateFormat
 import java.text.SimpleDateFormat
@@ -47,6 +42,9 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.*
 
+const val COMMENT_SEPARATOR = " / "
+
+@Deprecated("Migration to Compose")
 open class TransactionAdapter(
     private val groupingOverride: Grouping?,
     private val context: Context,
@@ -77,22 +75,6 @@ open class TransactionAdapter(
     interface OnToggleCrStatus {
         fun toggle(id: Long)
     }
-
-    constructor(
-        context: Context, layout: Int, c: Cursor?, flags: Int,
-        currencyFormatter: CurrencyFormatter, prefHandler: PrefHandler,
-        currencyContext: CurrencyContext, onToggleCrStatus: OnToggleCrStatus?
-    ) : this(
-        null,
-        context,
-        layout,
-        c,
-        flags,
-        currencyFormatter,
-        prefHandler,
-        currencyContext,
-        onToggleCrStatus
-    )
 
     override fun newView(context: Context, cursor: Cursor, parent: ViewGroup): View {
         val v = super.newView(context, cursor, parent)
@@ -153,7 +135,7 @@ open class TransactionAdapter(
                 catText = cursor.getString(KEY_ACCOUNT_LABEL) + " " + catText
             }
         } else {
-            val catId = DbUtils.getLongOrNull(cursor, KEY_CATID)
+            val catId = cursor.getLongOrNull(KEY_CATID)
             if (SPLIT_CATID == catId) catText =
                 context.getString(R.string.split_transaction) else if (catId == null) {
                 if (cursor.getInt(KEY_STATUS) != STATUS_HELPER) {
@@ -185,8 +167,8 @@ open class TransactionAdapter(
                 ssb
             ) else ssb
         }
-        val tagList = cursor.getStringOrNull(KEY_TAGLIST)
-        if (tagList != null && tagList.isNotEmpty()) {
+        val tagList = cursor.getStringListFromJson(KEY_TAGLIST).joinToString()
+        if (tagList.isNotEmpty()) {
             ssb = SpannableStringBuilder(tagList)
             ssb.setSpan(StyleSpan(Typeface.BOLD), 0, tagList.length, 0)
             catText = if (catText.isNotEmpty()) TextUtils.concat(
@@ -215,7 +197,7 @@ open class TransactionAdapter(
         return Utils.localeFromContext(context)
     }
 
-    fun refreshDateFormat() {
+    private fun refreshDateFormat() {
 
         dateEms = 3
 
@@ -246,11 +228,9 @@ open class TransactionAdapter(
     }
 
     override fun swapCursor(cursor: Cursor?): Cursor? {
-        futureCriterion = if ("current" == prefHandler.getString(
-                PrefKey.CRITERION_FUTURE,
-                "end_of_day"
-            )
-        ) System.currentTimeMillis() / 1000 else LocalDate.now().plusDays(1).atStartOfDay().atZone(
+        //currently unsupported, will work again, once TransactionListFragment uses Compose TransactionList,
+        //and this class gets removed
+        futureCriterion = if (true) System.currentTimeMillis() / 1000 else LocalDate.now().plusDays(1).atStartOfDay().atZone(
             ZoneId.systemDefault()
         ).toEpochSecond()
         return super.swapCursor(cursor)
@@ -259,7 +239,7 @@ open class TransactionAdapter(
     fun setAccount(account: Account) {
         mAccount = account
         shouldShowTime =
-            UiUtils.getDateMode(account.type, prefHandler) == UiUtils.DateMode.DATE_TIME
+            getDateMode(account.type, prefHandler) == UiUtils.DateMode.DATE_TIME
         refreshDateFormat()
     }
 

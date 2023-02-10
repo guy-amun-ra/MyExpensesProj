@@ -43,6 +43,7 @@ import com.google.android.material.snackbar.Snackbar;
 
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.R;
+import org.totschnig.myexpenses.activity.BaseActivity;
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
 import org.totschnig.myexpenses.adapter.AccountTypeAdapter;
 import org.totschnig.myexpenses.adapter.CurrencyAdapter;
@@ -85,7 +86,7 @@ public class DialogUtils {
         .setNegativeButton(R.string.response_no, (dialog, id) -> ctx.dismissDialog(R.id.FTP_DIALOG)).create();
   }
 
-  public static void showPasswordDialog(final ProtectedFragmentActivity ctx, AlertDialog dialog,
+  public static void showPasswordDialog(final BaseActivity ctx, AlertDialog dialog,
                                         PasswordDialogUnlockedCallback callback) {
     dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
     dialog.show();
@@ -186,10 +187,10 @@ public class DialogUtils {
 
   static class PasswordDialogListener implements View.OnClickListener {
     private final AlertDialog dialog;
-    private final ProtectedFragmentActivity ctx;
+    private final BaseActivity ctx;
     private final PasswordDialogUnlockedCallback callback;
 
-    public PasswordDialogListener(ProtectedFragmentActivity ctx, AlertDialog dialog,
+    public PasswordDialogListener(BaseActivity ctx, AlertDialog dialog,
                                   PasswordDialogUnlockedCallback callback) {
       this.dialog = dialog;
       this.ctx = ctx;
@@ -235,25 +236,12 @@ public class DialogUtils {
     }
   }
 
-  public static RadioGroup configureCalendarRestoreStrategy(View view) {
-    RadioGroup restorePlanStrategie = view.findViewById(R.id.restore_calendar_handling);
-    String calendarId = PrefKey.PLANNER_CALENDAR_ID.getString("-1");
-    String calendarPath = PrefKey.PLANNER_CALENDAR_PATH.getString("");
-    RadioButton configured = view.findViewById(R.id.restore_calendar_handling_configured);
-    if ((calendarId.equals("-1")) || calendarPath.equals("")) {
-      configured.setVisibility(View.GONE);
-    } else {
-      //noinspection SetTextI18n
-      configured.setText(configured.getText() + " (" + calendarPath + ")");
-    }
-    return restorePlanStrategie;
-  }
-
   public static RadioGroup.OnCheckedChangeListener buildCalendarRestoreStrategyChangedListener(
       final Activity context, final CalendarRestoreStrategyChangedListener listener) {
     return (group, checkedId) -> {
-      if (checkedId == R.id.restore_calendar_handling_backup ||
-          checkedId == R.id.restore_calendar_handling_configured) {
+      if ((checkedId == R.id.restore_calendar_handling_backup) ||
+              (checkedId == R.id.restore_calendar_handling_create_new) ||
+              (checkedId == R.id.restore_calendar_handling_configured)) {
         if (!CALENDAR.hasPermission(context)) {
           if (context instanceof ProtectedFragmentActivity) {
             ((ProtectedFragmentActivity) context).requestPermission(PermissionGroup.CALENDAR);
@@ -268,21 +256,6 @@ public class DialogUtils {
     void onCheckedChanged();
 
     void onCalendarPermissionDenied();
-  }
-
-  public static void configureDateFormat(Spinner spinner, Context context, PrefHandler prefHandler, String prefName) {
-    ArrayAdapter<QifDateFormat> dateFormatAdapter =
-        new ArrayAdapter<>(
-            context, android.R.layout.simple_spinner_item, QifDateFormat.values());
-    dateFormatAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item);
-    spinner.setAdapter(dateFormatAdapter);
-    QifDateFormat qdf;
-    try {
-      qdf = QifDateFormat.valueOf(prefHandler.getString(prefName, "EU"));
-    } catch (IllegalArgumentException e) {
-      qdf = QifDateFormat.EU;
-    }
-    spinner.setSelection(qdf.ordinal());
   }
 
   public static void configureEncoding(Spinner spinner, Context context, PrefHandler prefHandler, String prefName) {

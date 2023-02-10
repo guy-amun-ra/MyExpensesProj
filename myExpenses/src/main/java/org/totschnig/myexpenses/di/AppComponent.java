@@ -2,6 +2,8 @@ package org.totschnig.myexpenses.di;
 
 import android.content.Context;
 
+import androidx.annotation.Nullable;
+
 import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
@@ -31,7 +33,6 @@ import org.totschnig.myexpenses.export.pdf.PdfPrinter;
 import org.totschnig.myexpenses.feature.FeatureManager;
 import org.totschnig.myexpenses.feature.OcrFeature;
 import org.totschnig.myexpenses.fragment.BaseSettingsFragment;
-import org.totschnig.myexpenses.fragment.BaseTransactionList;
 import org.totschnig.myexpenses.fragment.BudgetList;
 import org.totschnig.myexpenses.fragment.CsvImportDataFragment;
 import org.totschnig.myexpenses.fragment.CsvImportParseFragment;
@@ -49,11 +50,9 @@ import org.totschnig.myexpenses.fragment.TemplatesList;
 import org.totschnig.myexpenses.model.CurrencyContext;
 import org.totschnig.myexpenses.preference.PrefHandler;
 import org.totschnig.myexpenses.provider.BaseTransactionProvider;
-import org.totschnig.myexpenses.provider.TransactionProvider;
 import org.totschnig.myexpenses.retrofit.ExchangeRateService;
-import org.totschnig.myexpenses.service.AutoBackupService;
-import org.totschnig.myexpenses.service.PlanExecutor;
 import org.totschnig.myexpenses.service.SyncNotificationDismissHandler;
+import org.totschnig.myexpenses.sync.SyncAdapter;
 import org.totschnig.myexpenses.task.GrisbiImportTask;
 import org.totschnig.myexpenses.task.QifImportTask;
 import org.totschnig.myexpenses.util.CurrencyFormatter;
@@ -74,7 +73,9 @@ import org.totschnig.myexpenses.viewmodel.ExchangeRateViewModel;
 import org.totschnig.myexpenses.viewmodel.ExportViewModel;
 import org.totschnig.myexpenses.viewmodel.FeatureViewModel;
 import org.totschnig.myexpenses.viewmodel.LicenceValidationViewModel;
+import org.totschnig.myexpenses.viewmodel.MyExpensesViewModel;
 import org.totschnig.myexpenses.viewmodel.OcrViewModel;
+import org.totschnig.myexpenses.viewmodel.RestoreViewModel;
 import org.totschnig.myexpenses.viewmodel.RoadmapViewModel;
 import org.totschnig.myexpenses.viewmodel.SettingsViewModel;
 import org.totschnig.myexpenses.viewmodel.ShareViewModel;
@@ -87,7 +88,6 @@ import java.util.Locale;
 import javax.inject.Named;
 import javax.inject.Singleton;
 
-import androidx.annotation.Nullable;
 import dagger.BindsInstance;
 import dagger.Component;
 import okhttp3.OkHttpClient;
@@ -181,8 +181,6 @@ public interface AppComponent {
 
   void inject(TemplatesList templatesList);
 
-  void inject(BaseTransactionList transactionList);
-
   void inject(TransactionListDialogFragment transactionListDialogFragment);
 
   void inject(BaseAdHandler adHandler);
@@ -196,8 +194,6 @@ public interface AppComponent {
   void inject(HistoryChart historyChart);
 
   void inject(DonateDialogFragment donateDialogFragment);
-
-  void inject(AutoBackupService autoBackupService);
 
   void inject(SyncNotificationDismissHandler syncNotificationDismissHandler);
 
@@ -214,8 +210,6 @@ public interface AppComponent {
   void inject(OnboardingDataFragment onboardingDataFragment);
 
   void inject(EditCurrencyViewModel editCurrencyViewModel);
-
-  void inject(PlanExecutor planExecutor);
 
   void inject(BudgetViewModel budgetViewModel);
 
@@ -290,5 +284,11 @@ public interface AppComponent {
   void inject(LicenceValidationViewModel licenceValidationViewModel);
 
   void inject(ShareViewModel shareViewModel);
+
+  void inject(SyncAdapter syncAdapter);
+
+  void inject(MyExpensesViewModel myExpensesViewModel);
+
+  void inject(RestoreViewModel restoreViewModel);
 
 }

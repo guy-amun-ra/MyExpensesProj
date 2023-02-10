@@ -15,6 +15,46 @@
 
 package org.totschnig.myexpenses.model;
 
+import android.accounts.AccountManager;
+import android.content.ContentProviderOperation;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.OperationApplicationException;
+import android.database.Cursor;
+import android.net.Uri;
+import android.os.Build;
+import android.os.RemoteException;
+
+import org.apache.commons.lang3.StringUtils;
+import org.totschnig.myexpenses.MyApplication;
+import org.totschnig.myexpenses.di.AppComponent;
+import org.totschnig.myexpenses.preference.PrefHandler;
+import org.totschnig.myexpenses.preference.PrefKey;
+import org.totschnig.myexpenses.provider.DatabaseConstants;
+import org.totschnig.myexpenses.provider.DbUtils;
+import org.totschnig.myexpenses.provider.MoreDbUtilsKt;
+import org.totschnig.myexpenses.provider.TransactionProvider;
+import org.totschnig.myexpenses.provider.filter.WhereFilter;
+import org.totschnig.myexpenses.sync.GenericAccountService;
+import org.totschnig.myexpenses.sync.SyncAdapter;
+import org.totschnig.myexpenses.util.ShortcutHelper;
+import org.totschnig.myexpenses.util.Utils;
+import org.totschnig.myexpenses.util.licence.LicenceHandler;
+import org.totschnig.myexpenses.viewmodel.data.Debt;
+import org.totschnig.myexpenses.viewmodel.data.DistributionAccountInfo;
+import org.totschnig.myexpenses.viewmodel.data.Tag;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.annotation.WorkerThread;
+
 import static android.content.ContentProviderOperation.newUpdate;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT;
@@ -40,49 +80,12 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_P
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TYPE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_EXPORTED;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_NONE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNTS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.WHERE_NOT_SPLIT_PART;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.WHERE_NOT_VOID;
 import static org.totschnig.myexpenses.provider.TransactionProvider.ACCOUNTS_TAGS_URI;
-
-import android.accounts.AccountManager;
-import android.content.ContentProviderOperation;
-import android.content.ContentUris;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.OperationApplicationException;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
-import android.os.RemoteException;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.VisibleForTesting;
-import androidx.annotation.WorkerThread;
-
-import org.apache.commons.lang3.StringUtils;
-import org.totschnig.myexpenses.MyApplication;
-import org.totschnig.myexpenses.di.AppComponent;
-import org.totschnig.myexpenses.preference.PrefHandler;
-import org.totschnig.myexpenses.preference.PrefKey;
-import org.totschnig.myexpenses.provider.DatabaseConstants;
-import org.totschnig.myexpenses.provider.DbUtils;
-import org.totschnig.myexpenses.provider.TransactionProvider;
-import org.totschnig.myexpenses.provider.filter.WhereFilter;
-import org.totschnig.myexpenses.sync.GenericAccountService;
-import org.totschnig.myexpenses.sync.SyncAdapter;
-import org.totschnig.myexpenses.util.ShortcutHelper;
-import org.totschnig.myexpenses.util.Utils;
-import org.totschnig.myexpenses.util.licence.LicenceHandler;
-import org.totschnig.myexpenses.viewmodel.data.Debt;
-import org.totschnig.myexpenses.viewmodel.data.DistributionAccountInfo;
-import org.totschnig.myexpenses.viewmodel.data.Tag;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Account represents an account stored in the database.
@@ -90,6 +93,7 @@ import java.util.List;
  *
  * @author Michael Totschnig
  */
+@Deprecated
 public class Account extends Model implements DistributionAccountInfo {
 
   public static final int EXPORT_HANDLE_DELETED_DO_NOTHING = -1;
@@ -124,6 +128,7 @@ public class Account extends Model implements DistributionAccountInfo {
 
   private boolean sealed;
 
+  @Nullable
   public String getSyncAccountName() {
     return syncAccountName;
   }
@@ -187,11 +192,12 @@ public class Account extends Model implements DistributionAccountInfo {
    * TODO: We should no longer allow calling this from the UI thread and consistently load account in the background
    */
   @WorkerThread
+  @Deprecated
   public static Account getInstanceFromDb(long id) {
     return getInstanceFromDb(id, false);
   }
 
-
+  @Deprecated
   private static Account getInstanceFromDb(long id, boolean openOnly) {
     if (id < 0)
       return AggregateAccount.getInstanceFromDb(id);
@@ -221,18 +227,18 @@ public class Account extends Model implements DistributionAccountInfo {
     return account;
   }
 
-  public static kotlin.Pair<Account, List<Tag>> getInstanceFromDbWithTags(long id) {
+  public static kotlin.Pair<Account, List<Tag>> getInstanceFromDbWithTags(long id, ContentResolver contentResolver) {
     Account t = getInstanceFromDb(id);
-    return t == null ? null : new kotlin.Pair<>(t, loadTags(id));
+    return t == null ? null : new kotlin.Pair<>(t, loadTags(id, contentResolver));
   }
 
   @Nullable
-  public static List<Tag> loadTags(long id) {
-    return ModelWithLinkedTagsKt.loadTags(LINKED_TAGS_URI, LINKED_TAGS_COLUMN, id);
+  public static List<Tag> loadTags(long id, ContentResolver contentResolver) {
+    return ModelWithLinkedTagsKt.loadTags(LINKED_TAGS_URI, LINKED_TAGS_COLUMN, id, contentResolver);
   }
 
-  public boolean saveTags(@Nullable List<Tag> tags) {
-    return ModelWithLinkedTagsKt.saveTags(LINKED_TAGS_URI, LINKED_TAGS_COLUMN, tags, getId());
+  public boolean saveTags(@Nullable List<Tag> tags, ContentResolver contentResolver) {
+    return ModelWithLinkedTagsKt.saveTags(LINKED_TAGS_URI, LINKED_TAGS_COLUMN, tags, getId(), contentResolver);
   }
 
   private Uri buildExchangeRateUri() {
@@ -325,17 +331,22 @@ public class Account extends Model implements DistributionAccountInfo {
 
   public Account(String label, CurrencyUnit currency, long openingBalance, String description,
                  AccountType type, int color) {
-    this(label, currency, new Money(currency, openingBalance), description, type, color);
+    this(label, new Money(currency, openingBalance), description, type, color);
   }
 
   public Account(String label, CurrencyUnit currency, long openingBalance, String description, AccountType accountType) {
     this(label, currency, openingBalance, description, accountType, DEFAULT_COLOR);
   }
 
-  public Account(String label, CurrencyUnit currencyUnit, Money openingBalance, String description,
+  public Account(String label, Money openingBalance, String description,
+                 AccountType type) {
+    this(label, openingBalance, description, type, DEFAULT_COLOR);
+  }
+
+  public Account(String label, Money openingBalance, String description,
                  AccountType type, int color) {
     this.setLabel(label);
-    this.currencyUnit = currencyUnit;
+    this.currencyUnit = openingBalance.getCurrencyUnit();
     this.openingBalance = openingBalance;
     this.description = description;
     this.setType(type);
@@ -363,10 +374,16 @@ public class Account extends Model implements DistributionAccountInfo {
     this.currencyUnit = currencyContext.get(c.getString(c.getColumnIndexOrThrow(KEY_CURRENCY)));
     this.openingBalance = new Money(this.currencyUnit,
         c.getLong(c.getColumnIndexOrThrow(KEY_OPENING_BALANCE)));
-    try {
-      this.setType(AccountType.valueOf(c.getString(c.getColumnIndexOrThrow(KEY_TYPE))));
-    } catch (IllegalArgumentException ex) {
-      this.setType(AccountType.CASH);
+
+    String type = c.getString(c.getColumnIndexOrThrow(KEY_TYPE));
+    if (type != null) {
+        try {
+          this.setType(AccountType.valueOf(type));
+        } catch (IllegalArgumentException ex) {
+          this.setType(AccountType.CASH);
+        }
+    } else {
+        this.setType(AccountType.CASH);
     }
     try {
       this.setGrouping(Grouping.valueOf(c.getString(c.getColumnIndexOrThrow(KEY_GROUPING))));
@@ -389,7 +406,7 @@ public class Account extends Model implements DistributionAccountInfo {
     if (columnIndexExchangeRate != -1) {
       this.exchangeRate = adjustExchangeRate(c.getDouble(columnIndexExchangeRate));
     }
-    long criterion = DbUtils.getLongOr0L(c, KEY_CRITERION);
+    long criterion = MoreDbUtilsKt.requireLong(c, KEY_CRITERION);
     if (criterion != 0) {
       this.criterion = new Money(this.currencyUnit, criterion);
     }
@@ -439,8 +456,8 @@ public class Account extends Model implements DistributionAccountInfo {
         .withSelection(KEY_SEALED + " = 1", null).build());
     ops.add(newUpdate(debtUri).withValue(KEY_SEALED, -1)
         .withSelection(KEY_SEALED + " = 1", null).build());
-    String selection = KEY_ACCOUNTID + " = ? and " + KEY_PARENTID + " is null";
-    String[] selectionArgs = new String[]{String.valueOf(getId())};
+    String selection = KEY_ACCOUNTID + " = ? AND " + KEY_PARENTID + " is null AND " + KEY_STATUS + " = ?";
+    String[] selectionArgs = new String[]{String.valueOf(getId()), String.valueOf(STATUS_NONE)};
     if (filter != null && !filter.isEmpty()) {
       selection += " AND " + filter.getSelectionForParents(DatabaseConstants.TABLE_TRANSACTIONS);
       selectionArgs = Utils.joinArrays(selectionArgs, filter.getSelectionArgs(false));
@@ -492,7 +509,6 @@ public class Account extends Model implements DistributionAccountInfo {
     initialValues.put(KEY_DESCRIPTION, description);
     initialValues.put(KEY_CURRENCY, currencyUnit.getCode());
     initialValues.put(KEY_TYPE, getType().name());
-    initialValues.put(KEY_GROUPING, getGrouping().name());
     initialValues.put(KEY_COLOR, color);
     initialValues.put(KEY_SYNC_ACCOUNT_NAME, syncAccountName);
     initialValues.put(KEY_UUID, requireUuid());
@@ -689,12 +705,6 @@ public class Account extends Model implements DistributionAccountInfo {
       return new AggregateAccount(cursor);
     } else {
       return new Account(cursor);
-    }
-  }
-
-  public void requestSync() {
-    if (syncAccountName != null) {
-      GenericAccountService.requestSync(syncAccountName,getUuid());
     }
   }
 

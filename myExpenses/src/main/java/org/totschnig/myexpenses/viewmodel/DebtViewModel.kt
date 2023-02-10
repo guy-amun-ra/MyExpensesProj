@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import kotlinx.html.*
 import kotlinx.html.stream.appendHTML
+import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.model.Transaction.EXTENDED_URI
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider
@@ -29,7 +30,7 @@ import javax.inject.Inject
 import kotlin.math.absoluteValue
 import kotlin.math.sign
 
-class DebtViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
+open class DebtViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
 
     @Inject
     lateinit var currencyFormatter: CurrencyFormatter
@@ -157,7 +158,7 @@ class DebtViewModel(application: Application) : ContentResolvingAndroidViewModel
     }
 
     fun exportText(context: Context, debt: Debt): LiveData<String> =
-        liveData {
+        liveData(context = coroutineContext()) {
             val stringBuilder = StringBuilder().appendLine(debt.label)
                 .appendLine(debt.title(context))
             debt.description.takeIf { it.isNotBlank() }?.let {
@@ -183,7 +184,7 @@ class DebtViewModel(application: Application) : ContentResolvingAndroidViewModel
         }
 
     fun exportHtml(context: Context, debt: Debt): LiveData<Uri> =
-        liveData {
+        liveData(context = coroutineContext()) {
             val file = File(context.cacheDir, "debt_${debt.id}.html")
             file.writer().use { writer ->
                 val table = exportData(context, debt)
@@ -254,7 +255,7 @@ class DebtViewModel(application: Application) : ContentResolvingAndroidViewModel
         val trend: Int = 0
     )
 
-    enum class ExportFormat(val mimeType: String) {
-        HTML("text/html"), TXT("text/plain")
+    enum class ExportFormat(val mimeType: String, val resId: Int) {
+        HTML("text/html", R.string.html), TXT("text/plain", R.string.txt)
     }
 }

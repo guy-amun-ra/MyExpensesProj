@@ -14,13 +14,17 @@
     <string name="toast_text_copied">"Текстът бе копиран"</string>
     <string name="copy_text">"Копиране в буфера"</string>
     <string name="stop">"Спиране"</string>
+    <string name="style">"Стил"</string>
+    <string name="loading">"Зарежда се…"</string>
     <string name="no_network">"Няма връзка с мрежата."</string>
     <string name="button_label_continue">Напред</string>
     <string name="autofill">"Автоматично попълване"</string>
     <string name="discard">"Отхвърляне"</string>
     <string name="dialog_dismiss">"Отхвърляне"</string>
+    <string name="details">"Подробности"</string>
     <string name="response_yes">"Да"</string>
     <string name="response_no">"Не"</string>
+     <string name="experimental">"Експериментални"</string>
     <string name="add_widget">"Добавяне на приспособление"</string>
     <string name="calendar">"Календар"</string>
     <string name="permissions_label">"Разрешения"</string>
@@ -28,5 +32,9 @@
     <string name="setup">"Настройване"</string>
     <string name="clear_cache">"Изчистване на кеша"</string>
     <string name="customize">"Персонализиране"</string>
+    <string name="compact">компактна</string>
+    <string name="storage_description">"Локално хранилище"</string>
+    <string name="encryption">"Шифроване"</string>
+    <string name="learn_more">"Научете повече"</string>
+    <string name="show_all">"Показване на всички"</string>
 </resources>
-

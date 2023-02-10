@@ -51,8 +51,11 @@ import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.Sort.Companion.preferredOrderByForTemplatesWithPlans
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
-import org.totschnig.myexpenses.provider.DbUtils
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
+import org.totschnig.myexpenses.provider.DatabaseConstants.SPLIT_CATID
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
+import org.totschnig.myexpenses.provider.getLongOrNull
 import org.totschnig.myexpenses.task.TaskExecutionFragment
 import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup
@@ -312,14 +315,9 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
         return false
     }
 
-    private fun isSplitAtPosition(position: Int): Boolean {
-        return if (mTemplatesCursor != null) {
-            mTemplatesCursor!!.moveToPosition(position) && DatabaseConstants.SPLIT_CATID == DbUtils.getLongOrNull(
-                mTemplatesCursor,
-                DatabaseConstants.KEY_CATID
-            )
-        } else false
-    }
+    private fun isSplitAtPosition(position: Int) = mTemplatesCursor?.let {
+        it.moveToPosition(position) && it.getLongOrNull(KEY_CATID) == SPLIT_CATID
+    } ?: false
 
     private fun hasSplitAtPositions(positions: SparseBooleanArray): Boolean {
         for (i in 0 until positions.size()) {
@@ -396,12 +394,12 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
             CursorLoader(
                 requireActivity(),
                 TransactionProvider.TEMPLATES_URI.buildUpon()
-                    .appendQueryParameter(TransactionProvider.QUERY_PARAMETER_WITH_PLAN_INFO, "1")
+                    .appendBooleanQueryParameter(TransactionProvider.QUERY_PARAMETER_WITH_PLAN_INFO)
                     .build(),
                 null,
                 DatabaseConstants.KEY_PARENTID + " is null",
                 null,
-                preferredOrderByForTemplatesWithPlans(prefHandler, Sort.USAGES)
+                preferredOrderByForTemplatesWithPlans(prefHandler, Sort.USAGES, prefHandler.collate)
             )
         } else throw IllegalArgumentException()
     }
@@ -509,19 +507,24 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
         viewModel.deleteTemplates(tag, PermissionGroup.CALENDAR.hasPermission(requireContext()))
             .observe(
                 viewLifecycleOwner
-            ) { result: Int ->
+            ) { result ->
                 val activity = requireActivity() as BaseActivity
-                if (result > 0) {
-                    activity.showSnackBar(
-                        activity.resources.getQuantityString(
-                            R.plurals.delete_success,
-                            result,
-                            result
-                        )
-                    )
-                } else {
-                    activity.showDeleteFailureFeedback(null)
-                }
+                activity.showSnackBar(
+                    buildList {
+                        if (result.success > 0) {
+                            add(
+                                activity.resources.getQuantityString(
+                                    R.plurals.delete_success,
+                                    result.success,
+                                    result.success
+                                )
+                            )
+                        }
+                        if (result.failure > 0) {
+                            add(activity.deleteFailureMessage(null))
+                        }
+                    }.joinToString(" ")
+                )
             }
     }
 
@@ -547,7 +550,8 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
     }
 
     private fun dispatchCancelInstance(vararg planInstances: PlanInstanceInfo) {
-        val countInstantiated = planInstances.count { planInstanceInfo -> planInstanceInfo.transactionId?.takeIf { it != 0L } != null }
+        val countInstantiated =
+            planInstances.count { planInstanceInfo -> planInstanceInfo.transactionId?.takeIf { it != 0L } != null }
         if (countInstantiated > 0) {
             confirmDeleteTransactionsForPlanInstances(
                 planInstances,
@@ -560,7 +564,8 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
     }
 
     private fun dispatchResetInstance(vararg planInstances: PlanInstanceInfo) {
-        val countInstantiated = planInstances.count { planInstanceInfo -> planInstanceInfo.transactionId?.takeIf { it != 0L } != null }
+        val countInstantiated =
+            planInstances.count { planInstanceInfo -> planInstanceInfo.transactionId?.takeIf { it != 0L } != null }
         if (countInstantiated > 0) {
             confirmDeleteTransactionsForPlanInstances(
                 planInstances,
@@ -637,7 +642,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
             if (!c.isNull(columnIndexTransferAccount)) {
                 catText = Transfer.getIndicatorPrefixForLabel(amount) + catText
             } else {
-                val catId = DbUtils.getLongOrNull(c, DatabaseConstants.KEY_CATID)
+                val catId = c.getLongOrNull(KEY_CATID)
                 if (catId == null) {
                     catText = Category.NO_CATEGORY_ASSIGNED_LABEL
                 }

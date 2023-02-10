@@ -1,27 +1,29 @@
 package org.totschnig.myexpenses.util.licence
 
-import android.app.Activity
 import android.app.Application
 import android.content.Context
 import com.amazon.device.iap.model.Product
 import com.amazon.device.iap.model.PurchaseResponse
 import com.amazon.device.iap.model.Receipt
+import com.android.billingclient.api.Purchase
 import com.google.android.vending.licensing.PreferenceObfuscator
-import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
-import org.totschnig.myexpenses.contrib.Config
+import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.contrib.Config.amazonSkus
-import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
-class StoreLicenceHandler(context: android.app.Application, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) :
+class StoreLicenceHandler(context: Application, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) :
         AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
 
-    override fun initBillingManager(activity: Activity, query: Boolean): BillingManager {
+    override fun initBillingManager(activity: IapActivity, query: Boolean): BillingManager {
         val billingUpdatesListener = object : AmazonBillingUpdatesListener {
             override fun onPurchase(receipt: Receipt): Boolean {
                 handlePurchaseForLicence(receipt.sku, receipt.receiptId)
+                handlePurchaseForAddOns(
+                    listOfNotNull(Licence.parseFeature(receipt.sku)),
+                    true
+                )
                 (activity as? BillingListener)?.onLicenceStatusSet(prettyPrintStatus(activity))
                 return licenceStatus != null
             }
@@ -54,10 +56,14 @@ class StoreLicenceHandler(context: android.app.Application, preferenceObfuscator
         return BillingManagerAmazon(activity.applicationContext, billingUpdatesListener)
     }
 
-    private fun registerInventory(purchases: MutableList<Receipt>, maybeCancel: Boolean) {
+    private fun registerInventory(purchases: MutableList<Receipt>, initialFullRequest: Boolean) {
         findHighestValidPurchase(purchases)?.let {
             handlePurchaseForLicence(it.sku, it.receiptId)
-        } ?: kotlin.run { if (maybeCancel) maybeCancel() }
+        } ?: kotlin.run { if (initialFullRequest) maybeCancel() }
+        handlePurchaseForAddOns(
+            purchases.mapNotNull { Licence.parseFeature(it.sku) },
+            !initialFullRequest
+        )
     }
 
     private fun findHighestValidPurchase(purchases: List<Receipt>) =
@@ -78,7 +84,7 @@ class StoreLicenceHandler(context: android.app.Application, preferenceObfuscator
         editor.apply()
     }
 
-    override fun launchPurchase(aPackage: Package, shouldReplaceExisting: Boolean, billingManager: BillingManager) {
+    override suspend fun launchPurchase(aPackage: Package, shouldReplaceExisting: Boolean, billingManager: BillingManager) {
         (billingManager as? BillingManagerAmazon)?.initiatePurchaseFlow(getSkuForPackage(aPackage))
     }
 
@@ -86,16 +92,10 @@ class StoreLicenceHandler(context: android.app.Application, preferenceObfuscator
         get() = arrayOf(ProfessionalPackage.Amazon)
 
     override val professionalPriceShortInfo: String
-        get() {
-            var priceInfo = joinPriceInformation(ProfessionalPackage.Professional_1, ProfessionalPackage.Professional_12)
-            if (licenceStatus === LicenceStatus.EXTENDED) {
-                val regularPrice = pricesPrefs.getString(Config.SKU_PROFESSIONAL_12, null)
-                if (regularPrice != null) {
-                    priceInfo += ". " + context.getString(R.string.extended_upgrade_goodie_subscription_amazon, 15, regularPrice)
-                }
-            }
-            return priceInfo
-        }
+        get() = joinPriceInformation(
+            ProfessionalPackage.Professional_1,
+            ProfessionalPackage.Professional_12
+        )
 
     override fun getDisplayPriceForPackage(aPackage: Package) = pricesPrefs.getString(getSkuForPackage(aPackage), null)
 
@@ -103,6 +103,4 @@ class StoreLicenceHandler(context: android.app.Application, preferenceObfuscator
         get() = null
 
     override fun getProLicenceAction(context: Context) = ""
-
-    override fun supportSingleFeaturePurchase(feature: ContribFeature) = false
 }

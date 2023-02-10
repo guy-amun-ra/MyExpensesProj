@@ -40,18 +40,17 @@
     <string name="color">Χρώμα</string>
     <string name="comment">Σημειώσεις</string>
     <string name="confirmation_dialog_dont_show_again">Να μην εμφανιστεί ξανά</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">Χωρίς διαφημίσεις</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Απεριόριστος αριθμός λογαριασμών</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Επισυνάψτε εικόνα στην συναλλαγή</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Γράφημα πίτας (Κατανομή ανά κατηγορία)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Απεριόριστος αριθμός σχεδίων</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Εξαγάγετε τη λίστα συναλλαγών σε PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Πρότυπο γραφικού στοιχείου</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Εισαγωγή CSV</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Απεριόριστος αριθμός προτύπων διαίρεσης</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>Υποστήριξη ηλεκτρονικού ταχυδρομείου</b> με εγγυημένη απόκριση εντός 2 εργάσιμων ημερών</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">Δικαίωμα ψήφου για τον <b>χάρτη πορείας</b></string>
-    <string name="contrib_feature_history_label" tools:ignore="UnusedResources">Γράφημα ιστορικού</string>
+    <string name="contrib_feature_ad_free_label">Χωρίς διαφημίσεις</string>
+    <string name="contrib_feature_accounts_unlimited_label">Απεριόριστος αριθμός λογαριασμών</string>
+    <string name="contrib_feature_attach_picture_label">Επισυνάψτε εικόνα στην συναλλαγή</string>
+    <string name="contrib_feature_distribution_label">Γράφημα πίτας (Κατανομή ανά κατηγορία)</string>
+    <string name="contrib_feature_plans_unlimited_label">Απεριόριστος αριθμός σχεδίων</string>
+    <string name="contrib_feature_print_label">Εξαγάγετε τη λίστα συναλλαγών σε PDF</string>
+    <string name="contrib_feature_csv_import_label">Εισαγωγή CSV</string>
+    <string name="contrib_feature_split_template_label">Απεριόριστος αριθμός προτύπων διαίρεσης</string>
+    <string name="contrib_feature_pro_support_label"><b>Υποστήριξη ηλεκτρονικού ταχυδρομείου</b> με εγγυημένη απόκριση εντός 2 εργάσιμων ημερών</string>
+    <string name="contrib_feature_roadmap_voting_label">Δικαίωμα ψήφου για τον <b>χάρτη πορείας</b></string>
+    <string name="contrib_feature_history_label">Γράφημα ιστορικού</string>
     <string name="licence_status_free">Ελεύθερο</string>
     <string name="contrib_key">Contrib κλειδί</string>
     <string name="extended_key">Κλειδί Εκτεταμένης λειτουργίας</string>
@@ -68,10 +67,6 @@
     <string name="description">περιγραφή</string>
     <string name="dialog_balance_delete">Διαγραφή διακανονισμένων συναλλαγών</string>
     <string name="dialog_confirm_discard_changes">Απόρριψη αλλαγών;</string>
-    <string name="dialog_confirm_discard_new_transaction">Απόρριψη νέας συναλλαγής;</string>
-    <string name="dialog_confirm_discard_new_template">Απόρριψη νέου προτύπου;</string>
-    <string name="dialog_confirm_discard_new_account">Απόρριψη νέου λογαριασμού;</string>
-    <string name="dialog_confirm_discard_new_method">Απόρριψη νέας μεθόδου πληρωμής;</string>
     <string name="dialog_command_disabled_balance">Δεν υπάρχουν εκκαθαρισμένες συναλλαγές που πρέπει να διακανονιστούν.</string>
     <string name="dialog_command_disabled_insert_transfer">Οι συναλλαγές μεταφοράς απαιτούν ένα δεύτερο λογαριασμό.</string>
     <string name="dialog_command_disabled_reset_account">Συναλλαγές για την εξαγωγή.</string>
@@ -137,7 +132,6 @@
     <string name="help_heading_credits">Πιστώσεις</string>
     <string name="help_heading_license">Άδεια</string>
     <string name="help_heading_whats_new">Τι νέο υπάρχει</string>
-    <string name="important_upgrade_information_heading">Σημαντικές πληροφορίες</string>
     <string name="import_select_transactions">Συναλλαγές</string>
     <string name="income">Εισόδημα</string>
     <string name="invalid_number_format">Δεκαδική μορφή δεν αναγνωρίζεται από τις τοπικές σας ρυθμίσεις. Παρακαλούμε να χρησιμοποιήσετε το %1$s</string>
@@ -288,8 +282,8 @@
     <string name="pref_contrib_purchase_title_in_app">Αγορά εντός της εφαρμογής</string>
     <string name="pref_custom_currency_title">Προσαρμογή νομισμάτων</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Εάν λάβατε ένα κλειδί, έχετε πρόσβαση σε αναβαθμισμένα χαρακτηριστικά.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Εισάγετε το κλειδί</string>
+    <string name="pref_enter_licence_summary">Εάν λάβατε ένα κλειδί, έχετε πρόσβαση σε αναβαθμισμένα χαρακτηριστικά.</string>
+    <string name="pref_enter_licence_title">Εισάγετε το κλειδί</string>
     <string name="pref_export_format_title"> Μορφή δεδομένων</string>
     <string name="pref_import_from_grisbi_summary">Κάνετε εισαγωγή κατηγοριών και μερών Grisbi XML</string>
     <string name="pref_import_from_grisbi_title">Εισαγωγή από Grisbi</string>
@@ -339,7 +333,6 @@
     <string name="pref_visit_website_summary">Αρχείο καταγραφής αλλαγών και συχνές Ερωτήσεις</string>
     <string name="pref_visit_website_title">Επισκεφθείτε την ιστοσελίδα</string>
     <string name="progress_dialog_deleting">Διαγραφή αντικειμένων</string>
-    <string name="progress_dialog_loading">Φόρτωση αντικειμένου από τη βάση δεδομένων</string>
     <string name="progress_dialog_printing">Δημιουργία %s</string>
     <string name="qif_parse_result">Εγγράφηκαν: %1$s λογαριασμοί· %2$s κατηγορίες και %3$s μέρη</string>
     <string name="qif_parse_failure_found_multiple_accounts">Πολλαπλοί λογαριασμοί βρέθηκαν στο αρχείο QIF.</string>
@@ -463,7 +456,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Η αγορά απέτυχε ή ακυρώθηκε.</string>
     <string name="hint_auto_fill">Θα πρέπει τα δεδομένα να συμπληρώνονται αυτόματα από την τελευταία συναλλαγή για τον ίδιο δικαιούχο/πληρωτή; Μπορείτε πάντα να αλλάξετε αυτήν τη συμπεριφορά από τις ρυθμίσεις.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d λογαριασμοί με νόμισμα %2$s έχουν ενημερωθεί.</string>
-    <string name="learn_more">Μάθετε περισσότερα</string>
     <string name="import_source_file">Αρχείο</string>
     <string name="restore_calendar_handling">Χειρισμός δεδομένων ημερολογίου</string>
     <string name="restore_calendar_handling_configured">Επαναφορά σχεδίων στο τρέχον ημερολόγιο</string>
@@ -574,7 +566,7 @@
     <string name="warning_synchronization_folder_usage">Αυτός ο φάκελος χρησιμοποιείται για το συγχρονισμό δεδομένων μεταξύ εγκαταστάσεων του {app_name} σε διαφορετικές συσκευές. Παρακαλώ μην τροποποιήσετε οτιδήποτε από τα περιεχόμενά του χειροκίνητα.</string>
     <string name="link_account_failure_3">Η διένεξη μπορεί να επιλυθεί χειροκίνητα από το μενού περιβάλλοντος της καταχώρησης.</string>
     <string name="template">Πρότυπο</string>
-    <string name="contrib_feature_synchronization_label" tools:ignore="UnusedResources">Συγχρονισμός σύννεφου</string>
+    <string name="contrib_feature_synchronization_label">Συγχρονισμός σύννεφου</string>
     <string name="all_contrib_key_features">Όλα οι δυνατότητες ενός Contrib κλειδιού</string>
     <string name="all_extended_key_features">Όλες οι δυνατότητες του Εκτεταμένου Κλειδιού</string>
     <!-- button leading user to purchase flow for licence keys -->
@@ -604,7 +596,6 @@
     <string name="onboarding_restore_from_cloud_backup">Αντίγραφα ασφαλείας</string>
     <string name="onboarding_restore_from_local">Επαναφορά τοπικού αντιγράφου ασφαλείας</string>
     <string name="dialog_button_add">Προσθήκη</string>
-    <string name="template_create_error">Σφάλμα κατά την αποθήκευση του προτύπου</string>
     <string name="pref_sync_notification_summary">Ειδοποίηση σχετικά με την πρόοδο του συγχρονισμού</string>
     <string name="pref_debug_logging_summary">Εγγραφή πληροφοριών εντοπισμού σφαλμάτων στο αρχείο καταγραφής συστήματος</string>
     <string name="plan_custom_recurrence_info">Αποθηκεύστε πρώτα το πρότυπο. Στη συνέχεια, το σχέδιο θα ανοίξει στην εφαρμογή ημερολογίου, όπου μπορείτε να ορίσετε μια προσαρμοσμένη περιοδικότητα.</string>
@@ -613,7 +604,6 @@
     <string name="progress_validating_licence">Επικύρωση Άδειας</string>
     <string name="licence_validation_error_expired">Η άδεια έληξε</string>
     <string name="licence_validation_error_device_limit_exceeded">Έγινε υπέρβαση του ορίου συσκευών. Καταργήστε την άδεια χρήσης από κάποια άλλη συσκευή.</string>
-    <string name="error">Σφάλμα (%s)</string>
     <string name="button_validate">Επικύρωση</string>
     <string name="licence_key">Κλειδί άδειας χρήσης</string>
     <string name="licence_removal_information">Εάν δεν χρειάζεστε πλέον την αναβαθμισμένη λειτουργικότητα σε αυτήν τη συσκευή, μπορείτε να καταργήσετε το κλειδί άδειας χρήσης. Αυτό ελευθερώνει το κλειδί για ενεργοποίηση σε μία άλλη συσκευή. Το κλειδί μπορεί να ενεργοποιηθεί σε έως και %d συσκευές.</string>
@@ -639,7 +629,6 @@
     <string name="auto_fill_account_from_aggregate_only">Μόνο όταν ξεκινούν από συνολικό λογαριασμό.</string>
     <string name="sync_auth_exception">Η εξουσιοδότηση απέτυχε.</string>
     <string name="sync_login_again">Συνδεθείτε ξανά.</string>
-    <string name="sync_loading_accounts_from_backend">Φόρτωση διαθέσιμων λογαριασμών από το σύστημα υποστήριξης.</string>
     <plurals name="delete_success">
         <item quantity="one">Ένα αντικείμενο διαγράφηκε με επιτυχία.</item>
         <item quantity="other">%d αντικείμενα διαγράφηκαν με επιτυχία.</item>
@@ -666,11 +655,7 @@
     <string name="warning_ungroup_split_transactions">Οι επιλεγμένες διαιρεμένες συναλλαγές θα απομαδοποιηθούν, δηλαδή τα διαχωρισμένα τμήματα θα γίνουν κανονικές συναλλαγές.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">Κατάργηση διαίρεσης</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">Η διαιρεμένη συναλλαγή καταργήθηκε με επιτυχία.</item>
-        <item quantity="other">%1$d οι διαιρεμένες συναλλαγές καταργήθηκαν με επιτυχία.</item>
-    </plurals>
-    <string name="split_transaction_one_error">Δεν μπόρεσε να μετατραπεί η συναλλαγή για διάσπαση.</string>
+    <string name="ungroup_split_transaction_success">Η διαιρεμένη συναλλαγή καταργήθηκε με επιτυχία.</string>
     <string name="pref_transaction_time_summary">Να επιτρέπεται ο ορισμός του ακριβούς χρόνου συναλλαγής.</string>
     <string name="pref_value_date_summary">Να επιτρέπεται ο ορισμός ημερομηνίας αξίας εκτός από την ημερομηνία δέσμευσης. Ο χρόνος συναλλαγής θα είναι κρυφός. Αυτή η ρύθμιση δεν εφαρμόζεται σε λογαριασμούς μετρητών.</string>
     <!-- the date on which the transaction took place, aka transaction date, as opposed to value date -->
@@ -811,7 +796,6 @@
     <string name="dialog_title_delete_debt">Διαγραφή χρέους;</string>
     <string name="warning_delete_category_with_budget">Για τουλάχιστον μία επιλεγμένη κατηγορία, υπάρχουν πιστώσεις προϋπολογισμού, οι οποίες θα διαγραφούν επίσης.</string>
     <string name="onboarding_ui_title">Το {app_name} προσαρμόζεται στις προτιμήσεις σας</string>
-    <string name="ungroup_split_transaction_failure">Κατά την κατάργηση της ομαδοποίησης των συναλλαγών, το %1$d από το %2$d απέτυχε.</string>
     <string name="split_transaction_not_possible">Μόνο οι συναλλαγές που έχουν τον ίδιο λογαριασμό, δικαιούχο και κατάσταση μπορούν να ομαδοποιηθούν σε μία διαχωρισμένη συναλλαγή.</string>
     <string name="licence_expires_tomorrow">Το επαγγελματικό σας κλειδί θα λήξει αύριο.</string>
     <string name="licence_expires_today">Το επαγγελματικό σας κλειδί λήγει σήμερα.</string>
@@ -833,7 +817,6 @@
     <string name="licence_expired_yesterday">Το επαγγελματικό σας κλειδί έληξε χθες.</string>
     <string name="select_package">Επιλέξτε ένα πακέτο άδειας χρήσης.</string>
     <string name="debt">Χρέος</string>
-    <string name="dialog_confirm_discard_new_debt">Απόρριψη νέου χρέους;</string>
     <string name="whats_new_336_1">Μοιραστείτε την σύνοψη χρέους</string>
     <string name="whats_new_336_2">Ετικέτες για χωρισμένα μέρη</string>
     <string name="title_activity_debt_overview">Επισκόπηση χρέους</string>

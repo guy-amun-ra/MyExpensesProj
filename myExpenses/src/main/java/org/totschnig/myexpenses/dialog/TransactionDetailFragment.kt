@@ -22,14 +22,10 @@ import android.view.View
 import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.ViewModelProvider
 import com.google.android.material.snackbar.Snackbar
 import com.squareup.picasso.Picasso
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.EDIT_REQUEST
@@ -43,15 +39,16 @@ import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.Plan
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.util.CurrencyFormatter
-import org.totschnig.myexpenses.util.PictureDirHelper
-import org.totschnig.myexpenses.util.UiUtils
+import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.util.UiUtils.DateMode
-import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.addChipsBulk
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.TransactionDetailViewModel
 import org.totschnig.myexpenses.viewmodel.data.Transaction
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import javax.inject.Inject
 
 class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(), DialogInterface.OnClickListener {
@@ -80,7 +77,7 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
         (requireActivity().applicationContext as MyApplication).appComponent.inject(viewModel)
         val rowId = requireArguments().getLong(DatabaseConstants.KEY_ROWID)
         viewModel.transaction(rowId).observe(this) { o -> fillData(o) }
-        viewModel.getTags().observe(this) { tags ->
+        viewModel.tags.observe(this) { tags ->
             if (tags.isNotEmpty()) {
                 binding.TagGroup.addChipsBulk(tags)
             } else {
@@ -93,7 +90,7 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
             DatabaseConstants.KEY_TRANSACTIONID
         )
         val alertDialog =
-            builder.setTitle(R.string.progress_dialog_loading) //.setIcon(android.R.color.transparent)
+            builder.setTitle(R.string.loading) //.setIcon(android.R.color.transparent)
                 .setNegativeButton(android.R.string.ok, this)
                 .setPositiveButton(R.string.menu_edit, null)
                 .setNeutralButton(R.string.menu_view_picture, this)
@@ -123,7 +120,7 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
                         showSnackBar(R.string.warning_splitpartcategory_context)
                         return
                     }
-                    dismiss()
+                    dismissAllowingStateLoss()
                     val i = Intent(ctx, ExpenseEdit::class.java)
                     i.putExtra(DatabaseConstants.KEY_ROWID, transaction.id)
                     ctx.startActivityForResult(i, EDIT_REQUEST)
@@ -229,7 +226,7 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
                     binding.EquivalentAmountRow.visibility = View.VISIBLE
                     binding.EquivalentAmount.text = formatCurrencyAbs(transaction.equivalentAmount)
                 }
-                val dateMode = UiUtils.getDateMode(transaction.accountType, prefHandler)
+                val dateMode = getDateMode(transaction.accountType, prefHandler)
                 val dateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)
                 val timeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM)
                 if (dateMode == DateMode.BOOKING_VALUE) {
@@ -240,24 +237,21 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
                         ZoneId.systemDefault()
                     ).format(dateFormatter)
                 }
-                val dateTime = ZonedDateTime.ofInstant(
-                    Instant.ofEpochSecond(transaction.date),
-                    ZoneId.systemDefault()
-                )
-                var dateText = dateTime.format(dateFormatter)
+
+                var dateText = transaction.date.format(dateFormatter)
                 if (dateMode == DateMode.DATE_TIME) {
-                    dateText += " " + dateTime.format(timeFormatter)
+                    dateText += " " + transaction.date.format(timeFormatter)
                 }
                 binding.Date.text = dateText
-                if (transaction.comment != "") {
-                    binding.Comment.text = transaction.comment
-                } else {
+                if (transaction.comment.isNullOrBlank()) {
                     binding.CommentRow.visibility = View.GONE
-                }
-                if (transaction.referenceNumber != "") {
-                    binding.Number.text = transaction.referenceNumber
                 } else {
+                    binding.Comment.text = transaction.comment
+                }
+                if (transaction.referenceNumber.isNullOrBlank()) {
                     binding.NumberRow.visibility = View.GONE
+                } else {
+                    binding.Number.text = transaction.referenceNumber
                 }
                 if (transaction.payee != "" || transaction.debtLabel != null) {
                     val payeeInfo = transaction.payee + if (transaction.debtLabel == null) "" else
@@ -273,9 +267,11 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
                 } else {
                     binding.PayeeRow.visibility = View.GONE
                 }
-                transaction.methodLabel?.let {
-                    binding.Method.text = it
-                } ?: kotlin.run { binding.MethodRow.visibility = View.GONE }
+                if (transaction.methodLabel.isNullOrBlank()) {
+                    binding.MethodRow.visibility = View.GONE
+                } else {
+                    binding.Method.text = transaction.methodLabel
+                }
 
                 if (transaction.accountType == AccountType.CASH) {
                     binding.StatusRow.visibility = View.GONE
@@ -310,8 +306,15 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
     }
 
     companion object {
-        @JvmStatic
-        fun newInstance(id: Long): TransactionDetailFragment = TransactionDetailFragment().apply {
+        fun show(id: Long, fragmentManager: FragmentManager) {
+            with(fragmentManager) {
+                if (findFragmentByTag(TransactionDetailFragment::class.java.name) == null) {
+                    newInstance(id).show(this, TransactionDetailFragment::class.java.name)
+                }
+            }
+        }
+
+        private fun newInstance(id: Long): TransactionDetailFragment = TransactionDetailFragment().apply {
             arguments = Bundle().apply {
                 putLong(DatabaseConstants.KEY_ROWID, id)
             }

@@ -14,7 +14,7 @@ import org.totschnig.myexpenses.util.AppDirHelper
 import org.totschnig.myexpenses.util.ZipUtils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.failure
-import org.totschnig.myexpenses.util.io.FileUtils
+import org.totschnig.myexpenses.util.io.displayName
 import java.io.File
 import java.io.IOException
 import java.security.GeneralSecurityException
@@ -37,7 +37,7 @@ fun doBackup(
         ?: return Result.failure(context, R.string.io_error_appdir_null)
     if (!AppDirHelper.isWritableDirectory(appDir)) {
         return Result.failure(
-            context, R.string.app_dir_not_accessible, FileUtils.getPath(context, appDir.uri)
+            context, R.string.app_dir_not_accessible, appDir.displayName
         )
     }
     val backupFile = requireBackupFile(appDir, !TextUtils.isEmpty(password))
@@ -52,10 +52,7 @@ fun doBackup(
 
             sync(context.contentResolver, withSync, backupFile)
             backupFile to listOldBackups(appDir, prefHandler)
-        } catch (e: IOException) {
-            CrashHandler.report(e)
-            throw e
-        } catch (e: GeneralSecurityException) {
+        } catch (e: Exception) {
             CrashHandler.report(e)
             throw e
         } finally {
@@ -101,10 +98,10 @@ private fun sync(contentResolver: ContentResolver, backend: String?, backupFile:
 
 private fun requireBackupFile(appDir: DocumentFile, encrypted: Boolean): DocumentFile? {
     return AppDirHelper.timeStampedFile(
-        appDir,
-        "backup",
-        if (encrypted) "application/octet-stream" else "application/zip",
-        if (encrypted) "enc" else null
+        parentDir = appDir,
+        prefix = "backup",
+        mimeType = if (encrypted) "application/octet-stream" else "application/zip",
+        extension = if (encrypted) "enc" else "zip"
     )
 }
 

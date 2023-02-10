@@ -1,16 +1,28 @@
 package org.totschnig.myexpenses.viewmodel.data
 
 import android.content.Context
+import android.graphics.drawable.Drawable
+import androidx.annotation.AttrRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.content.res.ResourcesCompat
 import com.afollestad.materialdialogs.utils.MDUtil.getStringArray
+import com.kazy.fontdrawable.FontDrawable
+import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.util.UiUtils
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 sealed interface IIconInfo {
     val label: Int
+    fun asDrawable(context: Context, @AttrRes colorAttr: Int = R.attr.colorOnSurface): Drawable?
 
     companion object {
         fun resolveIcon(icon: String): IIconInfo? =
-            FontAwesomeIcons[icon] ?: ExtraIcons[icon]
+            FontAwesomeIcons[icon] ?: ExtraIcons[icon] ?: kotlin.run {
+                CrashHandler.report(Exception("Unable to resolve icon $icon"))
+                null
+            }
 
         fun resolveLabelForCategory(context: Context, category: String) =
             context.getString(
@@ -60,6 +72,17 @@ sealed interface IIconInfo {
 }
 
 data class IconInfo(val unicode: Char, @StringRes override val label: Int, val isBrand: Boolean) :
-    IIconInfo
+    IIconInfo {
+        val font = if (isBrand) R.font.fa_brands_400 else R.font.fa_solid_900
+    override fun asDrawable(context: Context, @AttrRes colorAttr: Int): Drawable? =
+        FontDrawable.Builder(context, unicode, ResourcesCompat.getFont(context, font))
+            .setSizeDp(24)
+            .setColor(UiUtils.getColor(context, colorAttr))
+            .build()
+    }
 
-data class ExtraIcon(@DrawableRes val drawable: Int, @StringRes override val label: Int) : IIconInfo
+data class ExtraIcon(@DrawableRes val drawable: Int, @StringRes override val label: Int) : IIconInfo {
+    override fun asDrawable(context: Context, @AttrRes colorAttr: Int): Drawable? = AppCompatResources.getDrawable(context, drawable)?.apply {
+        setTint(UiUtils.getColor(context, colorAttr))
+    }
+}

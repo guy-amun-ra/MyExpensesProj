@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splittemplate_title">Plantilla dividida</string>
+    <string name="splittemplate_description">Número ilimitado de plantillas y proyectos para transacciones divididas</string>
+    <string name="history_title">Gráfico de historial</string>
+    <string name="history_description">Entienda cómo su situación financiera evoluciona en el tiempo</string>
+    <string name="budget_title">Presupuestar</string>
+    <string name="budget_description">Defina cuánto prevé gastar en presupuestos anual, mensual o semanalmente </string>
+    <string name="ocr_title">Escanear recibo</string>
+    <string name="ocr_description">Extrae automáticamente el importe, la fecha y el acreedor</string>
+    <string name="professional_benefit_2">Soporte por correo electrónico</string>
+    <string name="professional_benefit_3">Participar en la ruta de desarrollo</string>
+    <string name="webui_description">Utilice su navegador para introducir los datos</string>
+    <string name="professional_benefit_1">Desbloquea todas las funciones premium</string>
+    <string name="webui_title">Interfaz de usuario web</string>
+    <string name="accountsunlimited_title">Número de cuentas ilimitadas</string>
+    <string name="accountsunlimited_description">Desbloquear la capacidad de crear más de cinco cuentas.</string>
+    <string name="categorytree_title">Árbol de Categorías</string>
+    <string name="adfree_title">Sin publicidad</string>
+    <string name="csvimport_title">Importar el código CSV</string>
+    <string name="adfree_description">Sin anuncios.</string>
+    <string name="distribution_title">Gráfico de sectores</string>
+    <string name="plansunlimited_description">Desbloquea la posibilidad de crear más de tres planes para transacciones recurrentes.</string>
+    <string name="print_description">Imprima la lista de transacciones en un archivo PDF</string>
+    <string name="synchronization_description">Los datos pueden sincronizarse entre varios dispositivos.</string>
+    <string name="distribution_description">Visualice la distribución estadística de transacciones por categoría entre diferentes periodos (años, meses, semanas, días)</string>
+    <string name="csvimport_description">Una sofisticada y personalizable importación a CSV (para aplicaciones de hojas de cálculo)</string>
+    <string name="splittransaction_description">Una transacción puede separarse en diferentes partes (categorías y transferencias).</string>
+    <string name="categorytree_description">Jerarquía de categorías arbitrariamente profunda</string>
+    <string name="plansunlimited_title">Número de planes ilimitado</string>
+    <string name="print_title">Imprimir</string>
+    <string name="splittransaction_title">Dividir la transacción</string>
+    <string name="synchronization_title">Sincronización con la nube</string>
+</resources>

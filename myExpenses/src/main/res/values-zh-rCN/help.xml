@@ -19,9 +19,6 @@
     <string name="form_title_help_text">输入唯一标识该模板的标题。</string>
     <string name="menu_save_help_text">保存数据并且关闭表格。</string>
     <string name="menu_invert_transfer_help_text">交换 “From” 和 “To” 账户反转交易的方向。</string>
-    <string name="menu_create_folder_help_text">在当前文件夹内创建新文件夹。</string>
-    <string name="menu_FolderBrowser_select_help_text">选择当前文件夹作为导出和备份的存储目标。</string>
-    <string name="menu_up_help_text">导航到当前文件夹的父目录。</string>
     <string name="menu_create_account_help_text">创建一个新账户。免费版仅可创建5个账户。</string>
     <string name="popup_MyExpenses_toolbar_intro">轻按工具栏（账户文本标签或当前余额）弹出包含以下条目的菜单：</string>
     <string name="help_MyExpenses_fab_long_press">长按悬浮操作按钮，通过弹出菜单编制转账、分拆交易或收入表单。</string>
@@ -72,11 +69,11 @@
     <string name="help_BudgetActivity_info" tools:ignore="UnusedResources">通过制定预算，您可设定自己在既定期间想要支出的总金额。您还可以对类别或子类别分配金额。之后，您可以监控自己已支出的金额和待支出的金额。</string>
     <string name="menu_HistoryActivity_history_transfers_help_text">若转账应该视为正常收入或开支，则进行切换。</string>
     <string name="menu_HistoryActivity_history_show_balance_help_text">是否显示余额。</string>
-    <string name="help_MyExpenses_crStatus_info">交易状态可通过颜色方框标示：灰色代表未对账、蓝色代表已结算、绿色代表已对账。点击颜色方框，可更改交易状态。</string>
+    <string name="menu_status_handle_help_text">交易状态可通过颜色方框标示：灰色代表未对账、蓝色代表已结算、绿色代表已对账。点击颜色方框，可更改交易状态。</string>
     <string name="menu_distribution_help_text">按类别显示您的开支分布。您还可以长按某一组别表头来查看特定期间的开支分布。</string>
     <string name="help_ManageBudgets_info">该界面汇总了您所创建的所有预算。可使用悬浮按钮创建新预算。点击列表条目显示单个预算。</string>
     <string name="help_ManageBudgets_title">列明所有预算的清单</string>
-    <string name="help_ManageSyncBackends_webdav">WebDAV：如果您的云存储提供商支持此项协议，则My Expenses能够与之进行数据同步。sync data with it. Simply provide the URL to a folder with your username and password. If you use https and your webserver uses a self-signed certificate, you will be able to trust it explicitly.</string>
+    <string name="help_ManageSyncBackends_webdav">如果您的云存储提供商支持此项协议，则My Expenses能够与之进行数据同步。sync data with it. Simply provide the URL to a folder with your username and password. If you use https and your webserver uses a self-signed certificate, you will be able to trust it explicitly.</string>
     <string name="help_ManageSyncBackends_intro">My Expenses允许为每个账户配置不同的同步后台。例如，您可以将某一账户与共享文件夹同步，同时可以将另一账户与私人文件夹同步。在该界面上，您可以添加或移除同步后台，开始或停止与远程账户进行同步。同步会定期自动进行，您可在此处手动触发与某一后台进行同步。请注意，My Expenses需要对远程文件夹获得全权控制。您不得使用其他工具或接口更改该文件夹内容，因为该操作可能会导致同步失败。</string>
     <string name="cab_NavigationDrawer_close_reopen_help_text">通过关闭账户，您可以阻止对该账户的数据做出任何更改（增加、删除、编辑），但仍然可在统计计算时将其纳入其中。</string>
     <string name="cab_NavigationDrawer_hide_help_text">将账户从清单中移除。</string>
@@ -84,7 +81,7 @@
     <string name="form_category_help_text">该按钮可打开类别列表，您可以选择某一类别来映射该交易。</string>
     <string name="form_transfer_from_account_transfer_to_account_help_text">指定该项目转出或转入的账户。</string>
     <string name="help_MethodEdit_title">支付方式表单</string>
-    <string name="help_ManageSyncBackends_drive">Google Drive：选择你自己拥有或与您共享的文件夹。</string>
+    <string name="help_ManageSyncBackends_drive">选择你自己拥有或与您共享的文件夹。</string>
     <string name="help_ManageParties_floating_action_button">使用悬浮操作按钮添加一个新条目。</string>
     <string name="help_ManageParties_select_filter_info">轻按某一交易方，以对交易清单进行筛选。长按可选择多个交易方。</string>
     <string name="help_ManageParties_manage_info">该界面列出了用以自动填写付款人/收款人字段的交易方。</string>
@@ -140,7 +137,6 @@
     <string name="help_ManageCategories_select_mapping_info">除了从首选项界面管理类别时可以执行的操作(创建、编辑、删除)之外，在此界面上，您可以将某项交易映射到选定的类别。只需单击子类别。</string>
     <string name="help_ManageCategories_manage_info">此界面允许创建、编辑和删除类别。默认情况下，类别列表中的主要排序标准是您使用类别的次数(次要标准是字母顺序)。您可以借此快速访问最常使用的类别。</string>
     <string name="help_ExpenseEdit_templateCategory_title">用于交易模板的表单</string>
-    <string name="help_FolderBrowser_info">您在此选择的文件夹将用于存储备份和导出。浏览文件夹层次结构，直到找到所需的文件夹。</string>
     <string name="help_ExpenseEdit_templateSplit_title">用于拆分模板的表单</string>
     <string name="help_ExpenseEdit_templateCategory_info">使用此表单输入新模板或编辑现有模板。使用操作栏中的下拉菜单在交易、转账和拆分模板之间进行切换。</string>
     <string name="form_method_help_text">此字段仅在当前账户属于可与付款方式进行关联的账户类型的情况下方可使用。默认情况下，只有银行账户可与支付方式（支票、信用卡、存款、直接借记）进行关联。转到设置-&gt;管理-&gt;支付方式，配置账户类型和支付方式之间的关联。当您选择定义为编号的方法时，用于输入参考编号的附加字段将变为可用。</string>
@@ -192,4 +188,15 @@
     <string name="menu_parent_category_selection_help_text">使用此选项，你可以自定义对具有子类别的类别的点击动作：如果子类别已选中，则短按将选择类别；如果未选中，短按将展开/收起类别。在后一种情况下，可以从上下文菜单中进行选择</string>
     <string name="menu_create_sync_backend_help_text">从子菜单中选择要添加的同步后端的类型，并提供特定于每个的详细信息</string>
     <string name="form_BudgetEdit_type_help_text">预算定义为定期（每天、每周、每月、每年）或一次性。对于一次性预算，你可以指定其起始的持续时间。可将常规预算（未过滤）设为默认：这意味着交易列表（如果配置为每天、每周、每月或每年分组数据）将显示此预算在每个期间的进度</string>
+    <string name="help_Budget_amount_click_1">更改金额绝不会影响过去的时期。如您决定只为当期进行设置，它会影响未来时期。</string>
+    <string name="menu_BudgetActivity_rollover_help_text">如果您的预算不足或超支，您可以将差额转存到下一个期间，这样可分配的金额更有弹性。有三个选项：</string>
+    <string name="menu_BudgetActivity_rollover_categories">每个类别的余额都被展期，下一期间的相应分配将受到影响。</string>
+    <string name="menu_BudgetActivity_rollover_total">只有总预算的剩余部分被展期，所以只有下一时期的总预算增加或减少了。</string>
+    <string name="menu_BudgetActivity_rollover_edit">此选项用于精确配置展期金额。例如，您可以只为某些类别或子类别设置部分展期金额，并将剩余部分转存到总预算上。</string>
+    <string name="help_WebUI_info_2">目前网页版不支持转账或拆分交易。</string>
+    <string name="help_WebUI_info_3">您可以设置安全访问密码。在网页浏览器显示的对话框中，只需输入密码，不用考虑用户名。</string>
+    <string name="help_WebUI_info_4">显示选定账户的交易信息时，网页版将直接使用您在 Android 设备应用上设置的过滤器。</string>
+    <string name="help_WebUI_info_1">从电脑上的网页浏览器调用副标题中显示的链接。</string>
+    <string name="cab_MyExpenses_select_help_text">可以通过选择此命令或长按列表条目来启动多选。</string>
+    <string name="help_ManageSyncBackends_saf">此选项允许通过 Android 的文件选择器对话框选择文件夹。如果您安装了支持选择用于存储内容的文件夹的云存储应用（如 NextCloud），这将非常有用</string>
 </resources>

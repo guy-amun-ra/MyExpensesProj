@@ -32,15 +32,15 @@ import org.totschnig.myexpenses.dialog.DialogUtils
 import org.totschnig.myexpenses.dialog.DialogUtils.CalendarRestoreStrategyChangedListener
 import org.totschnig.myexpenses.preference.AccountPreference
 import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.preference.requireString
 import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import org.totschnig.myexpenses.util.io.FileUtils
+import org.totschnig.myexpenses.util.io.displayName
 import org.totschnig.myexpenses.util.safeMessage
 import org.totschnig.myexpenses.viewmodel.BackupViewModel
 import org.totschnig.myexpenses.viewmodel.BackupViewModel.BackupState
 import org.totschnig.myexpenses.viewmodel.BackupViewModel.BackupState.Running
+import org.totschnig.myexpenses.viewmodel.RestoreViewModel.Companion.KEY_ENCRYPT
 import org.totschnig.myexpenses.viewmodel.RestoreViewModel.Companion.KEY_FILE_PATH
 import org.totschnig.myexpenses.viewmodel.RestoreViewModel.Companion.KEY_PASSWORD
 import org.totschnig.myexpenses.viewmodel.RestoreViewModel.Companion.KEY_RESTORE_PLAN_STRATEGY
@@ -72,21 +72,17 @@ class BackupRestoreActivity : RestoreActivity(), ConfirmationDialogListener,
                         val message = StringBuilder().append(
                             getString(
                                 R.string.warning_backup,
-                                FileUtils.getPath(this, it.uri)
+                                it.displayName
                             )
                         )
                             .append(" ")
                         if (isProtected) {
                             message.append(getString(R.string.warning_backup_protected)).append(" ")
-                        } else if (prefHandler.getBoolean(
-                                PrefKey.PROTECTION_LEGACY,
-                                false
-                            ) || prefHandler.getBoolean(
-                                PrefKey.PROTECTION_DEVICE_LOCK_SCREEN,
-                                false
-                            )
+                        } else if (prefHandler.getBoolean(PrefKey.PROTECTION_LEGACY, false)
+                            || prefHandler.getBoolean(PrefKey.PROTECTION_DEVICE_LOCK_SCREEN, false)
+                            || prefHandler.encryptDatabase
                         ) {
-                            message.append(unencryptedBackupWarning()).append(" ")
+                            message.append(unencryptedBackupWarning).append(" ")
                         }
                         message.append(getString(R.string.continue_confirmation))
                         ConfirmationDialogFragment.newInstance(Bundle().apply {
@@ -116,7 +112,7 @@ class BackupRestoreActivity : RestoreActivity(), ConfirmationDialogListener,
                                     getString(R.string.backup_save_to_sync_backend, withSync)
                                 )
                                 putBoolean(
-                                    ConfirmationDialogFragment.KEY_CHECKBOX_INITIALLY_CHHECKED,
+                                    ConfirmationDialogFragment.KEY_CHECKBOX_INITIALLY_CHECKED,
                                     prefHandler.getBoolean(
                                         PrefKey.SAVE_TO_SYNC_BACKEND_CHECKED,
                                         false
@@ -235,10 +231,12 @@ class BackupRestoreActivity : RestoreActivity(), ConfirmationDialogListener,
         )
     }
 
-    private fun buildRestoreArgs(fileUri: Uri, restorePlanStrategy: Int) = Bundle().apply {
-        putInt(KEY_RESTORE_PLAN_STRATEGY, restorePlanStrategy)
-        putParcelable(KEY_FILE_PATH, fileUri)
-    }
+    private fun buildRestoreArgs(fileUri: Uri, restorePlanStrategy: Int, encrypt: Boolean) =
+        Bundle().apply {
+            putInt(KEY_RESTORE_PLAN_STRATEGY, restorePlanStrategy)
+            putParcelable(KEY_FILE_PATH, fileUri)
+            putBoolean(KEY_ENCRYPT, encrypt)
+        }
 
     override fun shouldKeepProgress(taskId: Int) = true
 
@@ -257,8 +255,12 @@ class BackupRestoreActivity : RestoreActivity(), ConfirmationDialogListener,
             Utils.getSimpleClassNameFromComponentName(it)
         } == OnboardingActivity::class.java.simpleName
 
-    fun onSourceSelected(mUri: Uri, restorePlanStrategy: Int) {
-        val args = buildRestoreArgs(mUri, restorePlanStrategy)
+    fun onSourceSelected(
+        mUri: Uri,
+        restorePlanStrategy: Int,
+        encrypt: Boolean
+    ) {
+        val args = buildRestoreArgs(mUri, restorePlanStrategy, encrypt)
         backupViewModel.isEncrypted(mUri).observe(this) { result ->
             result.onFailure {
                 showDismissibleSnackBar(it.safeMessage, object : Snackbar.Callback() {
@@ -304,13 +306,17 @@ class BackupRestoreActivity : RestoreActivity(), ConfirmationDialogListener,
 
     override fun onPositive(args: Bundle, checked: Boolean) {
         val command = args.getInt(ConfirmationDialogFragment.KEY_COMMAND_POSITIVE)
-        if (command == R.id.BACKUP_COMMAND) {
-            prefHandler.putBoolean(PrefKey.SAVE_TO_SYNC_BACKEND_CHECKED, checked)
-            backupViewModel.doBackup(checked)
-        } else if (command == R.id.RESTORE_COMMAND) {
-            doRestore(args)
-        } else if (command == R.id.PURGE_BACKUPS_COMMAND) {
-            backupViewModel.purgeBackups()
+        when (command) {
+            R.id.BACKUP_COMMAND -> {
+                prefHandler.putBoolean(PrefKey.SAVE_TO_SYNC_BACKEND_CHECKED, checked)
+                backupViewModel.doBackup(checked)
+            }
+            R.id.RESTORE_COMMAND -> {
+                doRestore(args)
+            }
+            R.id.PURGE_BACKUPS_COMMAND -> {
+                backupViewModel.purgeBackups()
+            }
         }
     }
 
@@ -318,12 +324,12 @@ class BackupRestoreActivity : RestoreActivity(), ConfirmationDialogListener,
         abort()
     }
 
-    fun abort() {
+    private fun abort() {
         setResult(RESULT_CANCELED)
         finish()
     }
 
-    override fun onDismissOrCancel(args: Bundle) {
+    override fun onDismissOrCancel() {
         abort()
     }
 
@@ -347,8 +353,6 @@ class BackupRestoreActivity : RestoreActivity(), ConfirmationDialogListener,
                 ?.onCalendarPermissionDenied()
         }
     }
-
-    override val snackBarContainerId: Int = android.R.id.content
 
     companion object {
         const val FRAGMENT_TAG_RESTORE_SOURCE = "RESTORE_SOURCE"

@@ -40,13 +40,12 @@
     <string name="color">Cor</string>
     <string name="comment">Notas</string>
     <string name="confirmation_dialog_dont_show_again">Não exibir novamente</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">Sem anúncios</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Número ilimitado de contas</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Anexar imagem à transação</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Número ilimitado de planos</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Exportar lista de transações para PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Widget de modelos</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Importação CSV</string>
+    <string name="contrib_feature_ad_free_label">Sem anúncios</string>
+    <string name="contrib_feature_accounts_unlimited_label">Número ilimitado de contas</string>
+    <string name="contrib_feature_attach_picture_label">Anexar imagem à transação</string>
+    <string name="contrib_feature_plans_unlimited_label">Número ilimitado de planos</string>
+    <string name="contrib_feature_print_label">Exportar lista de transações para PDF</string>
+    <string name="contrib_feature_csv_import_label">Importação CSV</string>
     <string name="licence_status_free">Gratuita</string>
     <string name="contrib_key">Chave de contribuição</string>
     <string name="extended_key">Chave estendida</string>
@@ -63,10 +62,6 @@
     <string name="description">Descrição</string>
     <string name="dialog_balance_delete">Excluir transações reconciliadas</string>
     <string name="dialog_confirm_discard_changes">Descartar as alterações\?</string>
-    <string name="dialog_confirm_discard_new_transaction">Descartar a nova transação\?</string>
-    <string name="dialog_confirm_discard_new_template">Descartar o novo modelo\?</string>
-    <string name="dialog_confirm_discard_new_account">Descartar a nova conta\?</string>
-    <string name="dialog_confirm_discard_new_method">Descartar a nova forma de pagamento\?</string>
     <string name="dialog_command_disabled_balance">Não existe nenhuma transação compensada para ser reconciliada.</string>
     <string name="dialog_command_disabled_insert_transfer">As transferências de transações requerem uma segunda conta.</string>
     <string name="dialog_command_disabled_reset_account">Nenhuma transação para exportar.</string>
@@ -124,7 +119,6 @@
     <string name="help_heading_credits">Créditos</string>
     <string name="help_heading_license">Licença</string>
     <string name="help_heading_whats_new">Novidades</string>
-    <string name="important_upgrade_information_heading">Informações importantes</string>
     <string name="import_select_transactions">Transações</string>
     <string name="income">Receita</string>
     <string name="invalid_number_format">Formato decimal não reconhecido pela sua localidade. Por favor, use %1$s</string>
@@ -270,8 +264,8 @@
     <string name="pref_contrib_purchase_title_in_app">Pagamentos no app</string>
     <string name="pref_custom_currency_title">Personalizar moedas</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Caso tenha recebido uma chave, obtenha acesso aos recursos premium.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Digite a chave</string>
+    <string name="pref_enter_licence_summary">Caso tenha recebido uma chave, obtenha acesso aos recursos premium.</string>
+    <string name="pref_enter_licence_title">Digite a chave</string>
     <string name="pref_export_format_title">Formato dos dados</string>
     <string name="pref_import_from_grisbi_summary">Importa categorias e parceiros do ficheiro XML do Grisbi</string>
     <string name="pref_import_from_grisbi_title">Importar do Grisbi</string>
@@ -322,7 +316,6 @@
     <string name="pref_visit_website_summary">Alterações e perguntas frequentes</string>
     <string name="pref_visit_website_title">Visitar o site web</string>
     <string name="progress_dialog_deleting">Excluindo objetos</string>
-    <string name="progress_dialog_loading">Carregando objeto do banco de dados</string>
     <string name="progress_dialog_printing">Gerando %s</string>
     <string name="qif_parse_result">Analisada: %1$s contas, %2$s categorias e %3$s parceiros</string>
     <string name="qif_parse_failure_found_multiple_accounts">Foram encontradas várias contas no ficheiro QIF.</string>
@@ -442,7 +435,6 @@
     <string name="comparison_operator_date_after">após</string>
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">A compra falhou ou foi cancelada.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d contas com a moeda %2$s foram atualizadas.</string>
-    <string name="learn_more">Saiba Mais</string>
     <string name="import_source_file">Arquivo</string>
     <string name="restore_calendar_handling">Manipulação de dados da agenda</string>
     <string name="restore_calendar_handling_configured">Restaurar os planos para a agenda configurada atualmente</string>
@@ -590,8 +582,6 @@
     <string name="onboarding_restore_from_cloud">Restaurar a partir da sincronização na nuvem</string>
     <string name="onboarding_restore_from_local">Restaurar ficheiro de backup local</string>
     <string name="dialog_button_add">Adicionar</string>
-    <string name="template_create_error">Erro durante o salvamento do modelo</string>
-    <string name="split_transaction_one_error">Não foi possível transformar a transação em dividida.</string>
     <string name="pref_category_exchange_rates">Taxas de câmbio</string>
     <string name="budget_duration_from">De</string>
     <string name="budget_duration_to">Até</string>
@@ -710,7 +700,6 @@
     <string name="menu_budget_allocated_only">Exibir apenas categorias com alocação</string>
     <string name="budget_date_end_after_start">A data de término do orçamento deve ser posterior à data de início.</string>
     <string name="no_budgets">Defina seu primeiro orçamento tocando no botão +.</string>
-    <string name="dialog_confirm_discard_new_budget">Descartar o novo orçamento\?</string>
     <string name="budget_onetime">Único</string>
     <string name="menu_create_budget">Novo orçamento</string>
     <string name="discover_feature_expense_income_switch">Use este botão para registrar a receita.</string>
@@ -738,7 +727,6 @@
     <string name="menu_reopen">Reabrir</string>
     <string name="menu_close">Encerrar</string>
     <string name="menu_hide">Ocultar</string>
-    <string name="pref_account_list_fast_scroll_summary">Habilita a rolagem rápida para a lista de contas. Pode levar a uma exibição incorreta em alguns dispositivos</string>
     <string name="joining_or">ou</string>
     <string name="button_label_no_encryption">Sem criptografia</string>
     <string name="input_label_passphrase">Senha</string>
@@ -806,14 +794,9 @@
     <string name="pref_value_date_summary">Permite a definição de uma data da contabilização, além da data do pagamento. A data da transação ficará oculta. Essa configuração não se aplica a contas de dinheiro.</string>
     <string name="pref_transaction_time_summary">Permitir a definição da data exata da transação.</string>
     <string name="split_transaction_not_possible">Somente transações que possuam a mesma conta, beneficiário e status podem ser agrupadas em uma transação dividida.</string>
-    <string name="split_transaction_group_error">Não foi possível agrupar as transações em uma dividida.</string>
     <string name="split_transaction_group_success">%1$d transações foram agrupadas em uma transação dividida com sucesso.</string>
     <string name="split_transaction_one_success">A transação foi transformada em dividida com sucesso.</string>
-    <string name="ungroup_split_transaction_failure">Ao desagrupar as transações divididas, ocorreu uma falha em %1$d das %2$d.</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">A transação dividida foi desagrupada com sucesso.</item>
-        <item quantity="other">%1$d transações divididas foram desagrupadas com sucesso.</item>
-    </plurals>
+    <string name="ungroup_split_transaction_success">A transação dividida foi desagrupada com sucesso.</string>
     <string name="menu_ungroup_split_transaction">Desagrupar divisão</string>
     <string name="warning_ungroup_split_transactions">As transações divididas selecionadas serão desagrupadas e suas divisões serão convertidas em transações normais.</string>
     <string name="warning_split_transactions">As transações atuais serão agrupadas em uma transação dividida. A informação das datas será perdida, sendo substituída pela sua média.</string>
@@ -837,7 +820,6 @@
         <item quantity="one">Um objeto foi excluído com sucesso.</item>
         <item quantity="other">%d objetos foram excluídos com sucesso.</item>
     </plurals>
-    <string name="sync_loading_accounts_from_backend">Carregando contas disponíveis no destino.</string>
     <string name="sync_auth_exception">Falha na autorização.</string>
     <string name="sync_login_again">Por favor, autentique-se novamente.</string>
     <string name="auto_fill_account_from_aggregate_only">Apenas quando iniciar de uma conta agregada.</string>
@@ -862,7 +844,6 @@
     <string name="licence_removal_information">Caso você não precise mais de funcionalidades premium neste dispositivo, você pode remover a chave da licença. Isso libera a chave para ativação em outro dispositivo. A chave pode ser ativada em até %d dispositivos.</string>
     <string name="licence_key">Chave da licença</string>
     <string name="button_validate">Validar</string>
-    <string name="error">Erro (%s)</string>
     <string name="licence_validation_error_device_limit_exceeded">Foi excedido o limite do dispositivo. Por favor, remova a licença de outro dispositivo.</string>
     <string name="licence_validation_error_expired">A licença está expirada</string>
     <string name="progress_validating_licence">Validando a licença</string>
@@ -891,4 +872,81 @@
     <string name="bug_fixes">Correções de erros</string>
     <string name="new_version">Nova versão</string>
     <string name="pref_news_title">Notícias</string>
+    <string name="debts">Dívidas</string>
+    <string name="account_deleted">A conta foi apagada</string>
+    <string name="recurrence_last_day_of_month">Último dia</string>
+    <string name="performance_enhancement" tools:ignore="UnusedResources">Melhoria de performance</string>
+    <string name="warning_party_delete_debt">Ao apagar esse parceiro, as dívidas lhe associadas serão excluídas também.</string>
+    <plurals name="debt_mapped_transactions">
+        <item quantity="one">A dívida %1$s tem %2$d transação mapeada.</item>
+        <item quantity="many">A dívida %1$s tem %2$d transações mapeadas.</item>
+        <item quantity="other">A dívida %1$s tem %2$d transações mapeadas.</item>
+    </plurals>
+    <string name="whats_new_338">Hierarquia de categorias arbitrariamente profunda</string>
+    <string name="pref_purge_backup_require_confirmation_summary">Exibir mensagem de confirmação antes de purgar ficheiros</string>
+    <string name="pref_purge_backup_keep_title">Quantidade máxima de backups recentes a serem preservados</string>
+    <string name="dialog_title_warning_delete_party">Apagar parceiro\?</string>
+    <string name="warning_link_transfer">As duas transações selecionadas serão vinculadas como uma transferência. As informações de beneficiário/pagador e da categoria serão descartadas.</string>
+    <string name="account_widget_configuration_sum_total">Incluir transações futuras</string>
+    <string name="account_widget_configuration">Configuração do widget de conta</string>
+    <string name="menu_merge">Unificar</string>
+    <string name="merge_parties_select">Selecione o nome do parceiro unificado:</string>
+    <string name="active_tags">Etiquetas ativas</string>
+    <string name="request_for_invoice">Pedido de fatura</string>
+    <string name="auto_fill_focus">Definir foco no beneficiário</string>
+    <string name="warning_plan_instance_delete">A transação criada para a data selecionada será apagada.</string>
+    <string name="backup_save_to_sync_backend">Gravar em %s</string>
+    <string name="stability_improvements" tools:ignore="UnusedResources">Melhorias de estabilidade</string>
+    <string name="debt">Dívida</string>
+    <string name="dialog_title_delete_debt">Apagar a dívida\?</string>
+    <string name="object_sealed_debt">O objeto refere-se a uma dívida encerrada.</string>
+    <string name="debt_managment">Gestão de dívidas</string>
+    <string name="title_activity_debt_overview">Visão geral da dívida</string>
+    <string name="pref_mlkit_script_title">Script para MlKit</string>
+    <plurals name="import_categories_icons_updated">
+        <item quantity="one">Uma categoria foi atualizada com ícone.</item>
+        <item quantity="many">%1$d categorias foram atualizadas com ícones.</item>
+        <item quantity="other">%1$d categorias foram atualizadas com ícones.</item>
+    </plurals>
+    <string name="whats_new_336_1">Compartilhar o resumo da dívida</string>
+    <string name="dialog_title_purge_backups">Expurgar backups antigos</string>
+    <string name="purge_backups">Os seguintes backups antigos serão excluídos:</string>
+    <plurals name="purge_backup_failure">
+        <item quantity="one">Não foi possível apagar um ficheiro de backup antigo.</item>
+        <item quantity="many">Não foi possível apagar %d ficheiros de backup antigos.</item>
+        <item quantity="other">Não foi possível apagar %d ficheiros de backup antigos.</item>
+    </plurals>
+    <string name="pref_debug_logging_share_summary">Compartilhar ficheiros de registo</string>
+    <string name="whats_new_340">Campos de anotação permitem múltiplas linhas.</string>
+    <string name="webui_warning_move_transaction">A transação será movida para a conta {account}.</string>
+    <string name="pref_csv_export_split_categories_summary">Usa colunas separadas para cada nível da hierarquia de categoria</string>
+    <string name="pref_csv_export_split_amount_summary">Usa colunas separadas para receitas e despesas</string>
+    <string name="pref_csv_export_split_date_time_summary">Usa colunas separadas para data e hora</string>
+    <string name="required">Obrigatório</string>
+    <string name="budget_only_current_period">Definido somente para %s</string>
+    <string name="budget_table_header_rollover">Prorrogar</string>
+    <string name="rollover_edit_invalid">A soma da prorrogação atribuída a uma categoria e das prorrogações atribuídas às subcategorias não pode exceder o restante.</string>
+    <string name="dialog_confirm_rollover_delete">Todos os montantes de prorrogações para este período serão excluídos.</string>
+    <string name="content_description_attachment">Anexo</string>
+    <string name="redesign">Redesenhar</string>
+    <string name="upgrade_info_557">O que acha do novo visual\? Por favor, nos informe. Uma variante mais próxima do visual antigo pode ser ativada nas Configurações (%1$s -&gt; %2$s).</string>
+    <string name="account_widget_configuration_sum">Tipo de soma exibida</string>
+    <string name="ui_refinement">Melhorias na interface do utilizador</string>
+    <string name="menu_new_debt">Nova dívida</string>
+    <string name="debt_owes_me">%s me deve</string>
+    <string name="debt_I_owe">Devo para %s</string>
+    <string name="cb_label_merge_accounts">Fundir contas</string>
+    <string name="contrib_feature_category_tree_label" tools:ignore="UnusedResources">Árvore de categorias</string>
+    <string name="dialog_contrib_usage_limit_with_dialog">Devido ao status atual da sua licença (%1$s), este diálogo será exibido a cada utilização.</string>
+    <plurals name="purge_backup_success">
+        <item quantity="one">Um ficheiro de backup antigo foi apagado.</item>
+        <item quantity="many">%d ficheiros de backup antigos foram apagados.</item>
+        <item quantity="other">%d ficheiros de backup antigos foram apagados.</item>
+    </plurals>
+    <string name="select_all_list_too_large">O comando %s não está disponível porque a lista foi apenas parcialmente carregada. Por favor, use a funcionalidade Pesquisar para reduzir o tamanho da lista.</string>
+    <string name="whats_new_336_2">Etiquetas para as partes da divisão</string>
+    <string name="setup_completed">Configuração concluída</string>
+    <string name="icons_for_categories">Ícones para categorias</string>
+    <string name="menu_parent_category_selection">Selecionar a categoria mãe no toque breve</string>
+    <string name="menu_reconfigure">Reconfigurar</string>
 </resources>

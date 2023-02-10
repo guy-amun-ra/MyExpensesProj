@@ -46,7 +46,6 @@
     <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Biểu đồ quạt (dựa theo phân phối danh mục)</string>
     <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Tạo các kế hoạch với số lượng không giới hạn</string>
     <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Xuất danh sách giao dịch sang dạng PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Tiện ích cho bản mẫu</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Nhập CSV</string>
     <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Không giới hạn số lượng bản mẫu chia tách</string>
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>Hỗ trợ qua email</b> với đảm bảo sẽ nhận được phản hồi sau 2 ngày làm việc</string>
@@ -68,10 +67,6 @@
     <string name="description">Mô tả</string>
     <string name="dialog_balance_delete">Xoá các giao dịch đã khớp</string>
     <string name="dialog_confirm_discard_changes">Huỷ bỏ thay đổi?</string>
-    <string name="dialog_confirm_discard_new_transaction">Huỷ bỏ giao dịch mới?</string>
-    <string name="dialog_confirm_discard_new_template">Huỷ bỏ bản mẫu mới?</string>
-    <string name="dialog_confirm_discard_new_account">Huỷ bỏ tải khoản mới?</string>
-    <string name="dialog_confirm_discard_new_method">Huỷ bỏ phương thức thanh toán mới?</string>
     <string name="dialog_command_disabled_balance">Không còn giao dịch nào chưa được thanh toán để khớp.</string>
     <string name="dialog_command_disabled_insert_transfer">Việc chuyển khoản yêu cầu một tài khoản khác.</string>
     <string name="dialog_command_disabled_reset_account">Không có giao dịch để xuất.</string>
@@ -132,7 +127,6 @@
     <string name="help_heading_credits">Lời tri ân</string>
     <string name="help_heading_license">Giấy phép</string>
     <string name="help_heading_whats_new">Có gì mới</string>
-    <string name="important_upgrade_information_heading">Thông tin quan trọng</string>
     <string name="import_select_transactions">Các giao dịch</string>
     <string name="income">Thu</string>
     <string name="invalid_number_format">Định dạng thập phân không được nhận diện bởi hệ thống ngôn ngữ của bạn. Xin sử dụng %1$s</string>
@@ -279,8 +273,8 @@
     <string name="pref_contrib_purchase_title_in_app">Mua hàng trong ứng dụng</string>
     <string name="pref_custom_currency_title">Tùy chỉnh các loại tiền tệ</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Nếu bạn đã nhận một khóa, hãy nâng cấp lên các tính năng trả phí.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Nhập khóa</string>
+    <string name="pref_enter_licence_summary">Nếu bạn đã nhận một khóa, hãy nâng cấp lên các tính năng trả phí.</string>
+    <string name="pref_enter_licence_title">Nhập khóa</string>
     <string name="pref_export_format_title">Định dạng dữ liệu</string>
     <string name="pref_import_from_grisbi_summary">Nhập các phân loại (và các nhóm) Grisbi XML</string>
     <string name="pref_import_from_grisbi_title">Nhập dữ liệu về Grisbi</string>
@@ -332,7 +326,6 @@
     <string name="pref_visit_website_summary">Xem các thay đổi về tính năng và những câu hỏi thường gặp</string>
     <string name="pref_visit_website_title">Truy cập Website</string>
     <string name="progress_dialog_deleting">Đang xóa mục</string>
-    <string name="progress_dialog_loading">Đang tải đối tượng từ cơ sở dữ liệu</string>
     <string name="progress_dialog_printing">Đang tạo tập tin %s</string>
     <string name="qif_parse_result">Đã phân tích : %1$s tài khoản; %2$s danh mục và %3$s bên giao dịch</string>
     <string name="qif_parse_failure_found_multiple_accounts">Phát hiện nhiều tài khoản trong tập tin QIF.</string>
@@ -450,7 +443,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Giao dịch thất bại hoặc đã bị huỷ bỏ</string>
     <string name="hint_auto_fill">Dữ liệu từ giao dịch liền trước với cùng người nhận/trả có nên được tự động thêm vào? Bạn luôn có thể thay đổi tuỳ chọn này trong mục cài đặt.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d tài khoản với loại tiền %2$s đã được cập nhật.</string>
-    <string name="learn_more">Tìm hiểu thêm</string>
     <string name="import_source_file">Tập tin</string>
     <string name="restore_calendar_handling">Xử lý dữ liệu lịch</string>
     <string name="restore_calendar_handling_configured">Khôi phục kế hoạch tới lịch được thiết lập hiện tại</string>
@@ -602,7 +594,6 @@
     <string name="onboarding_restore_from_cloud">Khôi phục từ bản đồng bộ trực tuyến</string>
     <string name="onboarding_restore_from_local">Khôi phục từ tập tin sao lưu trong máy</string>
     <string name="dialog_button_add">Thêm</string>
-    <string name="template_create_error">Lỗi khi lưu bản mẫu</string>
     <string name="contributed_by">Đóng góp bởi %s</string>
     <string name="pref_sync_notification_summary">Thông báo về quá trình đồng bộ hoá</string>
     <string name="pref_debug_logging_summary">Ghi thông tin gỡ lỗi vào nhật ký hệ thống</string>
@@ -612,7 +603,6 @@
     <string name="progress_validating_licence">Đang xác minh bản quyền</string>
     <string name="licence_validation_error_expired">Bản quyền đã hết hạn</string>
     <string name="licence_validation_error_device_limit_exceeded">Đã chạm mốc giới hạn số lượng thiết bị. Vui lòng xoá bớt bản quyền trên các thiết bị khác.</string>
-    <string name="error">Lỗi (%s)</string>
     <string name="button_validate">Xác minh</string>
     <string name="licence_key">Khoá bản quyền</string>
     <string name="licence_removal_information">Nếu bạn không còn cần tính năng trả phí trên thiết bị này, bạn có thể gỡ bỏ khoá bản quyền. Điều này sẽ cho phép bạn đăng ký bản quyền cho một thiết bị khác. Khoá này có thể được dùng để kích hoạt tới %d thiết bị.</string>
@@ -638,7 +628,6 @@
     <string name="auto_fill_account_from_aggregate_only">Chỉ khi bắt đầu từ tài khoản gộp.</string>
     <string name="sync_auth_exception">Không thể uỷ quyền.</string>
     <string name="sync_login_again">Vui lòng đăng nhập lại.</string>
-    <string name="sync_loading_accounts_from_backend">Đang nạp các tài khoản sẵn có từ backend.</string>
     <plurals name="delete_success">
         <item quantity="other">%d đối tượng đã được xoá.</item>
     </plurals>
@@ -662,11 +651,7 @@
     <string name="home_currency_change_warning">Nếu bạn đổi tiền tệ của quốc gia bạn, khoản tương đương và tỷ giá hối đoái sẽ bị mất, chúng sẽ cần được thiết đặt lại.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">Bỏ gộp nhóm các giao dịch con</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="other">%1$d giao dịch tách đã được bỏ gộp nhóm.</item>
-    </plurals>
-    <string name="split_transaction_one_error">Không thể chuyển giao dịch sang dạng phân tách.</string>
-    <string name="split_transaction_group_error">Không thể gộp các giao dịch vào một GD tách.</string>
+    <string name="ungroup_split_transaction_success">1 giao dịch tách đã được bỏ gộp nhóm.</string>
     <string name="pref_transaction_time_summary">Cho phép ghi lại cụ thể thời gian giao dịch.</string>
     <!-- the date on which the transaction took place, aka transaction date, as opposed to value date -->
     <string name="booking_date">Ngày ghi sổ</string>

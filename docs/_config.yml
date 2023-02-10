@@ -47,64 +47,68 @@ footnote:
     F-Droid: Webdav, Dropbox<br>Play Store: Webdav, Dropbox, Google Drive
 title:
   ar: مصروفاتي
-  en: My Expenses
-  fr: Mes dépenses
-  de: Meine Ausgaben
-  it: Le mie spese
-  es: Mis gastos
-  ca: Les Meves Despeses
-  tr: Harcamalarım
-  vi: Chi Tiêu Của Tôi
-  hu: Kiadásaim
-  zh-tw: 開支助手
-  zh-cn: 开支助手
-  pt: Minhas despesas
-  pl: Moje Wydatki
-  cs: Moje výdaje
-  ru: Мои расходы
-  ro: Cheltuielile Mele
-  ja: マイ エクスペンス
-  ms: Perbelanjaan Saya
-  hr: Moji troškovi
-  eu: Nire gastuak
-  da: Mine udgifter
   bg: Моите разходи
+  ca: Les Meves Despeses
+  cs: Moje výdaje
+  da: Mine udgifter
+  de: Meine Ausgaben
   el: Έξοδα μου
+  en: My Expenses
+  es: Mis gastos
+  eu: Nire gastuak
+  fr: Mes dépenses
+  hr: Moji troškovi
+  hu: Kiadásaim
+  it: Le mie spese
   iw: ההוצאות שלי
-  uk: Мої Витрати
-  ta: எனது செலவுகள்
-  ko: 내 지출
+  ja: マイ エクスペンス
   kn: ಮೈ ಎಕ್ಸಪೆನ್ಸಸ್
+  ko: 내 지출
+  ms: Perbelanjaan Saya
+  nl: Mijn Uitgaven
+  pl: Moje Wydatki
+  pt: Minhas despesas
+  ro: Cheltuielile Mele
+  ru: Мои расходы
+  ta: எனது செலவுகள்
+  te: నా ఖర్చులు
+  tr: Harcamalarım
+  uk: Мої Витрати
+  vi: Chi Tiêu Của Tôi
+  zh-cn: 开支助手
+  zh-tw: 開支助手
 langs:
-  de: Deutsch
-  en: English
-  it: Italiano
-  fr: Français
-  pt: Português
-  es: Español
-  pl: Polski
-  ru: русский
   ar: العربية
-  cs: Čeština
-  vi: Tiếng Việt
-  hu: Magyar
-  tr: Türkçe
-  zh-tw: 中文 (繁體)
-  zh-cn: 中文 (中国)
-  ca: Català
-  ro: Română
-  ja: 日本語
-  ms: Bahasa Melayu
-  hr: hrvatski
-  eu: euskara
-  da: Dansk
   bg: български
+  ca: Català
+  cs: Čeština
+  da: Dansk
+  de: Deutsch
   el: Ελληνικά
+  en: English
+  es: Español
+  eu: euskara
+  fr: Français
+  hr: hrvatski
+  hu: Magyar
+  it: Italiano
   iw: עברית
-  uk: українська
-  ta: தமிழ்
-  ko: 한국어
+  ja: 日本語
   kn: ಕನ್ನಡ
+  ko: 한국어
+  ms: Bahasa Melayu
+  nl: Nederlands
+  pl: Polski
+  pt: Português
+  ro: Română
+  ru: русский
+  ta: தமிழ்
+  te: తెలుగు
+  tr: Türkçe
+  uk: українська
+  vi: Tiếng Việt
+  zh-cn: 中文 (中国)
+  zh-tw: 中文 (繁體)
 paypal-lc:
   de: DE
   en: US
@@ -127,6 +131,208 @@ amazon:
   en: "www.amazon.com"
   pt: "www.amazon.com.br"
 versions:
+  -
+    - 3.4.8
+    - "2022-12-10"
+    -
+      ar: |
+        الترجمة: الهولندية
+      bg: |
+        Превод: нидерландски
+      ca: |
+        Traducció: neerlandès
+      cs: |
+        Překlad: nizozemština
+      da: |
+        Oversættelse: hollandsk
+      de: |
+        Übersetzung: Niederländisch
+      el: |
+        Μετάφραση: Ολλανδικά
+      es: |
+        Traducción: neerlandés
+      eu: |
+        Itzulpena: nederlandera
+      fr: |
+        Traduction: néerlandais
+      hr: |
+        Prijevod: nizozemski
+      hu: |
+        Fordítás: holland
+      it: |
+        Traduzione: olandese
+      iw: |
+        תרגום: הולנדית
+      ja: |
+        翻訳: オランダ語
+      kn: |
+        ಅನುವಾದ: ಡಚ್
+      ko: |
+        번역: 네덜란드어
+      km: |
+        ការបកប្រែ: ហូឡង់
+      ms: |
+        Terjemahan: Belanda
+      nl: |
+        Vertalen: Nederlands
+      pl: |
+        Tłumaczenie: niderlandzki
+      pt: |
+        Tradução: holandês
+      ro: |
+        Traducere: neerlandeză
+      ru: |
+        Перевод: нидерландский
+      si: |
+        පරිවර්තනය: ලන්දේසි
+      ta: |
+        மொழிபெயர்ப்பு: டச்சு
+      te: |
+        అనువాదం: డచ్
+      tr: |
+        Çeviri: Felemenkçe
+      vi: |
+        Dịch thuật: Tiếng Hà Lan
+      zh: |
+        翻译: 荷兰语
+      zh-TW: |
+        翻譯: Dutch
+      en: |
+        Translation: Dutch
+  -
+    - 3.4.7
+    - "2022-12-10"
+    -
+      ar: |
+        التزامن: التخزين المحلي
+      bg: |
+        Синхронизиране: Локално хранилище
+      ca: |
+        Sincronització: Emmagatzematge local
+      cs: |
+        Synchronizace: Místní úložiště
+      da: |
+        Synkronisering: Lokalt lager
+      de: |
+        Synchronisierung: Lokaler Speicher
+      el: |
+        Συγχρονισμός: Τοπικός χώρος αποθήκευσης
+      es: |
+        Sincronización: Almacenamiento local
+      eu: |
+        Sinkronizazioa: Biltegi lokala
+      fr: |
+        Synchronisation: Stockage local
+      hr: |
+        Sinkronizacija: Lokalna pohrana
+      hu: |
+        Szinkronizálás: Helyi tárhely
+      it: |
+        Sincronizzazione: Archiviazione locale
+      iw: |
+        סנכרון: אחסון מקומי
+      ja: |
+        同期: ローカル ストレージ
+      kn: |
+        ಸಿಂಕ್ರೊನೈಸೇಶನ್: ಸ್ಥಳೀಯ ಸಂಗ್ರಹಣೆ
+      ko: |
+        동기화: 로컬 저장소
+      km: |
+        ការធ្វើសមកាលកម្ម: ទំហំផ្ទុកមូលដ្ឋាន
+      ms: |
+        Penyegerakan: Storan setempat
+      nl: |
+        Synchronisatie: Lokale opslag
+      pl: |
+        Synchronizacja: Pamięć lokalna
+      pt: |
+        Sincronização: Armazenamento local
+      ro: |
+        Sincronizare: Stocare locală
+      ru: |
+        Синхронизация: Локальное хранилище
+      si: |
+        සමමුහුර්තකරණය: පෙදෙසි ආචයනය
+      ta: |
+        ஒத்திசைவு: சாதனச் சேமிப்பகம்
+      te: |
+        సమకాలీకరణ: స్థానిక నిల్వ
+      tr: |
+        Eşzamanla: Yerel depolama
+      vi: |
+        Đồng bộ hóa: Bộ nhớ cục bộ
+      zh: |
+        同步: 本地存储空间
+      zh-TW: |
+        同步化: 本機儲存空間
+      en: |
+        Synchronization: Local storage
+  -
+    - 3.4.6
+    - "2022-11-19"
+    -
+      bg: |
+        Списък на транзакциите: Редизайн
+      de: |
+        Buchungsliste: Neugestaltung
+      es: |
+        Lista de transacciones: Rediseño
+      fr: |
+        Liste des opérations: Refonte
+      hr: |
+        Popis transakcija: Novi dizajn
+      it: |
+        Elenco delle transazioni: Riprogettazione
+      iw: |
+        רשימת עסקאות: עיצוב מחדש
+      kn: |
+        ವಹಿವಾಟು ಪಟ್ಟಿ: ಮರುವಿನ್ಯಾಸ
+      pt: |
+        Lista de transações: Redesenhar
+      tr: |
+        Muamele listesi: Yeniden tasarla
+      en: |
+        Transaction list: Redesign
+  -
+    - 3.4.5
+    - "2022-09-05"
+    -
+      ar: |
+        وضع الميزانية 3.0. واجهة مستخدم الويب: https
+      bg: |
+        Бюджетиране 3.0. Уеб потребителски интерфейс: https
+      cs: |
+        Rozpočty 3.0. Webové uživatelské rozhraní: https
+      de: |
+        Budgetierung 3.0. Web-Benutzeroberfläche: https
+      es: |
+        Presupuestar 3.0. Interfaz de usuario web: https
+      fr: |
+        Budgétisation 3.0. Interface utilisateur Web: https
+      hr: |
+        Izrada proračuna 3.0. Internetsko korisničko sučelje: https
+      hu: |
+        Költségvetés 3.0. Webes felhasználói kezelőfelület: https
+      it: |
+        Bilancio 3.0. Interfaccia utente Web: https
+      iw: |
+        תקצוב 3.0. ממשק משתמש באינטרנט: https
+      kn: |
+        ಬಜೆಟ್ 3.0. ವೆಬ್ ಬಳಕೆದಾರ ಇಂಟರ್ಫೇಸ್: https
+      pt: |
+        Orçamento 3.0. Interface web do utilizador: https
+      ru: |
+        Бюджетирование 3.0. Веб-интерфейс пользователя: https
+      ta: |
+        வரவு செலவுத் திட்டம் 3.0. வலை பயனர் இடைமுகம்: https
+      tr: |
+        Bütçeleme 3.0. İnternet Kullanıcı Arayüzü: https
+      zh: |
+        预算编制 3.0. 网络的用户界面: https
+      zh-TW: |
+        預算編訂 3.0. 網頁版的使用者介面: https
+      en: |
+        Budgeting 3.0. Web User Interface: https
   -
     - 3.4.4
     - "2022-08-12"

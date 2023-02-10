@@ -25,9 +25,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.getWeekMax;
 import android.content.ContentProviderClient;
 import android.content.ContentResolver;
 import android.content.ContentValues;
-import android.content.res.Resources;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 
 import androidx.annotation.Nullable;
@@ -35,8 +33,9 @@ import androidx.annotation.VisibleForTesting;
 
 import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.model.PaymentMethod;
-import org.totschnig.myexpenses.service.DailyScheduler;
-import org.totschnig.myexpenses.util.ColorUtils;
+import org.totschnig.myexpenses.preference.PrefHandler;
+import org.totschnig.myexpenses.service.AutoBackupWorker;
+import org.totschnig.myexpenses.service.PlanExecutor;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 
 import java.io.File;
@@ -49,26 +48,27 @@ public class DbUtils {
   private DbUtils() {
   }
 
-  public static boolean restore(File backupFile) {
+  public static boolean restore(File backupFile, boolean encrypt) {
     boolean result = false;
     MyApplication app = MyApplication.getInstance();
     try {
-      DailyScheduler.cancelAutoBackup(app);
-      DailyScheduler.cancelPlans(app);
+      AutoBackupWorker.Companion.cancel(app);
+      PlanExecutor.Companion.cancel(app);
       PaymentMethod.clear();
 
       if (backupFile.exists()) {
         ContentResolver resolver = app.getContentResolver();
         ContentProviderClient client = resolver.acquireContentProviderClient(TransactionProvider.AUTHORITY);
         TransactionProvider provider = (TransactionProvider) client.getLocalContentProvider();
-        result = provider.restore(backupFile);
+        result = provider.restore(backupFile, encrypt);
         client.release();
       }
     } catch (Exception e) {
       CrashHandler.report(e);
     }
-    DailyScheduler.updatePlannerAlarms(app,false, true);
-    DailyScheduler.updateAutoBackupAlarms(app);
+    PrefHandler prefHandler = app.getAppComponent().prefHandler();
+    PlanExecutor.Companion.enqueueSelf(app, prefHandler, true);
+    AutoBackupWorker.Companion.enqueueOrCancel(app, prefHandler);
     return result;
   }
 
@@ -107,19 +107,6 @@ public class DbUtils {
   public static Long getLongOrNull(Cursor c, int columnIndex) {
     if (c.isNull(columnIndex))
       return null;
-    return c.getLong(columnIndex);
-  }
-
-  /**
-   * @return Long that is OL if field is null in db
-   */
-  public static Long getLongOr0L(Cursor c, String field) {
-    return getLongOr0L(c, c.getColumnIndexOrThrow(field));
-  }
-
-  public static Long getLongOr0L(Cursor c, int columnIndex) {
-    if (c.isNull(columnIndex))
-      return 0L;
     return c.getLong(columnIndex);
   }
 
@@ -190,38 +177,5 @@ public class DbUtils {
       cursor.close();
     }
     return result;
-  }
-
-  static int suggestNewCategoryColor(SQLiteDatabase db) {
-    String[] projection = new String[]{
-        "color",
-        "(select count(*) from categories where parent_id is null and color=t.color) as count"
-    };
-    Cursor cursor = db.query(ColorUtils.MAIN_COLORS_AS_TABLE, projection, null, null, null, null, "count ASC", "1");
-    int result = 0;
-    if (cursor != null) {
-      cursor.moveToFirst();
-      result = cursor.getInt(0);
-      cursor.close();
-    }
-    return result;
-  }
-
-  @Nullable
-  private static String[] getArraySave(Resources resources, int resId) {
-    try {
-      return resources.getStringArray(resId);
-    } catch (Resources.NotFoundException e) {//if resource does exist in an alternate locale, but not in the default one
-      return null;
-    }
-  }
-
-  @Nullable
-  private static String getStringSafe(Resources resources, int resId) {
-    try {
-      return resources.getString(resId);
-    } catch (Resources.NotFoundException e) {//if resource does exist in an alternate locale, but not in the default one
-      return null;
-    }
   }
 }

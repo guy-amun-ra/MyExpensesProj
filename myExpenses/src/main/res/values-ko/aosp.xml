@@ -14,13 +14,17 @@
     <string name="toast_text_copied">"텍스트 복사됨"</string>
     <string name="copy_text">"클립보드에 복사"</string>
     <string name="stop">"중지"</string>
+    <string name="style">"종류"</string>
+    <string name="loading">"로드 중…"</string>
     <string name="no_network">"네트워크에 연결되어 있지 않습니다."</string>
     <string name="button_label_continue">계속</string>
     <string name="autofill">"자동완성"</string>
     <string name="discard">"취소"</string>
     <string name="dialog_dismiss">"닫기"</string>
+    <string name="details">"세부정보"</string>
     <string name="response_yes">"예"</string>
     <string name="response_no">"아니요"</string>
+    <string name="experimental">"베타"</string>
     <string name="add_widget">"위젯 추가"</string>
     <string name="calendar">"캘린더"</string>
     <string name="permissions_label">"권한"</string>
@@ -28,5 +32,10 @@
     <string name="setup">"설정"</string>
     <string name="clear_cache">"캐시 지우기"</string>
     <string name="customize">"맞춤설정"</string>
+    <string name="compact">컴팩트</string>
+    <string name="storage_description">"로컬 저장소"</string>
+    <string name="encryption">"암호화"</string>
+    <string name="learn_more">"자세히 알아보기"</string>
+    <string name="show_all">"모두 표시"</string>
 </resources>
 

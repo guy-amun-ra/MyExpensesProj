@@ -25,6 +25,8 @@ import org.junit.Test
 import org.totschnig.myexpenses.ACTION_MANAGE
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ManageCategories
+import org.totschnig.myexpenses.compose.TEST_TAG_EDIT_TEXT
+import org.totschnig.myexpenses.compose.TEST_TAG_POSITIVE_BUTTON
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.provider.DatabaseConstants
@@ -35,7 +37,6 @@ import java.time.LocalDate
 import java.util.*
 
 class CategoriesCabTest : BaseUiTest<ManageCategories>() {
-    private lateinit var activityScenario: ActivityScenario<ManageCategories>
     @get:Rule
     val composeTestRule = createEmptyComposeRule()
 
@@ -60,12 +61,12 @@ class CategoriesCabTest : BaseUiTest<ManageCategories>() {
                 it.action = ACTION_MANAGE
             }
         ).also {
-            activityScenario = it
+            testScenario = it
         }
 
     private fun fixtureWithMappedTransaction() {
         baseFixture()
-        with(Transaction.getNewInstance(account.id)) {
+        with(Transaction.getNewInstance(account)) {
             amount = Money(CurrencyUnit(Currency.getInstance("USD")), -1200L)
             catId = categoryId
             save()
@@ -74,7 +75,7 @@ class CategoriesCabTest : BaseUiTest<ManageCategories>() {
 
     private fun fixtureWithMappedTemplate() {
         baseFixture()
-        with(Template(account, Transactions.TYPE_TRANSACTION, null)) {
+        with(Template(account.id, account.currencyUnit, Transactions.TYPE_TRANSACTION, null)) {
             amount = Money(CurrencyUnit(Currency.getInstance("USD")), -1200L)
             catId = categoryId
             save()
@@ -154,9 +155,9 @@ class CategoriesCabTest : BaseUiTest<ManageCategories>() {
         launch().use {
             composeTestRule.onNodeWithText("TestCategory").performClick()
             onContextMenu(R.string.subcategory)
-            composeTestRule.onNodeWithTag("editText")
+            composeTestRule.onNodeWithTag(TEST_TAG_EDIT_TEXT)
                 .performTextInput("Subcategory")
-            composeTestRule.onNodeWithTag("positive").performClick()
+            composeTestRule.onNodeWithTag(TEST_TAG_POSITIVE_BUTTON).performClick()
             assertThat(repository.count(TransactionProvider.CATEGORIES_URI,
                 "${DatabaseConstants.KEY_PARENTID} = ?", arrayOf(categoryId.toString()))).isEqualTo(1)
         }
@@ -165,6 +166,4 @@ class CategoriesCabTest : BaseUiTest<ManageCategories>() {
     private fun onContextMenu(@StringRes menuItemId: Int) =
         composeTestRule.onNodeWithText(getString(menuItemId)).performClick()
 
-    override val testScenario: ActivityScenario<ManageCategories>
-        get() = activityScenario
 }

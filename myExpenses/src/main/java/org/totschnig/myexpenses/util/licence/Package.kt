@@ -114,6 +114,19 @@ sealed class AddOnPackage(
     val feature: ContribFeature,
     val isPro: Boolean = true
 ) : Package(if (isPro) 430 else 270) {
+
+    companion object {
+        //We cannot use an initializer here, because the objects we want to list might not be constructed
+        //thus giving us a list of nulls:
+        //https://youtrack.jetbrains.com/issue/KT-8970/Object-is-uninitialized-null-when-accessed-from-static-context-ex.-companion-object-with-initialization-loop
+        val values: List<AddOnPackage>
+            get() = listOf(
+                SplitTemplate, History, Budget, Ocr, WebUi, CategoryTree,
+                AccountsUnlimited, PlansUnlimited, SplitTransaction, Distribution, Print, AdFree,
+                CsvImport, Synchronization
+            )
+    }
+
     override val optionName = "AddOn"
     val sku: String
         get() = this::class.simpleName!!.lowercase(Locale.ROOT)

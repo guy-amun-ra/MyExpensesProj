@@ -13,13 +13,17 @@
     <string name="toast_text_copied">"Másolt szöveg"</string>
     <string name="copy_text">"Másolás vágólapra"</string>
     <string name="stop">"Leállítás"</string>
+    <string name="style">"Stílus"</string>
+    <string name="loading">"Betöltés…"</string>
     <string name="no_network">"Nincs hálózati kapcsolat."</string>
     <string name="button_label_continue">Tovább</string>
     <string name="autofill">"Automatikus kitöltés"</string>
     <string name="discard">"Elvetés"</string>
     <string name="dialog_dismiss">"Elvetés"</string>
+    <string name="details">"Részletek"</string>
     <string name="response_yes">"Igen"</string>
     <string name="response_no">"Nem"</string>
+    <string name="experimental">"Kísérleti"</string>
     <string name="add_widget">"Modul hozzáadása"</string>
     <string name="calendar">"Naptár"</string>
     <string name="permissions_label">"Engedélyek"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"Beállítás"</string>
     <string name="clear_cache">"A gyorsítótár törlése"</string>
     <string name="customize">"Személyre szabás"</string>
+    <string name="compact">kompakt</string>
+    <string name="storage_description">"Helyi tárhely"</string>
+    <string name="encryption">"Titkosítás"</string>
+    <string name="learn_more">"További információ"</string>
+    <string name="show_all">"Összes megjelenítése"</string>
 </resources>
 

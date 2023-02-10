@@ -13,13 +13,17 @@
     <string name="toast_text_copied">"Texto copiado"</string>
     <string name="copy_text">"Copiar en el portapapeles"</string>
     <string name="stop">"Detener"</string>
+     <string name="style">"Estilo"</string>
+    <string name="loading">"Cargando…"</string>
     <string name="no_network">"No hay conexión de red."</string>
     <string name="button_label_continue">Continuar</string>
     <string name="autofill">"Autocompletar"</string>
     <string name="discard">"Descartar"</string>
     <string name="dialog_dismiss">"Aceptar"</string>
+    <string name="details">"Detalles"</string>
     <string name="response_yes">"Sí"</string>
     <string name="response_no">"No"</string>
+    <string name="experimental">"Experimental"</string>
     <string name="add_widget">"Añadir widget"</string>
     <string name="calendar">"Calendario"</string>
     <string name="permissions_label">"Permisos"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"Configuración"</string>
     <string name="clear_cache">"Borrar caché"</string>
     <string name="customize">"Personalizar"</string>
+    <string name="compact">compacto</string>
+    <string name="storage_description">"Almacenamiento local"</string>
+    <string name="encryption">"Cifrado"</string>
+    <string name="learn_more">"Más información"</string>
+    <string name="show_all">"Mostrar todo"</string>
 </resources>
 

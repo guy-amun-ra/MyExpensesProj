@@ -5,6 +5,7 @@ import android.view.Menu
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.databinding.ActivityComposeBinding
 import org.totschnig.myexpenses.dialog.TransactionListDialogFragment
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.preference.PrefKey
@@ -27,6 +28,15 @@ abstract class DistributionBaseActivity<T: DistributionViewModelBase<*>> : Prote
         }
         setAggregateTypesFromPreferences()
     }
+
+    fun setupView(): ActivityComposeBinding {
+        val binding = ActivityComposeBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        setupToolbar()
+        return binding
+    }
+
+    override val snackBarContainerId: Int = R.id.compose_container
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         menu.findItem(R.id.TOGGLE_AGGREGATE_TYPES)?.let {
@@ -85,11 +95,11 @@ abstract class DistributionBaseActivity<T: DistributionViewModelBase<*>> : Prote
                 category.id,
                 viewModel.grouping,
                 viewModel.filterClause,
-                viewModel.filterPersistence.value?.whereFilter?.getSelectionArgs(true),
+                viewModel.whereFilter.value.getSelectionArgs(true),
                 if (category.level == 0) accountInfo.label(this) else category.label,
                 if (viewModel.aggregateTypes) 0 else (if (viewModel.incomeType) 1 else -1),
                 true,
-                category.icon?.let { resources.getIdentifier(it, "drawable", packageName) }
+                category.icon?.let { resources.getIdentifier(it, "drawable", packageName) } //TODO check might be not functional since new category icon implementation
             )
                 .show(supportFragmentManager, TransactionListDialogFragment::class.java.name)
         }

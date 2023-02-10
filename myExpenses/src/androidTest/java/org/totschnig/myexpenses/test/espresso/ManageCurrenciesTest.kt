@@ -11,6 +11,7 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule
 import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.Matchers
 import org.hamcrest.Matchers.containsString
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.totschnig.myexpenses.R
@@ -28,6 +29,11 @@ class ManageCurrenciesTest : BaseUiTest<ManageCurrencies>() {
     @get:Rule
     var scenarioRule = ActivityScenarioRule(ManageCurrencies::class.java)
 
+    @Before
+    fun setup() {
+        testScenario = scenarioRule.scenario
+    }
+
     @Test
     fun changeOfFractionDigitsWithUpdateShouldKeepTransactionSum() {
         testHelper(true)
@@ -44,9 +50,8 @@ class ManageCurrenciesTest : BaseUiTest<ManageCurrencies>() {
         val currencyUnit = currencyContext[CURRENCY_CODE]
         val account = Account("TEST ACCOUNT", currencyUnit, 5000L, "", AccountType.CASH, Account.DEFAULT_COLOR)
         account.save()
-        waitForAdapter()
         try {
-            val op = Transaction.getNewInstance(account.id)
+            val op = Transaction.getNewInstance(account)
             op.amount = Money(currencyUnit, -1200L)
             op.save()
             val before = account.totalBalance
@@ -76,11 +81,6 @@ class ManageCurrenciesTest : BaseUiTest<ManageCurrencies>() {
             currencyContext.storeCustomFractionDigits(CURRENCY_CODE, 2)
         }
     }
-
-    override val testScenario: ActivityScenario<ManageCurrencies>
-        get() = scenarioRule.scenario
-    override val listId: Int
-        get() = android.R.id.list
 
     companion object {
         private const val CURRENCY_CODE = "EUR"

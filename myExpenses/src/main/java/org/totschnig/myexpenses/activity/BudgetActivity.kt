@@ -7,11 +7,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Snackbar
 import androidx.compose.material.Text
@@ -27,6 +23,7 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.chip.ChipGroup
 import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
+import eltos.simpledialogfragment.form.AmountInputHostDialog
 import eltos.simpledialogfragment.form.Check
 import eltos.simpledialogfragment.form.SimpleFormDialog
 import kotlinx.coroutines.flow.filterNotNull
@@ -38,7 +35,6 @@ import org.totschnig.myexpenses.compose.AppTheme
 import org.totschnig.myexpenses.compose.Budget
 import org.totschnig.myexpenses.compose.ExpansionMode
 import org.totschnig.myexpenses.compose.rememberMutableStateListOf
-import org.totschnig.myexpenses.databinding.ActivityComposeBinding
 import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.model.Money
@@ -68,9 +64,7 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityComposeBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        setupToolbar(true)
+        val binding = setupView()
         with((applicationContext as MyApplication).appComponent) {
             inject(viewModel)
         }
@@ -78,7 +72,8 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
             defaultSortOrder = Sort.ALLOCATED,
             prefKey = PrefKey.SORT_ORDER_BUDGET_CATEGORIES,
             options = arrayOf(Sort.LABEL, Sort.ALLOCATED, Sort.SPENT),
-            prefHandler = prefHandler
+            prefHandler = prefHandler,
+            collate = collate
         )
         viewModel.setSortOrder(sortDelegate.currentSortOrder)
         val budgetId: Long = intent.getLongExtra(DatabaseConstants.KEY_ROWID, 0)
@@ -92,12 +87,12 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
             }
         }
         binding.composeView.setContent {
-            AppTheme(this) {
+            AppTheme {
                 val category =
                     viewModel.categoryTreeForBudget.collectAsState(initial = Category.LOADING).value
                 val budget = viewModel.accountInfo.collectAsState(null).value
                 val sort = viewModel.sortOrder.collectAsState()
-                val filterPersistence = viewModel.filterPersistence.collectAsState().value
+                val whereFilter = viewModel.whereFilter.collectAsState().value
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (category == Category.LOADING || budget == null) {
                         CircularProgressIndicator(
@@ -114,9 +109,9 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
                                 update = { chipGroup ->
                                     chipGroup.addChipsBulk(buildList {
                                         add(budget.label(this@BudgetActivity))
-                                        filterPersistence?.whereFilter?.criteria?.map {
+                                        whereFilter.criteria.map {
                                             it.prettyPrint(this@BudgetActivity)
-                                        }?.let { addAll(it) }
+                                        }.let { addAll(it) }
                                     })
                                 }
 
@@ -173,7 +168,7 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
         currencyUnit: CurrencyUnit,
         withOneTimeCheck: Boolean
     ) {
-        val simpleFormDialog = SimpleFormDialog.build()
+        val simpleFormDialog = AmountInputHostDialog.build()
             .title(if (category.level > 0) category.label else getString(R.string.dialog_title_edit_budget))
             .neg()
         val amount = Money(currencyUnit, category.budget.budget)
@@ -223,7 +218,7 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
                 EDIT_BUDGET_DIALOG -> {
                     val amount = Money(
                         budget.currency,
-                        (extras.getSerializable(DatabaseConstants.KEY_AMOUNT) as BigDecimal?)!!
+                        (extras.getSerializable(DatabaseConstants.KEY_AMOUNT) as BigDecimal)
                     )
                     viewModel.updateBudget(
                         budget.id,
@@ -235,8 +230,7 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
                 }
                 DELETE_BUDGET_DIALOG -> {
                     viewModel.deleteBudget(
-                        budgetId = budget.id,
-                        if (budget.default) BudgetViewModel.prefNameForDefaultBudget(budget.accountId, budget.grouping) else null
+                        budgetId = budget.id
                     ).observe(this) {
                         if (it) {
                             setResult(Activity.RESULT_FIRST_USER)
@@ -374,8 +368,6 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
         }
         return true
     }
-
-    override val snackBarContainerId: Int = R.id.compose_container
 
     override fun onOptionsItemSelected(item: MenuItem) =
         if (sortDelegate.onOptionsItemSelected(item)) {

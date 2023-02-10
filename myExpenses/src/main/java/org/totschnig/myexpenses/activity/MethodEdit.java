@@ -48,16 +48,11 @@ public class MethodEdit extends EditActivity implements CompoundButton.OnChecked
   private PaymentMethod mMethod;
 
   @Override
-  int getDiscardNewMessage() {
-    return R.string.dialog_confirm_discard_new_method;
-  }
-
-  @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
         
     setContentView(R.layout.one_method);
-    setupToolbar();
+    setupToolbarWithClose();
 
     mLabelText = findViewById(R.id.Label);
     mAccountTypesGrid = findViewById(R.id.AccountTypeGrid);

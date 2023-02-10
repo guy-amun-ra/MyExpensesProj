@@ -61,6 +61,7 @@ import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.model.Transfer;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.DbUtils;
+import org.totschnig.myexpenses.provider.MoreDbUtilsKt;
 import org.totschnig.myexpenses.provider.filter.WhereFilter;
 import org.totschnig.myexpenses.util.AppDirHelper;
 import org.totschnig.myexpenses.util.CurrencyFormatter;
@@ -68,7 +69,7 @@ import org.totschnig.myexpenses.util.LazyFontSelector.FontType;
 import org.totschnig.myexpenses.util.PdfHelper;
 import org.totschnig.myexpenses.util.Result;
 import org.totschnig.myexpenses.util.Utils;
-import org.totschnig.myexpenses.util.io.FileUtils;
+import org.totschnig.myexpenses.util.io.DocumentFileExtensionKt;
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider;
 import org.totschnig.myexpenses.viewmodel.data.Category;
 import org.totschnig.myexpenses.viewmodel.data.DateInfo;
@@ -120,7 +121,7 @@ public class PdfPrinter {
     DocumentFile outputFile = AppDirHelper.timeStampedFile(
         destDir,
         fileName,
-        "application/pdf", null);
+        "application/pdf", "pdf");
     Document document = new Document();
     transactionCursor = Model.cr().query(
         account.getExtendedUriForTransactionList(false, false), account.getExtendedProjectionForTransactionList(),
@@ -137,7 +138,8 @@ public class PdfPrinter {
       return Result.ofFailure(
           R.string.io_error_unable_to_create_file,
           fileName,
-          FileUtils.getPath(context, destDir.getUri()));
+          DocumentFileExtensionKt.getDisplayName(destDir)
+      );
     }
     PdfWriter.getInstance(document, Model.cr().openOutputStream(outputFile.getUri()));
     Timber.d("All setup %d", (System.currentTimeMillis() - start));
@@ -152,7 +154,8 @@ public class PdfPrinter {
     transactionCursor.close();
     document.close();
     return Result.ofSuccess(R.string.export_sdcard_success, outputFile.getUri(),
-        FileUtils.getPath(context, outputFile.getUri()));
+        DocumentFileExtensionKt.getDisplayName(outputFile)
+    );
   }
 
   private void addMetaData(Document document) {
@@ -210,7 +213,7 @@ public class PdfPrinter {
     int columnIndexTransferPeer = transactionCursor.getColumnIndex(KEY_TRANSFER_PEER);
     int columnIndexDate = transactionCursor.getColumnIndex(KEY_DATE);
     int columnIndexCrStatus = transactionCursor.getColumnIndex(KEY_CR_STATUS);
-    int columnIndexTagList = transactionCursor.getColumnIndex(KEY_TAGLIST);
+
     DateFormat itemDateFormat;
     switch (account.getGrouping()) {
       case DAY:
@@ -275,10 +278,11 @@ public class PdfPrinter {
         }
         table = helper.newTable(2);
         table.setWidthPercentage(100f);
-        PdfPCell cell = helper.printToCell(account.getGrouping().getDisplayTitle(ctx, year, second, DateInfo.fromCursor(transactionCursor), userLocaleProvider.getUserPreferredLocale()), FontType.HEADER);
+        PdfPCell cell = helper.printToCell(account.getGrouping().getDisplayTitle(ctx, year, second, DateInfo.fromCursor(transactionCursor)), FontType.HEADER);
         table.addCell(cell);
         if (groupCursor.isAfterLast()) {
-          Timber.w("Grouping: %s, currentHeaderId; %d, prevHeaderId: %d", account.getGrouping(), currentHeaderId, prevHeaderId);
+          Timber.w("Grouping: %s, currentHeaderId; %d, prevHeaderId: %d, filter: %s",
+                  account.getGrouping(), currentHeaderId, prevHeaderId, filter);
           throw new IllegalStateException();
         }
         long sumExpense = groupCursor.getLong(columnIndexGroupSumExpense);
@@ -443,9 +447,9 @@ public class PdfPrinter {
       cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
       table.addCell(cell);
       String comment = transactionCursor.getString(columnIndexComment);
-      String tagList = transactionCursor.getString(columnIndexTagList);
+      List<String> tagList = MoreDbUtilsKt.getStringListFromJson(transactionCursor, KEY_TAGLIST);
       final boolean hasComment = comment != null && comment.length() > 0;
-      final boolean hasTags = tagList != null && tagList.length() > 0;
+      final boolean hasTags = tagList.size() > 0;
       if (hasComment || hasTags) {
         table.addCell(helper.emptyCell());
         if (hasComment) {
@@ -459,7 +463,9 @@ public class PdfPrinter {
           table.addCell(cell);
         }
         if (hasTags) {
-          cell = helper.printToCell(tagList, FontType.BOLD);
+          //for the moment we stick with the result of java.util.AbstractCollection.toString
+          //when we convert this to Kotlin, we will add more accurate rendering
+          cell = helper.printToCell(tagList.toString(), FontType.BOLD);
           if (isVoid) {
             cell.getPhrase().getChunks().get(0).setGenericTag(VOID_MARKER);
           }

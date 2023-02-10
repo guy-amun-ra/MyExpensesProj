@@ -1,10 +1,10 @@
 package org.totschnig.myexpenses.delegate
 
-import android.content.res.Resources.NotFoundException
 import android.database.Cursor
 import android.os.Bundle
 import android.text.TextUtils
 import android.view.View
+import androidx.core.database.getLongOrNull
 import icepick.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSACTION
@@ -18,10 +18,9 @@ import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.shouldStartAutoFillWithFocus
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ICON
-import org.totschnig.myexpenses.provider.DbUtils
-import org.totschnig.myexpenses.util.UiUtils
 import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import org.totschnig.myexpenses.viewmodel.data.Account
+import org.totschnig.myexpenses.viewmodel.data.IIconInfo
 
 class CategoryDelegate(
     viewBinding: OneExpenseBinding,
@@ -51,14 +50,14 @@ class CategoryDelegate(
 
     override fun bind(
         transaction: ITransaction?,
-        newInstance: Boolean,
+        withTypeSpinner: Boolean,
         savedInstanceState: Bundle?,
         recurrence: Plan.Recurrence?,
         withAutoFill: Boolean
     ) {
         super.bind(
             transaction,
-            newInstance,
+            withTypeSpinner,
             savedInstanceState,
             recurrence,
             withAutoFill
@@ -83,8 +82,8 @@ class CategoryDelegate(
         viewBinding.EquivalentAmount.setFractionDigits(homeCurrency.fractionDigits)
     }
 
-    override fun buildMainTransaction(accountId: Long): ITransaction =
-        (if (isTemplate) buildTemplate(accountId) else Transaction(accountId, parentId)).apply {
+    override fun buildMainTransaction(account: Account): ITransaction =
+        (if (isTemplate) buildTemplate(account) else Transaction(account.id, parentId)).apply {
             this.catId = this@CategoryDelegate.catId
             this.label = this@CategoryDelegate.label
         }
@@ -110,16 +109,10 @@ class CategoryDelegate(
             viewBinding.ClearCategory.visibility = View.VISIBLE
 
         }
-        try {
-            viewBinding.Category.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                if (categoryIcon != null) UiUtils.resolveIcon(
-                    viewBinding.root.context,
-                    categoryIcon
-                ) else 0, 0, 0, 0
-            )
-        } catch (e: NotFoundException) {
-            categoryIcon?.let { CrashHandler.report(e, mapOf("icon" to it)) }
+        val startDrawable = categoryIcon?.let {
+            IIconInfo.resolveIcon(it)?.asDrawable(context, R.attr.colorPrimary)
         }
+        viewBinding.Category.setCompoundDrawablesRelativeWithIntrinsicBounds(startDrawable, null, null, null)
     }
 
     override fun populateFields(transaction: ITransaction, withAutoFill: Boolean) {
@@ -135,7 +128,7 @@ class CategoryDelegate(
             val columnIndexCatId = data.getColumnIndex(DatabaseConstants.KEY_CATID)
             val columnIndexLabel = data.getColumnIndex(DatabaseConstants.KEY_LABEL)
             if (catId == null && columnIndexCatId != -1 && columnIndexLabel != -1) {
-                catId = DbUtils.getLongOrNull(data, columnIndexCatId)
+                catId = data.getLongOrNull(columnIndexCatId)
                 label = data.getString(columnIndexLabel)
                 categoryIcon = data.getString(data.getColumnIndexOrThrow(KEY_ICON))
                 setCategoryButton()
@@ -164,7 +157,7 @@ class CategoryDelegate(
             }
             val columnIndexMethodId = data.getColumnIndex(DatabaseConstants.KEY_METHODID)
             if (methodId == null && columnIndexMethodId != -1) {
-                methodId = DbUtils.getLongOrNull(data, columnIndexMethodId)
+                methodId = data.getLongOrNull(columnIndexMethodId)
                 if (!typeHasChanged) { //if type has changed, we need to wait for methods to be reloaded, method is then selected in onLoadFinished
                     setMethodSelection()
                 }

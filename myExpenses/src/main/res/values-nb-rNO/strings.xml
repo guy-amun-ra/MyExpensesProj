@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="dialog_command_disabled_reset_account">Ingen overføringer å eksportere.</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources">&lt;b xmlns:tools=\"http://schemas.android.com/tools\"&gt;E-poststøtte&lt;/b&gt; med garantert svar innen 2 arbeidsdager</string>
+    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>E-poststøtte</b> med garantert svar innen 2 arbeidsdager</string>
     <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Eksporter overføringsliste til PDF</string>
     <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Ubegrenset antall planer</string>
     <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Kakediagram (distribusjon per kategori)</string>
@@ -56,11 +56,9 @@
     <string name="progress_removing_licence">Fjerner lisens …</string>
     <string name="licence_key">Lisensnøkkel</string>
     <string name="button_validate">Bekreft</string>
-    <string name="error">Feil (%s)</string>
     <string name="licence_validation_error_expired">Utløpt lisens</string>
     <string name="progress_validating_licence">Bekrefter lisens …</string>
     <string name="picture">Bilde</string>
-    <string name="template_create_error">Feil under lagring av mal</string>
     <string name="dialog_button_add">Legg til</string>
     <string name="onboarding_restore_from_cloud_backup">Sikkerhetskopier</string>
     <string name="onboarding_more_options">Flere valg</string>
@@ -124,7 +122,6 @@
     <string name="menu_view_picture">Vis bilde</string>
     <string name="restore_calendar_handling_ignore">Ikke gjenopprett planer</string>
     <string name="import_source_file">Fil</string>
-    <string name="learn_more">Lær mer</string>
     <string name="comparison_operator_date_after">etter</string>
     <string name="comparison_operator_date_before">før</string>
     <string name="comparison_operator_between">mellom</string>
@@ -175,7 +172,6 @@
     <string name="qif_parse_failure_found_multiple_accounts">Fant flere kontoer i QIF-filen.</string>
     <string name="progress_dialog_printing">Genererer %s</string>
     <string name="progress_dialog_deleting">Sletter objekter …</string>
-    <string name="progress_dialog_loading">Laster inn objekt fra database …</string>
     <string name="pref_visit_website_title">Besøk nettsiden</string>
     <string name="pref_visit_website_summary">Endringslogg og O-S-S</string>
     <string name="pref_ui_theme_title">Drakt</string>
@@ -271,7 +267,6 @@
     <string name="label">Etikett</string>
     <string name="income">Inntekt</string>
     <string name="import_select_transactions">Overføringer</string>
-    <string name="important_upgrade_information_heading">Viktig info</string>
     <string name="help_heading_whats_new">Hva er nyttt</string>
     <string name="help_heading_license">Lisens</string>
     <string name="help_heading_credits">Bidragsytere</string>
@@ -302,16 +297,12 @@
     <string name="dialog_security_answer">Svar</string>
     <string name="dialog_remind_rate_yes">Vurder nå</string>
     <string name="dialog_remind_rate_how_many_stars">Hvor mange stjerner vil du gi {app_name}\?</string>
-    <string name="dialog_confirm_discard_new_transaction">Forkast ny overføring\?</string>
-    <string name="dialog_confirm_discard_new_template">Forkast ny mal\?</string>
     <string name="dialog_password_new_password">Nytt passord</string>
     <string name="dialog_password_change_password">Endre passord</string>
     <string name="dialog_export_not_yet_exported">Kun eksporter overføringer som ikke er eksportert enda</string>
     <string name="dialog_export_delete">Slett eksporterte overføringer</string>
     <string name="dialog_contrib_usage_limit_plans" tools:ignore="PluralsCandidate">Din nåværende lisensstatus (%2$s) lar deg opprette %1$d planer.</string>
     <string name="dialog_contrib_no">Prøv</string>
-    <string name="dialog_confirm_discard_new_method">Forkast ny betalingsmetode\?</string>
-    <string name="dialog_confirm_discard_new_account">Forkast ny konto\?</string>
     <string name="dialog_confirm_discard_changes">Forkast endringer\?</string>
     <string name="description">Beskrivelse</string>
     <string name="number_format_illegal">Ugyldig nummerformat</string>
@@ -322,7 +313,6 @@
     <string name="contrib_key_requires">Krever %1$s.</string>
     <string name="licence_status_free">Gratis</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">CSV-import</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Mal-miniprogram</string>
     <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Ubegrenset antall konti</string>
     <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">Ingen reklamer</string>
     <string name="comment">Notater</string>

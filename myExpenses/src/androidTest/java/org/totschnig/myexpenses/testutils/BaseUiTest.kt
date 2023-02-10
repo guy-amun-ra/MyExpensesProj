@@ -6,17 +6,11 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.database.Cursor
+import android.content.res.Resources
 import android.view.View
-import android.view.ViewGroup
-import android.widget.Adapter
-import android.widget.AdapterView
-import android.widget.ListView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
-import androidx.test.espresso.Espresso.closeSoftKeyboard
-import androidx.test.espresso.Espresso.onData
-import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.Espresso.*
 import androidx.test.espresso.NoMatchingViewException
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.assertion.ViewAssertions
@@ -25,10 +19,6 @@ import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.platform.app.InstrumentationRegistry
 import com.adevinta.android.barista.internal.matcher.HelperMatchers.menuIdMatcher
 import org.assertj.core.api.Assertions
-import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.CoreMatchers.instanceOf
-import org.hamcrest.Matcher
-import org.junit.Assert
 import org.junit.Before
 import org.mockito.Mockito
 import org.totschnig.myexpenses.MyApplication
@@ -43,12 +33,11 @@ import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.distrib.DistributionHelper
 import org.totschnig.myexpenses.viewmodel.data.Category
-import se.emilsjolander.stickylistheaders.StickyListHeadersListView
 import java.util.*
 import java.util.concurrent.TimeoutException
 import org.totschnig.myexpenses.test.R as RT
 
-abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
+abstract class BaseUiTest<A: ProtectedFragmentActivity> {
     private var isLarge = false
 
     val testContext: Context
@@ -60,6 +49,9 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
     val app: TestApp
         get() = targetContext.applicationContext as TestApp
 
+    val prefHandler: PrefHandler
+        get() = app.appComponent.prefHandler()
+
     @Before
     fun setUp() {
         isLarge = testContext.resources.getBoolean(RT.bool.isLarge)
@@ -69,12 +61,6 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
         closeSoftKeyboard()
         onView(ViewMatchers.withId(R.id.CREATE_COMMAND)).perform(ViewActions.click())
     }
-
-    protected val wrappedList: Matcher<View>
-        get() = org.hamcrest.Matchers.allOf(
-                ViewMatchers.isAssignableFrom(AdapterView::class.java),
-                ViewMatchers.isDescendantOfA(ViewMatchers.withId(R.id.list)),
-                ViewMatchers.isDisplayed())
 
     /**
      * @param menuItemId id of menu item rendered in CAB on Honeycomb and higher
@@ -121,7 +107,7 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
         }
     }
 
-    protected abstract val testScenario: ActivityScenario<out A>
+    lateinit var testScenario: ActivityScenario<A>
 
     protected fun rotate() {
         testScenario.onActivity {
@@ -137,18 +123,6 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
     fun assertFinishing(resultCode: Int = Activity.RESULT_OK) {
         Assertions.assertThat(testScenario.result.resultCode).isEqualTo(resultCode)
     }
-
-    private val list: ViewGroup?
-        get() {
-            var result: ViewGroup? = null
-            testScenario.onActivity {
-                result = it.currentFragment?.view?.findViewById(listId)
-            }
-            return result
-        }
-
-    protected open val listId: Int
-        get() = R.id.list
 
     protected fun getQuantityString(resId: Int, @Suppress("SameParameterValue") quantity: Int, vararg formatArguments: Any): String {
         var result: String? = null
@@ -166,17 +140,6 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
         return result!!
     }
 
-    private val adapter: Adapter?
-        get() {
-            val list = list ?: return null
-            if (list is StickyListHeadersListView) {
-                return list.adapter
-            }
-            return if (list is ListView) {
-                list.adapter
-            } else null
-        }
-
     protected val repository: Repository
         get() = Repository(
             ApplicationProvider.getApplicationContext<MyApplication>(),
@@ -184,23 +147,6 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
             Mockito.mock(CurrencyFormatter::class.java),
             Mockito.mock(PrefHandler::class.java)
         )
-
-    @Throws(TimeoutException::class)
-    protected fun waitForAdapter(): Adapter {
-        var iterations = 0
-        while (true) {
-            val adapter = adapter
-            try {
-                Thread.sleep(500)
-            } catch (ignored: InterruptedException) {
-            }
-            if (adapter != null) {
-                return adapter
-            }
-            iterations++
-            if (iterations > 10) throw TimeoutException()
-        }
-    }
 
     @Throws(TimeoutException::class)
     protected fun waitForSnackbarDismissed() {
@@ -225,20 +171,13 @@ abstract class BaseUiTest<out A: ProtectedFragmentActivity> {
         Locale.setDefault(locale)
         val config = Configuration()
         config.locale = locale
-        val instCtx = InstrumentationRegistry.getInstrumentation().context
-        instCtx.resources.updateConfiguration(config,
-                instCtx.resources.displayMetrics)
-        app.settings?.edit()?.putString(PrefKey.UI_LANGUAGE.key, locale.language + "-" + locale.country)?.apply()
-                ?: run {
-                    Assert.fail("Could not find prefs")
-                }
+        testContext.resources.update(config)
+        targetContext.applicationContext.resources.update(config)
+        prefHandler.putString(PrefKey.UI_LANGUAGE, locale.language + "-" + locale.country)
     }
 
-    fun openCab() {
-        onData(`is`(instanceOf(Cursor::class.java)))
-                .inAdapterView(wrappedList)
-                .atPosition(1)
-                .perform(ViewActions.longClick())
+    private fun Resources.update(configuration: Configuration) {
+        updateConfiguration(configuration, displayMetrics)
     }
 
     protected fun writeCategory(label: String, parentId: Long? = null) =

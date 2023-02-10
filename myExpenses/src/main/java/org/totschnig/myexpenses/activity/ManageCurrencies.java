@@ -13,7 +13,7 @@ public class ManageCurrencies extends ProtectedFragmentActivity  {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.currency_list);
-    setupToolbar(true);
+    setupToolbar();
     getSupportActionBar().setTitle(R.string.pref_custom_currency_title);
   }
 
@@ -26,10 +26,5 @@ public class ManageCurrencies extends ProtectedFragmentActivity  {
       EditCurrencyDialog.newInstance(null).show(getSupportFragmentManager(), "NEW_CURRENCY");
     }
     return false;
-  }
-
-  @Override
-  public Fragment getCurrentFragment() {
-    return getSupportFragmentManager().findFragmentById(R.id.currency_list);
   }
 }

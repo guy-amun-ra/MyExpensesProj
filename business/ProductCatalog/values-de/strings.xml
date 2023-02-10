@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splittemplate_title">Mehrteilige Vorlage</string>
+    <string name="splittemplate_description">Unbegrenzte Anzahl von Vorlagen und Plänen für mehrteilige Buchungen</string>
+    <string name="history_title">Verlaufsdiagramm</string>
+    <string name="history_description">Verstehen Sie, wie sich Ihre finanzielle Situation im Laufe der Zeit entwickelt</string>
+    <string name="budget_title">Budgetierung</string>
+    <string name="budget_description">Legen Sie in jährlichen, monatlichen oder wöchentlichen Budgets fest, wie viel Sie  ausgeben möchten</string>
+    <string name="ocr_title">Quittung scannen</string>
+    <string name="ocr_description">Betrag, Datum und Zahlungsempfänger automatisch extrahieren</string>
+    <string name="webui_title">Web-Benutzeroberfläche</string>
+    <string name="webui_description">Verwenden Sie Ihren Desktop-Browser für die Dateneingabe</string>
+    <string name="professional_benefit_1">Schalte alle Premium-Funktionen frei</string>
+    <string name="professional_benefit_2">E-Mail-Support</string>
+    <string name="professional_benefit_3">Stimmrecht zum Entwicklungsfahrplan</string>
+    <string name="categorytree_title">Kategorienbaum</string>
+    <string name="categorytree_description">Beliebig tiefe Kategorienhierarchie</string>
+    <string name="accountsunlimited_title">Unbegrenzte Anzahl von Konten</string>
+    <string name="accountsunlimited_description">Schalten Sie die Möglichkeit frei, mehr als fünf Konten zu erstellen.</string>
+    <string name="adfree_title">Ohne Werbung</string>
+    <string name="csvimport_title">CSV Import</string>
+    <string name="adfree_description">Ohne Werbung.</string>
+    <string name="csvimport_description">Ausgefeilter, anpassbarer CSV-Import (Tabellenkalkulationsanwendungen)</string>
+    <string name="distribution_title">Kreisdiagramm</string>
+    <string name="splittransaction_description">Eine einzelne Buchung kann in mehrere Teile (Kategorien und Umbuchungen) aufgeteilt werden.</string>
+    <string name="synchronization_description">Daten können zwischen mehreren Geräten synchronisiert werden.</string>
+    <string name="plansunlimited_description">Schalten Sie die Möglichkeit frei, mehr als drei Pläne für wiederkehrende Buchungen zu erstellen.</string>
+    <string name="plansunlimited_title">Unbegrenzte Anzahl von Plänen</string>
+    <string name="print_title">Drucken</string>
+    <string name="splittransaction_title">Mehrteilige Buchung</string>
+    <string name="synchronization_title">Cloud-Synchronisierung</string>
+    <string name="distribution_description">Visualisieren Sie die statistische Verteilung der Buchungen pro Kategorie über verschiedene Perioden (Jahre, Monate, Wochen, Tage)</string>
+    <string name="print_description">Drucken der Buchungsliste in eine PDF-Datei</string>
+</resources>

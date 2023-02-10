@@ -4,6 +4,7 @@
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     version="2.0">
     <xsl:output encoding="UTF-8" method="xml" />
+    <xsl:include href="helpers_v1.xsl" />
     <xsl:include href="helpers.xsl" />
     <xsl:param name="version" />
     <xsl:param name="versionCode" />
@@ -39,6 +40,10 @@
             <xsl:value-of select="$dir" />
             <xsl:text>/aosp.xml</xsl:text>
         </xsl:variable>
+        <xsl:variable name="help">
+            <xsl:value-of select="$dir" />
+            <xsl:text>/help.xml</xsl:text>
+        </xsl:variable>
         <xsl:variable name="info">
             <xsl:text>../myExpenses/src/main/res/values/version_info.xml</xsl:text>
         </xsl:variable>
@@ -49,6 +54,7 @@
                         <xsl:with-param name="version" select="$version" />
                         <xsl:with-param name="strings" select="$strings" />
                         <xsl:with-param name="aosp" select="$aosp" />
+                        <xsl:with-param name="help" select="$help" />
                         <xsl:with-param name="lang" select="$lang" />
                     </xsl:call-template>
                 </xsl:variable>

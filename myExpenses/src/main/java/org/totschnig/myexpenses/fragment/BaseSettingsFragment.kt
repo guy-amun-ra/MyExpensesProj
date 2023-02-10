@@ -12,6 +12,7 @@ import android.icu.text.ListFormatter
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.DocumentsContract
 import android.text.TextUtils.isEmpty
 import android.text.TextUtils.join
 import android.view.Menu
@@ -24,22 +25,16 @@ import androidx.appcompat.app.ActionBar
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.fragment.app.viewModels
-import androidx.preference.EditTextPreference
-import androidx.preference.ListPreference
-import androidx.preference.MultiSelectListPreference
-import androidx.preference.Preference
-import androidx.preference.PreferenceCategory
-import androidx.preference.PreferenceFragmentCompat
-import androidx.preference.PreferenceGroup
-import androidx.preference.SwitchPreferenceCompat
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.*
 import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.form.Input
 import eltos.simpledialogfragment.form.SimpleFormDialog
 import eltos.simpledialogfragment.list.CustomListDialog
 import eltos.simpledialogfragment.list.SimpleListDialog
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.totschnig.myexpenses.MyApplication
-import org.totschnig.myexpenses.MyApplication.FEEDBACK_EMAIL
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
 import org.totschnig.myexpenses.activity.Help
@@ -53,32 +48,23 @@ import org.totschnig.myexpenses.exception.ExternalStorageNotAvailableException
 import org.totschnig.myexpenses.feature.Feature
 import org.totschnig.myexpenses.feature.FeatureManager
 import org.totschnig.myexpenses.model.ContribFeature
-import org.totschnig.myexpenses.preference.AccountPreference
-import org.totschnig.myexpenses.preference.LocalizedFormatEditTextPreference
+import org.totschnig.myexpenses.preference.*
 import org.totschnig.myexpenses.preference.LocalizedFormatEditTextPreference.OnValidationErrorListener
-import org.totschnig.myexpenses.preference.PopupMenuPreference
-import org.totschnig.myexpenses.preference.PrefHandler
-import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.preference.requireString
-import org.totschnig.myexpenses.service.DailyScheduler
+import org.totschnig.myexpenses.preference.PreferenceDataStore
+import org.totschnig.myexpenses.retrofit.ExchangeRateSource
+import org.totschnig.myexpenses.service.AutoBackupWorker
 import org.totschnig.myexpenses.sync.BackendService
 import org.totschnig.myexpenses.sync.GenericAccountService
+import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.util.AppDirHelper.getContentUriForFile
-import org.totschnig.myexpenses.util.CurrencyFormatter
-import org.totschnig.myexpenses.util.ShortcutHelper
 import org.totschnig.myexpenses.util.TextUtils.concatResStrings
-import org.totschnig.myexpenses.util.UiUtils
-import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.ads.AdHandlerFactory
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.distrib.DistributionHelper
-import org.totschnig.myexpenses.util.enumValueOrNull
 import org.totschnig.myexpenses.util.io.isConnectedWifi
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.licence.Package
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
-import org.totschnig.myexpenses.util.safeMessage
-import org.totschnig.myexpenses.util.setNightMode
 import org.totschnig.myexpenses.util.tracking.Tracker
 import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
 import org.totschnig.myexpenses.viewmodel.SettingsViewModel
@@ -130,6 +116,12 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
     @Inject
     lateinit var crashHandler: CrashHandler
 
+    @Inject
+    lateinit var preferenceDataStore: PreferenceDataStore
+
+    @Inject
+    lateinit var tracker: Tracker
+
     private val webUiViewModel: WebUiViewModel by viewModels()
     private val currencyViewModel: CurrencyViewModel by viewModels()
     private val viewModel: SettingsViewModel by viewModels()
@@ -156,10 +148,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.HELP_COMMAND) {
             when {
-                matches(preferenceScreen, PrefKey.PERFORM_SHARE) -> {
+                onScreen(PrefKey.PERFORM_SHARE) -> {
                     preferenceActivity.startActionView("https://github.com/mtotschnig/MyExpenses/wiki/FAQ:-Data#what-are-the-different-share-options")
                 }
-                matches(preferenceScreen, PrefKey.UI_WEB) -> {
+                onScreen(PrefKey.UI_WEB) -> {
                     startActivity(Intent(requireContext(), Help::class.java).apply {
                         putExtra(HelpDialogFragment.KEY_CONTEXT, "WebUI")
                         putExtra(
@@ -180,13 +172,14 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             super.onCreate(savedInstanceState)
             inject(this@BaseSettingsFragment)
         }
+
         viewModel.appDirInfo.observe(this) { result ->
             val pref = requirePreference<Preference>(PrefKey.APP_DIR)
             result.onSuccess { appDirInfo ->
-                pref.summary = if (appDirInfo.second) {
-                    appDirInfo.first
+                pref.summary = if (appDirInfo.isWriteable) {
+                    appDirInfo.displayName
                 } else {
-                    getString(R.string.app_dir_not_accessible, appDirInfo.first)
+                    getString(R.string.app_dir_not_accessible, appDirInfo.uri)
                 }
             }.onFailure {
                 pref.setSummary(
@@ -200,7 +193,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 )
             }
         }
-        if(matches(preferenceScreen, PrefKey.UI_WEB)) {
+        if(onScreen(PrefKey.UI_WEB)) {
             webUiViewModel.getServiceState().observe(this) { result ->
                 preferenceActivity.supportActionBar?.let { actionBar ->
                     (actionBar.customView as? SwitchCompat)?.let { switch ->
@@ -217,12 +210,12 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 }
             }
         }
-        setHasOptionsMenu(matches(preferenceScreen, PrefKey.PERFORM_SHARE, PrefKey.UI_WEB))
+        setHasOptionsMenu(onScreen(PrefKey.PERFORM_SHARE, PrefKey.UI_WEB))
     }
 
     override fun onStart() {
         super.onStart()
-        if (featureManager.isFeatureInstalled(Feature.WEBUI, requireContext())) {
+        if (onScreen(PrefKey.UI_WEB) && featureManager.isFeatureInstalled(Feature.WEBUI, requireContext())) {
             bindToWebUiService()
         }
     }
@@ -257,8 +250,8 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         settings.unregisterOnSharedPreferenceChangeListener(this)
     }
 
-    override fun onValidationError(messageResId: Int) {
-        preferenceActivity.showSnackBar(messageResId)
+    override fun onValidationError(message: String) {
+        preferenceActivity.showSnackBar(message)
     }
 
     val preferenceActivity get() = requireActivity() as MyPreferenceActivity
@@ -266,7 +259,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
     private fun configureUninstallPrefs() {
         configureMultiSelectListPref(
             PrefKey.FEATURE_UNINSTALL_FEATURES,
-            featureManager.installedFeatures().filterTo(HashSet()) { it != "drive" },
+            featureManager.installedFeatures(requireContext(), prefHandler),
             featureManager::uninstallFeatures
         ) { module ->
             Feature.fromModuleName(module)?.let { getString(it.labelResId) } ?: module
@@ -348,6 +341,8 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             true
         } else false
 
+    private fun onScreen(vararg prefKey: PrefKey) = matches(preferenceScreen, *prefKey)
+
     fun matches(preference: Preference, vararg prefKey: PrefKey) =
         prefKey.any { prefHandler.getKey(it) == preference.key }
 
@@ -360,14 +355,24 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         key: String
     ) {
         when (key) {
+            getKey(PrefKey.CRASHREPORT_USEREMAIL) -> {
+                crashHandler.setUserEmail(sharedPreferences.getString(key, null))
+            }
+            getKey(PrefKey.CRASHREPORT_ENABLED) -> {
+                crashHandler.setEnabled(sharedPreferences.getBoolean(key, false))
+                preferenceActivity.showSnackBar(R.string.app_restart_required)
+            }
+            getKey(PrefKey.EXCHANGE_RATE_PROVIDER) -> {
+                configureOpenExchangeRatesPreference(sharedPreferences.getString(key, ExchangeRateSource.defaultSource.name))
+            }
+            getKey(PrefKey.CUSTOM_DECIMAL_FORMAT) -> {
+                currencyFormatter.invalidateAll(requireContext().contentResolver)
+            }
             getKey(PrefKey.UI_LANGUAGE) -> {
                 featureManager.requestLocale(preferenceActivity)
             }
-            getKey(PrefKey.GROUP_MONTH_STARTS), getKey(PrefKey.GROUP_WEEK_STARTS), getKey(PrefKey.CRITERION_FUTURE) -> {
+            getKey(PrefKey.GROUP_MONTH_STARTS), getKey(PrefKey.GROUP_WEEK_STARTS) -> {
                 preferenceActivity.rebuildDbConstants()
-            }
-            getKey(PrefKey.DB_SAFE_MODE) -> {
-                preferenceActivity.rebuildAccountProjection()
             }
             getKey(PrefKey.UI_FONTSIZE) -> {
                 updateAllWidgets()
@@ -405,10 +410,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 ) {
                     preferenceActivity.showUnencryptedBackupWarning()
                 }
-                DailyScheduler.updateAutoBackupAlarms(preferenceActivity)
+                AutoBackupWorker.enqueueOrCancel(preferenceActivity, prefHandler)
             }
             getKey(PrefKey.AUTO_BACKUP_TIME) -> {
-                DailyScheduler.updateAutoBackupAlarms(preferenceActivity)
+                AutoBackupWorker.enqueueOrCancel(preferenceActivity, prefHandler)
             }
             getKey(PrefKey.SYNC_FREQUCENCY) -> {
                 for (account in GenericAccountService.getAccounts(preferenceActivity)) {
@@ -416,10 +421,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 }
             }
             getKey(PrefKey.TRACKING) -> {
-                preferenceActivity.setTrackingEnabled(sharedPreferences.getBoolean(key, false))
+                tracker.setEnabled(sharedPreferences.getBoolean(key, false))
             }
             getKey(PrefKey.PLANNER_EXECUTION_TIME) -> {
-                DailyScheduler.updatePlannerAlarms(preferenceActivity, false, false)
+                preferenceActivity.enqueuePlanner(false)
             }
             getKey(PrefKey.TESSERACT_LANGUAGE) -> {
                 preferenceActivity.checkTessDataDownload()
@@ -488,18 +493,6 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                     }
                 }
             }
-            matches(pref, PrefKey.CUSTOM_DECIMAL_FORMAT) -> {
-                currencyFormatter.invalidateAll(requireContext().contentResolver)
-            }
-            matches(pref, PrefKey.EXCHANGE_RATE_PROVIDER) -> {
-                configureOpenExchangeRatesPreference((value as String))
-            }
-            matches(pref, PrefKey.CRASHREPORT_USEREMAIL) -> {
-                crashHandler.setUserEmail(value as String)
-            }
-            matches(pref, PrefKey.CRASHREPORT_ENABLED) -> {
-                preferenceActivity.showSnackBar(R.string.app_restart_required)
-            }
             matches(pref, PrefKey.OCR_DATE_FORMATS) -> {
                 if (!isEmpty(value as String)) {
                     try {
@@ -538,10 +531,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             }
             matches(pref, PrefKey.UI_WEB) -> {
                 return if (value as Boolean) {
-                   /* if (!isConnectedWifi(requireContext())) {
+                    if (!isConnectedWifi(requireContext())) {
                         preferenceActivity.showSnackBar(getString(R.string.no_network) + " (WIFI)")
                         return false
-                    }*/
+                    }
                     if (licenceHandler.hasAccessTo(ContribFeature.WEB_UI) && preferenceActivity.featureViewModel.isFeatureAvailable(
                             preferenceActivity,
                             Feature.WEBUI
@@ -586,7 +579,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
     }
 
     fun setProtectionDependentsState() {
-        if (matches(preferenceScreen, PrefKey.ROOT_SCREEN, PrefKey.PERFORM_PROTECTION_SCREEN)) {
+        if (onScreen(PrefKey.ROOT_SCREEN, PrefKey.PERFORM_PROTECTION_SCREEN)) {
             val isLegacy = prefHandler.getBoolean(PrefKey.PROTECTION_LEGACY, false)
             val isProtected =
                 isLegacy || prefHandler.getBoolean(PrefKey.PROTECTION_DEVICE_LOCK_SCREEN, false)
@@ -615,7 +608,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
     }
 
     fun configureContribPrefs() {
-        if (!matches(preferenceScreen, PrefKey.ROOT_SCREEN)) {
+        if (!onScreen(PrefKey.ROOT_SCREEN)) {
             return
         }
         val contribPurchasePref = requirePreference<Preference>(PrefKey.CONTRIB_PURCHASE)
@@ -664,7 +657,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         } ?: run {
             prefHandler.putString(PrefKey.HOME_CURRENCY, currencyCode)
         }
-        preferenceActivity.invalidateHomeCurrency()
+        requireApplication().invalidateHomeCurrency()
         preferenceActivity.showSnackBarIndefinite(R.string.saving)
         viewModel.resetEquivalentAmounts().observe(this) { integer ->
             preferenceActivity.dismissSnackBar()
@@ -687,16 +680,20 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         preferenceActivity.logEvent(Tracker.EVENT_PREFERENCE_CLICK, bundle)
     }
 
-    private fun setListenerRecursive(
+    /**
+     * sets listener and allows multi-line title for every preference in group, recursively
+     */
+    private fun configureRecursive(
         preferenceGroup: PreferenceGroup,
         listener: Preference.OnPreferenceClickListener
     ) {
         for (i in 0 until preferenceGroup.preferenceCount) {
             val preference = preferenceGroup.getPreference(i)
             if (preference is PreferenceCategory) {
-                setListenerRecursive(preference, listener)
+                configureRecursive(preference, listener)
             } else {
                 preference.onPreferenceClickListener = listener
+                preference.isSingleLineTitle = false
             }
         }
     }
@@ -747,10 +744,11 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         }
     var pickFolderRequestStart: Long = 0
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
 
-        setListenerRecursive(
+        configureRecursive(
             preferenceScreen, if (getKey(PrefKey.UI_HOME_SCREEN_SHORTCUTS) == rootKey)
                 homeScreenShortcutPrefClickHandler
             else
@@ -759,6 +757,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         unsetIconSpaceReservedRecursive(preferenceScreen)
 
         when (rootKey) {
+
             null -> { //ROOT screen
                 requirePreference<Preference>(PrefKey.HOME_CURRENCY).onPreferenceChangeListener =
                     this
@@ -776,6 +775,14 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 requirePreference<LocalizedFormatEditTextPreference>(PrefKey.CUSTOM_DATE_FORMAT).onValidationErrorListener =
                     this
 
+                lifecycleScope.launchWhenStarted {
+                    preferenceDataStore.handleToggle(requirePreference(PrefKey.GROUP_HEADER))
+                }
+
+                lifecycleScope.launchWhenStarted {
+                    preferenceDataStore.handleList(requirePreference(PrefKey.CRITERION_FUTURE))
+                }
+
                 loadAppDirSummary()
 
                 val qifPref = requirePreference<Preference>(PrefKey.IMPORT_QIF)
@@ -785,8 +792,11 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 csvPref.summary = getString(R.string.pref_import_summary, "CSV")
                 csvPref.title = getString(R.string.pref_import_title, "CSV")
 
-                viewModel.hasStaleImages.observe(this) { result ->
-                    requirePreference<Preference>(PrefKey.MANAGE_STALE_IMAGES).isVisible = result
+                lifecycleScope.launchWhenStarted {
+                    viewModel.hasStaleImages.collect { result ->
+                        requirePreference<Preference>(PrefKey.MANAGE_STALE_IMAGES).isVisible =
+                            result
+                    }
                 }
 
                 val privacyCategory =
@@ -802,14 +812,15 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                     preferenceScreen.removePreference(privacyCategory)
                 }
 
-                val languagePref = requirePreference<ListPreference>(PrefKey.UI_LANGUAGE)
-                languagePref.entries = getLocaleArray()
+                requirePreference<ListPreference>(PrefKey.UI_LANGUAGE).entries = getLocaleArray()
 
-                currencyViewModel.getCurrencies().observe(this) { currencies ->
-                    with(requirePreference<ListPreference>(PrefKey.HOME_CURRENCY)) {
-                        entries = currencies.map(Currency::toString).toTypedArray()
-                        entryValues = currencies.map { it.code }.toTypedArray()
-                        isEnabled = true
+                lifecycleScope.launchWhenStarted {
+                    currencyViewModel.currencies.collect { currencies ->
+                        with(requirePreference<ListPreference>(PrefKey.HOME_CURRENCY)) {
+                            entries = currencies.map(Currency::toString).toTypedArray()
+                            entryValues = currencies.map { it.code }.toTypedArray()
+                            isEnabled = true
+                        }
                     }
                 }
 
@@ -833,6 +844,8 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
 
                 requirePreference<Preference>(PrefKey.NEWS).title =
                     "${getString(R.string.pref_news_title)} (Mastodon)"
+
+                requirePreference<Preference>(PrefKey.ENCRYPT_DATABASE_INFO).isVisible = prefHandler.encryptDatabase
             }
             getKey(PrefKey.UI_HOME_SCREEN_SHORTCUTS) -> {
                 val shortcutSplitPref = requirePreference<Preference>(PrefKey.SHORTCUT_CREATE_SPLIT)
@@ -901,10 +914,6 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                     context,
                     R.string.crash_reports_user_info
                 )
-                requirePreference<Preference>(PrefKey.CRASHREPORT_ENABLED).onPreferenceChangeListener =
-                    this
-                requirePreference<Preference>(PrefKey.CRASHREPORT_USEREMAIL).onPreferenceChangeListener =
-                    this
             }
             getKey(PrefKey.OCR) -> {
                 if ("" == prefHandler.getString(PrefKey.OCR_TOTAL_INDICATORS, "")) {
@@ -964,12 +973,10 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 configureUninstallPrefs()
             }
             getKey(PrefKey.EXCHANGE_RATES) -> {
-                requirePreference<Preference>(PrefKey.EXCHANGE_RATE_PROVIDER).onPreferenceChangeListener =
-                    this
                 configureOpenExchangeRatesPreference(
                     prefHandler.requireString(
                         PrefKey.EXCHANGE_RATE_PROVIDER,
-                        "EXCHANGE_RATE_HOST"
+                        ExchangeRateSource.defaultSource.name
                     )
                 )
             }
@@ -996,6 +1003,17 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
             getKey(PrefKey.CSV_EXPORT) -> {
                 preferenceScreen.title = getString(R.string.export_to_format, "CSV")
             }
+            getKey(PrefKey.UI_TRANSACTION_LIST) -> {
+                requirePreference<TwoStatePreference>(PrefKey.UI_ITEM_RENDERER_LEGACY).let {
+                    it.title = requireContext().compactItemRendererTitle()
+                    lifecycleScope.launchWhenStarted {
+                        preferenceDataStore.handleToggle(it)
+                    }
+                }
+                lifecycleScope.launchWhenStarted {
+                    preferenceDataStore.handleToggle(requirePreference(PrefKey.UI_ITEM_RENDERER_CATEGORY_ICON))
+                }
+            }
         }
     }
 
@@ -1006,7 +1024,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         return preferenceActivity.getTranslatorsArrayResId(language, country)
     }
 
-    private fun configureOpenExchangeRatesPreference(provider: String) {
+    private fun configureOpenExchangeRatesPreference(provider: String?) {
         requirePreference<Preference>(PrefKey.OPEN_EXCHANGE_RATES_APP_ID).isEnabled =
             provider == "OPENEXCHANGERATES"
     }
@@ -1053,7 +1071,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
      * @return true if we have handle the given key as a subScreen
      */
     fun handleScreenWithMasterSwitch(prefKey: PrefKey, disableDependents: Boolean): Boolean {
-        if (matches(preferenceScreen, prefKey)) {
+        if (onScreen(prefKey)) {
             preferenceActivity.supportActionBar?.let { actionBar ->
                 val status = prefHandler.getBoolean(prefKey, false)
                 val actionBarSwitch = requireActivity().layoutInflater.inflate(
@@ -1081,7 +1099,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 }
             }
             return true
-        } else if (matches(preferenceScreen, PrefKey.ROOT_SCREEN)) {
+        } else if (onScreen(PrefKey.ROOT_SCREEN)) {
             setOnOffSummary(prefKey)
         }
         return false
@@ -1177,7 +1195,13 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 true
             }
             matches(preference, PrefKey.APP_DIR) -> {
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
+                // TODO migrate to ActivityResultContracts.OpenDocumentTree
+                //noinspection InlinedApi
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    viewModel.appDirInfo.value?.getOrNull()?.uri?.let {
+                        putExtra(DocumentsContract.EXTRA_INITIAL_URI, it)
+                    }
+                }
                 try {
                     pickFolderRequestStart = System.currentTimeMillis()
                     startActivityForResult(
@@ -1304,7 +1328,7 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
                 if (which == OnDialogResultListener.BUTTON_POSITIVE) {
                     val logDir = File(requireContext().getExternalFilesDir(null), "logs")
                     startActivity(Intent(Intent.ACTION_SEND_MULTIPLE).apply {
-                        putExtra(Intent.EXTRA_EMAIL, arrayOf(FEEDBACK_EMAIL))
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf(getString(R.string.support_email)))
                         putExtra(Intent.EXTRA_SUBJECT, "[${getString(R.string.app_name)}]: Logs")
                         type = "text/plain"
                         val arrayList = ArrayList(
@@ -1335,5 +1359,8 @@ abstract class BaseSettingsFragment : PreferenceFragmentCompat(), OnValidationEr
         const val KEY_KEY = "key"
         const val PICK_FOLDER_REQUEST = 2
         private const val CONTRIB_PURCHASE_REQUEST = 3
+
+        fun Context.compactItemRendererTitle() =
+            "${getString(R.string.style)} : ${getString(R.string.compact)}"
     }
 }

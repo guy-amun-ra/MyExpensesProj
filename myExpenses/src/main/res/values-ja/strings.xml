@@ -40,18 +40,17 @@
     <string name="color">色</string>
     <string name="comment">メモ</string>
     <string name="confirmation_dialog_dont_show_again">今後表示しない</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">広告なし</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">無制限の勘定数</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">取引に画像を添付</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">円グラフ (分類ごとの分布)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">無制限の計画数</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">取引リストを PDF にエクスポート</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">テンプレート ウィジェット</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">CSV インポート</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">無制限の分割テンプレート</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources">2 営業日以内の <b>メールサポート</b> 対応を保証</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources"><b>開発ロードマップ</b> の投票権</string>
-    <string name="contrib_feature_history_label" tools:ignore="UnusedResources">履歴チャート</string>
+    <string name="contrib_feature_ad_free_label">広告なし</string>
+    <string name="contrib_feature_accounts_unlimited_label">無制限の勘定数</string>
+    <string name="contrib_feature_attach_picture_label">取引に画像を添付</string>
+    <string name="contrib_feature_distribution_label">円グラフ (分類ごとの分布)</string>
+    <string name="contrib_feature_plans_unlimited_label">無制限の計画数</string>
+    <string name="contrib_feature_print_label">取引リストを PDF にエクスポート</string>
+    <string name="contrib_feature_csv_import_label">CSV インポート</string>
+    <string name="contrib_feature_split_template_label">無制限の分割テンプレート</string>
+    <string name="contrib_feature_pro_support_label">2 営業日以内の <b>メールサポート</b> 対応を保証</string>
+    <string name="contrib_feature_roadmap_voting_label"><b>開発ロードマップ</b> の投票権</string>
+    <string name="contrib_feature_history_label">履歴チャート</string>
     <string name="licence_status_free">無料</string>
     <string name="contrib_key">貢献キー</string>
     <string name="extended_key">拡張キー</string>
@@ -68,10 +67,6 @@
     <string name="description">説明</string>
     <string name="dialog_balance_delete">照合した取引を削除</string>
     <string name="dialog_confirm_discard_changes">変更を破棄しますか?</string>
-    <string name="dialog_confirm_discard_new_transaction">新しい取引を破棄しますか?</string>
-    <string name="dialog_confirm_discard_new_template">新しいテンプレートを破棄しますか?</string>
-    <string name="dialog_confirm_discard_new_account">新しい勘定を破棄しますか?</string>
-    <string name="dialog_confirm_discard_new_method">新しい支払方法を破棄しますか?</string>
     <string name="dialog_command_disabled_balance">照合すべき消込された取引はありません。</string>
     <string name="dialog_command_disabled_insert_transfer">取引の振替には、2番目の勘定が必要です。</string>
     <string name="dialog_command_disabled_reset_account">エクスポートする取引がありません。</string>
@@ -135,7 +130,6 @@
     <string name="help_heading_credits">クレジット</string>
     <string name="help_heading_license">ライセンス</string>
     <string name="help_heading_whats_new">新着情報</string>
-    <string name="important_upgrade_information_heading">重要な情報</string>
     <string name="import_select_transactions">取引</string>
     <string name="income">収入</string>
     <string name="invalid_number_format">小数点の書式があなたのロケールでは認識できません。%1$s を使用してください。</string>
@@ -283,8 +277,8 @@
     <string name="pref_contrib_purchase_title_in_app">アプリ内課金</string>
     <string name="pref_custom_currency_title">通貨をカスタマイズ</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">キーを受け取った場合、プレミアム機能へアクセスすることができます。</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">キーを入力</string>
+    <string name="pref_enter_licence_summary">キーを受け取った場合、プレミアム機能へアクセスすることができます。</string>
+    <string name="pref_enter_licence_title">キーを入力</string>
     <string name="pref_export_format_title">データ形式</string>
     <string name="pref_import_from_grisbi_summary">Grisbi XML ファイルから分類と取引先をインポートします</string>
     <string name="pref_import_from_grisbi_title">Grisbi からインポート</string>
@@ -336,7 +330,6 @@
     <string name="pref_visit_website_summary">変更履歴 および FAQ</string>
     <string name="pref_visit_website_title">Webサイトを訪問</string>
     <string name="progress_dialog_deleting">オブジェクトを削除中</string>
-    <string name="progress_dialog_loading">データベースからオブジェクトをロード中</string>
     <string name="progress_dialog_printing">%s を生成中</string>
     <string name="qif_parse_result">解析しました: %1$s 勘定; %2$s 分類 および %3$s 取引先</string>
     <string name="qif_parse_failure_found_multiple_accounts">QIF ファイルに複数の勘定が見つかりました。</string>
@@ -457,7 +450,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">購入が失敗またはキャンセルされました。</string>
     <string name="hint_auto_fill">同じ受取人/支払人の場合、前回の取引から自動的にデータを入力する必要がありますか? この動作はいつでも設定から変更できます。</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">通貨 %2$s の %1$d 勘定が更新されました。</string>
-    <string name="learn_more">さらに詳しく</string>
     <string name="import_source_file">ファイル</string>
     <string name="restore_calendar_handling">カレンダーデータの利用</string>
     <string name="restore_calendar_handling_configured">現在設定されたカレンダーに計画を復元する</string>
@@ -615,7 +607,6 @@
     <string name="onboarding_restore_from_cloud_backup">バックアップ</string>
     <string name="onboarding_restore_from_local">ローカルのバックアップファイルを復元</string>
     <string name="dialog_button_add">追加</string>
-    <string name="template_create_error">テンプレートの保存中にエラーが発生しました</string>
     <string name="contributed_by">貢献者 %s</string>
     <string name="pref_sync_notification_summary">同期の進行状況を通知する</string>
     <string name="pref_debug_logging_summary">システムログにデバッグ情報を書き込む</string>
@@ -625,7 +616,6 @@
     <string name="progress_validating_licence">ライセンスの検証中</string>
     <string name="licence_validation_error_expired">ライセンスの期限が切れました</string>
     <string name="licence_validation_error_device_limit_exceeded">デバイスの限度に達しました。別のデバイスからライセンスを削除してください。</string>
-    <string name="error">エラー (%s)</string>
     <string name="button_validate">検証</string>
     <string name="licence_key">ライセンスキー</string>
     <string name="licence_removal_information">このデバイスでもうプレミアム機能が必要ではない場合は、ライセンスキーを削除することができます。これにより別のデバイスでライセンスをアクティベーションすることができます。キーは %dデバイスまでアクティベートすることができます。</string>
@@ -651,7 +641,6 @@
     <string name="auto_fill_account_from_aggregate_only">集計勘定から開始された場合のみ。</string>
     <string name="sync_auth_exception">認証に失敗しました。</string>
     <string name="sync_login_again">もう一度ログインしてください。</string>
-    <string name="sync_loading_accounts_from_backend">バックエンドから利用可能な口座をロード中。</string>
     <plurals name="delete_success">
         <item quantity="other">%d のオブジェクトが削除されました。</item>
     </plurals>
@@ -677,14 +666,9 @@
     <string name="warning_ungroup_split_transactions">選択された分割取引はグループ解除されます。分割された部分は通常の取引になります。</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">分割のグループ化解除</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="other">%1$d 分割取引がグループ化解除されました。</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">分割取引のグループ化解除中、 %1$d / %2$d 失敗しました。</string>
+    <string name="ungroup_split_transaction_success">1 分割取引がグループ化解除されました。</string>
     <string name="split_transaction_one_success">取引が分割に変換されました。</string>
-    <string name="split_transaction_one_error">取引を変換して分割することができませんでした。</string>
     <string name="split_transaction_group_success">%1$d 取引が1つの分割取引にグループ化されました。</string>
-    <string name="split_transaction_group_error">取引を分割にグループ化できませんでした。</string>
     <string name="split_transaction_not_possible">同じ勘定科目、支払先、およびステータスを持つ取引だけが、1つの分割取引にグループ化できます。</string>
     <string name="pref_transaction_time_summary">正確な取引時間を設定できるようにします。</string>
     <string name="pref_value_date_summary">予約日に加えて実行日を設定することができます。 取引時間は表示されません。 この設定は現金口座には適用されません。</string>
@@ -764,7 +748,6 @@
     <string name="button_label_no_encryption">暗号化しない</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">または</string>
-    <string name="pref_account_list_fast_scroll_summary">アカウントリストの高速スクロールを有効にします。 一部のデバイスでは正しく表示されない可能性があります</string>
     <string name="menu_hide">非表示</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">閉じる</string>
@@ -800,7 +783,6 @@
     <string name="discover_feature_expense_income_switch">この切り替えボタンを使用して収入を記録します。</string>
     <string name="menu_create_budget">新しい予算</string>
     <string name="budget_onetime">１回限り</string>
-    <string name="dialog_confirm_discard_new_budget">新しい予算を破棄しますか?</string>
     <string name="budget_duration_from">開始</string>
     <string name="budget_duration_to">終了</string>
     <string name="no_budgets">+ ボタンをタップして最初の予算を定義します。</string>
@@ -882,5 +864,7 @@
     <string name="ui_refinement">ユーザーインターフェースの洗練</string>
     <string name="whats_new_338">任意に深いカテゴリー階層</string>
     <string name="dialog_title_purge_backups">古いバックアップをパージする</string>
-    <string name="whats_new_344">分類のアイコン</string>
+    <string name="icons_for_categories">分類のアイコン</string>
+    <string name="contrib_feature_category_tree_label" tools:ignore="UnusedResources">カテゴリツリー</string>
+    <string name="redesign">デザイン</string>
 </resources>

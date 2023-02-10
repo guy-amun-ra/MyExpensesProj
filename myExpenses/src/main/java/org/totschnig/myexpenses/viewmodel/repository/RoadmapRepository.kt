@@ -9,6 +9,7 @@ import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.acra.util.StreamReader
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.preference.PrefHandler
@@ -17,7 +18,6 @@ import org.totschnig.myexpenses.retrofit.Issue
 import org.totschnig.myexpenses.retrofit.RoadmapService
 import org.totschnig.myexpenses.retrofit.Vote
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import org.totschnig.myexpenses.util.io.StreamReader
 import timber.log.Timber
 import java.io.File
 import java.io.FileInputStream
@@ -33,10 +33,8 @@ class RoadmapRepository @Inject constructor(private val gson: Gson, private val 
         const val ISSUE_CACHE = "issue_cache.json"
         const val ROADMAP_VOTE = "roadmap_vote.json"
         private val isSandbox = BuildConfig.DEBUG
-        private const val localBackend = false
         val ROADMAP_URL = when {
-            localBackend -> "http://10.0.2.2:3000/"
-            isSandbox -> "https://votedb-staging.herokuapp.com/"
+            isSandbox -> "http://10.0.2.2:3000/"
             else -> "https://roadmap.myexpenses.mobi/"
         }
     }

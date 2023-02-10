@@ -159,10 +159,8 @@ class BillingManagerPlay(
      * Clear the resources
      */
     override fun destroy() {
-        log().d("Destroying the manager.")
-        if (billingClient.isReady) {
-            billingClient.endConnection()
-        }
+        log().d("Destroying the manager. BillingClient ready? ${billingClient.isReady}")
+        billingClient.endConnection()
     }
 
     private suspend fun querySkuDetailsAsync(

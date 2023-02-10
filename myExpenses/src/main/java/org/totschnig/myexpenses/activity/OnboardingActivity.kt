@@ -1,7 +1,6 @@
 package org.totschnig.myexpenses.activity
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.View
@@ -11,16 +10,16 @@ import androidx.lifecycle.lifecycleScope
 import icepick.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.databinding.OnboardingBinding
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
 import org.totschnig.myexpenses.dialog.RestoreFromCloudDialogFragment
 import org.totschnig.myexpenses.fragment.OnBoardingPrivacyFragment
 import org.totschnig.myexpenses.fragment.OnboardingDataFragment
 import org.totschnig.myexpenses.fragment.OnboardingUiFragment
-import org.totschnig.myexpenses.model.Model
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
+import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.sync.json.AccountMetaData
 import org.totschnig.myexpenses.ui.FragmentPagerAdapter
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.distrib.DistributionHelper.distribution
 import org.totschnig.myexpenses.util.distrib.DistributionHelper.versionNumber
 import org.totschnig.myexpenses.util.safeMessage
@@ -47,10 +46,7 @@ class OnboardingActivity : SyncBackendSetupActivity() {
         binding.viewPager.offscreenPageLimit = 2
     }
 
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        //skip Help
-        return true
-    }
+    override fun onCreateOptionsMenu(menu: Menu) = false //skip help
 
     fun navigateNext() {
         val currentItem = binding.viewPager.currentItem
@@ -67,9 +63,13 @@ class OnboardingActivity : SyncBackendSetupActivity() {
     }
 
     private val dataFragment: OnboardingDataFragment?
-        get() = supportFragmentManager.findFragmentByTag(
-            pagerAdapter.getFragmentName(pagerAdapter.count - 1)
-        ) as? OnboardingDataFragment
+        get() = getFragmentAtPosition(2) as? OnboardingDataFragment
+
+    private val privacyFragment: OnBoardingPrivacyFragment?
+        get() = getFragmentAtPosition(1) as? OnBoardingPrivacyFragment
+
+    private fun getFragmentAtPosition(pos: Int) =
+        supportFragmentManager.findFragmentByTag(pagerAdapter.getFragmentName(pos))
 
     fun start() {
         prefHandler.putInt(PrefKey.CURRENT_VERSION, versionNumber)
@@ -79,9 +79,9 @@ class OnboardingActivity : SyncBackendSetupActivity() {
         finish()
     }
 
-    override fun createAccountTaskShouldReturnBackups(): Boolean {
-        return true
-    }
+    override val createAccountTaskShouldReturnBackups = true
+
+    override val createAccountTaskShouldQueryLocalAccounts = false
 
     override fun onReceiveSyncAccountData(data: SyncAccountData) {
         lifecycleScope.launchWhenResumed {
@@ -135,28 +135,31 @@ class OnboardingActivity : SyncBackendSetupActivity() {
             return makeFragmentName(binding.viewPager.id, getItemId(currentPosition))
         }
 
-        override fun getItem(pos: Int): Fragment {
-            return when (pos) {
-                0 -> OnboardingUiFragment.newInstance()
-                1 -> {
-                    if (showPrivacyPage()) OnBoardingPrivacyFragment.newInstance() else OnboardingDataFragment.newInstance()
-                }
-                else -> OnboardingDataFragment.newInstance()
-            }
+        override fun getItem(pos: Int) = when (pos) {
+            0 -> OnboardingUiFragment.newInstance()
+            1 -> OnBoardingPrivacyFragment.newInstance()
+            else -> OnboardingDataFragment.newInstance()
         }
 
-        override fun getCount(): Int {
-            return if (showPrivacyPage()) 3 else 2
-        }
-
-        private fun showPrivacyPage(): Boolean {
-            return distribution.supportsTrackingAndCrashReporting
-        }
+        override fun getCount() = 3
     }
 
     @Suppress("UNUSED_PARAMETER")
     fun editAccountColor(view: View) {
         dataFragment?.editAccountColor()
+    }
+
+    override fun onNegative(args: Bundle) {
+        if (args.getInt(ConfirmationDialogFragment.KEY_COMMAND_NEGATIVE) == R.id.ENCRYPT_CANCEL_COMMAND) {
+            prefHandler.putBoolean(PrefKey.ENCRYPT_DATABASE, false)
+            privacyFragment?.setupMenu()
+        }
+    }
+
+    override fun onNeutral(args: Bundle) {
+        if (args.getInt(ConfirmationDialogFragment.KEY_COMMAND_NEUTRAL) == R.id.ENCRYPT_LEARN_MORE_COMMAND) {
+            startActionView("https://github.com/mtotschnig/MyExpenses/wiki/FAQ:-Data#how-does-database-encryption-work")
+        }
     }
 
     override val snackBarContainerId: Int

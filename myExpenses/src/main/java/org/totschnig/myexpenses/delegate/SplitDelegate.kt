@@ -50,14 +50,14 @@ class SplitDelegate(
 
     override fun bind(
         transaction: ISplit?,
-        newInstance: Boolean,
+        withTypeSpinner: Boolean,
         savedInstanceState: Bundle?,
         recurrence: Plan.Recurrence?,
         withAutoFill: Boolean
     ) {
         super.bind(
             transaction,
-            newInstance,
+            withTypeSpinner,
             savedInstanceState,
             recurrence,
             withAutoFill
@@ -76,7 +76,8 @@ class SplitDelegate(
         })
         viewBinding.CategoryRow.visibility = View.GONE
         viewBinding.SplitRow.visibility = View.VISIBLE
-        missingRecurrenceFeature = if (!newInstance || prefHandler.getBoolean(
+        host.registerForContextMenu(viewBinding.list)
+        missingRecurrenceFeature = if (!withTypeSpinner || prefHandler.getBoolean(
                 PrefKey.NEW_SPLIT_TEMPLATE_ENABLED,
                 true
             )
@@ -88,12 +89,13 @@ class SplitDelegate(
 
     }
 
-    override fun buildMainTransaction(accountId: Long): ISplit =
-        if (isTemplate) buildTemplate(accountId) else SplitTransaction(accountId)
+    override fun buildMainTransaction(account: Account): ISplit =
+        if (isTemplate) buildTemplate(account) else SplitTransaction(account.id)
 
     override fun prepareForNew() {
         super.prepareForNew()
-        rowId = SplitTransaction.getNewInstance(accountId!!).id
+        val account = currentAccount()!!
+        rowId = SplitTransaction.getNewInstance(account.id, account.currency, true).id
         host.viewModel.loadSplitParts(rowId, isTemplate)
     }
 
@@ -113,8 +115,12 @@ class SplitDelegate(
             viewBinding.unsplitLine.visibility = unsplitVisibility
             viewBinding.BottomLine.visibility = unsplitVisibility
         } else if (transactionSum != 0L) {
+            val existingValue = viewBinding.Amount.typedValue
+            val newValue = Money(adapter.currencyUnit, transactionSum).amountMajor
             automaticAmountUpdate = true
-            viewBinding.Amount.setAmount(Money(adapter.currencyUnit, transactionSum).amountMajor)
+            if (existingValue != newValue) {
+                viewBinding.Amount.setAmount(newValue)
+            }
         }
     }
 
@@ -184,8 +190,6 @@ class SplitDelegate(
         viewBinding.empty.visibility = if (transactions.isEmpty()) View.VISIBLE else View.GONE
         viewBinding.list.visibility = if (transactions.isEmpty()) View.GONE else View.VISIBLE
         transactionSum = transactions.sumOf { it.amountRaw }
-        if (host.isDirty) {
-            updateBalance()
-        }
+        updateBalance()
     }
 }

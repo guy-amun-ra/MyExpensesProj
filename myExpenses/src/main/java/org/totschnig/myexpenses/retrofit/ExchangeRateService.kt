@@ -5,10 +5,7 @@ import org.json.JSONObject
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.preference.requireString
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.enumValueOrDefault
-import org.totschnig.myexpenses.util.enumValueOrNull
 import retrofit2.Response
 import timber.log.Timber
 import java.io.IOException
@@ -22,6 +19,9 @@ enum class ExchangeRateSource {
 
     @Suppress("SpellCheckingInspection")
     OPENEXCHANGERATES;
+    companion object {
+        val defaultSource = EXCHANGE_RATE_HOST
+    }
 }
 
 data class Configuration(val source: ExchangeRateSource, val openExchangeRatesAppId: String = "")
@@ -40,7 +40,7 @@ class ExchangeRateService(
     ): Pair<LocalDate, Float> = when (configuration.source) {
         ExchangeRateSource.EXCHANGE_RATE_HOST -> {
             val today = LocalDate.now()
-            val error = if (date < today) {
+            val errorResponse = if (date < today) {
                 val response = exchangeRateHost.getTimeSeries(date, date, symbol, base).execute()
                 log(response)
                 if (response.isSuccessful) {
@@ -50,9 +50,7 @@ class ExchangeRateService(
                         }
                     }
                     null
-                } else {
-                    response.errorBody()?.string() ?: "Unknown Error"
-                }
+                } else response
             } else {
                 val response = exchangeRateHost.getLatest(symbol, base).execute()
                 log(response)
@@ -63,11 +61,14 @@ class ExchangeRateService(
                         }
                     }
                     null
-                } else {
-                    response.errorBody()?.string() ?: "Unknown Error"
-                }
+                } else response
             }
-            throw IOException(error ?: "Unable to retrieve data")
+            throw IOException(
+                if (errorResponse != null) {
+                    (errorResponse.errorBody()?.string()?.takeIf { it.isNotEmpty() } ?: "Unknown error") + " (${errorResponse.code()})"
+                } else "Unable to retrieve data"
+
+            )
         }
         ExchangeRateSource.OPENEXCHANGERATES -> {
             if (configuration.openExchangeRatesAppId == "") throw MissingAppIdException()
@@ -120,13 +121,12 @@ private fun toLocalDate(timestamp: Long): LocalDate {
 }
 
 fun configuration(prefHandler: @NotNull PrefHandler): Configuration {
-    val default = ExchangeRateSource.EXCHANGE_RATE_HOST
     @Suppress("SpellCheckingInspection")
     val preferenceValue = prefHandler.requireString(
         PrefKey.EXCHANGE_RATE_PROVIDER,
-        default.name
+        ExchangeRateSource.defaultSource.name
     ).takeIf { it != "RATESAPI" }
-    val source = enumValueOrDefault(preferenceValue, default)
+    val source = enumValueOrDefault(preferenceValue, ExchangeRateSource.defaultSource)
     return Configuration(
         source, prefHandler.requireString(PrefKey.OPEN_EXCHANGE_RATES_APP_ID, "")
     )

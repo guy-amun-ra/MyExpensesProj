@@ -15,18 +15,12 @@
 
 package org.totschnig.myexpenses.test.model;
 
-import static org.junit.Assert.assertNotEquals;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CODE;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CR_STATUS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENT_BALANCE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SUM_EXPENSES;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SUM_INCOME;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SUM_TRANSFERS;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_HELPER;
 
 import android.content.OperationApplicationException;
 import android.database.Cursor;
@@ -40,8 +34,6 @@ import org.totschnig.myexpenses.model.Money;
 import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.model.Transfer;
 import org.totschnig.myexpenses.provider.TransactionProvider;
-import org.totschnig.myexpenses.provider.filter.CategoryCriteria;
-import org.totschnig.myexpenses.provider.filter.WhereFilter;
 import org.totschnig.myexpenses.util.Utils;
 
 public class AccountTest extends ModelTest {
@@ -63,7 +55,7 @@ public class AccountTest extends ModelTest {
     account2 = new Account("Account 2", openingBalance, "Account 2");
     account2.save();
     catId = writeCategory(TEST_CAT, null);
-    op = Transaction.getNewInstance(account1.getId());
+    op = Transaction.getNewInstance(account1);
     assert op != null;
     op.setAmount(new Money(account1.getCurrencyUnit(), -expense1));
     op.setCrStatus(CrStatus.CLEARED);
@@ -75,8 +67,7 @@ public class AccountTest extends ModelTest {
     op.setAmount(new Money(account1.getCurrencyUnit(), income2));
     op.setCatId(catId);
     op.saveAsNew();
-    Transfer op1 = Transfer.getNewInstance(account1.getId(), account2.getId());
-    assert op1 != null;
+    Transfer op1 = Transfer.getNewInstance(account1, account2.getId());
     op1.setAmount(new Money(account1.getCurrencyUnit(), transferP));
     op1.save();
     op1.setAmount(new Money(account1.getCurrencyUnit(), -transferN));
@@ -94,7 +85,7 @@ public class AccountTest extends ModelTest {
     restored = Account.getInstanceFromDb(account.getId());
     assertEquals(account, restored);
     long trAmount = (long) 100;
-    Transaction op1 = Transaction.getNewInstance(account.getId());
+    Transaction op1 = Transaction.getNewInstance(account);
     assert op1 != null;
     op1.setAmount(new Money(account.getCurrencyUnit(), trAmount));
     op1.setComment("test transaction");

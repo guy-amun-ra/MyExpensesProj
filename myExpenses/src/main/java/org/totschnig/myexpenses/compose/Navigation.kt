@@ -1,15 +1,35 @@
 package org.totschnig.myexpenses.compose
 
-import android.annotation.SuppressLint
-import androidx.compose.foundation.layout.*
-import androidx.compose.material.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -17,78 +37,45 @@ import androidx.compose.ui.unit.dp
 import arrow.core.Either
 import org.totschnig.myexpenses.R
 
-@SuppressLint("PrivateResource")
-@Composable
-fun Navigation(
-    onNavigation: () -> Unit = {},
-    title: String,
-    actions: @Composable RowScope.() -> Unit = {},
-    content: @Composable (PaddingValues) -> Unit
-) {
-    Navigation(
-        onNavigation = onNavigation,
-        title = { Text(text = title, style = MaterialTheme.typography.h6) },
-        actions = actions,
-        content = content
-    )
-}
-
-@SuppressLint("PrivateResource")
-@Composable
-fun Navigation(
-    onNavigation: () -> Unit = {},
-    title: @Composable () -> Unit,
-    actions: @Composable RowScope.() -> Unit = {},
-    content: @Composable (PaddingValues) -> Unit
-) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = title,
-                navigationIcon = {
-                    IconButton(onClick = onNavigation) {
-                        Icon(
-                            painterResource(id = R.drawable.ic_menu_back),
-                            contentDescription = stringResource(R.string.abc_action_bar_up_description)
-                        )
-                    }
-                },
-                backgroundColor = colorResource(id = R.color.toolbarBackground),
-                actions = actions
-            )
-        },
-        content = content
-    )
-}
-
 data class Menu<T>(val entries: List<MenuEntry<T>>)
 data class MenuEntry<T>(
     val icon: ImageVector? = null,
-    val label: String,
+    val label: Int,
     val content: Either<(T) -> Unit, Menu<T>>
 ) {
-    constructor(icon: ImageVector? = null, label: String, action: (T) -> Unit) : this(
+    constructor(icon: ImageVector? = null, label: Int, action: (T) -> Unit) : this(
         icon,
         label,
         Either.Left(action)
     )
 
-    constructor(icon: ImageVector? = null, label: String, subMenu: Menu<T>) : this(
+    constructor(icon: ImageVector? = null, label: Int, subMenu: Menu<T>) : this(
         icon,
         label,
         Either.Right(subMenu)
     )
     companion object {
-        @Composable
         fun <T> delete(action: (T) -> Unit) = MenuEntry(
             icon = Icons.Filled.Delete,
-            label = stringResource(id = R.string.menu_delete),
+            label = R.string.menu_delete,
             action = action
         )
-        @Composable
+
         fun <T> edit(action: (T) -> Unit) = MenuEntry(
             icon = Icons.Filled.Edit,
-            label = stringResource(id = R.string.menu_edit),
+            label = R.string.menu_edit,
+            action = action
+        )
+
+        fun <T> select(action: (T) -> Unit) = MenuEntry(
+            icon = Icons.Filled.Check,
+            label = R.string.select,
+            action = action
+        )
+
+        fun <T> toggle(isSealed: Boolean, action: (T) -> Unit) = MenuEntry(
+            icon = if (isSealed) Icons.Filled.LockOpen else Icons.Filled.Lock,
+            label = if (isSealed) R.string.menu_reopen else R.string.menu_close,
             action = action
         )
     }
@@ -125,6 +112,7 @@ fun <T> HierarchicalMenu(
     target: T
 ) {
     DropdownMenu(
+        modifier = Modifier.testTag(TEST_TAG_CONTEXT_MENU),
         expanded = expanded.value,
         onDismissRequest = { expanded.value = false }
     ) {
@@ -137,13 +125,14 @@ private fun RowScope.EntryContent(entry: MenuEntry<*>, offset: Dp = 0.dp) {
     Spacer(modifier = Modifier.width(offset))
     entry.icon?.let {
         Icon(
-            modifier = Modifier.padding(end = 5.dp).size(24.dp),
+            modifier = Modifier
+                .padding(end = 5.dp)
+                .size(24.dp),
             imageVector = it,
-            tint = LocalColors.current.iconTint,
             contentDescription = null
         )
     }
-    Text(text = entry.label, modifier = Modifier.weight(1f))
+    Text(text = stringResource(entry.label), modifier = Modifier.weight(1f))
 }
 
 @Composable
@@ -182,24 +171,15 @@ private fun <T> EntryListRenderer(expanded: MutableState<Boolean>, menu: Menu<T>
     }
 }
 
-
-@Preview
-@Composable
-fun Activity() {
-    Navigation(
-        title = "Main Title"
-    ) { Text(text = "Main Content") }
-}
-
 @Preview
 @Composable
 fun EntryContent() {
     Column {
         DropdownMenuItem(onClick = {}) {
-            EntryContent(GenericMenuEntry(icon = Icons.Filled.Edit, label = "Edit") {})
+            EntryContent(GenericMenuEntry(icon = Icons.Filled.Edit, label = R.string.menu_edit) {})
         }
         DropdownMenuItem(onClick = {}) {
-            EntryContent(GenericMenuEntry(icon = myiconpack.ArrowsAlt, label = "Move") {})
+            EntryContent(GenericMenuEntry(icon = myiconpack.ArrowsAlt, label = R.string.menu_move) {})
         }
     }
 }
@@ -207,16 +187,16 @@ fun EntryContent() {
 @Preview
 @Composable
 fun Overflow() {
-    fun emptyEntry(label: String) = GenericMenuEntry(label = label) {}
+    fun emptyEntry(label: Int) = GenericMenuEntry(label = label) {}
     OverFlowMenu(
         menu = Menu(
             entries = listOf(
-                emptyEntry("Option 1"),
+                emptyEntry(R.string.menu_learn_more),
                 MenuEntry(
-                    label = "Option 2", subMenu = Menu(
+                    label = R.string.menu_hide, subMenu = Menu(
                         entries = listOf(
-                            MenuEntry(icon = Icons.Filled.Edit, label = "Edit") {},
-                            MenuEntry(icon = myiconpack.ArrowsAlt, label = "Move") {}
+                            MenuEntry(icon = Icons.Filled.Edit, label = R.string.menu_edit) {},
+                            MenuEntry(icon = myiconpack.ArrowsAlt, label = R.string.menu_move) {}
                         )
                     )
                 )

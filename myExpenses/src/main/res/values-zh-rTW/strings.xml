@@ -40,18 +40,17 @@
     <string name="color">顏色</string>
     <string name="comment">備註</string>
     <string name="confirmation_dialog_dont_show_again">不再顯示</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">無廣告</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">無限數量的帳戶</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">可附加交易圖片</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">圓餅統計圖(會根據每個類別作出統計圖表)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">無限數量的收支計畫</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">可將交易清單以PDF的檔案型式輸出</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">範本小工具</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">以CSV的檔案型式輸入</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">無限數量的分割款項範本</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>電子郵件支援</b> 保證在2個工作天內回覆</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">對<b>程式開發者的未來藍圖 </b>進行投票</string>
-    <string name="contrib_feature_history_label" tools:ignore="UnusedResources">收支歷史圖表</string>
+    <string name="contrib_feature_ad_free_label">無廣告</string>
+    <string name="contrib_feature_accounts_unlimited_label">無限數量的帳戶</string>
+    <string name="contrib_feature_attach_picture_label">可附加交易圖片</string>
+    <string name="contrib_feature_distribution_label">圓餅統計圖(會根據每個類別作出統計圖表)</string>
+    <string name="contrib_feature_plans_unlimited_label">無限數量的收支計畫</string>
+    <string name="contrib_feature_print_label">可將交易清單以PDF的檔案型式輸出</string>
+    <string name="contrib_feature_csv_import_label">以CSV的檔案型式輸入</string>
+    <string name="contrib_feature_split_template_label">無限數量的分割款項範本</string>
+    <string name="contrib_feature_pro_support_label"><b>電子郵件支援</b> 保證在2個工作天內回覆</string>
+    <string name="contrib_feature_roadmap_voting_label">對<b>程式開發者的未來藍圖</b>進行投票</string>
+    <string name="contrib_feature_history_label">收支歷史圖表</string>
     <string name="licence_status_free">免費版</string>
     <string name="contrib_key">貢獻版金鑰(Contrib Key)</string>
     <string name="extended_key">延伸版金鑰(Extended Key)</string>
@@ -68,10 +67,6 @@
     <string name="description">描述</string>
     <string name="dialog_balance_delete">删除已對帳的交易</string>
     <string name="dialog_confirm_discard_changes">要放棄變更?</string>
-    <string name="dialog_confirm_discard_new_transaction">要放棄新增的交易?</string>
-    <string name="dialog_confirm_discard_new_template">要放棄新增的範本?</string>
-    <string name="dialog_confirm_discard_new_account">要放棄新增的帳戶?</string>
-    <string name="dialog_confirm_discard_new_method">要放棄新增的付款方式?</string>
     <string name="dialog_command_disabled_balance">沒有已結算或已入帳的交易需要去對帳</string>
     <string name="dialog_command_disabled_insert_transfer">需要建立第二個帳戶才可以互相轉帳。</string>
     <string name="dialog_command_disabled_reset_account">沒有交易資料可以輸出</string>
@@ -136,7 +131,6 @@
     <string name="help_heading_credits">信用</string>
     <string name="help_heading_license">許可</string>
     <string name="help_heading_whats_new">最新資訊</string>
-    <string name="important_upgrade_information_heading">重要消息</string>
     <string name="import_select_transactions">交易項目</string>
     <string name="income">收入</string>
     <string name="invalid_number_format">本機設備無法識別十進制格式。請使用%1$s</string>
@@ -285,8 +279,8 @@
     <string name="pref_contrib_purchase_title_in_app">程式內付款</string>
     <string name="pref_custom_currency_title">自定義貨幣</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">如果您收到金鑰，就可以使用高級功能。</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">請輸入金鑰號碼</string>
+    <string name="pref_enter_licence_summary">如果您收到金鑰，就可以使用高級功能。</string>
+    <string name="pref_enter_licence_title">請輸入金鑰號碼</string>
     <string name="pref_export_format_title">數據資料格式</string>
     <string name="pref_import_from_grisbi_summary">從Grisbi XML 檔案匯入類別項目和交易對象(收款人/付款人)</string>
     <string name="pref_import_from_grisbi_title">由Grisbi匯入</string>
@@ -338,7 +332,6 @@
     <string name="pref_visit_website_summary">活動日誌和常見問題</string>
     <string name="pref_visit_website_title">瀏覽官方網站</string>
     <string name="progress_dialog_deleting">刪除物件中…</string>
-    <string name="progress_dialog_loading">從資料庫載入物件中…</string>
     <string name="progress_dialog_printing">生成%s檔案中</string>
     <string name="qif_parse_result">已解析：%1$s個帳戶； %2$s類別項目和%3$s交易對象</string>
     <string name="qif_parse_failure_found_multiple_accounts">在QIF檔案中找到多個帳戶。</string>
@@ -460,7 +453,6 @@
     <string name="hint_auto_fill">當交易對象(收款人/付款人)相同時，是否自動填入上次交易的內容？
 您始終可以通過\"程式設定\"更改此決定。</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate"> %2$s 貨幣的 %1$d 帳戶已經被更新了</string>
-    <string name="learn_more">了解更多</string>
     <string name="import_source_file">檔案</string>
     <string name="restore_calendar_handling">日曆資料處理中</string>
     <string name="restore_calendar_handling_configured">將計畫復原到當前設定的日曆中</string>
@@ -619,7 +611,6 @@
     <string name="onboarding_restore_from_cloud_backup">備份檔案</string>
     <string name="onboarding_restore_from_local">從本機備份檔案來復原</string>
     <string name="dialog_button_add">新增</string>
-    <string name="template_create_error">保存範本時發生錯誤</string>
     <string name="contributed_by">由%s貢獻</string>
     <string name="pref_sync_notification_summary">通知有關同步的進度</string>
     <string name="pref_debug_logging_summary">將偵錯資訊寫入系統日誌</string>
@@ -629,7 +620,6 @@
     <string name="progress_validating_licence">許可證驗證中…</string>
     <string name="licence_validation_error_expired">許可證已過期</string>
     <string name="licence_validation_error_device_limit_exceeded">超出裝置限制。請從其他裝置上刪除授權的許可證。</string>
-    <string name="error">錯誤（%s）</string>
     <string name="button_validate">驗證</string>
     <string name="licence_key">許可證金鑰</string>
     <string name="licence_removal_information">如果您不再需要此裝置上的高級功能，則可以刪除授權許可金鑰。這樣可以釋放金鑰，以便在另一台裝置上啟用。該金鑰最多可以在%d台裝置上啟用。</string>
@@ -655,7 +645,6 @@
     <string name="auto_fill_account_from_aggregate_only">僅當從彙總帳戶啟動時。</string>
     <string name="sync_auth_exception">授權失敗。</string>
     <string name="sync_login_again">請重新登入。</string>
-    <string name="sync_loading_accounts_from_backend">從後端載入可用帳戶中…</string>
     <plurals name="delete_success">
         <item quantity="other">%d已成功刪除。</item>
     </plurals>
@@ -681,14 +670,9 @@
     <string name="warning_ungroup_split_transactions">您所選定的分割交易將被解散群組，也就是說，它們的分割款項將各自成為一般交易。</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">拆散分割交易</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="other">分割交易%1$d已被拆散成功。</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">拆散分割交易時，分割交易%2$d中的%1$d拆散失敗。</string>
+    <string name="ungroup_split_transaction_success">分割交易1已被拆散成功。</string>
     <string name="split_transaction_one_success">轉換成分割交易成功。</string>
-    <string name="split_transaction_one_error">無法將交易轉換為分割交易。</string>
     <string name="split_transaction_group_success">%1$d數筆交易已成功地組成一個分割交易。</string>
-    <string name="split_transaction_group_error">無法將這些交易組成一個分割交易。</string>
     <string name="split_transaction_not_possible">只有具有相同帳戶、收款人和狀態的交易，才能被組成一個分割交易。</string>
     <string name="pref_transaction_time_summary">允許設定確切的交易時間。</string>
     <string name="pref_value_date_summary">除了\"帳面交易日期(booking date)\"外，還可以設定\"生效日期(value date)\"。交易時間將被隱藏。此設定不適用於現金帳戶。</string>
@@ -768,7 +752,6 @@
     <string name="button_label_no_encryption">沒有加密</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">或</string>
-    <string name="pref_account_list_fast_scroll_summary">啟用快速捲動帳戶清單的功能。但有可能會導致某些機型出現顯示不正確的問題。</string>
     <string name="menu_hide">隱藏</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">關閉</string>
@@ -804,7 +787,6 @@
     <string name="discover_feature_expense_income_switch">可以使用此轉換鈕記錄收入。</string>
     <string name="menu_create_budget">新增預算</string>
     <string name="budget_onetime">單次</string>
-    <string name="dialog_confirm_discard_new_budget">捨棄新預算？</string>
     <string name="budget_duration_from">從</string>
     <string name="budget_duration_to">到</string>
     <string name="no_budgets">點擊 + 按鈕定義您的第一筆預算。</string>

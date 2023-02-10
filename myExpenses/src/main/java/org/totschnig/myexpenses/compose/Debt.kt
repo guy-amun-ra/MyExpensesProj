@@ -26,15 +26,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.compose.MenuEntry.Companion.delete
+import org.totschnig.myexpenses.compose.MenuEntry.Companion.edit
+import org.totschnig.myexpenses.compose.MenuEntry.Companion.toggle
 import org.totschnig.myexpenses.model.CurrencyUnit
+import org.totschnig.myexpenses.util.convAmount
 import org.totschnig.myexpenses.util.epoch2LocalDate
 import org.totschnig.myexpenses.util.localDate2Epoch
 import org.totschnig.myexpenses.viewmodel.DebtViewModel
 import org.totschnig.myexpenses.viewmodel.data.Debt
 import timber.log.Timber
 import java.time.LocalDate
-
-typealias AmountFormatter = ((Long, CurrencyUnit) -> String)
 
 @Composable
 fun DebtCard(
@@ -44,7 +46,8 @@ fun DebtCard(
     onEdit: (Debt) -> Unit,
     onDelete: (Debt, Int) -> Unit,
     onToggle: (Debt) -> Unit,
-    onShare: (Debt, DebtViewModel.ExportFormat) -> Unit
+    onShare: (Debt, DebtViewModel.ExportFormat) -> Unit,
+    onTransactionClick: (Long) -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -61,7 +64,8 @@ fun DebtCard(
             onEdit,
             onDelete,
             onToggle,
-            onShare
+            onShare,
+            onTransactionClick = onTransactionClick
         )
     }
 }
@@ -74,7 +78,8 @@ fun DebtRenderer(
     onEdit: (Debt) -> Unit = {},
     onDelete: (Debt, Int) -> Unit = { _, _ -> },
     onToggle: (Debt) -> Unit = {},
-    onShare: (Debt, DebtViewModel.ExportFormat) -> Unit = { _, _ -> }
+    onShare: (Debt, DebtViewModel.ExportFormat) -> Unit = { _, _ -> },
+    onTransactionClick: (Long) -> Unit = {}
 ) {
     CompositionLocalProvider(
         LocalColors provides LocalColors.current.copy(
@@ -153,7 +158,8 @@ fun DebtRenderer(
                         TransactionRenderer(
                             transaction = transaction,
                             debt.currency,
-                            index == count - 1
+                            index == count - 1,
+                            onTransactionClick = onTransactionClick
                         )
                     }
                 }
@@ -163,28 +169,17 @@ fun DebtRenderer(
                     modifier = Modifier.align(Alignment.TopEnd),
                     menu = Menu(buildList {
                         if (!debt.isSealed) {
-                            add(MenuEntry.edit {
-                                onEdit(it)
-                            })
+                            add(edit { onEdit(it) })
                         }
-                        add(
-                            MenuEntry(
-                                icon = if (debt.isSealed) Icons.Filled.LockOpen else Icons.Filled.Lock,
-                                label = stringResource(id = if (debt.isSealed) R.string.menu_reopen else R.string.menu_close)
-                            ) {
-                                onToggle(it)
-                            }
-                        )
-                        add(MenuEntry.delete {
-                            onDelete(it, transactions.size)
-                        })
+                        add(toggle(debt.isSealed) { onToggle(it) })
+                        add(delete { onDelete(it, transactions.size) })
                         add(
                             MenuEntry(
                                 icon = Icons.Filled.Share,
-                                label = stringResource(id = R.string.button_label_share_file),
+                                label = R.string.button_label_share_file,
                                 subMenu = Menu(
                                     DebtViewModel.ExportFormat.values().map { format ->
-                                        MenuEntry(label = format.name) {
+                                        MenuEntry(label = format.resId) {
                                             onShare(it, format)
                                         }
                                     }
@@ -203,9 +198,15 @@ fun TransactionRenderer(
     transaction: DebtViewModel.Transaction,
     currency: CurrencyUnit,
     boldBalance: Boolean,
-    withIcon: Boolean = true
+    withIcon: Boolean = true,
+    onTransactionClick: ((Long) -> Unit)? = null
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier.optional(onTransactionClick, ifPresent = {
+            clickable { it(transaction.id) }
+        }),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
 
         Text(
             modifier = Modifier.padding(start = 4.dp),
@@ -217,7 +218,7 @@ fun TransactionRenderer(
             Text(
                 modifier = Modifier.weight(1F),
                 textAlign = TextAlign.End,
-                text = LocalAmountFormatter.current(it, currency)
+                text = LocalCurrencyFormatter.current.convAmount(it, currency)
             )
         }
 

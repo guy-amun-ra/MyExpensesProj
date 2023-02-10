@@ -40,18 +40,17 @@
     <string name="color">Цвят</string>
     <string name="comment">Бележки</string>
     <string name="confirmation_dialog_dont_show_again">Не показвай отново</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">Без реклами</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Неограничен брой сметки</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Прикачане на изображение към транзакция</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Графично разпределение (по категория)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Неограничен брой планове</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Експортиране в PDF на списък транзакции</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Шаблон на уиджет</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Импорт от CSV</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Неограничен брой шаблони за  разпределяне</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b> Поддръжка по имейл </b> с гарантиран отговор до 2 работни дни</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">Право да гласувате на <b> карта за развитие </b></string>
-    <string name="contrib_feature_history_label" tools:ignore="UnusedResources">Графика на историята</string>
+    <string name="contrib_feature_ad_free_label">Без реклами</string>
+    <string name="contrib_feature_accounts_unlimited_label">Неограничен брой сметки</string>
+    <string name="contrib_feature_attach_picture_label">Прикачане на изображение към транзакция</string>
+    <string name="contrib_feature_distribution_label">Графично разпределение (по категория)</string>
+    <string name="contrib_feature_plans_unlimited_label">Неограничен брой планове</string>
+    <string name="contrib_feature_print_label">Експортиране в PDF на списък транзакции</string>
+    <string name="contrib_feature_csv_import_label">Импорт от CSV</string>
+    <string name="contrib_feature_split_template_label">Неограничен брой шаблони за  разпределяне</string>
+    <string name="contrib_feature_pro_support_label"><b>Поддръжка по имейл</b> с гарантиран отговор до 2 работни дни</string>
+    <string name="contrib_feature_roadmap_voting_label">Право да гласувате на <b> карта за развитие </b></string>
+    <string name="contrib_feature_history_label">Графика на историята</string>
     <string name="licence_status_free">Безплатен</string>
     <string name="contrib_key">ключ за Основен вариант</string>
     <string name="extended_key">ключ за Разширен вариант</string>
@@ -68,10 +67,6 @@
     <string name="description">Описание</string>
     <string name="dialog_balance_delete">Изтрий изравнените транзакции</string>
     <string name="dialog_confirm_discard_changes">Да отхвърля ли промените?</string>
-    <string name="dialog_confirm_discard_new_transaction">Да отхвърля ли новата транзакция?</string>
-    <string name="dialog_confirm_discard_new_template">Да отхвърля ли новия шаблон?</string>
-    <string name="dialog_confirm_discard_new_account">Да отхвърля ли новата сметка?</string>
-    <string name="dialog_confirm_discard_new_method">Да отхвърля ли новия начин на плащане?</string>
     <string name="dialog_command_disabled_balance">Няма изчистени транзакции, които да бъдат изравнени.</string>
     <string name="dialog_command_disabled_insert_transfer">Транзакциите превод изискват втора сметка.</string>
     <string name="dialog_command_disabled_reset_account">Няма транзакции за експорт.</string>
@@ -137,7 +132,6 @@
     <string name="help_heading_credits">Кредити</string>
     <string name="help_heading_license">Лиценз</string>
     <string name="help_heading_whats_new">Какво ново</string>
-    <string name="important_upgrade_information_heading">Важна информация</string>
     <string name="import_select_transactions">Транзакции</string>
     <string name="income">Приход</string>
     <string name="invalid_number_format">Не е рапознат десетичния разделител. Моля, използвайте %1$s</string>
@@ -288,8 +282,8 @@
     <string name="pref_contrib_purchase_title_in_app">Плащане в приложението</string>
     <string name="pref_custom_currency_title">Персонализирайте валути</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Ако сте получили ключ, получавате достъп до допълнителните функции.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Въведете ключ</string>
+    <string name="pref_enter_licence_summary">Ако сте получили ключ, получавате достъп до допълнителните функции.</string>
+    <string name="pref_enter_licence_title">Въведете ключ</string>
     <string name="pref_export_format_title">Формат на датата</string>
     <string name="pref_import_from_grisbi_summary">Внасяне на категории и страни от Grisbi XML файл</string>
     <string name="pref_import_from_grisbi_title">Внасяне от Grisbi</string>
@@ -341,7 +335,6 @@
     <string name="pref_visit_website_summary">Често задавани въпроси (FAQ)</string>
     <string name="pref_visit_website_title">Посетете сайта ни</string>
     <string name="progress_dialog_deleting">Изтриване на обекти</string>
-    <string name="progress_dialog_loading">Зареждане обекти от база данни</string>
     <string name="progress_dialog_printing">Генериране на %s</string>
     <string name="qif_parse_result">Анализирани: %1$s сметки; %2$s категории и %3$s страни</string>
     <string name="qif_parse_failure_found_multiple_accounts">Открити са множество сметки в QIF файла.</string>
@@ -466,7 +459,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Закупуването е неуспешно или отменено.</string>
     <string name="hint_auto_fill">Да се попълват ли автоматично данните от последната транзакция за същия получател / платец? Винаги можете да промените това поведение от настройките.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">Актуализирани са %1$d сметки с валута %2$s .</string>
-    <string name="learn_more">Научете повече</string>
     <string name="import_source_file">Файл</string>
     <string name="restore_calendar_handling">Възстановяване на данни в календара</string>
     <string name="restore_calendar_handling_configured">Възстанови плановете в текущия календар</string>
@@ -586,7 +578,7 @@
     <string name="link_account_failure_3">Конфликтът може да бъде разрешен ръчно от контекстното меню на елемента.</string>
     <string name="progress_dialog_checking_sync_backend">Проверка на отдалеченото хранилище</string>
     <string name="template">Шаблон</string>
-    <string name="contrib_feature_synchronization_label" tools:ignore="UnusedResources">Синхронизация чрез облак</string>
+    <string name="contrib_feature_synchronization_label">Синхронизация чрез облак</string>
     <string name="all_contrib_key_features">Всички възможности на Основен вариант</string>
     <string name="all_extended_key_features">Всички възможности на Разширен вариант</string>
     <!-- button leading user to purchase flow for licence keys -->
@@ -625,7 +617,6 @@
     <string name="onboarding_restore_from_cloud_backup">Архиви</string>
     <string name="onboarding_restore_from_local">Възстановяване от локален архивен файл</string>
     <string name="dialog_button_add">Добави</string>
-    <string name="template_create_error">Грешка при запазването на шаблона</string>
     <string name="contributed_by">Принос чрез %s</string>
     <string name="pref_sync_notification_summary">Уведомяване за хода на синхронизацията</string>
     <string name="pref_debug_logging_summary">Запис на информация за отстраняване на грешки в системния дневник</string>
@@ -635,7 +626,6 @@
     <string name="progress_validating_licence">Валидиране на лиценза</string>
     <string name="licence_validation_error_expired">Лицензът изтече</string>
     <string name="licence_validation_error_device_limit_exceeded">Превишен е броят на устройствата. Моля, премахнете лиценза от друго устройство.</string>
-    <string name="error">Грешка (%s)</string>
     <string name="button_validate">Валидиране</string>
     <string name="licence_key">Лицензен ключ</string>
     <string name="licence_removal_information">Ако на това устройство вече не се нуждаете от допълнителните възможности на лиценза, може да премахнете лицензния ключ. Това освобождава ключа за активиране на още едно, друго устройство. Ключът може да бъде активиран на до %d устройства.</string>
@@ -661,7 +651,6 @@
     <string name="auto_fill_account_from_aggregate_only">Само при започване от общата сметка.</string>
     <string name="sync_auth_exception">остъпът е отказан.</string>
     <string name="sync_login_again">Моля, влезте отново.</string>
-    <string name="sync_loading_accounts_from_backend">Зареждане на наличните сметки от отдалеченото хранилище.</string>
     <plurals name="delete_success">
         <item quantity="one">Един обект бе успешно изтрит.</item>
         <item quantity="other">%d обекта бяха успешно изтрити.</item>
@@ -688,15 +677,9 @@
     <string name="warning_ungroup_split_transactions">Избраните разпределени транзакции ще бъдат разгрупирани, т.е. разпределените им части ще станат отделни транзакции.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">Разгрупирай разпределени</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">Сплит транзакцията бе успешно дегенерирана.</item>
-        <item quantity="other">%1$d транзакции са разгрупирани успешно.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">При разгрупиране, %1$d от %2$d разпределени транзакции са отказани.</string>
+    <string name="ungroup_split_transaction_success">Сплит транзакцията бе успешно дегенерирана.</string>
     <string name="split_transaction_one_success">Успешно преобразувана в разпределена транзакция.</string>
-    <string name="split_transaction_one_error">Не мога да преобразувам транзакцията в разпределена.</string>
     <string name="split_transaction_group_success"> %1$d транзакции са успешно групирани в една разпределена транзакция.</string>
-    <string name="split_transaction_group_error">Тези транзакции не може да бъдат групирани в разпределена.</string>
     <string name="split_transaction_not_possible">Само транзакции, които имат еднакви сметка, получател и статус, могат да бъдат групирани в една разпределена транзакция.</string>
     <string name="pref_transaction_time_summary">Позволява да зададете часовото време на транзакцията.</string>
     <string name="pref_value_date_summary">Позволява да зададете време на вальора освен датата на резервацията. Времето на транзакцията ще бъде скрито. Тази настройка не се прилага за касови сметки.</string>
@@ -776,7 +759,6 @@
     <string name="button_label_no_encryption">Без шифроване</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">или</string>
-    <string name="pref_account_list_fast_scroll_summary">Активиране на бързо превъртане за списъка на сметките. Може да доведе до неправилно показване на някои устройства</string>
     <string name="menu_hide">Скрий</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">Затвори</string>
@@ -812,7 +794,6 @@
     <string name="discover_feature_expense_income_switch">Използвайте този превключвател, за да запишете приход.</string>
     <string name="menu_create_budget">Нов бюджет</string>
     <string name="budget_onetime">Еднократно</string>
-    <string name="dialog_confirm_discard_new_budget">Да се отхвърли ли новият бюджет?</string>
     <string name="budget_duration_from">От</string>
     <string name="budget_duration_to">До</string>
     <string name="no_budgets">Дефинирайте първия си бюджет, като докоснете бутона +.</string>
@@ -981,7 +962,6 @@
         <item quantity="other">Задължението %1$s има %2$d отнесени транзакции.</item>
     </plurals>
     <string name="dialog_title_delete_debt">Да се изтрие ли задължението\?</string>
-    <string name="dialog_confirm_discard_new_debt">Да се премахне ли новото задължение\?</string>
     <string name="warning_party_delete_debt">При изтриване на страна, задълженията дефинирани към нея също ще бъдат изтрити.</string>
     <string name="debts">Задължения</string>
     <string name="debt_owes_me">%s ми се длъжат</string>
@@ -1021,5 +1001,18 @@
     <string name="pref_debug_logging_share_summary">Споделяне на файловете дневници за дебъг</string>
     <string name="whats_new_340">Полето Бележки позволява няколко абзаца.</string>
     <string name="webui_warning_move_transaction">Транзакцията ще бъде преместена в сметка {account}.</string>
-    <string name="whats_new_344">Икони за категориите</string>
+    <string name="icons_for_categories">Икони за категориите</string>
+    <string name="budget_only_current_period">Задай само за %s</string>
+    <string name="budget_table_header_rollover">Пренасяне на суми</string>
+    <string name="dialog_confirm_rollover_delete">Всички суми за пренасяне за тоси период ще бъдат изтрити.</string>
+    <string name="rollover_edit_invalid">Сборът от сумите за пренасяне, зададени по категория и подкатегории, не може да надвишава остатъка.</string>
+    <string name="required">Задължително</string>
+    <string name="content_description_attachment">Прикачено</string>
+    <string name="redesign">Редизайн</string>
+    <string name="upgrade_info_557">Харесвате ли новия дизайн\? Моля, кажете ни. Вариант, близък до стария дизайн може да активирате от Настройки (%1$s -&gt; %2$s).</string>
+    <string name="select_all_list_too_large">Командата %s не е достъпна, защото списъка е зареден частично. Моля, използвайте функциите за Търсене, за да намалите размера на списъка.</string>
+    <string name="menu_reconfigure">Преконфигуриране</string>
+    <string name="encrypt_database">Криптиране на базата данни</string>
+    <string name="encrypt_database_info">Базата данни ще бъде шифрована с парола, която не може да бъде извлечена от устройството. Също така, тя няма да бъде архивирана от услугата за архивиране на вашето устройство.</string>
+    <string name="database_is_encrypted">Базата данни е шифрована.</string>
 </resources>

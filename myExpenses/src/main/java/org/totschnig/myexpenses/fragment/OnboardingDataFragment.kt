@@ -13,6 +13,7 @@ import eltos.simpledialogfragment.color.SimpleColorDialog
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.BackupRestoreActivity
+import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.activity.OnboardingActivity
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
 import org.totschnig.myexpenses.activity.RESTORE_REQUEST
@@ -20,19 +21,18 @@ import org.totschnig.myexpenses.activity.SyncBackendSetupActivity
 import org.totschnig.myexpenses.adapter.CurrencyAdapter
 import org.totschnig.myexpenses.databinding.OnboardingWizzardDataBinding
 import org.totschnig.myexpenses.dialog.DialogUtils
+import org.totschnig.myexpenses.dialog.MessageDialogFragment
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.AccountType
 import org.totschnig.myexpenses.model.CurrencyContext
-import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Money
-import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.getAccountNames
 import org.totschnig.myexpenses.util.UiUtils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
-import org.totschnig.myexpenses.viewmodel.OnBoardingViewModel
+import org.totschnig.myexpenses.viewmodel.OnBoardingDataViewModel
 import org.totschnig.myexpenses.viewmodel.data.Currency
 import org.totschnig.myexpenses.viewmodel.data.Currency.Companion.create
 import java.math.BigDecimal
@@ -45,13 +45,10 @@ class OnboardingDataFragment : OnboardingFragment(), AdapterView.OnItemSelectedL
 
     @Inject
     lateinit var currencyContext: CurrencyContext
-    
-    @Inject
-    lateinit var prefHandler: PrefHandler
-    
-    val currencyViewModel: CurrencyViewModel by viewModels()
-    val viewModel: OnBoardingViewModel by viewModels()
-    
+
+    private val currencyViewModel: CurrencyViewModel by viewModels()
+    val viewModel: OnBoardingDataViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         with((requireActivity().application as MyApplication).appComponent) {
@@ -61,11 +58,11 @@ class OnboardingDataFragment : OnboardingFragment(), AdapterView.OnItemSelectedL
         }
         viewModel.accountSave.observe(this) {
             if (it) {
-                (requireActivity() as OnboardingActivity).start()
-            }  else {
+                hostActivity.start()
+            } else {
                 val message = "Unknown error while setting up account"
                 CrashHandler.report(Exception(message))
-                (requireActivity() as OnboardingActivity).showSnackBar(message)
+                hostActivity.showSnackBar(message)
             }
         }
     }
@@ -83,20 +80,30 @@ class OnboardingDataFragment : OnboardingFragment(), AdapterView.OnItemSelectedL
         )
     }
 
-    override fun getNavigationButtonId(): Int {
-        return R.id.suw_navbar_done
-    }
+    override val navigationButtonId = R.id.suw_navbar_done
 
     override fun onNextButtonClicked() {
-        prefHandler.putString(PrefKey.HOME_CURRENCY, validateSelectedCurrency().code)
-        viewModel.saveAccount(buildAccount())
+        if (prefHandler.encryptDatabase && !isSqlCryptLoaded) {
+            (requireActivity() as BaseActivity).showMessage(
+                "The module required for database encryption has not yet been downloaded from Play Store. Please try again!",
+                null,
+                null,
+                MessageDialogFragment.Button(
+                    R.string.button_label_close,
+                    R.id.QUIT_COMMAND,
+                    null
+                ),
+                false
+            )
+        } else {
+            prefHandler.putString(PrefKey.HOME_CURRENCY, selectedCurrency.code)
+            viewModel.saveAccount(buildAccount())
+        }
     }
 
-    override fun getMenuResId(): Int {
-        return R.menu.onboarding_data
-    }
+    override val menuResId = R.menu.onboarding_data
 
-    public override fun setupMenu() {
+    override fun setupMenu() {
         toolbar.menu.findItem(R.id.SetupFromRemote).subMenu?.let {
             it.clear()
             (requireActivity() as SyncBackendSetupActivity).addSyncProviderMenuEntries(it)
@@ -123,11 +130,9 @@ class OnboardingDataFragment : OnboardingFragment(), AdapterView.OnItemSelectedL
         return true
     }
 
-    override fun getLayoutResId(): Int {
-        return R.layout.onboarding_wizzard_data
-    }
+    override val layoutResId = R.layout.onboarding_wizzard_data
 
-    public override fun bindView(view: View) {
+    override fun bindView(view: View) {
         _binding = OnboardingWizzardDataBinding.bind(view)
         binding.MoreOptionsButton.setOnClickListener {
             viewModel.moreOptionsShown = true
@@ -151,17 +156,14 @@ class OnboardingDataFragment : OnboardingFragment(), AdapterView.OnItemSelectedL
 
         //currency
         DialogUtils.configureCurrencySpinner(binding.Currency, this)
-        val code =
-            if (savedInstanceState != null) savedInstanceState[DatabaseConstants.KEY_CURRENCY] as String? else null
+        val code = savedInstanceState?.getString(DatabaseConstants.KEY_CURRENCY)
         val currency =
             if (code != null) create(code, requireActivity()) else currencyViewModel.default
-        currencyViewModel.getCurrencies().observe(this) { currencies: List<Currency?> ->
-            val adapter = binding.Currency.adapter as CurrencyAdapter
-            adapter.clear()
-            adapter.addAll(currencies)
-            binding.Currency.setSelection(adapter.getPosition(currency))
-            nextButton.visibility = View.VISIBLE
-        }
+        val adapter = binding.Currency.adapter as CurrencyAdapter
+        adapter.clear()
+        adapter.addAll(currencyViewModel.currenciesFromEnum)
+        binding.Currency.setSelection(adapter.getPosition(currency))
+        nextButton.visibility = View.VISIBLE
 
         //type
         DialogUtils.configureTypeSpinner(binding.AccountType)
@@ -173,9 +175,8 @@ class OnboardingDataFragment : OnboardingFragment(), AdapterView.OnItemSelectedL
         }
     }
 
-    override fun getTitle(): CharSequence {
-        return getString(R.string.onboarding_data_title)
-    }
+    override val title: CharSequence
+        get() = getString(R.string.onboarding_data_title)
 
     private fun setDefaultLabel() {
         binding.Label.setText(R.string.default_account_name)
@@ -197,25 +198,23 @@ class OnboardingDataFragment : OnboardingFragment(), AdapterView.OnItemSelectedL
 
     override fun onItemSelected(parent: AdapterView<*>, view: View, position: Int, id: Long) {
         if (parent.id == R.id.Currency) {
-            binding.Amount.setFractionDigits(validateSelectedCurrency().fractionDigits)
+            binding.Amount.setFractionDigits(selectedCurrency.fractionDigits)
         }
     }
 
-    private fun validateSelectedCurrency(): CurrencyUnit {
-        val currency = (binding.Currency.selectedItem as Currency).code
-        return currencyContext[currency]
-    }
+    private val selectedCurrency
+        get() = currencyContext[(binding.Currency.selectedItem as Currency).code]
 
     override fun onNothingSelected(parent: AdapterView<*>?) {}
-    fun buildAccount(): Account {
+    private fun buildAccount(): Account {
         var label = binding.Label.text.toString()
         if (TextUtils.isEmpty(label)) {
             label = getString(R.string.default_account_name)
         }
         val openingBalance = binding.Amount.typedValue
-        val currency = validateSelectedCurrency()
+        val currency = selectedCurrency
         return Account(
-            label, currency, Money(currency, openingBalance),
+            label, Money(currency, openingBalance),
             binding.Description.text.toString(),
             binding.AccountType.selectedItem as AccountType, viewModel.accountColor
         )

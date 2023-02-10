@@ -32,6 +32,7 @@ import org.totschnig.myexpenses.activity.ManageSyncBackends
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
+import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID
 import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.TransactionProvider
@@ -138,17 +139,13 @@ class GenericAccountService : Service() {
         const val KEY_BROKEN = "broken"
         const val KEY_ENCRYPTED = "encrypted"
 
-        @JvmStatic
-        fun requestSync(syncAccountName: String, uuid: String) {
-            requestSync(accountName = syncAccountName, uuid = uuid)
-        }
-
-        fun requestSync(accountName: String,
-                        manual: Boolean = true,
-                        expedited: Boolean = true,
-                        uuid: String? = null,
-                        extras: Bundle = Bundle()
-                        ) {
+        fun requestSync(
+            accountName: String,
+            manual: Boolean = true,
+            expedited: Boolean = true,
+            uuid: String? = null,
+            extras: Bundle = Bundle()
+        ) {
             ContentResolver.requestSync(
                 getAccount(accountName),
                 TransactionProvider.AUTHORITY, extras.apply {
@@ -201,15 +198,34 @@ class GenericAccountService : Service() {
         }
 
         fun storePassword(
-            contentResolver: ContentResolver?,
-            accountName: String,
+            context: Context,
+            account: Account,
             encryptionPassword: String?
         ) {
-            DbUtils.storeSetting(contentResolver, getPasswordKey(accountName), encryptionPassword)
+            AccountManager.get(context)
+                .setUserData(account, KEY_PASSWORD_ENCRYPTION, encryptionPassword)
         }
 
-        fun loadPassword(contentResolver: ContentResolver?, accountName: String): String? {
-            return DbUtils.loadSetting(contentResolver, getPasswordKey(accountName))
+        fun loadPassword(context: Context, accountName: String): String? {
+            return loadPassword(context, getAccount(accountName))
+        }
+
+        fun loadPassword(context: Context, account: Account): String? {
+            return AccountManager.get(context).getUserData(account, KEY_PASSWORD_ENCRYPTION)
+        }
+
+        fun migratePasswords(context: Context) {
+            getAccounts(context).forEach { account ->
+                val legacyPasswordKey = "${account.name} - $KEY_PASSWORD_ENCRYPTION"
+                DbUtils.loadSetting(context.contentResolver, legacyPasswordKey)?.let {
+                    Timber.i("Migrated password for ${account.name}")
+                    storePassword(context, account, it)
+                    context.contentResolver.delete(
+                        TransactionProvider.SETTINGS_URI,
+                        DatabaseConstants.KEY_KEY + " = ?", arrayOf(legacyPasswordKey)
+                    )
+                }
+            }
         }
 
         private fun getPasswordKey(accountName: String): String {
@@ -250,6 +266,10 @@ class GenericAccountService : Service() {
         @JvmStatic
         fun getAccountNames(context: Context): Array<String> =
             getAccounts(context).map { it.name }.toTypedArray()
+
+        fun activateSync(account: String, prefHandler: PrefHandler) {
+            activateSync(getAccount(account), prefHandler)
+        }
 
         fun activateSync(account: Account, prefHandler: PrefHandler) {
             ContentResolver.setSyncAutomatically(account, TransactionProvider.AUTHORITY, true)

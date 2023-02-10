@@ -3,6 +3,7 @@
     xmlns:my="http://myexpenses.mobi/"
     version="2.0">
     <xsl:output encoding="UTF-8" method="xml" />
+    <xsl:include href="helpers_v1.xsl" />
     <xsl:include href="helpers.xsl" />
     <xsl:param name="version" />
     <xsl:param name="languages" select="$all-languages" />
@@ -30,6 +31,10 @@
             <xsl:value-of select="$dir" />
             <xsl:text>/aosp.xml</xsl:text>
         </xsl:variable>
+        <xsl:variable name="help">
+            <xsl:value-of select="$dir" />
+            <xsl:text>/help.xml</xsl:text>
+        </xsl:variable>
         <xsl:variable name="changelog">
             <xsl:for-each select="tokenize($version, ' ')">
                 <xsl:variable name="entry">
@@ -38,6 +43,7 @@
                             <xsl:with-param name="version" select="." />
                             <xsl:with-param name="strings" select="$strings" />
                             <xsl:with-param name="aosp" select="$aosp" />
+                            <xsl:with-param name="help" select="$help" />
                             <xsl:with-param name="lang" select="$lang" />
                         </xsl:call-template>
                     </xsl:variable>

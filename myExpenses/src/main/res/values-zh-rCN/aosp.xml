@@ -13,13 +13,17 @@
     <string name="toast_text_copied">"文本已复制"</string>
     <string name="copy_text">"复制到剪贴板"</string>
     <string name="stop">"停止"</string>
+    <string name="style">"样式"</string>
+    <string name="loading">"正在加载…"</string>
     <string name="no_network">"目前没有网络连接。"</string>
     <string name="button_label_continue">继续</string>
     <string name="autofill">"自动填充"</string>
     <string name="discard">"放弃"</string>
     <string name="dialog_dismiss">"关闭"</string>
+    <string name="details">"详细信息"</string>
     <string name="response_yes">"是"</string>
     <string name="response_no">"否"</string>
+    <string name="experimental">"实验性功能"</string>
     <string name="add_widget">"添加微件"</string>
     <string name="calendar">"日历"</string>
     <string name="permissions_label">"权限"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"设置"</string>
     <string name="clear_cache">"清除缓存"</string>
     <string name="customize">"自定义"</string>
+    <string name="compact">紧凑型</string>
+    <string name="storage_description">"本地存储空间"</string>
+    <string name="encryption">"加密"</string>
+    <string name="learn_more">"了解详情"</string>
+    <string name="show_all">"显示全部选择"</string>
 </resources>
 

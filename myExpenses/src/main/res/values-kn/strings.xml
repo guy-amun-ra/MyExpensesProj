@@ -40,15 +40,14 @@
     <string name="color">ಬಣ್ಣ</string>
     <string name="comment">ಟಿಪ್ಪಣಿಗಳು</string>
     <string name="confirmation_dialog_dont_show_again">ಮತ್ತೆ ತೋರಿಸಬೇಡ</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">ಜಾಹೀರಾತುಗಳಿಲ್ಲ</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">ಅನಿಯಮಿತ ಸಂಖ್ಯೆಯ ಖಾತೆಗಳು</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">ವ್ಯವಹಾರಕ್ಕೆ ಚಿತ್ರವನ್ನು ಲಗತ್ತಿಸಿ</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">ಪೈ ಚಾರ್ಟ್ (ಪ್ರತಿ ವರ್ಗಕ್ಕೆ ವಿತರಣೆ)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">ಅನಿಯಮಿತ ಸಂಖ್ಯೆಯ ಯೋಜನೆಗಳು</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">ವಹಿವಾಟಿನ ಪಟ್ಟಿಯನ್ನು ಪಿಡಿಎಫ್‌ಗೆ ರಫ್ತು ಮಾಡಿ</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">ಟೆಂಪ್ಲೇಟು ವಿಜೆಟ್</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">ಸಿಎಸ್ವಿ ಆಮದು</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">ವಿಭಜಿತ ಟೆಂಪ್ಲೆಟ್ಗಳ ಅನಿಯಮಿತ ಸಂಖ್ಯೆ</string>
+    <string name="contrib_feature_ad_free_label">ಜಾಹೀರಾತುಗಳಿಲ್ಲ</string>
+    <string name="contrib_feature_accounts_unlimited_label">ಅನಿಯಮಿತ ಸಂಖ್ಯೆಯ ಖಾತೆಗಳು</string>
+    <string name="contrib_feature_attach_picture_label">ವ್ಯವಹಾರಕ್ಕೆ ಚಿತ್ರವನ್ನು ಲಗತ್ತಿಸಿ</string>
+    <string name="contrib_feature_distribution_label">ಪೈ ಚಾರ್ಟ್ (ಪ್ರತಿ ವರ್ಗಕ್ಕೆ ವಿತರಣೆ)</string>
+    <string name="contrib_feature_plans_unlimited_label">ಅನಿಯಮಿತ ಸಂಖ್ಯೆಯ ಯೋಜನೆಗಳು</string>
+    <string name="contrib_feature_print_label">ವಹಿವಾಟಿನ ಪಟ್ಟಿಯನ್ನು ಪಿಡಿಎಫ್‌ಗೆ ರಫ್ತು ಮಾಡಿ</string>
+    <string name="contrib_feature_csv_import_label">ಸಿಎಸ್ವಿ ಆಮದು</string>
+    <string name="contrib_feature_split_template_label">ವಿಭಜಿತ ಟೆಂಪ್ಲೆಟ್ಗಳ ಅನಿಯಮಿತ ಸಂಖ್ಯೆ</string>
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources">2 ವ್ಯವಹಾರ ದಿನಗಳಲ್ಲಿ ಖಾತರಿಯ ಪ್ರತಿಕ್ರಿಯೆಯೊಂದಿಗೆ <b>ಇಮೇಲ್ ಬೆಂಬಲ</b></string>
     <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources"><b>ಅಭಿವೃದ್ಧಿ ಮಾರ್ಗಸೂಚಿಯಲ್ಲಿ</b> ಮತದಾನ</string>
     <string name="contrib_feature_history_label" tools:ignore="UnusedResources">ಇತಿಹಾಸ ಚಾರ್ಟ್</string>
@@ -68,10 +67,6 @@
     <string name="description">ವಿವರಣೆ</string>
     <string name="dialog_balance_delete">ರಾಜಿ ಮಾಡಿಕೊಂಡ ವಹಿವಾಟುಗಳನ್ನು ಅಳಿಸಿ</string>
     <string name="dialog_confirm_discard_changes">ಬದಲಾವಣೆಗಳನ್ನು ತ್ಯಜಿಸುತ್ತದೆ?</string>
-    <string name="dialog_confirm_discard_new_transaction">ಹೊಸ ವಹಿವಾಟನ್ನು ತ್ಯಜಿಸುವುದೇ?</string>
-    <string name="dialog_confirm_discard_new_template">ಹೊಸ ಟೆಂಪ್ಲೇಟ್ ಅನ್ನು ತ್ಯಜಿಸುವುದೇ?</string>
-    <string name="dialog_confirm_discard_new_account">ಹೊಸ ಖಾತೆಯನ್ನು ತ್ಯಜಿಸುವುದೇ?</string>
-    <string name="dialog_confirm_discard_new_method">ಹೊಸ ಪಾವತಿ ವಿಧಾನವನ್ನು ತ್ಯಜಿಸುವುದೇ?</string>
     <string name="dialog_command_disabled_balance">ಯಾವುದೇ ತೆರವುಗೊಳಿಸಿದ ವಹಿವಾಟುಗಳನ್ನು ರಾಜಿ ಮಾಡಿಕೊಳ್ಳಲಾಗುವುದಿಲ್ಲ.</string>
     <string name="dialog_command_disabled_insert_transfer">ವರ್ಗಾವಣೆ ವಹಿವಾಟುಗಳಿಗೆ ಎರಡನೇ ಖಾತೆಯ ಅಗತ್ಯವಿದೆ.</string>
     <string name="dialog_command_disabled_reset_account">ರಫ್ತು ಮಾಡಲು ಯಾವುದೇ ವಹಿವಾಟು ಇಲ್ಲ.</string>
@@ -137,7 +132,6 @@
     <string name="help_heading_credits">ಸಾಲಗಳು</string>
     <string name="help_heading_license">ಲೈಸೆನ್ಸ್</string>
     <string name="help_heading_whats_new">ಹೊಸತೇನಿದೆ</string>
-    <string name="important_upgrade_information_heading">ಪ್ರಮುಖ ಮಾಹಿತಿ</string>
     <string name="import_select_transactions">ವ್ಯವಹಾರಗಳು</string>
     <string name="income">ಆದಾಯ</string>
     <string name="invalid_number_format">ನಿಮ್ಮ ಸ್ಥಳದಿಂದ ದಶಮಾಂಶ ಸ್ವರೂಪವನ್ನು ಗುರುತಿಸಲಾಗಿಲ್ಲ. ದಯವಿಟ್ಟು %1$s ಬಳಸಿ</string>
@@ -287,8 +281,8 @@
     <string name="pref_contrib_purchase_title_in_app">ಅಪ್ಲಿಕೇಶನ್‌ನಲ್ಲಿ ಪಾವತಿ</string>
     <string name="pref_custom_currency_title">ಕರೆನ್ಸಿಗಳನ್ನು ಕಸ್ಟಮೈಸ್ ಮಾಡಿ</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">ನೀವು ಕೀಲಿಯನ್ನು ಸ್ವೀಕರಿಸಿದ್ದರೆ, ಪ್ರೀಮಿಯಂ ವೈಶಿಷ್ಟ್ಯಗಳಿಗೆ ಪ್ರವೇಶವನ್ನು ಪಡೆಯಿರಿ.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">ಕೀಲಿಯನ್ನು ನಮೂದಿಸಿ</string>
+    <string name="pref_enter_licence_summary">ನೀವು ಕೀಲಿಯನ್ನು ಸ್ವೀಕರಿಸಿದ್ದರೆ, ಪ್ರೀಮಿಯಂ ವೈಶಿಷ್ಟ್ಯಗಳಿಗೆ ಪ್ರವೇಶವನ್ನು ಪಡೆಯಿರಿ.</string>
+    <string name="pref_enter_licence_title">ಕೀಲಿಯನ್ನು ನಮೂದಿಸಿ</string>
     <string name="pref_export_format_title">ಡೇಟಾ ಸ್ವರೂಪ</string>
     <string name="pref_import_from_grisbi_summary">ಗ್ರಿಸ್ಬಿ ಎಕ್ಸ್‌ಎಂಎಲ್ ಫೈಲ್‌ನಿಂದ ವಿಭಾಗಗಳು ಮತ್ತು ಪಕ್ಷಗಳನ್ನು ಆಮದು ಮಾಡಿ</string>
     <string name="pref_import_from_grisbi_title">ಗ್ರಿಸ್ಬಿಯಿಂದ ಆಮದು ಮಾಡಿ</string>
@@ -340,7 +334,6 @@
     <string name="pref_visit_website_summary">ಚೇಂಜ್ಲಾಗ್ ಮತ್ತು FAQ</string>
     <string name="pref_visit_website_title">ವೆಬ್‌ಸೈಟ್‌ಗೆ ಭೇಟಿ ನೀಡಿ</string>
     <string name="progress_dialog_deleting">ವಸ್ತುಗಳನ್ನು ಅಳಿಸಲಾಗುತ್ತಿದೆ</string>
-    <string name="progress_dialog_loading">ಡೇಟಾಬೇಸ್‌ನಿಂದ ವಸ್ತುವನ್ನು ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ</string>
     <string name="progress_dialog_printing">%s ರಚಿಸಲಾಗುತ್ತಿದೆ</string>
     <string name="qif_parse_result">ಪಾರ್ಸ್ ಮಾಡಲಾಗಿದೆ: %1$s ಖಾತೆಗಳು; %2$s ವಿಭಾಗಗಳು ಮತ್ತು %3$s ಪಕ್ಷಗಳು</string>
     <string name="qif_parse_failure_found_multiple_accounts">QIF ಫೈಲ್‌ನಲ್ಲಿ ಬಹು ಖಾತೆಗಳು ಕಂಡುಬರುತ್ತವೆ.</string>
@@ -465,7 +458,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">ಖರೀದಿ ವಿಫಲವಾಗಿದೆ ಅಥವಾ ರದ್ದುಗೊಂಡಿದೆ.</string>
     <string name="hint_auto_fill">ಅದೇ ಪಾವತಿದಾರ / ಪಾವತಿಸುವವರಿಗೆ ಕೊನೆಯ ವಹಿವಾಟಿನಿಂದ ಡೇಟಾವನ್ನು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಭರ್ತಿ ಮಾಡಬೇಕೇ? ನೀವು ಯಾವಾಗಲೂ ಈ ನಡವಳಿಕೆಯನ್ನು ಸೆಟ್ಟಿಂಗ್‌ಗಳಿಂದ ಬದಲಾಯಿಸಬಹುದು.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d ಕರೆನ್ಸಿ %2$s ಹೊಂದಿರುವ ಖಾತೆಗಳನ್ನು ನವೀಕರಿಸಲಾಗಿದೆ.</string>
-    <string name="learn_more">ಇನ್ನಷ್ಟು ತಿಳಿಯಿರಿ</string>
     <string name="import_source_file">ಫೈಲ್</string>
     <string name="restore_calendar_handling">ಕ್ಯಾಲೆಂಡರ್ ಡೇಟಾ ನಿರ್ವಹಣೆ</string>
     <string name="restore_calendar_handling_configured">ಪ್ರಸ್ತುತ ಕಾನ್ಫಿಗರ್ ಮಾಡಿದ ಕ್ಯಾಲೆಂಡರ್‌ಗೆ ಯೋಜನೆಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಿ</string>
@@ -623,7 +615,6 @@
     <string name="onboarding_restore_from_cloud_backup">ಬ್ಯಾಕಪ್‌ಗಳು</string>
     <string name="onboarding_restore_from_local">ಸ್ಥಳೀಯ ಬ್ಯಾಕಪ್ ಫೈಲ್ ಅನ್ನು ಮರುಸ್ಥಾಪಿಸಿ</string>
     <string name="dialog_button_add">ಸೇರಿಸಿ</string>
-    <string name="template_create_error">ಟೆಂಪ್ಲೇಟ್ ಉಳಿಸುವಾಗ ದೋಷ</string>
     <string name="contributed_by">%s ಕೊಡುಗೆ ನೀಡಿದೆ</string>
     <string name="pref_sync_notification_summary">ಸಿಂಕ್ರೊನೈಸೇಶನ್ ಪ್ರಗತಿಯ ಬಗ್ಗೆ ತಿಳಿಸಿ</string>
     <string name="pref_debug_logging_summary">ಡೀಬಗ್ ಮಾಡುವ ಮಾಹಿತಿಯನ್ನು ಸಿಸ್ಟಮ್ ಲಾಗ್‌ಗೆ ಬರೆಯಿರಿ</string>
@@ -633,7 +624,6 @@
     <string name="progress_validating_licence">ಪರವಾನಗಿ ಮೌಲ್ಯೀಕರಿಸಲಾಗುತ್ತಿದೆ</string>
     <string name="licence_validation_error_expired">ಪರವಾನಗಿ ಅವಧಿ ಮೀರಿದೆ</string>
     <string name="licence_validation_error_device_limit_exceeded">ಸಾಧನದ ಮಿತಿಯನ್ನು ಮೀರಿದೆ. ದಯವಿಟ್ಟು ಮತ್ತೊಂದು ಸಾಧನದಿಂದ ಪರವಾನಗಿ ತೆಗೆದುಹಾಕಿ.</string>
-    <string name="error">ದೋಷ (%s)</string>
     <string name="button_validate">ಮೌಲ್ಯೀಕರಿಸಿ</string>
     <string name="licence_key">ಪರವಾನಗಿ ಕೀ</string>
     <string name="licence_removal_information">ಈ ಸಾಧನದಲ್ಲಿ ನಿಮಗೆ ಇನ್ನು ಮುಂದೆ ಪ್ರೀಮಿಯಂ ಕ್ರಿಯಾತ್ಮಕತೆಯ ಅಗತ್ಯವಿಲ್ಲದಿದ್ದರೆ, ನೀವು ಪರವಾನಗಿ ಕೀಲಿಯನ್ನು ತೆಗೆದುಹಾಕಬಹುದು. ಇದು ಮತ್ತೊಂದು ಸಾಧನದಲ್ಲಿ ಸಕ್ರಿಯಗೊಳಿಸುವ ಕೀಲಿಯನ್ನು ಮುಕ್ತಗೊಳಿಸುತ್ತದೆ. ಕೀಲಿಯನ್ನು %d ಸಾಧನಗಳಲ್ಲಿ ಸಕ್ರಿಯಗೊಳಿಸಬಹುದು.</string>
@@ -659,7 +649,6 @@
     <string name="auto_fill_account_from_aggregate_only">ಒಟ್ಟು ಖಾತೆಯಿಂದ ಪ್ರಾರಂಭಿಸಿದಾಗ ಮಾತ್ರ.</string>
     <string name="sync_auth_exception">ಅಧಿಕಾರ ವಿಫಲವಾಗಿದೆ.</string>
     <string name="sync_login_again">ದಯವಿಟ್ಟು ಮತ್ತೆ ಲಾಗ್ ಇನ್ ಮಾಡಿ.</string>
-    <string name="sync_loading_accounts_from_backend">ಲಭ್ಯವಿರುವ ಖಾತೆಗಳನ್ನು ಬ್ಯಾಕೆಂಡ್‌ನಿಂದ ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ.</string>
     <plurals name="delete_success">
         <item quantity="one">ಒಂದು ವಸ್ತುವನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ.</item>
         <item quantity="other">%d ವಸ್ತುಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಅಳಿಸಲಾಗಿದೆ.</item>
@@ -686,15 +675,9 @@
     <string name="warning_ungroup_split_transactions">ಆಯ್ದ ವಿಭಜಿತ ವಹಿವಾಟುಗಳನ್ನು ಗುಂಪು ಮಾಡಲಾಗುವುದಿಲ್ಲ, ಅಂದರೆ ಅವುಗಳ ವಿಭಜಿತ ಭಾಗಗಳು ಸಾಮಾನ್ಯ ವಹಿವಾಟುಗಳಾಗಿ ಮಾರ್ಪಡುತ್ತವೆ.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">ಗುಂಪು ವಿಭಜನೆ</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">ಸ್ಪ್ಲಿಟ್ ವಹಿವಾಟನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಗುಂಪು ಮಾಡಲಾಗಿಲ್ಲ.</item>
-        <item quantity="other">%1$d ವಿಭಜಿತ ವಹಿವಾಟುಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಗುಂಪು ಮಾಡಲಾಗಿಲ್ಲ.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">ವಿಭಜಿತ ವಹಿವಾಟುಗಳನ್ನು ಗುಂಪು ಮಾಡದಿದ್ದಾಗ, %2$d ರಲ್ಲಿ %1$d ವಿಫಲವಾಗಿದೆ.</string>
+    <string name="ungroup_split_transaction_success">ಸ್ಪ್ಲಿಟ್ ವಹಿವಾಟನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಗುಂಪು ಮಾಡಲಾಗಿಲ್ಲ.</string>
     <string name="split_transaction_one_success">ವಹಿವಾಟು ಯಶಸ್ವಿಯಾಗಿ ವಿಭಜನೆಯಾಗಿ ರೂಪಾಂತರಗೊಂಡಿದೆ.</string>
-    <string name="split_transaction_one_error">ವಹಿವಾಟನ್ನು ವಿಭಜನೆಗೆ ಪರಿವರ್ತಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.</string>
     <string name="split_transaction_group_success">%1$d ವಹಿವಾಟುಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಒಂದು ವಿಭಜಿತ ವಹಿವಾಟಾಗಿ ವರ್ಗೀಕರಿಸಲಾಗಿದೆ.</string>
-    <string name="split_transaction_group_error">ವಹಿವಾಟುಗಳನ್ನು ವಿಭಜಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ.</string>
     <string name="split_transaction_not_possible">ಒಂದೇ ಖಾತೆ, ಪಾವತಿಸುವವರು ಮತ್ತು ಸ್ಥಿತಿಯನ್ನು ಹೊಂದಿರುವ ವಹಿವಾಟುಗಳನ್ನು ಮಾತ್ರ ಒಂದು ವಿಭಜಿತ ವಹಿವಾಟಾಗಿ ವರ್ಗೀಕರಿಸಬಹುದು.</string>
     <string name="pref_transaction_time_summary">ನಿಖರವಾದ ವಹಿವಾಟು ಸಮಯವನ್ನು ಹೊಂದಿಸಲು ಅನುಮತಿಸಿ.</string>
     <string name="pref_value_date_summary">ಬುಕಿಂಗ್ ದಿನಾಂಕದ ಜೊತೆಗೆ ಮೌಲ್ಯ ದಿನಾಂಕವನ್ನು ಹೊಂದಿಸಲು ಅನುಮತಿಸಿ. ವಹಿವಾಟಿನ ಸಮಯವನ್ನು ಮರೆಮಾಡಲಾಗುತ್ತದೆ. ಈ ಸೆಟ್ಟಿಂಗ್ ಅನ್ನು ನಗದು ಖಾತೆಗಳಿಗೆ ಅನ್ವಯಿಸಲಾಗುವುದಿಲ್ಲ.</string>
@@ -774,7 +757,6 @@
     <string name="button_label_no_encryption">ಗೂ ry ಲಿಪೀಕರಣವಿಲ್ಲದೆ</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">ಅಥವಾ</string>
-    <string name="pref_account_list_fast_scroll_summary">ಖಾತೆ ಪಟ್ಟಿಗಾಗಿ ವೇಗದ ಸ್ಕ್ರಾಲ್ ಅನ್ನು ಸಕ್ರಿಯಗೊಳಿಸಿ. ಕೆಲವು ಸಾಧನಗಳಲ್ಲಿ ತಪ್ಪಾದ ಪ್ರದರ್ಶನಕ್ಕೆ ಕಾರಣವಾಗಬಹುದು</string>
     <string name="menu_hide">ಮರೆಮಾಡಿ</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">ಮುಚ್ಚಿ</string>
@@ -810,7 +792,6 @@
     <string name="discover_feature_expense_income_switch">ಆದಾಯವನ್ನು ದಾಖಲಿಸಲು ಈ ಸ್ವಿಚ್ ಬಟನ್ ಬಳಸಿ.</string>
     <string name="menu_create_budget">ಹೊಸ ಬಜೆಟ್</string>
     <string name="budget_onetime">ಒಂದು ಬಾರಿ</string>
-    <string name="dialog_confirm_discard_new_budget">ಹೊಸ ಬಜೆಟ್ ಅನ್ನು ತ್ಯಜಿಸುವುದೇ?</string>
     <string name="budget_duration_from">ಇಂದ</string>
     <string name="budget_duration_to">ಗೆ</string>
     <string name="no_budgets">+ ಬಟನ್ ಟ್ಯಾಪ್ ಮಾಡುವ ಮೂಲಕ ನಿಮ್ಮ ಮೊದಲ ಬಜೆಟ್ ಅನ್ನು ವಿವರಿಸಿ.</string>
@@ -949,7 +930,6 @@
         <item quantity="other">%1$s ಸಾಲವು %2$d ಮ್ಯಾಪ್ ಮಾಡಿದ ವಹಿವಾಟುಗಳನ್ನು ಹೊಂದಿದೆ.</item>
     </plurals>
     <string name="dialog_title_delete_debt">ಸಾಲವನ್ನು ಅಳಿಸುವುದೇ\?</string>
-    <string name="dialog_confirm_discard_new_debt">ಹೊಸ ಸಾಲವನ್ನು ತಿರಸ್ಕರಿಸುವುದೇ\?</string>
     <string name="warning_party_delete_debt">ಈ ಪಕ್ಷವನ್ನು ಅಳಿಸುವಾಗ, ಅದಕ್ಕೆ ವ್ಯಾಖ್ಯಾನಿಸಲಾದ ಸಾಲಗಳನ್ನು ಸಹ ಅಳಿಸಲಾಗುತ್ತದೆ.</string>
     <string name="debts">ಸಾಲಗಳು</string>
     <string name="debt_I_owe">ನಾನು %s ಗೆ ಣಿಯಾಗಿದ್ದೇನೆ</string>
@@ -985,10 +965,17 @@
     </plurals>
     <string name="pref_debug_logging_share_summary">ಲಾಗ್ ಫೈಲ್‌ಗಳನ್ನು ಹಂಚಿಕೊಳ್ಳಿ</string>
     <string name="menu_parent_category_selection">ಶಾರ್ಟ್ ಟ್ಯಾಪ್‌ನಲ್ಲಿ ಪೋಷಕ ವರ್ಗವನ್ನು ಆಯ್ಕೆಮಾಡಿ</string>
-    <string name="whats_new_344">ವರ್ಗಗಳಿಗೆ ಚಿಹ್ನೆಗಳು</string>
+    <string name="icons_for_categories">ವರ್ಗಗಳಿಗೆ ಚಿಹ್ನೆಗಳು</string>
     <string name="required">ಅಗತ್ಯವಿದೆ</string>
     <string name="pref_csv_export_split_categories_summary">ವರ್ಗ ಶ್ರೇಣಿಯ ಪ್ರತಿ ಹಂತಕ್ಕೆ ಪ್ರತ್ಯೇಕ ಕಾಲಮ್‌ಗಳನ್ನು ಬಳಸಿ</string>
     <string name="pref_csv_export_split_amount_summary">ಆದಾಯ ಮತ್ತು ವೆಚ್ಚಗಳಿಗಾಗಿ ಪ್ರತ್ಯೇಕ ಕಾಲಮ್ಗಳನ್ನು ಬಳಸಿ</string>
     <string name="pref_csv_export_split_date_time_summary">ದಿನಾಂಕ ಮತ್ತು ಸಮಯಕ್ಕಾಗಿ ಪ್ರತ್ಯೇಕ ಕಾಲಮ್‌ಗಳನ್ನು ಬಳಸಿ</string>
     <string name="webui_warning_move_transaction">ವಹಿವಾಟನ್ನು ಖಾತೆಗೆ ಸರಿಸಲಾಗುತ್ತದೆ {account}.</string>
+    <string name="budget_table_header_rollover">ಉರುಳಿಸು</string>
+    <string name="dialog_confirm_rollover_delete">ಈ ಅವಧಿಯ ಎಲ್ಲಾ ರೋಲ್‌ಓವರ್ ಮೊತ್ತಗಳನ್ನು ಅಳಿಸಲಾಗುತ್ತದೆ.</string>
+    <string name="content_description_attachment">ಲಗತ್ತು</string>
+    <string name="redesign">ಮರುವಿನ್ಯಾಸ</string>
+    <string name="rollover_edit_invalid">ಒಂದು ವರ್ಗಕ್ಕೆ ನಿಯೋಜಿಸಲಾದ ರೋಲ್‌ಓವರ್‌ನ ಮೊತ್ತ ಮತ್ತು ಉಪವರ್ಗಗಳಿಗೆ ನಿಯೋಜಿಸಲಾದ ರೋಲ್‌ಓವರ್‌ಗಳು ಉಳಿದವನ್ನು ಮೀರುವಂತಿಲ್ಲ.</string>
+    <string name="budget_only_current_period">%s ಗೆ ಮಾತ್ರ ಹೊಂದಿಸಿ</string>
+    <string name="upgrade_info_557">ಹೊಸ ವಿನ್ಯಾಸವನ್ನು ನೀವು ಹೇಗೆ ಇಷ್ಟಪಡುತ್ತೀರಿ\? ದಯವಿಟ್ಟು ನಮಗೆ ತಿಳಿಸಿ. ಹಳೆಯ ವಿನ್ಯಾಸಕ್ಕೆ ಹತ್ತಿರವಿರುವ ರೂಪಾಂತರವನ್ನು ಸೆಟ್ಟಿಂಗ್‌ಗಳಲ್ಲಿ ಸಕ್ರಿಯಗೊಳಿಸಬಹುದು (%1$s -&gt; %2$s).</string>
 </resources>

@@ -40,13 +40,12 @@
     <string name="color">நிறம்</string>
     <string name="comment">குறிப்புக்கள்</string>
     <string name="confirmation_dialog_dont_show_again">மீண்டும் காட்ட வேண்டாம்</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">விளம்பரங்கள் இல்லை</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">கணக்குகளுக்கு வரம்பில்லை</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">பரிவர்த்தனையுடன் படத்தை இணைக்கலாம்</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">பை விளக்கப்படம் (வகை ஒன்றுக்கு பங்கீடு)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">திட்டங்களுக்கு வரம்பில்லை</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">பரிவர்த்தனை பட்டியலை PDF ஆக ஏற்றுமதி</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">வார்ப்புரு நிரல் பலகை</string>
+    <string name="contrib_feature_ad_free_label">விளம்பரங்கள் இல்லை</string>
+    <string name="contrib_feature_accounts_unlimited_label">கணக்குகளுக்கு வரம்பில்லை</string>
+    <string name="contrib_feature_attach_picture_label">பரிவர்த்தனையுடன் படத்தை இணைக்கலாம்</string>
+    <string name="contrib_feature_distribution_label">பை விளக்கப்படம் (வகை ஒன்றுக்கு பங்கீடு)</string>
+    <string name="contrib_feature_plans_unlimited_label">திட்டங்களுக்கு வரம்பில்லை</string>
+    <string name="contrib_feature_print_label">பரிவர்த்தனை பட்டியலை PDF ஆக ஏற்றுமதி</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">CSV இறக்குமதி</string>
     <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">வரம்பற்ற பிரிவு வார்ப்புருக்கள்</string>
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources">2 வணிக நாட்களுக்குள் உத்தரவாத பதிலுடன் <b> மின்னஞ்சல் ஆதரவு </b></string>
@@ -68,10 +67,6 @@
     <string name="description">விளக்கம்</string>
     <string name="dialog_balance_delete">நல்லிணக்கம் செய்யப்பட்ட பரிவர்த்தனைகளை நீக்குக</string>
     <string name="dialog_confirm_discard_changes">மாற்றங்களை கைவிடவா?</string>
-    <string name="dialog_confirm_discard_new_transaction">புதிய பரிவர்த்தனையை கைவிடவா?</string>
-    <string name="dialog_confirm_discard_new_template">புதிய வார்ப்புருவை கைவிடவா?</string>
-    <string name="dialog_confirm_discard_new_account">புதிய கணக்கை கைவிடவா?</string>
-    <string name="dialog_confirm_discard_new_method">புதிய கட்டண முறையை கைவிடவா?</string>
     <string name="dialog_command_disabled_balance">ஒப்புக்கொள்ளப்பட்ட பரிவர்த்தனைகள் எதுவும் நல்லிணக்கம் செய்யப்பட வேண்டியதில்லை.</string>
     <string name="dialog_command_disabled_insert_transfer">பரிமாற்ற பரிவர்த்தனைக்கு இரண்டாவது கணக்கு தேவை.</string>
     <string name="dialog_command_disabled_reset_account">ஏற்றுமதி செய்ய பரிவர்த்தனைகள் ஏதும் இல்லை.</string>
@@ -137,7 +132,6 @@
     <string name="help_heading_credits">புகழாரம்</string>
     <string name="help_heading_license">உரிமம்</string>
     <string name="help_heading_whats_new">புதியது என்ன</string>
-    <string name="important_upgrade_information_heading">முக்கிய தகவல்கள்</string>
     <string name="import_select_transactions">பரிவர்த்தனைகள்</string>
     <string name="income">வருமானம்</string>
     <string name="invalid_number_format">உங்கள் வட்டாரத்தால் வரையறுக்கப்படாத பதின்ம வடிவம். தயவுசெய்து %1$s ஐப் பயன்படுத்துக</string>
@@ -288,8 +282,8 @@
     <string name="pref_contrib_purchase_title_in_app">செயலி சார்ந்த கட்டணம்</string>
     <string name="pref_custom_currency_title">நாணயங்களைத் தனி விருப்பமாக்குதல்</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">நீங்கள் ஒரு திறவுகோலைப் பெற்றிருந்தால் மதிப்பு அம்சங்களை அணுகலாம்.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">திறவுகோலை உள்ளிடவும்</string>
+    <string name="pref_enter_licence_summary">நீங்கள் ஒரு திறவுகோலைப் பெற்றிருந்தால் மதிப்பு அம்சங்களை அணுகலாம்.</string>
+    <string name="pref_enter_licence_title">திறவுகோலை உள்ளிடவும்</string>
     <string name="pref_export_format_title">தரவு வடிவம்</string>
     <string name="pref_import_from_grisbi_summary">Grisbi XML கோப்பிலிருந்து வகைகள் மற்றும் தரப்புகளை இறக்குமதி செய்</string>
     <string name="pref_import_from_grisbi_title">Grisbi-யிலிருந்து இறக்குமதி செய்</string>
@@ -341,7 +335,6 @@
     <string name="pref_visit_website_summary">மாற்றக் குறிப்பு மற்றும் அடிக்கடி கேட்கப்படும் கேள்விகள்</string>
     <string name="pref_visit_website_title">வலைத்தளத்தைப் பார்க்கவும்</string>
     <string name="progress_dialog_deleting">பொருட்கள் நீக்கப்படுகிறது</string>
-    <string name="progress_dialog_loading">தரவுத்தளத்திலிருந்து பொருளை ஏற்றுகிறது</string>
     <string name="progress_dialog_printing">%s உருவாக்கப்படுகிறது</string>
     <string name="qif_parse_result">பாகுபடுத்தப்பட்டவை: %1$s கணக்குகள்; %2$s வகைகள் மற்றும் %3$s தரப்புகள்</string>
     <string name="qif_parse_failure_found_multiple_accounts">QIF கோப்பில் பல கணக்குகள் கண்டுபிடிக்கப்பட்டன.</string>
@@ -466,7 +459,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">வாங்குதல் தோல்வியுற்றது அல்லது ரத்துசெய்யப்பட்டது.</string>
     <string name="hint_auto_fill">அதே பணம் பெறுபவர்/செலுத்துபவர் கொண்ட முந்தய பரிவர்த்தனையிலிருந்து தரவு தானாகவே நிரப்பப்பட வேண்டுமா? இதை  அமைப்புகளிலிருந்து எப்போதும் மாற்றிக்கொள்ளலாம்.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%2$s-ஐ நாணயமாக கொண்ட %1$d கணக்குகள் புதுப்பிக்கப்பட்டன.</string>
-    <string name="learn_more">மேலும் அறிக</string>
     <string name="import_source_file">கோப்பு</string>
     <string name="restore_calendar_handling">நாட்காட்டி தரவு கையாளுதல்</string>
     <string name="restore_calendar_handling_configured">தற்போது விருப்பமைக்கப்பட்ட நாட்காட்டிக்கு திட்டங்களை மீட்டமைக்கவும்</string>
@@ -625,7 +617,6 @@
     <string name="onboarding_restore_from_cloud_backup">காப்புப்பிரதிகள்</string>
     <string name="onboarding_restore_from_local">உள் காப்புப்பிரதி கோப்பை மீட்டமை</string>
     <string name="dialog_button_add">சேர்</string>
-    <string name="template_create_error">வார்ப்புருவை சேமிக்கும் போது பிழை ஏற்பட்டது</string>
     <string name="contributed_by">%s-ஆல் பங்களிக்கப்பட்டது</string>
     <string name="pref_sync_notification_summary">ஒத்திசைவின் முன்னேற்றம் பற்றி தெரிவிக்கவும்</string>
     <string name="pref_debug_logging_summary">கணினி குறிப்பில் பிழைத்திருத்த உதவும் தகவல்களை எழுதவும்</string>
@@ -635,7 +626,6 @@
     <string name="progress_validating_licence">உரிமம் சரிபார்க்கப்படுகிறது</string>
     <string name="licence_validation_error_expired">உரிமம் காலாவதியானது</string>
     <string name="licence_validation_error_device_limit_exceeded">கருவிகளின் வரம்பு மீறப்பட்டது. தயவு செய்து மற்றொரு சாதனத்திலிருந்து உரிமத்தை அகற்றவும்.</string>
-    <string name="error">பிழை (%s)</string>
     <string name="button_validate">சரிபார்</string>
     <string name="licence_key">உரிம திறவுகோல்</string>
     <string name="licence_removal_information">இந்த கருவியில் இனி மதிப்பு செயல்பாடுகள் தேவையில்லை என்றால், நீங்கள் உரிம திறவுகோலை அகற்றலாம். இது மேலும் ஒரு கருவியில் செயல்படுத்துவதற்கு திறவுகோலை விடுவிக்கிறது. திறவுகோலை %dகருவிகளில் செயல்படுத்தலாம்.</string>
@@ -661,7 +651,6 @@
     <string name="auto_fill_account_from_aggregate_only">மொத்த கணக்கிலிருந்து தொடங்கும்போது மட்டுமே.</string>
     <string name="sync_auth_exception">அதிகாரமளிப்பு தோல்வியடைந்தது.</string>
     <string name="sync_login_again">தயவு செய்து மீண்டும் புகுபதிகை செய்க.</string>
-    <string name="sync_loading_accounts_from_backend">பின்தளத்தில் இருக்கக்கூடிய கணக்குகளை ஏற்றுகிறது.</string>
     <plurals name="delete_success">
         <item quantity="one">ஒரு பொருள் வெற்றிகரமாக நீக்கப்பட்டது.</item>
         <item quantity="other">%d பொருட்கள் வெற்றிகரமாக நீக்கப்பட்டன.</item>
@@ -688,15 +677,9 @@
     <string name="warning_ungroup_split_transactions">தேர்ந்தெடுக்கப்பட்ட பிரிவு பரிவர்த்தனைகள் கலைக்கப்படும், அதாவது அவற்றின் பிளவுப் பகுதிகள் சாதாரண பரிவர்த்தனைகளாக மாற்றப்படும்.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">பிரிவை கலை</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">பிளவு பரிவர்த்தனை வெற்றிகரமாக கலைக்கப்பட்டது.</item>
-        <item quantity="other">%1$d பிரிவு பரிவர்த்தனைகள் வெற்றிகரமாக கலைக்கப்பட்டன.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">பிரிவு பரிவர்த்தனைகளை கலைக்கும்போது, %2$d இல் %1$d தோல்வியடைந்தது.</string>
+    <string name="ungroup_split_transaction_success">பிளவு பரிவர்த்தனை வெற்றிகரமாக கலைக்கப்பட்டது.</string>
     <string name="split_transaction_one_success">பரிவர்த்தனை வெற்றிகரமாக பிரிவாக மாற்றப்பட்டது.</string>
-    <string name="split_transaction_one_error">பரிவர்த்தனையை பிரிவாக மாற்ற முடியவில்லை.</string>
     <string name="split_transaction_group_success">%1$d பரிவர்த்தனைகள் ஒரு பிரிவு பரிவர்த்தனையாக வெற்றிகரமாக குழுவமைக்கப்பட்டது.</string>
-    <string name="split_transaction_group_error">பரிமாற்றங்களை பிரிவாக குழுவமைக்க முடியவில்லை.</string>
     <string name="split_transaction_not_possible">ஒரே கணக்கு, பணம் பெறுபவர் மற்றும் நிலை கொண்ட பரிவர்த்தனைகளை மட்டுமே ஒரே பிரிவு பரிவர்த்தனையாக குழுவமைக்க முடியும்.</string>
     <string name="pref_transaction_time_summary">சரியான பரிவர்த்தனை நேரத்தை அமைக்க அனுமதி.</string>
     <string name="pref_value_date_summary">பதிவு தேதிக்கு கூடுதலாக மதிப்பு தேதியை அமைக்க அனுமதி. பரிவர்த்தனை நேரம் மறைக்கப்படும். இந்த அமைப்பு பண கணக்குகளில் பயன்படுத்தப்படாது.</string>
@@ -776,7 +759,6 @@
     <string name="button_label_no_encryption">மறையாக்கம் இல்லாமல்</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">அல்லது</string>
-    <string name="pref_account_list_fast_scroll_summary">கணக்கு பட்டியலில் விரைவாக நகருதலை இயலச்செய். சில கருவிகளில் தவறான காட்சிக்கு வழிவகுக்கலாம்</string>
     <string name="menu_hide">மறை</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">மூடு</string>
@@ -812,7 +794,6 @@
     <string name="discover_feature_expense_income_switch">வருமானத்தை பதிவு செய்ய இந்த நிலைமாற்றியை பயன்படுத்தவும்.</string>
     <string name="menu_create_budget">புதிய வரவு செலவுத் திட்டம்</string>
     <string name="budget_onetime">ஒரு முறை</string>
-    <string name="dialog_confirm_discard_new_budget">புதிய வரவு செலவுத் திட்டத்தை கைவிடவா?</string>
     <string name="budget_duration_from">இருந்து</string>
     <string name="budget_duration_to">வரை</string>
     <string name="no_budgets">+ பொத்தானைத் தட்டுவதன் மூலம் உங்கள் முதல் வரவு செலவுத் திட்டத்தை வரையறுக்கவும்.</string>
@@ -974,7 +955,6 @@
     <string name="debt_managment">கடன் மேலாண்மை</string>
     <string name="debt">கடன்</string>
     <string name="warning_party_delete_debt">இந்த தரப்பை நீக்கும்போது, அவருடன் தொடர்புடைய கடன்களும் நீக்கப்படும்.</string>
-    <string name="dialog_confirm_discard_new_debt">புதிய கடனை கைவிடவா\?</string>
     <string name="dialog_title_delete_debt">கடனை நீக்கவா\?</string>
     <string name="pref_mlkit_script_title">MlKit க்கான ஸ்கிரிப்ட்</string>
     <plurals name="import_categories_icons_updated">
@@ -1000,5 +980,5 @@
     <string name="whats_new_336_1">கடன் சுருக்கத்தை பகிரவும்</string>
     <string name="whats_new_336_2">பிரிவு பகுதிக்கான குறிச்சொற்கள்</string>
     <string name="whats_new_338">தன்னிச்சையாக ஆழமான வகை படிநிலை</string>
-    <string name="whats_new_344">வகைகளுக்கான ஐகான்கள்</string>
+    <string name="icons_for_categories">வகைகளுக்கான ஐகான்கள்</string>
 </resources>

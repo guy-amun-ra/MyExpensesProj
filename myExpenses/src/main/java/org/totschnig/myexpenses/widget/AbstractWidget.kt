@@ -1,6 +1,5 @@
 package org.totschnig.myexpenses.widget
 
-import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -108,6 +107,7 @@ abstract class AbstractWidget(
         } else {
             val svcIntent = Intent(context, clazz)
             svcIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            //TODO Check
             svcIntent.putExtra(KEY_WIDTH, availableWidth(context, appWidgetManager, appWidgetId))
             // When intents are compared, the extras are ignored, so we need to embed the extras
             // into the data so that the extras will not be ignored.

@@ -40,19 +40,19 @@
     <string name="color">Color</string>
     <string name="comment">Notes</string>
     <string name="confirmation_dialog_dont_show_again">Do not show again</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">No ads</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Unlimited number of accounts</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Attach image to transaction</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Pie chart (Distribution per category)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Unlimited number of plans</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Export transaction list to PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Template widget</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">CSV import</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Unlimited number of split templates</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>Email support</b> with guaranteed response within 2 business days</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">Voting right on <b>development roadmap</b></string>
-    <string name="contrib_feature_history_label" tools:ignore="UnusedResources">History chart</string>
-    <string name="contrib_feature_category_tree_label" tools:ignore="UnusedResources">Category tree</string>
+    <string name="contrib_feature_ad_free_label">No ads</string>
+    <string name="contrib_feature_accounts_unlimited_label">Unlimited number of accounts</string>
+    <string name="contrib_feature_attach_picture_label">Attach image to transaction</string>
+    <string name="contrib_feature_distribution_label">Pie chart (Distribution per category)</string>
+    <string name="contrib_feature_plans_unlimited_label">Unlimited number of plans</string>
+    <string name="contrib_feature_print_label">Export transaction list to PDF</string>
+    <string name="contrib_feature_csv_import_label">CSV import</string>
+    <string name="contrib_feature_split_template_label">Unlimited number of split templates</string>
+    <string name="contrib_feature_pro_support_label"><b>Email support</b> with guaranteed response within 2 business days</string>
+    <string name="contrib_feature_roadmap_voting_label">Voting right on <b>development roadmap</b></string>
+    <string name="contrib_feature_history_label">History chart</string>
+    <string name="contrib_feature_category_tree_label">Category tree</string>
+    <string name="contrib_feature_synchronization_label">Cloud synchronization</string>
     <string name="licence_status_free">Free</string>
     <string name="contrib_key">Contrib Key</string>
     <string name="extended_key">Extended Key</string>
@@ -69,10 +69,6 @@
     <string name="description">Description</string>
     <string name="dialog_balance_delete">Delete reconciled transactions</string>
     <string name="dialog_confirm_discard_changes">Discard changes?</string>
-    <string name="dialog_confirm_discard_new_transaction">Discard new transaction?</string>
-    <string name="dialog_confirm_discard_new_template">Discard new template?</string>
-    <string name="dialog_confirm_discard_new_account">Discard new account?</string>
-    <string name="dialog_confirm_discard_new_method">Discard new payment method?</string>
     <string name="dialog_command_disabled_balance">No cleared transactions to be reconciled.</string>
     <string name="dialog_command_disabled_insert_transfer">Transfer transactions require a second account.</string>
     <string name="dialog_command_disabled_reset_account">No transactions to export.</string>
@@ -140,7 +136,6 @@
     <string name="help_heading_credits">Credits</string>
     <string name="help_heading_license">License</string>
     <string name="help_heading_whats_new">What\'s new</string>
-    <string name="important_upgrade_information_heading">Important information</string>
     <string name="import_select_transactions">Transactions</string>
     <string name="income">Income</string>
     <string name="invalid_number_format">Decimal format not recognized by your locale. Please use %1$s</string>
@@ -292,8 +287,8 @@
     <string name="pref_contrib_purchase_title_in_app">In-App payment</string>
     <string name="pref_custom_currency_title">Customize currencies</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">If you received a key, gain access to premium features.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Enter key</string>
+    <string name="pref_enter_licence_summary">If you received a key, gain access to premium features.</string>
+    <string name="pref_enter_licence_title">Enter key</string>
     <string name="pref_export_format_title">Data format</string>
     <string name="pref_import_from_grisbi_summary">Import categories and parties from Grisbi XML file</string>
     <string name="pref_import_from_grisbi_title">Import from Grisbi</string>
@@ -347,7 +342,6 @@
     <string name="pref_visit_website_summary">Changelog and FAQ</string>
     <string name="pref_visit_website_title">Visit Website</string>
     <string name="progress_dialog_deleting">Deleting objects</string>
-    <string name="progress_dialog_loading">Loading object from database</string>
     <!-- %s is replaced with format (PDF, HTML) -->
     <string name="progress_dialog_printing">Generating %s</string>
     <string name="qif_parse_result">Parsed: %1$s accounts; %2$s categories and %3$s parties</string>
@@ -473,7 +467,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Purchasing failed or cancelled.</string>
     <string name="hint_auto_fill">Should data be filled in automatically from last transaction for same payee/payer? You can always change this behaviour from the settings.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d accounts with currency %2$s have been updated.</string>
-    <string name="learn_more">Learn more</string>
     <string name="import_source_file">File</string>
     <string name="restore_calendar_handling">Calendar data handling</string>
     <string name="restore_calendar_handling_configured">Restore plans to currently configured calendar</string>
@@ -594,7 +587,6 @@
     <string name="link_account_failure_3">The conflict can be resolved manually from the entry\'s context menu.</string>
     <string name="progress_dialog_checking_sync_backend">Verifying backend</string>
     <string name="template">Template</string>
-    <string name="contrib_feature_synchronization_label" tools:ignore="UnusedResources">Cloud synchronization</string>
     <string name="all_contrib_key_features">All features of Contrib Key</string>
     <string name="all_extended_key_features">All features of Extended Key</string>
     <!-- button leading user to purchase flow for licence keys -->
@@ -633,7 +625,6 @@
     <string name="onboarding_restore_from_cloud_backup">Backups</string>
     <string name="onboarding_restore_from_local">Restore local backup file</string>
     <string name="dialog_button_add">Add</string>
-    <string name="template_create_error">Error while saving template</string>
     <string name="contributed_by">Contributed by %s</string>
     <string name="pref_sync_notification_summary">Notify about synchronization progress</string>
     <string name="pref_debug_logging_summary">Write debugging information into system log</string>
@@ -643,7 +634,6 @@
     <string name="progress_validating_licence">Validating licence</string>
     <string name="licence_validation_error_expired">Licence expired</string>
     <string name="licence_validation_error_device_limit_exceeded">Device limit exceeded. Please remove licence from another device.</string>
-    <string name="error">Error (%s)</string>
     <string name="button_validate">Validate</string>
     <string name="licence_key">Licence Key</string>
     <string name="licence_removal_information">If you no longer need premium functionality on this device, you can remove the licence key. This frees the key for activation on one more other device. The key can be activated on up to %d devices.</string>
@@ -669,7 +659,6 @@
     <string name="auto_fill_account_from_aggregate_only">Only when started from aggregate account.</string>
     <string name="sync_auth_exception">Authorization failed.</string>
     <string name="sync_login_again">Please log in again.</string>
-    <string name="sync_loading_accounts_from_backend">Loading available accounts from backend.</string>
     <plurals name="delete_success">
         <item quantity="one">One object was successfully deleted.</item>
         <item quantity="other">%d objects were successfully deleted.</item>
@@ -696,15 +685,9 @@
     <string name="warning_ungroup_split_transactions">The selected split transactions will be ungrouped, i.e. their split parts will become normal transactions.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">Ungroup split</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">Split Transaction was successfully ungrouped.</item>
-        <item quantity="other">%1$d split transactions were successfully ungrouped.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">While ungrouping split transactions, %1$d out of %2$d failed.</string>
+    <string name="ungroup_split_transaction_success">Split Transaction was successfully ungrouped.</string>
     <string name="split_transaction_one_success">Transaction successfully transformed to split.</string>
-    <string name="split_transaction_one_error">Could not transform transaction to split.</string>
     <string name="split_transaction_group_success">%1$d transactions were successfully grouped into one split transaction.</string>
-    <string name="split_transaction_group_error">Could not group transactions into split.</string>
     <string name="split_transaction_not_possible">Only transactions that have same account, payee, and status can be grouped into one split transaction.</string>
     <string name="pref_transaction_time_summary">Allow to set exact transaction time.</string>
     <string name="pref_value_date_summary">Allow to set value date in addition to booking date. Transaction time will be hidden. This setting is not applied to cash accounts.</string>
@@ -784,7 +767,6 @@
     <string name="button_label_no_encryption">Without encryption</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">or</string>
-    <string name="pref_account_list_fast_scroll_summary">Enable fast scroll for account list. May lead to incorrect display on some devices</string>
     <string name="menu_hide">Hide</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">Close</string>
@@ -820,7 +802,6 @@
     <string name="discover_feature_expense_income_switch" tools:ignore="UnusedResources">Use this switch button to record income.</string>
     <string name="menu_create_budget">New budget</string>
     <string name="budget_onetime">One-time</string>
-    <string name="dialog_confirm_discard_new_budget">Discard new budget?</string>
     <string name="budget_duration_from">From</string>
     <string name="budget_duration_to">To</string>
     <string name="no_budgets">Define your first budget by tapping the + button.</string>
@@ -993,7 +974,6 @@
     <string name="debts">Debts</string>
     <!-- When user want to delete a party for which debts are defined, we ask for confirmation. -->
     <string name="warning_party_delete_debt">When deleting this party, debts defined for it will be deleted as well.</string>
-    <string name="dialog_confirm_discard_new_debt">Discard new debt?</string>
     <string name="dialog_title_delete_debt">Delete debt?</string>
     <plurals name="debt_mapped_transactions">
         <item quantity="one">Debt "%1$s" has %2$d mapped transaction.</item>
@@ -1042,7 +1022,7 @@
     <string name="pref_csv_export_split_amount_summary">Use separate columns for income and expenses</string>
     <string name="pref_csv_export_split_date_time_summary">Use separate columns for date and time</string>
     <!-- New feature in version 3.4.4 -->
-    <string name="whats_new_344">Icons for categories</string>
+    <string name="icons_for_categories">Icons for categories</string>
     <!-- Shown after validation of a form below a required text field if user did not provide value -->
     <string name="required">Required</string>
     <!-- This is the label for a checkbox allowing to modify a budget only for one period (year, month, week, day). %s will be replaced by the description of the period, e.g. August 2022 -->
@@ -1051,4 +1031,15 @@
     <string name="budget_table_header_rollover">Rollover</string>
     <string name="rollover_edit_invalid">The sum of the rollover assigned to a category and the rollovers assigned to subcategories cannot exceed the remainder.</string>
     <string name="dialog_confirm_rollover_delete">All rollover amounts for this period will be deleted.</string>
+    <!-- For icon that represents the fact that an image has been attached to a transaction -->
+    <string name="content_description_attachment">Attachment</string>
+    <string name="redesign">Redesign</string>
+    <!-- %1$s will be replaced with the section title (User Interface) and %2$s with the item label ("Trsnaction list: Style: Legacy") -->
+    <string name="upgrade_info_557">How do you like the new design? Please let us know. A variant closer to the old design can be activated in the Settings (%1$s -> %2$s).</string>
+    <!-- %s is replaced with the translation of "Select All" -->
+    <string name="select_all_list_too_large">The command %s is not available because the list is only partially loaded. Please use the Search functionality in order to reduce the list size.</string>
+    <string name="menu_reconfigure">Reconfigure</string>
+    <string name="encrypt_database">Encrypt database</string>
+    <string name="encrypt_database_info">The database will be encrypted with a passphrase that cannot be extracted from this device. Consequently it will not be backed up by your device\'s backup service.</string>
+    <string name="database_is_encrypted">Database is encrypted.</string>
 </resources>

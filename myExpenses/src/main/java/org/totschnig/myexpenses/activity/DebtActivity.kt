@@ -2,6 +2,7 @@ package org.totschnig.myexpenses.activity
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.activity.viewModels
 import androidx.core.app.ShareCompat
 import androidx.lifecycle.lifecycleScope
@@ -17,7 +18,8 @@ import timber.log.Timber
 
 abstract class DebtActivity : ProtectedFragmentActivity() {
 
-    protected val debtViewModel: DebtViewModel by viewModels()
+
+    protected abstract val debtViewModel: DebtViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,8 +49,8 @@ abstract class DebtActivity : ProtectedFragmentActivity() {
         }
     }
 
-    fun shareDebt(debt: Debt, exportFormat: DebtViewModel.ExportFormat) {
-        showProgressSnackBar(getString(R.string.progress_dialog_printing, exportFormat.name))
+    fun shareDebt(debt: Debt, exportFormat: DebtViewModel.ExportFormat, snackBarContainer: View?) {
+        showProgressSnackBar(getString(R.string.progress_dialog_printing, exportFormat.name), container = snackBarContainer)
         when(exportFormat) {
             DebtViewModel.ExportFormat.HTML -> debtViewModel.exportHtml(this, debt).observe(this) { uri ->
                 dismissSnackBar()

@@ -4,7 +4,10 @@ import android.app.Application
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.ContentUris
+import android.database.Cursor
 import android.database.sqlite.SQLiteConstraintException
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.liveData
@@ -15,27 +18,45 @@ import app.cash.copper.flow.observeQuery
 import com.squareup.sqlbrite3.BriteContentResolver
 import io.reactivex.disposables.Disposable
 import io.reactivex.exceptions.CompositeException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.compose.RenderType
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.Account.HOME_AGGREGATE_ID
+import org.totschnig.myexpenses.model.AggregateAccount
 import org.totschnig.myexpenses.model.CurrencyContext
+import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.Template
 import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefHandler
+import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.provider.TransactionProvider.TRANSACTIONS_URI
+import org.totschnig.myexpenses.provider.TransactionProvider.*
 import org.totschnig.myexpenses.provider.checkForSealedDebt
 import org.totschnig.myexpenses.provider.filter.WhereFilter
+import org.totschnig.myexpenses.provider.getBoolean
+import org.totschnig.myexpenses.provider.getInt
+import org.totschnig.myexpenses.provider.getLong
+import org.totschnig.myexpenses.provider.getString
+import org.totschnig.myexpenses.provider.getStringOrNull
 import org.totschnig.myexpenses.util.ResultUnit
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.data.AccountMinimal
+import org.totschnig.myexpenses.viewmodel.data.Budget
+import org.totschnig.myexpenses.viewmodel.data.DateInfo2
 import org.totschnig.myexpenses.viewmodel.data.Debt
 import javax.inject.Inject
 import kotlin.collections.set
@@ -58,42 +79,99 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
     @Inject
     lateinit var currencyContext: CurrencyContext
 
+    @Inject
+    lateinit var dataStore: DataStore<Preferences>
+
+    val collate: String
+        get() = prefHandler.collate
+
+    private val bulkDeleteStateInternal: MutableStateFlow<DeleteState?> = MutableStateFlow(null)
+    val bulkDeleteState: StateFlow<DeleteState?> = bulkDeleteStateInternal
+
+    fun bulkDeleteCompleteShown() {
+        bulkDeleteStateInternal.update {
+            null
+        }
+    }
+
     var disposable: Disposable? = null
 
     val contentResolver: ContentResolver
         get() = getApplication<MyApplication>().contentResolver
 
-    private val debts = MutableLiveData<List<Debt>>()
-    fun getDebts(): LiveData<List<Debt>> = debts
-
-    protected fun accountsMinimal(withHidden: Boolean = true): LiveData<List<AccountMinimal>> {
-        val liveData = MutableLiveData<List<AccountMinimal>>()
-        disposable = briteContentResolver.createQuery(
-            TransactionProvider.ACCOUNTS_MINIMAL_URI, null,
-            if (withHidden) null else "$KEY_HIDDEN = 0",
-            null, null, false
-        )
-            .mapToList { cursor ->
-                val id = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ROWID))
-                AccountMinimal(
-                    id,
-                    if (id == HOME_AGGREGATE_ID)
-                        getString(R.string.grand_total)
-                    else
-                        cursor.getString(cursor.getColumnIndexOrThrow(KEY_LABEL)),
-                    cursor.getString(cursor.getColumnIndexOrThrow(KEY_CURRENCY))
-                )
-            }
-            .subscribe {
-                liveData.postValue(it)
-                dispose()
-            }
-        return liveData
+    val renderer: Flow<RenderType> by lazy {
+        dataStore.data.map {
+            if (it[prefHandler.getBooleanPreferencesKey(PrefKey.UI_ITEM_RENDERER_LEGACY)] == true)
+                RenderType.Legacy else RenderType.New
+        }
     }
+
+    val withCategoryIcon: Flow<Boolean> by lazy {
+        dataStore.data.map {
+            it[prefHandler.getBooleanPreferencesKey(PrefKey.UI_ITEM_RENDERER_CATEGORY_ICON)] != false
+        }
+    }
+
+    val dateInfo: Flow<DateInfo2> = flow {
+        contentResolver.query(
+            DUAL_URI,
+            arrayOf(
+                "${getThisYearOfWeekStart()} AS $KEY_THIS_YEAR_OF_WEEK_START",
+                "${getThisYearOfMonthStart()} AS $KEY_THIS_YEAR_OF_MONTH_START",
+                "$THIS_YEAR AS $KEY_THIS_YEAR",
+                "${getThisMonth()} AS $KEY_THIS_MONTH",
+                "${getThisWeek()} AS $KEY_THIS_WEEK",
+                "$THIS_DAY AS $KEY_THIS_DAY"
+            ),
+            null, null, null, null
+        )?.use { cursor ->
+            cursor.moveToFirst()
+            emit(DateInfo2.fromCursor(cursor))
+        }
+    }.flowOn(Dispatchers.IO)
+
+    val budgetCreatorFunction: (Cursor) -> Budget = { cursor ->
+        val currency = cursor.getString(KEY_CURRENCY)
+        val currencyUnit = if (currency == AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE)
+            Utils.getHomeCurrency() else currencyContext.get(currency)
+        val budgetId = cursor.getLong(KEY_ROWID)
+        val accountId = cursor.getLong(KEY_ACCOUNTID)
+        val grouping = Grouping.valueOf(cursor.getString(KEY_GROUPING))
+        Budget(
+            id = budgetId,
+            accountId = accountId,
+            title = cursor.getString(KEY_TITLE),
+            description = cursor.getString(KEY_DESCRIPTION),
+            currency = currencyUnit,
+            grouping = grouping,
+            color = cursor.getInt(KEY_COLOR),
+            start = cursor.getStringOrNull(KEY_START),
+            end = cursor.getStringOrNull(KEY_END),
+            accountName = cursor.getStringOrNull(KEY_ACCOUNT_LABEL),
+            default = cursor.getBoolean(KEY_IS_DEFAULT)
+        )
+    }
+
+    fun accountsMinimal(withHidden: Boolean = true) = contentResolver.observeQuery(
+        ACCOUNTS_MINIMAL_URI, null,
+        if (withHidden) null else "$KEY_HIDDEN = 0",
+        null, null, false
+    )
+        .mapToList { cursor ->
+            val id = cursor.getLong(cursor.getColumnIndexOrThrow(KEY_ROWID))
+            AccountMinimal(
+                id,
+                if (id == HOME_AGGREGATE_ID)
+                    getString(R.string.grand_total)
+                else
+                    cursor.getString(cursor.getColumnIndexOrThrow(KEY_LABEL)),
+                cursor.getString(cursor.getColumnIndexOrThrow(KEY_CURRENCY))
+            )
+        }
 
     fun account(accountId: Long, once: Boolean = false) = liveData(context = coroutineContext()) {
         val base =
-            if (accountId > 0) TransactionProvider.ACCOUNTS_URI else TransactionProvider.ACCOUNTS_AGGREGATE_URI
+            if (accountId > 0) ACCOUNTS_URI else ACCOUNTS_AGGREGATE_URI
         val flow = contentResolver.observeQuery(
             ContentUris.withAppendedId(base, accountId),
             Account.PROJECTION_BASE, null, null, null, true
@@ -102,12 +180,8 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
         //.throttleFirst(100, TimeUnit.MILLISECONDS)
         (if (once) flow.take(1) else flow).collect {
             this.emit(it)
-            onAccountLoaded(it)
         }
     }
-
-
-    open fun onAccountLoaded(account: Account) {}
 
     override fun onCleared() {
         dispose()
@@ -119,34 +193,55 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
         }
     }
 
-    fun deleteTemplates(ids: LongArray, deletePlan: Boolean): LiveData<Int> =
+    sealed class DeleteState {
+        data class DeleteProgress(val count: Int, val total: Int) : DeleteState()
+        data class DeleteComplete(val success: Int, val failure: Int) : DeleteState()
+    }
+
+    fun deleteTemplates(ids: LongArray, deletePlan: Boolean): LiveData<DeleteState.DeleteComplete> =
         liveData(context = coroutineContext()) {
-            emit(ids.sumBy {
+            var success = 0
+            var failure = 0
+            ids.forEach {
                 try {
                     Template.delete(it, deletePlan)
-                    1
+                    success++
                 } catch (e: SQLiteConstraintException) {
                     CrashHandler.reportWithDbSchema(e)
-                    0
+                    failure++
                 }
-            })
+            }
+            emit(DeleteState.DeleteComplete(success, failure))
         }
 
 
-    fun deleteTransactions(ids: LongArray, markAsVoid: Boolean): LiveData<Int> =
-        liveData(context = coroutineContext()) {
-            emit(ids.sumBy {
+    fun deleteTransactions(ids: LongArray, markAsVoid: Boolean) {
+        viewModelScope.launch(context = coroutineContext()) {
+            var success = 0
+            var failure = 0
+            ids.forEach {
                 try {
-                    Transaction.delete(it, markAsVoid)
-                    1
+                    if (repository.deleteTransaction(it, markAsVoid, true))
+                        success++ else failure++
                 } catch (e: SQLiteConstraintException) {
                     CrashHandler.reportWithDbSchema(e)
-                    0
+                    failure++
                 }
-            })
+                bulkDeleteStateInternal.update {
+                    DeleteState.DeleteProgress(success + failure, ids.size)
+                }
+            }
+            contentResolver.notifyChange(TRANSACTIONS_URI, null, true)
+            contentResolver.notifyChange(ACCOUNTS_URI, null, false)
+            contentResolver.notifyChange(DEBTS_URI, null, false)
+            contentResolver.notifyChange(UNCOMMITTED_URI, null, false)
+            bulkDeleteStateInternal.update {
+                DeleteState.DeleteComplete(success, failure)
+            }
         }
+    }
 
-    internal fun deleteAccountsInternal(accountIds: Array<Long>) =
+    internal fun deleteAccountsInternal(accountIds: LongArray) =
         if (contentResolver.query(
                 TRANSACTIONS_URI,
                 arrayOf("MAX($checkForSealedDebt)"),
@@ -178,24 +273,17 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
      * @param rowId For split transactions, we check if any of their children is linked to a debt,
      * in which case the parent should not be linkable to a debt, and we return an empty list
      */
-    fun loadDebts(rowId: Long? = null) {
-        viewModelScope.launch {
-            contentResolver.observeQuery(
-                uri = with(TransactionProvider.DEBTS_URI.buildUpon()) {
-                    rowId?.let {
-                        appendQueryParameter(KEY_TRANSACTIONID, rowId.toString())
-                    }
-                    build()
-                },
-                selection = "$KEY_SEALED = 0",
-                notifyForDescendants = true
-            )
-                .mapToList { Debt.fromCursor(it, currencyContext) }
-                .collect {
-                    debts.postValue(it)
+    fun loadDebts(rowId: Long? = null, showAll: Boolean = false) = contentResolver.observeQuery(
+            uri = with(DEBTS_URI.buildUpon()) {
+                rowId?.let {
+                    appendQueryParameter(KEY_TRANSACTIONID, rowId.toString())
                 }
-        }
-    }
+                build()
+            },
+            selection = if(showAll) null else  "$KEY_SEALED = 0 AND $KEY_AMOUNT-$KEY_SUM != 0",
+            notifyForDescendants = true
+        )
+            .mapToList { Debt.fromCursor(it, currencyContext) }
 
     /**
      * deletes all expenses and updates account according to value of handleDelete
@@ -242,7 +330,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
         )
         //needs to be last, otherwise helper transaction would be deleted
         if (handleDeleteOperation != null) ops.add(handleDeleteOperation)
-        contentResolver.applyBatch(TransactionProvider.AUTHORITY, ops)
+        contentResolver.applyBatch(AUTHORITY, ops)
     }
 
 /*    fun loadDebugDebts(count: Int = 10) {

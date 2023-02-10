@@ -1,7 +1,6 @@
 package org.totschnig.myexpenses.export
 
 import android.content.Context
-import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.model.Account
@@ -10,6 +9,7 @@ import org.totschnig.myexpenses.model.SplitTransaction
 import org.totschnig.myexpenses.model.TransactionDTO
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
 import org.totschnig.myexpenses.provider.filter.WhereFilter
 import org.totschnig.myexpenses.util.StringBuilderWrapper
 import java.time.format.DateTimeFormatter
@@ -50,11 +50,11 @@ class CsvExporter(
         context: Context,
         outputStream: Lazy<Result<DocumentFile>>,
         append: Boolean
-    ): Result<Uri> {
+    ): Result<DocumentFile> {
         numberOfCategoryColumns = context.contentResolver.query(
             TransactionProvider.CATEGORIES_URI
                 .buildUpon()
-                .appendQueryParameter(TransactionProvider.QUERY_PARAMETER_HIERARCHICAL, "1")
+                .appendBooleanQueryParameter(TransactionProvider.QUERY_PARAMETER_HIERARCHICAL)
                 .build(),
             arrayOf("max(${DatabaseConstants.KEY_LEVEL})"),
             null, null, null

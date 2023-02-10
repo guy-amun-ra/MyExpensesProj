@@ -12,7 +12,7 @@ import android.widget.ExpandableListView.*
 import androidx.core.util.Pair
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.material.snackbar.BaseTransientBottomBar
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.snackbar.Snackbar
 import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
@@ -21,6 +21,7 @@ import icepick.State
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ManageSyncBackends
+import org.totschnig.myexpenses.activity.SyncBackendSetupActivity
 import org.totschnig.myexpenses.activity.SyncBackendSetupActivity.Companion.REQUEST_CODE_RESOLUTION
 import org.totschnig.myexpenses.adapter.SyncBackendAdapter
 import org.totschnig.myexpenses.databinding.SyncBackendsListBinding
@@ -40,7 +41,6 @@ import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.activateSync
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.getAccount
 import org.totschnig.myexpenses.sync.SyncBackendProvider
-import org.totschnig.myexpenses.util.UiUtils
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.safeMessage
 import org.totschnig.myexpenses.viewmodel.AbstractSyncBackendViewModel
@@ -52,7 +52,6 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
     private val binding get() = _binding!!
     private lateinit var syncBackendAdapter: SyncBackendAdapter
     private var metadataLoadingCount = 0
-    private lateinit var snackbar: Snackbar
     private lateinit var viewModel: AbstractSyncBackendViewModel
 
     @Inject
@@ -91,7 +90,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
     }
 
     private fun featureForAccount(account: String): Feature? =
-        BackendService.forAccount(account)?.feature
+        BackendService.forAccount(account).feature
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -104,15 +103,11 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
         binding.list.emptyView = binding.empty
         binding.list.setOnGroupExpandListener(this)
         binding.list.setOnChildClickListener(this)
-        snackbar = Snackbar.make(
-            binding.list,
-            R.string.sync_loading_accounts_from_backend,
-            BaseTransientBottomBar.LENGTH_INDEFINITE
-        )
-        UiUtils.increaseSnackbarMaxLines(snackbar)
-        viewModel.getLocalAccountInfo()
-            .observe(viewLifecycleOwner) { syncBackendAdapter.setLocalAccountInfo(it) }
-        viewModel.loadLocalAccountInfo()
+        lifecycleScope.launchWhenStarted {
+            viewModel.localAccountInfo.collect {
+                syncBackendAdapter.setLocalAccountInfo(it)
+            }
+        }
         registerForContextMenu(binding.list)
         return binding.root
     }
@@ -155,6 +150,15 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
             menu.add(Menu.NONE, R.id.SYNC_REMOVE_BACKEND_COMMAND, 0, R.string.menu_remove)
             if (syncBackendAdapter.isEncrypted(packedPosition)) {
                 menu.add(Menu.NONE, R.id.SHOW_PASSWORD_COMMAND, 0, R.string.input_label_passphrase)
+            }
+            if (
+                BackendService.forAccount(
+                    syncBackendAdapter.getBackendLabel(
+                        getPackedPositionGroup(packedPosition)
+                    )
+                ).supportsReconfiguration
+            ) {
+                menu.add(Menu.NONE, R.id.RECONFIGURE_COMMAND, 0, R.string.menu_reconfigure)
             }
         }
         super.onCreateContextMenu(menu, v, menuInfo)
@@ -251,6 +255,10 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
                     }
                 return true
             }
+            R.id.RECONFIGURE_COMMAND -> {
+                manageSyncBackends.reconfigure(syncBackendAdapter.getSyncAccountName(packedPosition))
+                return true
+            }
         }
         return super.onContextItemSelected(item)
     }
@@ -284,29 +292,25 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
     override fun onGroupExpand(groupPosition: Int) {
         if (!syncBackendAdapter.hasAccountMetadata(groupPosition)) {
             metadataLoadingCount++
-            if (!snackbar.isShownOrQueued) {
-                snackbar.show()
-            }
+            (requireActivity() as SyncBackendSetupActivity).showLoadingSnackBar()
             val backendLabel = syncBackendAdapter.getBackendLabel(groupPosition)
-            if (featureForAccount(backendLabel)?.let {
-                    manageSyncBackends.isFeatureAvailable(it)
-                } != false) {
-                viewModel.accountMetadata(backendLabel).observe(viewLifecycleOwner) { result ->
-                    metadataLoadingCount--
-                    if (metadataLoadingCount == 0) {
-                        snackbar.dismiss()
-                    }
-                    result.onSuccess { list ->
-                        syncBackendAdapter.setAccountMetadata(groupPosition, list)
-                    }.onFailure { throwable ->
-                        if (handleAuthException(throwable)) {
-                            resolutionPendingForGroup = groupPosition
-                        } else {
-                            manageSyncBackends.showSnackBar(
-                                throwable.safeMessage,
-                                Snackbar.LENGTH_SHORT
-                            )
-                        }
+            viewModel.accountMetadata(backendLabel, featureForAccount(backendLabel)?.let {
+                manageSyncBackends.isFeatureAvailable(it)
+            } != false)?.observe(viewLifecycleOwner) { result ->
+                metadataLoadingCount--
+                if (metadataLoadingCount == 0) {
+                    (requireActivity() as SyncBackendSetupActivity).dismissSnackBar()
+                }
+                result.onSuccess { list ->
+                    syncBackendAdapter.setAccountMetadata(groupPosition, list)
+                }.onFailure { throwable ->
+                    if (handleAuthException(throwable)) {
+                        resolutionPendingForGroup = groupPosition
+                    } else {
+                        manageSyncBackends.showSnackBar(
+                            throwable.safeMessage,
+                            Snackbar.LENGTH_SHORT
+                        )
                     }
                 }
             }
@@ -331,7 +335,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
     override fun onResult(dialogTag: String, which: Int, extras: Bundle): Boolean {
         if (dialogTag == DIALOG_INACTIVE_BACKEND && which == OnDialogResultListener.BUTTON_POSITIVE) {
             activateSync(
-                getAccount(extras.getString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)!!),
+                extras.getString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)!!,
                 prefHandler
             )
         }
@@ -363,6 +367,7 @@ class SyncBackendList : Fragment(), OnGroupExpandListener, OnDialogResultListene
         return true
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_RESOLUTION && resultCode == RESULT_OK) {

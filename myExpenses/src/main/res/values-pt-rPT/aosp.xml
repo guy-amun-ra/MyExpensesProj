@@ -5,4 +5,8 @@
     <string name="default_action">"Ação predefinida"</string>
     <string name="calendar">"Calendário"</string>
     <string name="setup">"Configuração"</string>
+    <string name="loading">"A carregar…"</string>
+    <string name="encryption">"Encriptação"</string>
+    <string name="experimental">"Experimental"</string>
+    <string name="learn_more">"Saber mais"</string>
 </resources>

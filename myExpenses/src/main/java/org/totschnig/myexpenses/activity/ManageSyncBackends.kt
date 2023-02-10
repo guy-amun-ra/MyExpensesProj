@@ -1,10 +1,13 @@
 package org.totschnig.myexpenses.activity
 
+import android.app.Activity
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo
+import androidx.activity.result.contract.ActivityResultContracts
 import icepick.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
@@ -14,6 +17,9 @@ import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
+import org.totschnig.myexpenses.sync.BackendService
+import org.totschnig.myexpenses.sync.GenericAccountService
+import org.totschnig.myexpenses.sync.SyncBackendProviderFactory.Companion.ACTION_RECONFIGURE
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.safeMessage
 import org.totschnig.myexpenses.viewmodel.AccountSealedException
@@ -22,13 +28,39 @@ import java.io.Serializable
 
 class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
 
+    private val reconfigure =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                result.data?.extras?.let {
+                    viewModel.reconfigure(it).observe(this) { success ->
+                        if (success) {
+                            listFragment.reloadAccountList()
+                        } else {
+                            showSnackBar("Reconfiguration failed")
+                        }
+                    }
+                }
+            }
+        }
+
+    fun reconfigure(syncAccount: String) {
+        BackendService.forAccount(syncAccount).instantiate()?.let {
+            reconfigure.launch(
+                Intent(this, it.setupActivityClass).apply {
+                    action = ACTION_RECONFIGURE
+                    putExtras(viewModel.getReconfigurationData(syncAccount))
+                }
+            )
+        }
+    }
+
     @JvmField
     @State
     var incomingAccountDeleted = false
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.manage_sync_backends)
-        setupToolbar(true)
+        setupToolbar()
         setTitle(R.string.pref_manage_sync_backends_title)
         if (savedInstanceState == null) {
             if (!licenceHandler.hasTrialAccessTo(ContribFeature.SYNCHRONIZATION)) {
@@ -70,7 +102,7 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
             R.id.SYNC_LINK_COMMAND_LOCAL_DO -> {
                 val account = args.getSerializable(KEY_ACCOUNT) as Account
                 viewModel.syncLinkLocal(
-                    accountName = account.syncAccountName,
+                    accountName = account.syncAccountName!!,
                     uuid = account.uuid!!
                 ).observe(this) { result ->
                     result.onFailure {
@@ -114,6 +146,7 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
         }
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
         if (!finishWithIncomingAccountDeleted()) {
             super.onBackPressed()
@@ -177,6 +210,7 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
 
 
     override fun onReceiveSyncAccountData(data: SyncAccountData) {
+        GenericAccountService.activateSync(data.accountName, prefHandler)
         listFragment.reloadAccountList()
         if (callingActivity == null && (data.localAccountsNotSynced.isNotEmpty() || data.remoteAccounts.isNotEmpty())) {
             //if we were called from AccountEdit, we do not show the setup account selection

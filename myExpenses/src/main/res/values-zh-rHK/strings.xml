@@ -31,7 +31,6 @@
     <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">將圖像附加到交易項目</string>
     <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">計劃數量不限</string>
     <string name="contrib_feature_print_label" tools:ignore="UnusedResources">匯出交易記錄清單成PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">模板插件</string>
     <string name="contrib_key">貢獻密鑰</string>
     <string name="extended_key">延伸版金鑰</string>
     <string name="currency">貨幣</string>
@@ -83,7 +82,6 @@
     <string name="help_heading_credits">信用</string>
     <string name="help_heading_license">許可</string>
     <string name="help_heading_whats_new">最新消息</string>
-    <string name="important_upgrade_information_heading">重要資訊</string>
     <string name="income">收入</string>
     <string name="invalid_number_format">十進制格式不能被辨認。請使用 %1$s</string>
     <string name="label">標籤</string>
@@ -225,7 +223,6 @@
     <string name="pref_ui_theme_title">界面主題</string>
     <string name="pref_visit_website_summary">活動日誌和常見問題</string>
     <string name="pref_visit_website_title">瀏覽官方網站</string>
-    <string name="progress_dialog_loading">從數據庫載入物件</string>
     <string name="reference_number">參考編號</string>
     <string name="restore_db_failure">數據庫恢復失敗。</string>
     <string name="restore_db_success">數據庫已從備份恢復過來。</string>

@@ -45,24 +45,21 @@ import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.compose.*
-import org.totschnig.myexpenses.databinding.ActivityComposeBinding
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_GROUPING
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
 import org.totschnig.myexpenses.ui.SelectivePieChartRenderer
-import org.totschnig.myexpenses.util.ColorUtils
-import org.totschnig.myexpenses.util.UiUtils
-import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.enumValueOrDefault
+import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.viewmodel.DistributionViewModel
 import org.totschnig.myexpenses.viewmodel.DistributionViewModelBase
 import org.totschnig.myexpenses.viewmodel.data.Category
 import org.totschnig.myexpenses.viewmodel.data.DistributionAccountInfo
 import kotlin.math.abs
 
-class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), OnDialogResultListener {
+class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
+    OnDialogResultListener {
     override val viewModel: DistributionViewModel by viewModels()
     private lateinit var chart: PieChart
     override val prefKey = PrefKey.DISTRIBUTION_AGGREGATE_TYPES
@@ -165,9 +162,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val binding = ActivityComposeBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        setupToolbar(true)
+        val binding = setupView()
         showChart.value = prefHandler.getBoolean(PrefKey.DISTRIBUTION_SHOW_CHART, true)
         with((applicationContext as MyApplication).appComponent) {
             inject(viewModel)
@@ -192,38 +187,42 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
         }
 
         binding.composeView.setContent {
-            AppTheme(this) {
+            AppTheme {
                 val isDark = isSystemInDarkTheme()
                 val configuration = LocalConfiguration.current
-                val categoryTree =
-                    viewModel.categoryTreeForDistribution.collectAsState(initial = Category.LOADING).value.let { category ->
-                        if (showChart.value) category.withSubColors {
+                val categoryState =
+                    viewModel.categoryTreeForDistribution.collectAsState(initial = Category.LOADING)
+                val categoryTree = remember {
+                    derivedStateOf {
+                        if (showChart.value) categoryState.value.withSubColors {
                             getSubColors(it, isDark)
                         } else {
-                            category.copy(children = category.children.map { it.copy(color = null) })
+                            categoryState.value.copy(children = categoryState.value.children.map { it.copy(color = null) })
                         }
                     }
+                }
 
-                val chartCategoryTree = derivedStateOf {
-                    //expansionState does not reflect updates to the data, that is why we just use it
-                    //to walk down the updated tree and find the expanded category
-                    var result = categoryTree
-                    expansionState.forEach { expanded ->
-                        result = result.children.find { it.id == expanded.id } ?: result
+                val chartCategoryTree = remember {
+                    derivedStateOf {
+                        //expansionState does not reflect updates to the data, that is why we just use it
+                        //to walk down the updated tree and find the expanded category
+                        var result = categoryTree.value
+                        expansionState.forEach { expanded ->
+                            result = result.children.find { it.id == expanded.id } ?: result
+                        }
+                        result
                     }
-                    result
                 }
                 LaunchedEffect(chartCategoryTree.value) {
                     setChartData(chartCategoryTree.value.children)
                 }
 
-                LaunchedEffect(selectionState.value) {
+                LaunchedEffect(chartCategoryTree.value, selectionState.value?.id) {
                     if (::chart.isInitialized) {
                         val position =
                             chartCategoryTree.value.children.indexOf(selectionState.value)
                         if (position > -1) {
                             chart.highlightValue(position.toFloat(), 0)
-                            chart.setCenterText(position)
                         }
                     }
                 }
@@ -232,7 +231,8 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                 val expansionMode = object : ExpansionMode.Single(expansionState) {
                     override fun toggle(category: Category) {
                         super.toggle(category)
-                        //when we collapse a category, we want it to be selected, when expand the first child should be selected
+                        // when we collapse a category, we want it to be selected;
+                        // when we expand, the first child should be selected
                         if (isExpanded(category.id)) {
                             selectionState.value = category.children.firstOrNull()
                         } else {
@@ -243,14 +243,14 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                 val accountInfo = viewModel.accountInfo.collectAsState(null)
                 Box(modifier = Modifier.fillMaxSize()) {
                     when {
-                        categoryTree == Category.LOADING -> {
+                        categoryTree.value == Category.LOADING -> {
                             CircularProgressIndicator(
                                 modifier = Modifier
                                     .size(96.dp)
                                     .align(Alignment.Center)
                             )
                         }
-                        categoryTree.children.isEmpty() -> {
+                        categoryTree.value.children.isEmpty() -> {
                             Text(
                                 modifier = Modifier.align(Alignment.Center),
                                 text = stringResource(id = R.string.no_mapped_transactions),
@@ -265,7 +265,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                                         Row(modifier = Modifier.weight(1f)) {
                                             RenderTree(
                                                 modifier = Modifier.weight(0.5f),
-                                                category = categoryTree,
+                                                category = categoryTree.value,
                                                 choiceMode = choiceMode,
                                                 expansionMode = expansionMode,
                                                 accountInfo = accountInfo.value
@@ -284,7 +284,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                                     Column {
                                         RenderTree(
                                             modifier = Modifier.weight(0.5f),
-                                            category = categoryTree,
+                                            category = categoryTree.value,
                                             choiceMode = choiceMode,
                                             expansionMode = expansionMode,
                                             accountInfo = accountInfo.value
@@ -369,7 +369,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                             add(
                                 MenuEntry(
                                     Icons.Filled.List,
-                                    stringResource(id = R.string.menu_show_transactions),
+                                    R.string.menu_show_transactions,
                                     ::showTransactions
                                 )
                             )
@@ -378,8 +378,15 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                             add(
                                 MenuEntry(
                                     Icons.Filled.Palette,
-                                    stringResource(id = R.string.color)
-                                ) { category -> category.color?.let { editCategoryColor(category.id, it) } }
+                                    R.string.color
+                                ) { category ->
+                                    category.color?.let {
+                                        editCategoryColor(
+                                            category.id,
+                                            it
+                                        )
+                                    }
+                                }
                             )
                     }
                 )
@@ -396,7 +403,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
         accountInfo: DistributionAccountInfo?,
         sums: Pair<Long, Long>
     ) {
-        val accountFormatter = LocalAmountFormatter.current
+        val accountFormatter = LocalCurrencyFormatter.current
         accountInfo?.let {
             Divider(
                 modifier = Modifier.padding(top = 4.dp),
@@ -413,12 +420,12 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(), 
                     Text("∑ :")
                     Text(
                         modifier = Modifier.weight(1f),
-                        text = "+" + accountFormatter(sums.first, it.currency),
+                        text = "+" + accountFormatter.convAmount(sums.first, it.currency),
                         textAlign = TextAlign.End
                     )
                     Text(
                         modifier = Modifier.weight(1f),
-                        text = "-" + accountFormatter(sums.second, it.currency),
+                        text = "-" + accountFormatter.convAmount(sums.second, it.currency),
                         textAlign = TextAlign.End
                     )
                 }

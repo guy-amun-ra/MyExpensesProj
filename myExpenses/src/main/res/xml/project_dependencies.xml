@@ -2,14 +2,9 @@
 <credits>
     <project>
         <name>Financisto</name>
-        <extra_info>CalculatorInput, QifParser, FolderBrowser, WhereFilter and AutoBackupService</extra_info>
+        <extra_info>CalculatorInput, QifParser, WhereFilter</extra_info>
         <url>https://launchpad.net/financisto</url>
         <licence>GPL v2.0</licence>
-    </project>
-    <project>
-        <name>StickyListHeaders</name>
-        <url>http://emilsjolander.github.io/StickyListHeaders</url>
-        <licence>Apache License, Version 2.0</licence>
     </project>
     <project>
         <name>iText</name>
@@ -127,11 +122,6 @@
         <licence>Apache License, Version 2.0</licence>
     </project>
     <project>
-        <name>Lightweight-Stream-API</name>
-        <url>https://github.com/aNNiMON/Lightweight-Stream-API</url>
-        <licence>Apache License, Version 2.0</licence>
-    </project>
-    <project>
         <name>OkHttp</name>
         <url>http://square.github.io/okhttp/</url>
         <licence>Apache License, Version 2.0</licence>
@@ -160,6 +150,11 @@
         <name>CircleProgress</name>
         <url>https://github.com/lzyzsd/CircleProgress/</url>
         <licence>Do What * You Want To Public License, Version 2</licence>
+    </project>
+    <project>
+        <name>Donut</name>
+        <url>https://github.com/futuredapp/donut</url>
+        <licence>MIT licence</licence>
     </project>
     <project>
         <name>Sqlbrite</name>
@@ -206,6 +201,17 @@
     <project>
         <name>Ktor</name>
         <url>https://ktor.io/</url>
+        <licence>Apache License, Version 2.0</licence>
+    </project>
+    <project>
+        <name>FontDrawable</name>
+        <url>https://github.com/k4zy/FontDrawable/</url>
+        <licence>Apache License, Version 2.0</licence>
+    </project>
+    <project>
+        <name>Accompanist</name>
+        <extra_info>drawablepainter, pager, flowlayout with patch from Sven Obser (https://github.com/brudaswen/accompanist/commit/582feb405276ce406260ad50634fd6b76ba19904)</extra_info>
+        <url>https://github.com/google/accompanist</url>
         <licence>Apache License, Version 2.0</licence>
     </project>
 </credits>

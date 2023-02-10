@@ -1,0 +1,172 @@
+package org.totschnig.myexpenses.dialog
+
+import android.app.Dialog
+import android.content.DialogInterface
+import android.os.Bundle
+import android.view.View
+import android.widget.AdapterView
+import android.widget.Spinner
+import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
+import org.totschnig.myexpenses.MyApplication
+import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.activity.QifImport
+import org.totschnig.myexpenses.adapter.IdAdapter
+import org.totschnig.myexpenses.adapter.CurrencyAdapter
+import org.totschnig.myexpenses.export.qif.QifDateFormat
+import org.totschnig.myexpenses.model.ExportFormat
+import org.totschnig.myexpenses.provider.DatabaseConstants
+import org.totschnig.myexpenses.util.checkNewAccountLimitation
+import org.totschnig.myexpenses.viewmodel.Account
+import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
+import org.totschnig.myexpenses.viewmodel.ImportViewModel
+import org.totschnig.myexpenses.viewmodel.data.Currency
+import org.totschnig.myexpenses.viewmodel.data.Currency.Companion.create
+
+class QifImportDialogFragment : TextSourceDialogFragment(), AdapterView.OnItemSelectedListener {
+    private lateinit var accountSpinner: Spinner
+    private lateinit var dateFormatSpinner: Spinner
+    private lateinit var currencySpinner: Spinner
+    private lateinit var encodingSpinner: Spinner
+    @Suppress("UNCHECKED_CAST")
+    private val accountsAdapter: IdAdapter<Account>
+        get() = accountSpinner.adapter as IdAdapter<Account>
+    private val currencyAdapter: CurrencyAdapter
+        get() = currencySpinner.adapter as CurrencyAdapter
+    private var currency: String? = null
+    private val currencyViewModel: CurrencyViewModel by viewModels()
+    private val viewModel: ImportViewModel by viewModels()
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        with((requireActivity().application as MyApplication).appComponent) {
+            inject(currencyViewModel)
+            inject(viewModel)
+        }
+    }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        if (savedInstanceState != null) {
+            currency = savedInstanceState.getString(DatabaseConstants.KEY_CURRENCY)
+        }
+        return super.onCreateDialog(savedInstanceState)
+    }
+
+    override fun getLayoutId(): Int {
+        return R.layout.import_dialog
+    }
+
+    override fun getLayoutTitle(): String {
+        return getString(
+            R.string.pref_import_title,
+            format.name
+        )
+    }
+
+    private val format: ExportFormat
+        get() = ExportFormat.QIF
+
+    override fun getTypeName(): String {
+        return format.name
+    }
+
+    override fun getPrefKey(): String {
+        return "import_" + format.extension + "_file_uri"
+    }
+
+    override fun onClick(dialog: DialogInterface, id: Int) {
+        if (activity == null) {
+            return
+        }
+        if (id == AlertDialog.BUTTON_POSITIVE) {
+            val format = dateFormatSpinner.selectedItem as QifDateFormat
+            val encoding = encodingSpinner.selectedItem as String
+            maybePersistUri()
+            prefHandler.putString(PREF_KEY_IMPORT_ENCODING, encoding)
+            prefHandler.putString(PREF_KEY_IMPORT_DATE_FORMAT, format.name)
+            (activity as QifImport?)!!.onSourceSelected(
+                mUri,
+                format,
+                accountSpinner.selectedItemId,
+                (currencySpinner.selectedItem as Currency).code,
+                mImportTransactions.isChecked,
+                mImportCategories.isChecked,
+                mImportParties.isChecked,
+                encoding
+            )
+        } else {
+            super.onClick(dialog, id)
+        }
+    }
+
+    override fun setupDialogView(view: View) {
+        super.setupDialogView(view)
+        accountSpinner = view.findViewById(R.id.Account)
+        accountSpinner.adapter = IdAdapter<Account>(requireContext())
+        accountSpinner.onItemSelectedListener = this
+        dateFormatSpinner = view.findViewById(R.id.DateFormat)
+        dateFormatSpinner.configureDateFormat(requireContext(), prefHandler, PREF_KEY_IMPORT_DATE_FORMAT)
+        encodingSpinner = view.findViewById(R.id.Encoding)
+        DialogUtils.configureEncoding(
+            encodingSpinner,
+            requireContext(),
+            prefHandler,
+            PREF_KEY_IMPORT_ENCODING
+        )
+        currencySpinner = view.findViewById(R.id.Currency)
+        DialogUtils.configureCurrencySpinner(currencySpinner, this)
+        lifecycleScope.launchWhenStarted {
+            currencyViewModel.currencies.collect {
+                val adapter = currencySpinner.adapter as CurrencyAdapter
+                adapter.addAll(it)
+                currencySpinner.setSelection(adapter.getPosition(currencyViewModel.default))
+            }
+        }
+        lifecycleScope.launchWhenStarted {
+            viewModel.accounts.collect {
+                accountsAdapter.addAll(it)
+                accountSpinner.setSelection(accountsAdapter.getPosition(viewModel.accountId))
+            }
+        }
+        view.findViewById<View>(R.id.AccountType).visibility =
+            View.GONE //QIF data should specify type
+    }
+
+    override fun onItemSelected(
+        parent: AdapterView<*>, view: View, position: Int,
+        id: Long
+    ) {
+        if (parent.id == R.id.Currency) {
+            if (viewModel.accountId == 0L) {
+                currency = (parent.selectedItem as Currency).code
+            }
+            return
+        }
+        accountSpinner.checkNewAccountLimitation(prefHandler, requireContext())
+        val selected = accountsAdapter.getItem(position)!!
+        viewModel.accountId = selected.id
+        val currency =
+            if (selected.id == 0L && currency != null) currency else selected.currency
+        currencySpinner.setSelection(
+            currencyAdapter.getPosition(create(currency!!, requireActivity()))
+        )
+        currencySpinner.isEnabled = position == 0
+    }
+
+    override fun onNothingSelected(parent: AdapterView<*>?) {}
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putSerializable(DatabaseConstants.KEY_CURRENCY, currency)
+    }
+
+    companion object {
+        const val PREF_KEY_IMPORT_DATE_FORMAT = "import_qif_date_format"
+        const val PREF_KEY_IMPORT_ENCODING = "import_qif_encoding"
+
+        @JvmStatic
+        fun newInstance(): QifImportDialogFragment {
+            return QifImportDialogFragment()
+        }
+    }
+}

@@ -28,6 +28,8 @@
     <string name="pref_perform_share_key">perform_share</string>
     <string name="pref_share_target_key">share_target</string>
     <string name="pref_ui_theme_key">pref_ui_theme</string>
+    <string name="pref_ui_item_renderer_legacy_key">ui_item_renderer_legacy</string>
+    <string name="pref_ui_item_renderer_category_icon_key">ui_item_renderer_category_icon</string>
     <string name="pref_ui_fontsize_key">pref_ui_fontsize</string>
     <string name="pref_backup_key">backup</string>
     <string name="pref_auto_backup_key">auto_backup</string>
@@ -103,7 +105,6 @@
     <string name="pref_translation_key">translation</string>
     <string name="pref_scroll_to_current_date_key">scroll_to_current_date</string>
     <string name="pref_security_export_password_key">security_export_password</string>
-    <string name="pref_account_list_fast_scroll_key">account_list_fast_scroll</string>
     <string name="pref_sync_changes_immediately_key">sync_changes_immediately</string>
     <string name="pref_exchange_rates_key">exchange_rates</string>
     <string name="pref_exchange_rate_provider_key">exchange_rate_provider</string>
@@ -123,6 +124,8 @@
     <string name="pref_purge_backup_key">purge_backup</string>
     <string name="pref_purge_backup_keep_key">purge_backup_keep</string>
     <string name="pref_purge_backup_require_confirmation_key">purge_backup_require_confirmation</string>
+    <string name="pref_ui_transaction_list_key">ui_transaction_list</string>
+    <string name="pref_encrypt_database_info_key">encrypt_database_info</string>
 
     <string name="help_licence_gpl">GNU General Public License version 3\nhttp://www.gnu.org/licenses/gpl.html .</string>
     <string-array name="additional_credits">
@@ -184,8 +187,6 @@
     <!-- User retrieving MyExpenses from a repository should not hit this message,
      so we leave it without localization -->
     <string name="error_accessing_market">No market application found</string>
-    <!-- only shown to users experimenting with restore, so no need for localization -->
-    <string name="restore_db_not_valid">BACKUP file is no valid SQLITE3 database.</string>
     <string name="restore_cannot_downgrade">You cannot restore a backup from a newer database schema version (%1$d). The current one is %2$d.</string>
     <string name="website">https://www.myexpenses.mobi</string>
 
@@ -194,7 +195,6 @@
 
     <string name="io_error_appdir_null">Application directory not found</string>
     <string name="io_error_backupdir_null">Could not create folder for storing backup</string>
-    <string name="io_error_cachedir_null">Cache directory not found</string>
     <string name="account_list_not_yet_loaded">Account list not yet loaded. Please try again</string>
 
     <string name="calculator_operator_plus">+</string>
@@ -217,8 +217,9 @@
     <string name="menu_set_weight">Set weight</string>
     <string name="menu_result">Result</string>
     <string name="menu_clear">Clear</string>
-    <string name="menu_color">@string/color</string>
-    <string name="menu_rollover">@string/budget_table_header_rollover</string>
+    <string name="menu_color" tools:ignore="UnusedResources">@string/color</string>
+    <string name="menu_status_handle" tools:ignore="UnusedResources">@string/status</string>
+    <string name="menu_rollover" tools:ignore="UnusedResources">@string/budget_table_header_rollover</string>
     <string name="roadmap_intro">We have launched a new iteration of the Roadmap Vote. Please help us define priorities for the upcoming year.</string>
     <string name="roadmap_intro_update">You need to update your vote in order to have it counted.</string>
     <string name="roadmap_loading">Loading issues …</string>
@@ -254,11 +255,15 @@
     <string name="corrupted_data_detected">Corrupted data detected: You can inspect the corrupted records from Settings -> Debug -> Corrupted Data. Contact support@myexpenses.mobi for assistance.</string>
     <string name="pref_exchange_rates_clear_cache_key">exchange_rates_clear_cache</string>
     <string name="pref_debug_repair_987_key">debug_repair_987</string>
-    <string name="button_label_repair">Repair</string>
     <string name="pref_csv_export_key">csv_export</string>
     <string name="pref_csv_export_split_categories_key">csv_export_split_categories</string>
     <string name="pref_csv_export_split_amount_key">csv_export_split_amount</string>
     <string name="pref_csv_export_split_date_time_key">csv_export_split_date_time</string>
     <string name="date_format_a">am/pm</string>
     <string name="pref_web_ui_https_key">web_ui_https</string>
+    <string name="pref_running_balance_key">running_balance</string>
+    <string name="title_requery">Requery SQLite</string>
+    <string name="html">HTML</string>
+    <string name="txt">TXT</string>
+    <string name="support_email">support@myexpenses.mobi</string>
 </resources>

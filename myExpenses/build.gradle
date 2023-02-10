@@ -45,7 +45,7 @@ android {
         testInstrumentationRunner "org.totschnig.myexpenses.MyTestRunner"
 
         vectorDrawables.useSupportLibrary = true
-        resConfigs 'en', 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'eu', 'fr', 'hr', 'hu', 'it', 'iw', 'ja', 'km', 'kn', 'ko', 'ms', 'pl', 'pt_BR', 'pt_PT', 'ro', 'ru', 'si', 'ta', 'te', 'tr', 'uk', 'vi', 'zh_CN', 'zh_HK', 'zh_TW'
+        resConfigs 'en_US', 'en_GB', 'ar', 'bg', 'ca', 'cs', 'da', 'de', 'el', 'es', 'eu', 'fr', 'hr', 'hu', 'it', 'iw', 'ja', 'km', 'kn', 'ko', 'ms', 'nl', 'pl', 'pt_BR', 'pt_PT', 'ro', 'ru', 'si', 'ta', 'te', 'tr', 'uk', 'ur', 'vi', 'zh_CN', 'zh_HK', 'zh_TW'
     }
 
     kotlinOptions {
@@ -99,6 +99,7 @@ android {
             dimension "distribution"
             buildConfigField "String", "DISTRIBUTION", "\"PLAY\""
             ext.gitTagSuffix = 'gp'
+            isDefault true
         }
         amazon {
             dimension "distribution"
@@ -118,6 +119,7 @@ android {
 
         intern {
             dimension "textRecognition"
+            isDefault true
         }
         extern {
             dimension "textRecognition"
@@ -128,7 +130,7 @@ android {
                     doLast {
                         def tag = "${project.versionCode}${flavor.ext.gitTagSuffix}"
                         def dir = "/home/michael/MyExpensesReleases/${tag}"
-                        def outputFolder = flavor.name == 'play' ? 'bundle' : 'universal_apk'
+                        def outputFolder = flavor.name == 'play' ? 'bundle' : 'apk_from_bundle'
                         def artifactSuffix = flavor.name == 'play' ? '.aab' : '-universal.apk'
                         def renameTarget = flavor.name == 'huawei' ? '/myExpenses.apk' : ''
                         println "mkdir ${dir}; mv myExpenses/build/outputs/mapping/${flavor.name}WithAdsInternRelease/mapping.txt ${dir}; mv myExpenses/build/outputs/${outputFolder}/${flavor.name}WithAdsInternRelease/myExpenses-${flavor.name}-withAds-intern-release${artifactSuffix} ${dir}${renameTarget}; git tag r${tag}; git push gitlab r${tag}"
@@ -180,7 +182,7 @@ android {
     //It does not seem possible to define dynamicFeatures dependent on variant
     //If you want to build intern variant, you need to include mlkit (+ at least one of ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore') and/or tesseract module
     //drive for Sync with Google Drive
-    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore', ':drive', ':dropbox', ':webdav']
+    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore', ':drive', ':dropbox', ':webdav', ':sqlcrypt']
 
     composeOptions {
         kotlinCompilerExtensionVersion compose_compiler_version
@@ -198,81 +200,85 @@ kotlin.sourceSets.all {
     languageSettings.optIn("kotlin.RequiresOptIn")
 }
 
-configurations.all {
-    exclude group: "com.google.android.material", module: "material"
-}
-
 //uncomment if you want to have Android log in stdout
 tasks.withType(Test) {
     systemProperty "robolectric.logging", "stdout"
 }
 
 dependencies {
+    debugImplementation 'com.squareup.leakcanary:leakcanary-android:2.10'
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugarVersion"
     implementation project(':transactionscontract')
     implementation "com.jakewharton:butterknife:$butterknifeVersion"
-    implementation 'com.squareup.phrase:phrase:1.1.0'
-    implementation "androidx.compose.ui:ui:$compose_version"
-    implementation "androidx.compose.material:material:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling-preview:$compose_version"
-    implementation 'androidx.activity:activity-compose:1.5.1'
-    implementation "com.google.android.material:compose-theme-adapter:1.1.18"
-    implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
-    androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
-    debugImplementation "androidx.compose.ui:ui-tooling:$compose_version"
-    implementation "androidx.compose.material:material-icons-extended:$compose_version"
-    implementation "com.google.accompanist:accompanist-drawablepainter:0.23.1"
+    implementation 'com.squareup.phrase:phrase:1.2.0'
+    def composeBom = platform('androidx.compose:compose-bom:2023.01.00')
+    implementation composeBom
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.material:material"
+    implementation("androidx.compose.material3:material3:1.0.1")
+    implementation "androidx.compose.ui:ui-tooling-preview"
+    implementation 'androidx.activity:activity-compose:1.6.1'
+    implementation "androidx.compose.runtime:runtime-livedata"
+    debugImplementation "androidx.compose.ui:ui-tooling"
+    implementation "androidx.compose.material:material-icons-extended"
+    implementation "androidx.paging:paging-compose:1.0.0-alpha17"
+    implementation "com.google.accompanist:accompanist-drawablepainter:$accompanist"
+    implementation "com.google.accompanist:accompanist-pager:$accompanist"
+    implementation "com.google.accompanist:accompanist-themeadapter-material:$accompanist"
+    //includes https://github.com/google/accompanist/pull/1074/files
+    implementation 'com.github.mtotschnig.accompanist:accompanist-flowlayout:99de3a9496'
+    implementation("app.futured.donut:donut-compose:2.2.2")
+
     kapt "com.jakewharton:butterknife-compiler:$butterknifeVersion"
     kapt "com.google.dagger:dagger-compiler:$daggerVersion"
     implementation "com.google.dagger:dagger:$daggerVersion"
     compileOnly 'javax.annotation:jsr250-api:1.0'
     implementation 'frankiesardo:icepick:3.2.0'
     kapt 'frankiesardo:icepick-processor:3.2.0'
-    implementation 'com.google.code.gson:gson:2.9.0'
+    implementation 'com.google.code.gson:gson:2.10.1'
 
-    api 'com.google.auto.value:auto-value-annotations:1.8.1'
-    kapt 'com.google.auto.value:auto-value:1.7'
+    api 'com.google.auto.value:auto-value-annotations:1.10'
+    kapt 'com.google.auto.value:auto-value:1.10'
 
-    kapt 'com.ryanharter.auto.value:auto-value-gson:1.3.0'
-    api 'com.ryanharter.auto.value:auto-value-gson-runtime:1.3.0'
+    kapt 'com.ryanharter.auto.value:auto-value-gson:1.3.1'
+    api 'com.ryanharter.auto.value:auto-value-gson-runtime:1.3.1'
 
-    kapt 'com.gabrielittner.auto.value:auto-value-cursor:1.1.0'
-    implementation 'com.gabrielittner.auto.value:auto-value-cursor-annotations:1.1.0'
+    kapt 'com.gabrielittner.auto.value:auto-value-cursor:2.0.1'
+    implementation 'com.gabrielittner.auto.value:auto-value-cursor-annotations:2.0.1'
 
     kapt 'com.ryanharter.auto.value:auto-value-parcel:0.2.8'
 
-    implementation 'com.github.mtotschnig:StickyListHeaders:2.8.0'
-    implementation 'com.github.mtotschnig:MaterialSeekBarPreference:bc211774e5'
     implementation project(':PlayLicensingOrig')
     implementation 'com.itextpdf:itextpdf:5.5.13.1'
+    api "ch.acra:acra-core:$acraVersion"
     implementation "ch.acra:acra-mail:$acraVersion"
     implementation "ch.acra:acra-dialog:$acraVersion"
     implementation "org.apache.commons:commons-lang3:$commonsLang"
     implementation("com.android.billingclient:billing-ktx:$billingVersion")
-    playImplementation 'com.google.android.play:core:1.10.3'
-    playImplementation "com.google.android.play:core-ktx:1.8.1"
-    amazonImplementation fileTree(dir: 'libs', include: ['in-app-purchasing-2.0.76.jar'])
+    playImplementation 'com.google.android.play:feature-delivery-ktx:2.0.1'
+    playImplementation 'com.google.android.play:review-ktx:2.0.1'
+    amazonImplementation 'com.amazon.device:amazon-appstore-sdk:3.0.3'
 
     implementation 'org.apache.commons:commons-csv:1.8'
     implementation "org.apache.commons:commons-text:$commonsText"
+    //noinspection GradleDependency
     api "com.squareup.picasso:picasso:$picassoVersion"
     implementation 'com.github.mtotschnig:MPAndroidChart:6fcf34d9d4'
-    implementation 'com.github.mtotschnig:Caldroid:2fcb748f0e'
+    implementation 'com.github.mtotschnig:Caldroid:e40729670a'
     api('io.github.eltos:simpledialogfragments:3.5.2')
 
-    //noinspection GradleDependency
-    implementation 'com.annimon:stream:1.2.1'
     implementation 'com.getkeepsafe.taptargetview:taptargetview:1.13.2'
 
     implementation 'org.apache.commons:commons-collections4:4.4'
 
     api "com.jakewharton.timber:timber:$timberVersion"
 
-    withAdsImplementation 'com.google.android.gms:play-services-ads:21.2.0'
+    withAdsImplementation 'com.google.android.gms:play-services-ads:21.5.0'
     //noinspection GradleDynamicVersion
     //withAdsImplementation 'com.amazon.android:mobile-ads:5.+'
 
-    implementation platform('com.google.firebase:firebase-bom:30.3.0')
+    implementation platform('com.google.firebase:firebase-bom:31.2.0')
     implementation 'com.google.firebase:firebase-config'
     implementation 'com.google.firebase:firebase-analytics'
     implementation 'com.google.firebase:firebase-crashlytics'
@@ -284,7 +290,7 @@ dependencies {
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation "androidx.recyclerview:recyclerview:$recyclerview"
     implementation 'androidx.cardview:cardview:1.0.0'
-    api 'com.github.mtotschnig:material-components-android:bug_1913_1.5-SNAPSHOT'
+    api "com.google.android.material:material:$materialComponents"
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
     api 'androidx.preference:preference-ktx:1.2.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -309,6 +315,8 @@ dependencies {
 
     implementation 'com.afollestad.material-dialogs:core:3.3.0'
 
+    implementation "androidx.sqlite:sqlite-ktx:$androidxSqlite"
+
     // dynamic feature module compilation fails with
     //Cannot access 'com.vmadalin.easypermissions.EasyPermissions.PermissionCallbacks' which is a supertype of 'org.totschnig.myexpenses.activity.BaseActivity'
     api 'com.vmadalin:easypermissions-ktx:1.0.0'
@@ -316,11 +324,49 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-html:0.7.3")
     implementation("io.arrow-kt:arrow-core:1.0.1")
 
+    implementation 'com.github.mtotschnig:FontDrawable:39e8f63ce2'
+
+    // Room components
+    implementation "androidx.room:room-runtime:$roomVersion"
+    implementation "androidx.room:room-ktx:$roomVersion"
+    kapt "androidx.room:room-compiler:$roomVersion"
+
+    implementation 'com.getkeepsafe.relinker:relinker:1.4.4'
+    implementation "com.github.requery:sqlite-android:$requery"
+
+    // Lifecycle components
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$archLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-common-java8:$archLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$archLifecycleVersion"
+
+    // ViewModel Kotlin support
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$archLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$archLifecycleVersion"
+    implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
+
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines"
+
+    //implementation "androidx.activity:activity-ktx:$activity_version"
+    implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
+
+    //Mlkit / Drive
+    implementation "com.google.android.gms:play-services-base:18.1.0"
+    implementation "com.google.mlkit:vision-interfaces:+"
+    implementation "com.google.guava:guava:31.1-android"
+
+    implementation 'com.github.mtotschnig:Android-Image-Cropper:3ead230612'
+    api "androidx.core:core-ktx:$ktxVersion"
+    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+
+    implementation 'androidx.work:work-runtime-ktx:2.8.0-rc01'
+
+    androidTestImplementation composeBom
     androidTestImplementation 'tools.fastlane:screengrab:2.1.1'
     androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
+    debugImplementation "androidx.test.espresso:espresso-idling-resource:$espressoVersion"
     androidTestImplementation "androidx.test.ext:junit:$androidxTextExtJunit"
-    androidTestImplementation "androidx.test:runner:1.5.0-alpha04"
-    androidTestUtil "androidx.test:orchestrator:1.4.1"
+    androidTestImplementation "androidx.test:runner:1.5.2"
+    androidTestUtil "androidx.test:orchestrator:1.4.2"
     androidTestImplementation "androidx.test:rules:$androidSupportTestVersion"
     androidTestImplementation "androidx.test.espresso:espresso-intents:$espressoVersion"
     androidTestImplementation("androidx.test.espresso:espresso-contrib:$espressoVersion")
@@ -331,60 +377,29 @@ dependencies {
     androidTestImplementation('com.adevinta.android:barista:4.2.0') {
         exclude group: 'org.jetbrains.kotlin' // Only if you already use Kotlin in your project
     }
+    androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    androidTestImplementation "androidx.room:room-testing:$roomVersion"
+    androidTestImplementation "androidx.compose.ui:ui-test-junit4"
+    //noinspection GradleDependency
+    androidTestImplementation "org.assertj:assertj-core:$assertjVersionAndroid"
+    androidTestImplementation "com.google.truth:truth:$truthVersion"
+    androidTestImplementation "androidx.arch.core:core-testing:$androidxArchVersion"
 
     testImplementation('com.adevinta.android:barista:4.2.0') {
         exclude group: 'org.jetbrains.kotlin' // Only if you already use Kotlin in your project
     }
-
+    testImplementation "androidx.compose.ui:ui-test-junit4"
     testImplementation "junit:junit:$junitVersion"
     testImplementation 'pl.pragmatists:JUnitParams:1.1.1'
     testImplementation "org.mockito:mockito-core:$mockitoVersion"
+    testImplementation "org.mockito.kotlin:mockito-kotlin:4.0.0"
     testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation "androidx.compose.ui:ui-test-junit4:$compose_version"
     testImplementation "androidx.test:core:$androidSupportTestVersion"
     testImplementation "org.assertj:assertj-core:$assertjVersion"
-    //noinspection GradleDependency
-    androidTestImplementation "org.assertj:assertj-core:$assertjVersionAndroid"
-    androidTestImplementation "com.google.truth:truth:$truthVersion"
     testImplementation "com.google.truth:truth:$truthVersion"
-    api "androidx.core:core-ktx:$ktxVersion"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
-    androidTestImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
     testImplementation "androidx.test:rules:$androidSupportTestVersion"
     testImplementation "androidx.test.ext:junit:$androidxTextExtJunit"
-
-    // Room components
-    implementation "androidx.room:room-runtime:$roomVersion"
-    implementation "androidx.room:room-ktx:$roomVersion"
-    kapt "androidx.room:room-compiler:$roomVersion"
-    androidTestImplementation "androidx.room:room-testing:$roomVersion"
-
-    // Lifecycle components
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:$archLifecycleVersion"
-    implementation "androidx.lifecycle:lifecycle-common-java8:$archLifecycleVersion"
-    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:$archLifecycleVersion"
-
-    androidTestImplementation "androidx.arch.core:core-testing:$androidxArchVersion"
-
-    // ViewModel Kotlin support
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$archLifecycleVersion"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$archLifecycleVersion"
-    implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
-
-
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines"
-
-    //implementation "androidx.activity:activity-ktx:$activity_version"
-    implementation "androidx.fragment:fragment-ktx:$fragmentVersion"
-
-    //Mlkit / Drive
-    implementation "com.google.android.gms:play-services-base:18.1.0"
-    implementation "com.google.mlkit:vision-interfaces:+"
-    implementation "com.google.guava:guava:30.1.1-android"
-
-    //noinspection GradleDependency
-    implementation 'com.github.mtotschnig:Android-Image-Cropper:2243115896'
 }
 
 static def getDate() {
@@ -408,11 +423,17 @@ apply plugin: 'com.google.firebase.crashlytics'
 
 task echoPublishTag() {
     doLast {
-        println "ChangeLog.install/bin/ChangeLog fdroid ${versionName} ${versionCode}"
-        println "git add metadata/*/changelogs/${versionCode}.txt"
-        println "git commit -m \"Release ${versionName}\""
-        println "git push"
-        println "git tag r${versionCode}; git push origin r${versionCode}"
+        def currentBranch = 'git branch --show-current'.execute().text.trim()
+
+        if (currentBranch == 'master') {
+            println "ChangeLog.install/bin/ChangeLog fdroid ${versionName} ${versionCode}"
+            println "git add metadata/*/changelogs/${versionCode}.txt"
+            println "git commit -m \"Release ${versionName}\""
+            println "git push"
+            println "git tag r${versionCode}; git push origin r${versionCode}"
+        } else {
+            println "Release should be built on master, current branch is $currentBranch"
+        }
     }
 }
 

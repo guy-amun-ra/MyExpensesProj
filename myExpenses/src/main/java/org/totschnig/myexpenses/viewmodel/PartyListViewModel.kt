@@ -8,31 +8,19 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.Cursor
 import android.text.TextUtils
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.liveData
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import app.cash.copper.flow.mapToList
 import app.cash.copper.flow.observeQuery
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.launch
-import org.jetbrains.annotations.Nullable
 import org.totschnig.myexpenses.dialog.select.SelectFromMappedTableDialogFragment
 import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEEID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME_NORMALIZED
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED
-import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_BUDGETS
-import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_PAYEES
-import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS
-import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.provider.TransactionProvider.CHANGES_URI
-import org.totschnig.myexpenses.provider.TransactionProvider.DEBTS_URI
-import org.totschnig.myexpenses.provider.TransactionProvider.PAYEES_URI
-import org.totschnig.myexpenses.provider.TransactionProvider.TEMPLATES_URI
-import org.totschnig.myexpenses.provider.TransactionProvider.TRANSACTIONS_URI
-import org.totschnig.myexpenses.provider.filter.PayeeCriteria
+import org.totschnig.myexpenses.provider.DatabaseConstants.*
+import org.totschnig.myexpenses.provider.TransactionProvider.*
+import org.totschnig.myexpenses.provider.filter.KEY_FILTER
+import org.totschnig.myexpenses.provider.filter.PayeeCriterion
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.replace
@@ -41,48 +29,55 @@ import org.totschnig.myexpenses.viewmodel.data.Party
 import timber.log.Timber
 import java.util.*
 
-class PartyListViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
+class PartyListViewModel(
+    application: Application,
+    val savedStateHandle: SavedStateHandle
+) : ContentResolvingAndroidViewModel(application) {
 
-    private val parties = MutableLiveData<List<Party>>()
     private lateinit var debts: Map<Long, List<Debt>>
+
+    var filter: String?
+        get() = savedStateHandle.get<String>(KEY_FILTER)
+        set(value) {
+            savedStateHandle[KEY_FILTER] = value
+        }
 
     fun getDebts(partyId: Long): List<Debt>? = if (::debts.isInitialized) debts[partyId] else null
 
-    fun getParties(): LiveData<List<Party>> = parties
-
-    fun loadParties(filter: @Nullable String?, accountId: Long) {
-        val filterSelection =
-            if (TextUtils.isEmpty(filter)) null else "$KEY_PAYEE_NAME_NORMALIZED LIKE ?"
-        val filterSelectionArgs = if (TextUtils.isEmpty(filter)) null else
-            arrayOf("%${Utils.escapeSqlLikeExpression(Utils.normalize(filter))}%")
-        val accountSelection = if (accountId == 0L) null else
-            StringBuilder("exists (SELECT 1 from $TABLE_TRANSACTIONS WHERE $KEY_PAYEEID = $TABLE_PAYEES.$KEY_ROWID").apply {
-                SelectFromMappedTableDialogFragment.accountSelection(accountId)?.let {
-                    append(" AND ")
+    @OptIn(ExperimentalCoroutinesApi::class)
+    fun parties(accountId: Long) = savedStateHandle.getLiveData(KEY_FILTER, "")
+        .asFlow()
+        .distinctUntilChanged()
+        .flatMapLatest {
+            val filterSelection =
+                if (TextUtils.isEmpty(filter)) null else "$KEY_PAYEE_NAME_NORMALIZED LIKE ?"
+            val filterSelectionArgs = if (TextUtils.isEmpty(filter)) null else
+                arrayOf("%${Utils.escapeSqlLikeExpression(Utils.normalize(filter))}%")
+            val accountSelection = if (accountId == 0L) null else
+                StringBuilder("exists (SELECT 1 from $TABLE_TRANSACTIONS WHERE $KEY_PAYEEID = $TABLE_PAYEES.$KEY_ROWID").apply {
+                    SelectFromMappedTableDialogFragment.accountSelection(accountId)?.let {
+                        append(" AND ")
+                        append(it)
+                    }
+                    append(")")
+                }
+            val accountSelectionArgs =
+                if (accountId == 0L) null else SelectFromMappedTableDialogFragment.accountSelectionArgs(
+                    accountId
+                )
+            val selection = StringBuilder().apply {
+                filterSelection?.let { append(it) }
+                accountSelection?.let {
+                    if (isNotEmpty()) append(" AND ")
                     append(it)
                 }
-                append(")")
-            }
-        val accountSelectionArgs =
-            if (accountId == 0L) null else SelectFromMappedTableDialogFragment.accountSelectionArgs(
-                accountId
-            )
-        val selection = StringBuilder().apply {
-            filterSelection?.let { append(it) }
-            accountSelection?.let {
-                if (length > 0) append(" AND ")
-                append(it)
-            }
-        }.takeIf { it.isNotEmpty() }?.toString()
-        disposable = briteContentResolver.createQuery(
-            PAYEES_URI, null,
-            selection, Utils.joinArrays(filterSelectionArgs, accountSelectionArgs), null, true
-        )
-            .mapToList { Party.fromCursor(it) }
-            .subscribe {
-                parties.postValue(it)
-            }
-    }
+            }.takeIf { it.isNotEmpty() }?.toString()
+            contentResolver.observeQuery(
+                PAYEES_URI, null,
+                selection, Utils.joinArrays(filterSelectionArgs, accountSelectionArgs), null, true
+            ).mapToList { Party.fromCursor(it) }
+
+        }
 
     fun loadDebts(): LiveData<Unit> = liveData(context = coroutineContext()) {
         contentResolver.observeQuery(DEBTS_URI, notifyForDescendants = true)
@@ -112,16 +107,16 @@ class PartyListViewModel(application: Application) : ContentResolvingAndroidView
     }
 
     private fun updatePartyFilters(old: Set<Long>, new: Long) {
-        contentResolver.query(TransactionProvider.ACCOUNTS_MINIMAL_URI, null, null, null, null)
+        contentResolver.query(ACCOUNTS_MINIMAL_URI, null, null, null, null)
             ?.use { cursor ->
-                updateFilterHelper(old, new, cursor, TransactionListViewModel::prefNameForCriteria)
+                updateFilterHelper(old, new, cursor, MyExpensesViewModel::prefNameForCriteria)
             }
     }
 
 
     private fun updatePartyBudgets(old: Set<Long>, new: Long) {
         contentResolver.query(
-            TransactionProvider.BUDGETS_URI,
+            BUDGETS_URI,
             arrayOf("$TABLE_BUDGETS.$KEY_ROWID"),
             null,
             null,
@@ -145,11 +140,11 @@ class PartyListViewModel(application: Application) : ContentResolvingAndroidView
                     KEY_PAYEEID
                 )
             val oldPayeeFilterValue = prefHandler.getString(payeeFilterKey, null)
-            val oldCriteria = oldPayeeFilterValue?.let {
-                PayeeCriteria.fromStringExtra(it)
+            val oldCriteria: PayeeCriterion? = oldPayeeFilterValue?.let {
+                PayeeCriterion.fromStringExtra(it)
             }
             if (oldCriteria != null) {
-                val oldSet = oldCriteria.values.map { it.toLong() }.toSet()
+                val oldSet = oldCriteria.values.toSet()
                 val newSet: Set<Long> = oldSet.replace(old, new)
                 if (oldSet != newSet) {
                     val labelList = mutableListOf<String>()
@@ -163,10 +158,10 @@ class PartyListViewModel(application: Application) : ContentResolvingAndroidView
                             it.moveToNext()
                         }
                     }
-                    val newPayeeFilterValue = PayeeCriteria(
+                    val newPayeeFilterValue = PayeeCriterion(
                         labelList.joinToString(","),
                         *newSet.toLongArray()
-                    ).toStringExtra()
+                    ).toString()
                     Timber.d(
                         "Updating %s (%s -> %s",
                         payeeFilterKey,
@@ -187,7 +182,7 @@ class PartyListViewModel(application: Application) : ContentResolvingAndroidView
             val contentValues = ContentValues(1).apply {
                 put(KEY_PAYEEID, keepId)
             }
-            itemIds.subtract(listOf(keepId)).let {
+            itemIds.subtract(setOf(keepId)).let {
                 val inOp = "IN (${it.joinToString()})"
                 val where = "$KEY_PAYEEID $inOp"
                 val operations = ArrayList<ContentProviderOperation>().apply {
@@ -231,7 +226,7 @@ class PartyListViewModel(application: Application) : ContentResolvingAndroidView
                     )
                 }
                 val size =
-                    contentResolver.applyBatch(TransactionProvider.AUTHORITY, operations).size
+                    contentResolver.applyBatch(AUTHORITY, operations).size
                 if (size == operations.size) {
                     updatePartyFilters(it, keepId)
                     updatePartyBudgets(it, keepId)

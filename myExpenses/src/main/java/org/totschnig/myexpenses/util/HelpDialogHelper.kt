@@ -22,26 +22,26 @@ class HelpDialogHelper(val context: Context) : ImageGetter {
         prefix: String
     ): String =
         item.split(".").joinToString("/") {
-            resolveStringOrThrowIf0((if (prefix == "form") "" else "menu_") + it)
+            getStringOrThrowIf0((if (prefix == "form") "" else "menu_") + it)
         }
 
     fun resolveStringOrArray(
         resString: String,
         separateComponentsByLineFeeds: Boolean
     ): CharSequence? {
+        fun toTitle(resId: Int) = SpannableStringBuilder()
+            .append(" ")
+            .bold { append(getString(resId)) }
+            .append(": ")
         return if (resString == "menu_BudgetActivity_rollover_help_text") {
-            fun toTitle(resId: Int ) = SpannableStringBuilder()
-                .append(" ")
-                .bold { append(getStringSafe(resId)) }
-                .append(": ")
             TextUtils.concat(*buildList {
-                add(getStringSafe(R.string.menu_BudgetActivity_rollover_help_text))
+                add(getString(R.string.menu_BudgetActivity_rollover_help_text))
                 add(toTitle(R.string.menu_aggregates))
-                add(getStringSafe(R.string.menu_BudgetActivity_rollover_total))
+                add(getString(R.string.menu_BudgetActivity_rollover_total))
                 add(toTitle(R.string.pref_manage_categories_title))
-                add(getStringSafe(R.string.menu_BudgetActivity_rollover_categories))
+                add(getString(R.string.menu_BudgetActivity_rollover_categories))
                 add(toTitle(R.string.menu_edit))
-                add(getStringSafe(R.string.menu_BudgetActivity_rollover_edit))
+                add(getString(R.string.menu_BudgetActivity_rollover_edit))
             }.toTypedArray())
         } else {
             val resIdString = resString.replace('.', '_')
@@ -52,7 +52,7 @@ class HelpDialogHelper(val context: Context) : ImageGetter {
                     null
                 } else {
                     HtmlCompat.fromHtml(
-                        getStringSafe(stringId),
+                        getString(stringId),
                         HtmlCompat.FROM_HTML_MODE_LEGACY, this, null
                     )
                 }
@@ -65,38 +65,39 @@ class HelpDialogHelper(val context: Context) : ImageGetter {
                 val components = resources.getStringArray(arrayId)
                     .filter { component -> !shouldSkip(component) }
                     .map { component -> handle(component) }
-                val resolvedComponents = ArrayList<CharSequence>()
-                for (i in components.indices) {
-                    resolvedComponents.add(
-                        HtmlCompat.fromHtml(
-                            components[i],
-                            HtmlCompat.FROM_HTML_MODE_LEGACY,
-                            this,
-                            null
+                TextUtils.concat(*buildList {
+                    for (i in components.indices) {
+                        this.add(
+                            HtmlCompat.fromHtml(
+                                components[i],
+                                HtmlCompat.FROM_HTML_MODE_LEGACY,
+                                this@HelpDialogHelper,
+                                null
+                            )
                         )
-                    )
-                    if (i < components.size - 1) {
-                        resolvedComponents.add(if (separateComponentsByLineFeeds) linefeed else " ")
+                        if (i < components.size - 1) {
+                            this.add(if (separateComponentsByLineFeeds) linefeed else " ")
+                        }
                     }
-                }
-                TextUtils.concat(*resolvedComponents.toTypedArray())
+                }.toTypedArray())
             }
         }
     }
 
     private fun handle(component: String) = if (component.startsWith("popup")) {
-        resolveName(component + "_intro") + " " + resources.getStringArray(
-            resolveArray(
-                component + "_items"
-            )
-        ).joinToString(" ") {
-            "<b>${resolveName(it)}</b>: ${resolveName(component + "_" + it)}"
-        }
+        getStringOrThrowIf0(component + "_intro") + " " +
+                resources.getStringArray(
+                    resolveArray(
+                        component + "_items"
+                    )
+                ).joinToString(" ") {
+                    "<b>${getStringOrThrowIf0(it)}</b>: ${getStringOrThrowIf0(component + "_" + it)}"
+                }
     } else {
-        resolveName(component)
+        (getStringOrNull(component + "_title")
+            ?.let { "<b>$it</b> " } ?: "") +
+                getStringOrThrowIf0(component)
     }
-
-    private fun resolveName(name: String) = getStringSafe(resolveString(name))
 
     private fun shouldSkip(component: String) = when (component) {
         "help_ManageSyncBackends_drive" -> DistributionHelper.isGithub
@@ -112,21 +113,20 @@ class HelpDialogHelper(val context: Context) : ImageGetter {
      * the resulting exception is caught and empty String is returned.
      */
     @Throws(Resources.NotFoundException::class)
-    fun resolveStringOrThrowIf0(resIdString: String) = when (resIdString) {
+    fun getStringOrThrowIf0(resIdString: String) = when (resIdString) {
         "menu_categories_export" -> {
             resources.getString(R.string.export_to_format, "QIF")
         }
         else -> {
-            resolveString(resIdString).takeIf { it != 0 }?.let { getStringSafe(it) }
-                ?: throw Resources.NotFoundException(resIdString)
+            getStringOrNull(resIdString) ?: throw Resources.NotFoundException(resIdString)
         }
     }
 
-    private fun getStringSafe(resId: Int) = try {
-        resources.getString(resId)
-    } catch (e: Resources.NotFoundException) { //if resource does exist in an alternate locale, but not in the default one
-        ""
-    }
+    fun getStringOrNull(resIdString: String) = resolveString(resIdString)
+        .takeIf { it != 0 }
+        ?.let { getString(it) }
+
+    private fun getString(resId: Int) = resources.getString(resId)
 
     @ArrayRes
     fun resolveArray(resIdString: String) = resolve(resIdString, "array")

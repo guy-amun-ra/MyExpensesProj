@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
-import android.database.Cursor
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.SavedStateHandle
@@ -23,7 +22,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.totschnig.myexpenses.model.AggregateAccount
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.provider.DatabaseConstants
@@ -31,7 +29,6 @@ import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.filter.FilterPersistence
 import org.totschnig.myexpenses.provider.getInt
 import org.totschnig.myexpenses.provider.getLong
-import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.data.Budget
 import org.totschnig.myexpenses.viewmodel.data.BudgetAllocation
@@ -73,44 +70,6 @@ class BudgetViewModel2(application: Application, savedStateHandle: SavedStateHan
         if (aggregate) (sums.first - sums.second) else -sums.second
     }
 
-    private val budgetCreatorFunction: (Cursor) -> Budget = { cursor ->
-        val currency =
-            cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_CURRENCY))
-        val currencyUnit = if (currency.equals(AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE))
-            Utils.getHomeCurrency() else currencyContext.get(currency)
-        val budgetId = cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_ROWID))
-        val accountId =
-            cursor.getLong(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_ACCOUNTID))
-        val grouping = Grouping.valueOf(
-            cursor.getString(
-                cursor.getColumnIndexOrThrow(
-                    DatabaseConstants.KEY_GROUPING
-                )
-            )
-        )
-        Budget(
-            budgetId,
-            accountId,
-            cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_TITLE)),
-            cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_DESCRIPTION)),
-            currencyUnit,
-            grouping,
-            cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_COLOR)),
-            cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_START)),
-            cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_END)),
-            cursor.getString(cursor.getColumnIndexOrThrow(DatabaseConstants.KEY_ACCOUNT_LABEL)),
-            getDefault(accountId, grouping) == budgetId
-        )
-    }
-
-    fun getDefault(accountId: Long, grouping: Grouping) = prefHandler.getLong(
-        BudgetViewModel.prefNameForDefaultBudget(
-            accountId,
-            grouping
-        ), 0
-    )
-
-
     @OptIn(ExperimentalCoroutinesApi::class)
     fun initWithBudget(budgetId: Long, groupingYear: Int, groupingSecond: Int) {
 
@@ -131,14 +90,14 @@ class BudgetViewModel2(application: Application, savedStateHandle: SavedStateHan
                         groupingInfo = GroupingInfo(budget.grouping, groupingYear, groupingSecond)
                     }
                 }
-                _filterPersistence.update {
+                _whereFilter.update {
                     FilterPersistence(
                         prefHandler, BudgetViewModel.prefNameForCriteria(budgetId), null,
                         immediatePersist = false,
                         restoreFromPreferences = true
                     ).also {
                         it.reloadFromPreferences()
-                    }
+                    }.whereFilter
                 }
             }
         }
@@ -174,18 +133,18 @@ class BudgetViewModel2(application: Application, savedStateHandle: SavedStateHan
             _aggregateTypes,
             _allocatedOnly,
             groupingInfoFlow.filterNotNull(),
-            _filterPersistence
-        ) { accountInfo, aggregateTypes, allocatedOnly, grouping, filterPersistence ->
+            _whereFilter
+        ) { accountInfo, aggregateTypes, allocatedOnly, grouping, whereFilter ->
             Tuple5(
                 accountInfo,
                 if (aggregateTypes) null else false,
                 allocatedOnly,
                 grouping,
-                filterPersistence
+                whereFilter
             )
         }.combine(budgetFlow) { tuple, budget -> tuple to budget }
             .flatMapLatest { (tuple, budget) ->
-                val (accountInfo, incomeType, allocatedOnly, grouping, filterPersistence) = tuple
+                val (accountInfo, incomeType, allocatedOnly, grouping, whereFilter) = tuple
                 categoryTreeWithSum(
                     accountInfo = accountInfo,
                     incomeType = incomeType,
@@ -198,7 +157,7 @@ class BudgetViewModel2(application: Application, savedStateHandle: SavedStateHan
                             }
                         }
                     },
-                    filterPersistence = filterPersistence,
+                    whereFilter = whereFilter,
                     selection = if (allocatedOnly) "${DatabaseConstants.KEY_BUDGET} IS NOT NULL OR ${DatabaseConstants.KEY_SUM} IS NOT NULL" else null,
                 ).map { it.copy(budget = budget) }
             }
@@ -249,7 +208,7 @@ class BudgetViewModel2(application: Application, savedStateHandle: SavedStateHan
         }
     }
 
-    fun deleteBudget(budgetId: Long, defaultKey: String?) = liveData(context = coroutineContext()) {
+    fun deleteBudget(budgetId: Long) = liveData(context = coroutineContext()) {
         emit(
             contentResolver.delete(
                 ContentUris.withAppendedId(
@@ -258,7 +217,6 @@ class BudgetViewModel2(application: Application, savedStateHandle: SavedStateHan
                 ), null, null
             ) == 1
         )
-        defaultKey?.let { prefHandler.remove(it) }
     }
 
     fun rollOverClear() {

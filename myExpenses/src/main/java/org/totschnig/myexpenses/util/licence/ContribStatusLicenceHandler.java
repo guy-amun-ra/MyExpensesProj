@@ -5,7 +5,6 @@ import android.app.Application;
 import com.google.android.vending.licensing.PreferenceObfuscator;
 
 import org.totschnig.myexpenses.BuildConfig;
-import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.preference.PrefHandler;
 import org.totschnig.myexpenses.preference.PrefKey;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;

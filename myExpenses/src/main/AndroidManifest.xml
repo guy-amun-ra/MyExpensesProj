@@ -60,6 +60,8 @@
         android:name="android.hardware.wifi"
         android:required="false" />
 
+    <uses-sdk tools:overrideLibrary="dev.burnoo.compose.rememberpreference"/>
+
     <queries>
         <intent>
             <action android:name="org.totschnig.ocr.action.RECOGNIZE" />
@@ -78,6 +80,8 @@
     <application
         android:name=".MyApplication"
         android:allowBackup="true"
+        android:backupAgent=".MyBackupAgent"
+        android:fullBackupOnly="true"
         android:fullBackupContent="@xml/mybackupscheme"
         android:icon="@mipmap/ic_myexpenses"
         android:label="${appName}"
@@ -230,7 +234,8 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
-        <activity android:name=".activity.ManageBudgets" />
+        <activity android:name=".activity.ManageBudgets"
+            android:theme="@style/EditDialog" />
         <activity
             android:name=".activity.ManageStaleImages"
             android:exported="false"
@@ -283,7 +288,7 @@
             android:exported="true"
             android:name=".activity.AccountWidgetConfigure"
             android:label="@string/account_widget_configuration"
-            android:theme="@style/WidgetConfiguration">
+            android:theme="@style/Configuration">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
@@ -294,6 +299,7 @@
                 android:resource="@xml/searchable" />
         </activity>
         <activity android:name=".activity.HistoryActivity" />
+        <activity android:name=".activity.SafSetup" android:theme="@style/Translucent" />
 
         <service
             android:name=".service.MyService"
@@ -323,15 +329,6 @@
             android:authorities="${applicationId}.calendarinstances"
             android:exported="false" />
 
-        <service
-            android:name=".service.PlanExecutor"
-            android:exported="${debug}"
-            android:permission="android.permission.BIND_JOB_SERVICE">
-            <intent-filter>
-                <action android:name="${applicationId}.ACTION_SCHEDULE_EXECUTE_PLANS" />
-                <action android:name="${applicationId}.ACTION_EXECUTE_PLANS" />
-            </intent-filter>
-        </service>
         <service android:name=".service.PlanNotificationClickHandler" />
         <service android:name=".service.SyncNotificationDismissHandler" />
 
@@ -353,15 +350,6 @@
             android:theme="@style/EditDialog" />
 
         <service
-            android:name=".service.AutoBackupService"
-            android:exported="${debug}"
-            android:permission="android.permission.BIND_JOB_SERVICE">
-            <intent-filter>
-                <action android:name="${applicationId}.ACTION_SCHEDULE_AUTO_BACKUP" />
-                <action android:name="${applicationId}.ACTION_AUTO_BACKUP" />
-            </intent-filter>
-        </service>
-        <service
             android:name=".sync.GenericAccountService"
             android:exported="false">
             <intent-filter>
@@ -375,8 +363,7 @@
         <service
             android:name=".sync.SyncService"
             android:exported="true"
-            android:process=":sync"
-            tools:ignore="ExportedService">
+            android:process=":sync">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -388,12 +375,9 @@
 
         <receiver android:name=".service.GenericAlarmReceiver" android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />
             </intent-filter>
         </receiver>
-
-        <receiver android:name=".service.ScheduleReceiver" />
 
         <receiver
             android:exported="true"
@@ -437,6 +421,7 @@
             android:value="true" />
 
         <meta-data android:name="firebase_crashlytics_collection_enabled" android:value="false" />
+        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
 
     </application>
 

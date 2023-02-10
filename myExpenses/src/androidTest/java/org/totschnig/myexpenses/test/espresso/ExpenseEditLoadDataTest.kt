@@ -33,7 +33,6 @@ import java.time.LocalDate
 import java.util.*
 
 class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
-    private lateinit var activityScenario: ActivityScenario<TestExpenseEdit>
 
     @get:Rule
     var grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(
@@ -57,11 +56,11 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
         account2 =
             Account("Test account 2", currency, 0, "", AccountType.CASH, Account.DEFAULT_COLOR)
         account2.save()
-        transaction = Transaction.getNewInstance(account1.id).apply {
+        transaction = Transaction.getNewInstance(account1).apply {
             amount = Money(currency, 500L)
             save()
         }
-        transfer = Transfer.getNewInstance(account1.id, account2.id).apply {
+        transfer = Transfer.getNewInstance(account1, account2.id).apply {
             setAmount(Money(currency, -600L))
             save()
         }
@@ -113,7 +112,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
             Account.DEFAULT_COLOR
         )
         foreignAccount.save()
-        val foreignTransfer = Transfer.getNewInstance(account1.id, foreignAccount.id)
+        val foreignTransfer = Transfer.getNewInstance(account1, foreignAccount.id)
         foreignTransfer.setAmountAndTransferAmount(
             Money(currency, 100L), Money(
                 foreignCurrency, 200L
@@ -152,8 +151,8 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
         return DecimalFormat("0.##").format(amount.toDouble())
     }
 
-    private fun launchAndWait(i: Intent) = ActivityScenario.launch<TestExpenseEdit>(i).also {
-        activityScenario = it
+    private fun launchAndWait(i: Intent) = ActivityScenario.launchActivityForResult<TestExpenseEdit>(i).also {
+        testScenario = it
     }
 
     @Test
@@ -232,8 +231,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
                 R.id.DateTimeRow, R.id.AmountRow, R.id.CommentRow, R.id.AccountRow,
                 R.id.TransferAccountRow
             )
-            onView(withId(R.id.OperationType))
-                .check(matches(ViewMatchers.withSpinnerText(R.string.menu_create_transfer)))
+            toolbarTitle().check(matches(withText(R.string.menu_create_transfer)))
             onView(
                 withIdAndParent(
                     R.id.AmountEditText,
@@ -247,7 +245,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
     @Test
     fun shouldSwitchAccountViewsForReceivingTransferPart() {
         load(transfer.transferPeer!!).use {
-            activityScenario.onActivity { activity: ExpenseEdit ->
+            testScenario.onActivity { activity: ExpenseEdit ->
                 Assertions.assertThat((activity.findViewById<View>(R.id.Amount) as AmountInput).type).isTrue
                 Assertions.assertThat(
                     (activity.findViewById<View>(R.id.AccountRow) as ViewGroup).getChildAt(
@@ -267,7 +265,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
     @Test
     fun shouldKeepAccountViewsForGivingTransferPart() {
         load(transfer.id).use {
-            activityScenario.onActivity { activity: ExpenseEdit ->
+            testScenario.onActivity { activity: ExpenseEdit ->
                 Assertions.assertThat((activity.findViewById<View>(R.id.Amount) as AmountInput).type).isFalse
                 Assertions.assertThat(
                     (activity.findViewById<View>(R.id.AccountRow) as ViewGroup).getChildAt(
@@ -286,7 +284,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
 
     @Test
     fun shouldPopulateWithSplitTransactionAndPrepareForm() {
-        val splitTransaction: Transaction = SplitTransaction.getNewInstance(account1.id)
+        val splitTransaction: Transaction = SplitTransaction.getNewInstance(account1)
         splitTransaction.status = DatabaseConstants.STATUS_NONE
         splitTransaction.save(true)
         load(splitTransaction.id).use {
@@ -325,8 +323,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
             it.onActivity { activity: ExpenseEdit ->
                 Assertions.assertThat(activity.isTemplate).isFalse()
             }
-            onView(withId(R.id.OperationType))
-                .check(matches(ViewMatchers.withSpinnerText(R.string.menu_create_split)))
+            toolbarTitle().check(matches(ViewMatchers.withSubstring(getString(R.string.menu_create_split))))
             checkEffectiveVisible(R.id.SplitRow)
             onView(withId(R.id.list))
                 .check(matches(ViewMatchers.hasChildCount(1)))
@@ -336,11 +333,11 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
 
     private fun buildSplitTemplate(): Long {
         val template =
-            Template.getTypedNewInstance(Transactions.TYPE_SPLIT, account1.id, false, null)
+            Template.getTypedNewInstance(Transactions.TYPE_SPLIT, account1, false, null)
         template!!.save(true)
         val part = Template.getTypedNewInstance(
             Transactions.TYPE_SPLIT,
-            account1.id,
+            account1,
             false,
             template.id
         )
@@ -352,7 +349,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
     fun shouldPopulateWithPlanAndPrepareForm() {
         val plan = Template.getTypedNewInstance(
             Transactions.TYPE_TRANSACTION,
-            account1.id,
+            account1,
             false,
             null
         )
@@ -373,7 +370,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
                 R.id.PayeeRow, R.id.AccountRow, R.id.PB
             )
             checkEffectiveGone(R.id.Recurrence)
-            activityScenario.onActivity { activity: ExpenseEdit ->
+            testScenario.onActivity { activity: ExpenseEdit ->
                 Assertions.assertThat(activity.isTemplate).isTrue()
             }
             onView(
@@ -386,13 +383,14 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
                 .check(matches(withText("Daily plan")))
 
         }
+        Plan.delete(plan.planId)
     }
 
     @Test
     fun shouldInstantiateFromTemplateAndPrepareForm() {
         val template = Template.getTypedNewInstance(
             Transactions.TYPE_TRANSACTION,
-            account1.id,
+            account1,
             false,
             null
         )
@@ -408,7 +406,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
                 R.id.PayeeRow, R.id.AccountRow
             )
             checkEffectiveGone(R.id.PB, R.id.TitleRow)
-            activityScenario.onActivity { activity: ExpenseEdit ->
+            testScenario.onActivity { activity: ExpenseEdit ->
                 Assertions.assertThat(activity.isTemplate).isFalse()
             }
             onView(
@@ -459,7 +457,7 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
         val sealedAccount =
             Account("Sealed account", currency, 0, "", AccountType.CASH, Account.DEFAULT_COLOR)
         sealedAccount.save()
-        val sealed = Transaction.getNewInstance(sealedAccount.id)
+        val sealed = Transaction.getNewInstance(sealedAccount)
         sealed.amount = Money(currency, 500L)
         sealed.save()
         val values = ContentValues(1)
@@ -474,7 +472,4 @@ class ExpenseEditLoadDataTest : BaseExpenseEditTest() {
             assertCanceled()
         }
     }
-
-    override val testScenario: ActivityScenario<TestExpenseEdit>
-        get() = activityScenario
 }

@@ -14,13 +14,17 @@
     <string name="toast_text_copied">"テキストをコピーしました"</string>
     <string name="copy_text">"クリップボードにコピー"</string>
     <string name="stop">"停止"</string>
+    <string name="style">"スタイル"</string>
+    <string name="loading">"読み込んでいます…"</string>
     <string name="no_network">"ネットワークに接続できません。"</string>
     <string name="button_label_continue">"次へ"</string>
     <string name="autofill">"自動入力"</string>
     <string name="discard">"破棄"</string>
     <string name="dialog_dismiss">"閉じる"</string>
+    <string name="details">"詳細"</string>
     <string name="response_yes">"はい"</string>
     <string name="response_no">"いいえ"</string>
+    <string name="experimental">"試験運用版"</string>
     <string name="add_widget">"ウィジェットを追加します"</string>
     <string name="calendar">"カレンダー"</string>
     <string name="permissions_label">"権限"</string>
@@ -28,5 +32,10 @@
     <string name="setup">"設定"</string>
     <string name="clear_cache">"キャッシュを削除"</string>
     <string name="customize">"カスタマイズ"</string>
+    <string name="compact">コンパクト</string>
+    <string name="storage_description">"ローカル ストレージ"</string>
+    <string name="encryption">"暗号化"</string>
+    <string name="learn_more">"詳細"</string>
+    <string name="show_all">"すべて表示"</string>
 </resources>
 

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splittemplate_title">Banaketa txantiloi</string>
+    <string name="history_title">Historikoaren diagrama</string>
+    <string name="history_description">Ulertu zure finantzarioaren bilakaera</string>
+    <string name="budget_description">Definitu zure asmoa zenbat gastatzea den, urte betean, hilabete batean edo asteroko aurrekontuetan</string>
+    <string name="professional_benefit_2">E-mail bidezko laguntza</string>
+    <string name="professional_benefit_3">Garapen ibilbidean bozkatzeko aukera</string>
+    <string name="adfree_title">Iragarkirik gabe</string>
+    <string name="accountsunlimited_title">Kontu kopuru mugagabea</string>
+    <string name="accountsunlimited_description">Bost kontu baino gehiago sortzeko gaitasuna desblokeatu du.</string>
+    <string name="csvimport_title">CSV inportazioa</string>
+    <string name="plansunlimited_title">Plan kopuru mugagabea</string>
+    <string name="print_title">Inprimatu</string>
+    <string name="splittransaction_title">Banatu transakzioa</string>
+    <string name="synchronization_title">Sinkronizazioa hodeian</string>
+    <string name="ocr_title">Eskaneatu ordainagiria</string>
+</resources>

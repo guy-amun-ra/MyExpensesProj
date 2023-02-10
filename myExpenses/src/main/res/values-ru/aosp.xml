@@ -13,13 +13,17 @@
     <string name="toast_text_copied">"Текст скопирован"</string>
     <string name="copy_text">"Копировать в буфер обмена"</string>
     <string name="stop">"Стоп"</string>
+    <string name="style">"Стиль"</string>
+    <string name="loading">"Загрузка…"</string>
     <string name="no_network">"Нет подключения к сети."</string>
     <string name="button_label_continue">Продолжить</string>
     <string name="autofill">"Автозаполнение"</string>
     <string name="discard">"Отменить"</string>
     <string name="dialog_dismiss">"Закрыть"</string>
+    <string name="details">"Информация"</string>
     <string name="response_yes">"Да"</string>
     <string name="response_no">"Нет"</string>
+     <string name="experimental">"Экспериментальная версия"</string>
     <string name="add_widget">"Добавить виджет"</string>
     <string name="calendar">"Календарь"</string>
     <string name="permissions_label">"Разрешения"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"Настройка"</string>
     <string name="clear_cache">"Очистить кеш"</string>
     <string name="customize">"Другой"</string>
+    <string name="compact">компактная раскладка</string>
+    <string name="storage_description">"Локальное хранилище"</string>
+    <string name="encryption">"Шифрование"</string>
+    <string name="learn_more">"Подробнее"</string>
+    <string name="show_all">"Показать все"</string>
 </resources>
 

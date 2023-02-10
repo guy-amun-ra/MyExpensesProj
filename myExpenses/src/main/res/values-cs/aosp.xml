@@ -13,13 +13,17 @@
     <string name="toast_text_copied">"Text zkopírován"</string>
     <string name="copy_text">"Zkopírovat do schránky"</string>
     <string name="stop">"Zastavit"</string>
+    <string name="style">"Styl"</string>
+    <string name="loading">"Načítání…"</string>
     <string name="no_network">"Připojení k síti není k dispozici."</string>
     <string name="button_label_continue">Pokračovat</string>
     <string name="autofill">"Automatické vyplňování"</string>
     <string name="discard">"Zahodit"</string>
     <string name="dialog_dismiss">"Zavřít"</string>
+    <string name="details">"Podrobnosti"</string>
     <string name="response_yes">"Ano"</string>
     <string name="response_no">"Ne"</string>
+    <string name="experimental">"Experimentální"</string>
     <string name="add_widget">"Přidat widget"</string>
     <string name="calendar">"Kalendář"</string>
     <string name="permissions_label">"Oprávnění"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"Nastavit"</string>
     <string name="clear_cache">"Vymazat mezipaměť"</string>
     <string name="customize">"Přizpůsobit"</string>
+    <string name="compact">kompaktní</string>
+    <string name="storage_description">"Místní úložiště"</string>
+    <string name="encryption">"Šifrování"</string>
+    <string name="learn_more">"Další informace"</string>
+    <string name="show_all">"Zobrazit vše"</string>
 </resources>
 

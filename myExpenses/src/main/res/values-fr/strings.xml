@@ -40,18 +40,17 @@
     <string name="color">Couleur</string>
     <string name="comment">Remarques</string>
     <string name="confirmation_dialog_dont_show_again">Ne pas montrer à nouveau</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">Sans publicité</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Nombre illimité de comptes</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Lier une image avec une transaction</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Diagramme circulaire (Répartition par catégorie)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Nombre d\'échéances illimité</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Export de la liste des opérations au format PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Widget de modèles</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Import CSV</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Nombre illimité de modèles ventilés</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources">&lt;b xmlns:tools=\"http://schemas.android.com/tools\"&gt;Assistance par courriel&lt;/b&gt; avec réponse garantie sous 2 jours ouvrables</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">Voter sur la <b>feuille de route pour le développement</b></string>
-    <string name="contrib_feature_history_label" tools:ignore="UnusedResources">Graphique historique</string>
+    <string name="contrib_feature_ad_free_label">Sans publicité</string>
+    <string name="contrib_feature_accounts_unlimited_label">Nombre illimité de comptes</string>
+    <string name="contrib_feature_attach_picture_label">Lier une image avec une transaction</string>
+    <string name="contrib_feature_distribution_label">Diagramme circulaire (Répartition par catégorie)</string>
+    <string name="contrib_feature_plans_unlimited_label">Nombre d\'échéances illimité</string>
+    <string name="contrib_feature_print_label">Export de la liste des opérations au format PDF</string>
+    <string name="contrib_feature_csv_import_label">Import CSV</string>
+    <string name="contrib_feature_split_template_label">Nombre illimité de modèles ventilés</string>
+    <string name="contrib_feature_pro_support_label"><b>Assistance par courriel</b> avec réponse garantie sous 2 jours ouvrables</string>
+    <string name="contrib_feature_roadmap_voting_label">Voter sur la <b>feuille de route pour le développement</b></string>
+    <string name="contrib_feature_history_label">Graphique historique</string>
     <string name="licence_status_free">Gratuit</string>
     <string name="contrib_key">Clé Contrib</string>
     <string name="extended_key">Clé étendue</string>
@@ -68,10 +67,6 @@
     <string name="description">Description</string>
     <string name="dialog_balance_delete">Supprimer les transactions rapprochées</string>
     <string name="dialog_confirm_discard_changes">Annuler les changements ?</string>
-    <string name="dialog_confirm_discard_new_transaction">Annuler la nouvelle opération ?</string>
-    <string name="dialog_confirm_discard_new_template">Annuler le nouveau modèle ?</string>
-    <string name="dialog_confirm_discard_new_account">Annuler le nouveau compte ?</string>
-    <string name="dialog_confirm_discard_new_method">Annuler la nouvelle méthode de paiement ?</string>
     <string name="dialog_command_disabled_balance">Aucune transaction à rapprocher.</string>
     <string name="dialog_command_disabled_insert_transfer">Les opérations de transfert requièrent un deuxième compte.</string>
     <string name="dialog_command_disabled_reset_account">Aucune opération à exporter.</string>
@@ -138,7 +133,6 @@
     <string name="help_heading_credits">Générique</string>
     <string name="help_heading_license">Licence</string>
     <string name="help_heading_whats_new">Nouveautés</string>
-    <string name="important_upgrade_information_heading">Information importante</string>
     <string name="import_select_transactions">Opérations</string>
     <string name="income">Revenu</string>
     <string name="invalid_number_format">Format de nombre non reconnu. Utilisez %1$s</string>
@@ -291,8 +285,8 @@
     <string name="pref_contrib_purchase_title_in_app">Paiement dans l\'application</string>
     <string name="pref_custom_currency_title">Personnaliser les devises</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Si vous avez reçu une clé, celle-ci déverrouille l\'accès aux fonctions Premium.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Saisir la clé</string>
+    <string name="pref_enter_licence_summary">Si vous avez reçu une clé, celle-ci déverrouille l\'accès aux fonctions Premium.</string>
+    <string name="pref_enter_licence_title">Saisir la clé</string>
     <string name="pref_export_format_title">Format de données</string>
     <string name="pref_import_from_grisbi_summary">Importer les catégories (et tiers) à partir de Grisbi XML</string>
     <string name="pref_import_from_grisbi_title">Import des données Grisbi</string>
@@ -344,7 +338,6 @@
     <string name="pref_visit_website_summary">Journal des modifications et FAQ</string>
     <string name="pref_visit_website_title">Visiter le site Web</string>
     <string name="progress_dialog_deleting">Les objets sont effacés</string>
-    <string name="progress_dialog_loading">Chargement</string>
     <string name="progress_dialog_printing">Génération du %s</string>
     <string name="qif_parse_result">Analysé : %1$s comptes, %2$s catégories et %3$s tiers</string>
     <string name="qif_parse_failure_found_multiple_accounts">Plusieurs comptes trouvés dans le fichier QIF.</string>
@@ -473,7 +466,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Échec ou annulation de l\'achat.</string>
     <string name="hint_auto_fill">Voulez-vous remplir automatiquement les données à partir de la dernière opération de ce tiers ? Vous pouvez toujours modifier cette option dans les paramètres.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d comptes en devise %2$s ont été mis à jour.</string>
-    <string name="learn_more">En apprendre plus</string>
     <string name="import_source_file">Fichier</string>
     <string name="restore_calendar_handling">Manipulation des données du calendrier</string>
     <string name="restore_calendar_handling_configured">Restauration des échéances dans le calendrier actuellement configuré</string>
@@ -593,7 +585,7 @@
     <string name="link_account_failure_3">Le conflit peut être résolu manuellement à partir du menu contextuel de l\'entrée.</string>
     <string name="progress_dialog_checking_sync_backend">Vérification du backend</string>
     <string name="template">Modèle</string>
-    <string name="contrib_feature_synchronization_label" tools:ignore="UnusedResources">Synchronisation dans le cloud</string>
+    <string name="contrib_feature_synchronization_label">Synchronisation dans le cloud</string>
     <string name="all_contrib_key_features">Toutes les fonctions de la Clé Contrib</string>
     <string name="all_extended_key_features">Toutes les fonctions de la Clé Étendue</string>
     <!-- button leading user to purchase flow for licence keys -->
@@ -632,7 +624,6 @@
     <string name="onboarding_restore_from_cloud_backup">Sauvegardes</string>
     <string name="onboarding_restore_from_local">Restaurer le fichier de sauvegarde local</string>
     <string name="dialog_button_add">Ajouter</string>
-    <string name="template_create_error">Erreur lors de la sauvegarde du modèle</string>
     <string name="contributed_by">Contribution de %s</string>
     <string name="pref_sync_notification_summary">Notifier sur la progression de la synchronisation</string>
     <string name="pref_debug_logging_summary">Écrire des informations de débogage dans le journal du système</string>
@@ -642,7 +633,6 @@
     <string name="progress_validating_licence">La licence est en cours de validation</string>
     <string name="licence_validation_error_expired">La licence est expirée</string>
     <string name="licence_validation_error_device_limit_exceeded">La limite du nombre d\'appareils est dépassée. Veuillez supprimer la licence d\'un autre appareil.</string>
-    <string name="error">Erreur (%s)</string>
     <string name="button_validate">Valider</string>
     <string name="licence_key">Clé de licence</string>
     <string name="licence_removal_information">Si vous n\'avez plus besoin de fonctions premium sur cet appareil, vous pouvez retirer la clé de licence. Cela libèrera la clé pour l\'activation d\'un autre appareil. Jusqu\'à %d appareils peuvent être activés par une clé.</string>
@@ -668,7 +658,6 @@
     <string name="auto_fill_account_from_aggregate_only">Uniquement lorsque démarré à partir du compte agrégé.</string>
     <string name="sync_auth_exception">L\'autorisation a échoué.</string>
     <string name="sync_login_again">Veuillez vous reconnecter.</string>
-    <string name="sync_loading_accounts_from_backend">Chargement des comptes disponible à partir du backend.</string>
     <plurals name="delete_success">
         <item quantity="one">Un objet a été supprimé avec succès.</item>
         <item quantity="many">%d objets ont été supprimés avec succès.</item>
@@ -696,16 +685,9 @@
     <string name="warning_ungroup_split_transactions">Les opérations ventilées sélectionnées seront dissociées, c\'est-à-dire que leurs parties après division deviendront des opérations normales.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">Dissocier la ventilation</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">La transaction partagée a été dissociée avec succès.</item>
-        <item quantity="many">%1$d opérations ventilées ont été dissociées avec succès.</item>
-        <item quantity="other">%1$d opérations ventilées ont été dissociées avec succès.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">En dissociant les opérations ventilées, %1$d sur %2$d ont échoué.</string>
+    <string name="ungroup_split_transaction_success">La transaction partagée a été dissociée avec succès.</string>
     <string name="split_transaction_one_success">L\'opération ventilée a été dissociée avec succès.</string>
-    <string name="split_transaction_one_error">Impossible de ventiler l\'opération.</string>
     <string name="split_transaction_group_success">%1$d opérations ont été regroupées avec succès en une seule opération ventilée.</string>
-    <string name="split_transaction_group_error">Impossible de regrouper les opérations en une opérations ventilée.</string>
     <string name="split_transaction_not_possible">Seules les opérations ayant le même compte, le même bénéficiaire et le même statut peuvent être regroupées en une seule opération ventilée.</string>
     <string name="pref_transaction_time_summary">Permet de définir l\'heure exacte de l\'opération.</string>
     <string name="pref_value_date_summary">Permet de définir la date de valeur en plus de la date d\'enregistrement. L\'heure de l\'opération sera cachéé. Ce paramètre n\'est pas appliqué aux comptes de caisse.</string>
@@ -785,7 +767,6 @@
     <string name="button_label_no_encryption">Sans cryptage</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">ou</string>
-    <string name="pref_account_list_fast_scroll_summary">Activer le défilement rapide pour la liste des comptes. Peut entraîner un affichage incorrect sur certains appareils</string>
     <string name="menu_hide">Cacher</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">Fermer</string>
@@ -821,7 +802,6 @@
     <string name="discover_feature_expense_income_switch">Utilisez ce bouton pour enregistrer le revenu.</string>
     <string name="menu_create_budget">Nouveau budget</string>
     <string name="budget_onetime">Une fois</string>
-    <string name="dialog_confirm_discard_new_budget">Annuler le nouveau budget \?</string>
     <string name="budget_duration_from">À partir</string>
     <string name="budget_duration_to">Au</string>
     <string name="no_budgets">Définissez votre premier budget en appuyant sur le bouton +.</string>
@@ -992,7 +972,6 @@
         <item quantity="other">La dette %1$s a %2$d transactions mappées.</item>
     </plurals>
     <string name="dialog_title_delete_debt">Supprimer la dette \?</string>
-    <string name="dialog_confirm_discard_new_debt">Effacer la nouvelle dette \?</string>
     <string name="warning_party_delete_debt">En supprimant cette partie, les dettes définies pour elle seront également supprimées.</string>
     <string name="debts">Dettes</string>
     <string name="debt_I_owe">Je dois à %s</string>
@@ -1012,7 +991,7 @@
     <string name="whats_new_336_2">Étiquettes pour les sous-opérations</string>
     <string name="setup_completed">Configuration terminée</string>
     <string name="whats_new_338">Une hiérarchie de catégories arbitrairement profonde</string>
-    <string name="contrib_feature_category_tree_label" tools:ignore="UnusedResources">Arborescence des catégories</string>
+    <string name="contrib_feature_category_tree_label">Arborescence des catégories</string>
     <string name="dialog_contrib_usage_limit_with_dialog">Avec votre statut de licence actuel (%1$s), ce dialogue s\'affichera à chaque utilisation.</string>
     <string name="menu_parent_category_selection">Sélectionnez la catégorie parent en appuyant brièvement</string>
     <string name="pref_purge_backup_require_confirmation_summary">Afficher une demande de confirmation avant la purge des fichiers</string>
@@ -1035,10 +1014,18 @@
     <string name="pref_csv_export_split_categories_summary">Utiliser des colonnes distinctes pour chaque niveau de la hiérarchie des catégories</string>
     <string name="pref_csv_export_split_amount_summary">Utiliser des colonnes distinctes pour les revenus et les dépenses</string>
     <string name="pref_csv_export_split_date_time_summary">Utiliser des colonnes distinctes pour la date et l\'heure</string>
-    <string name="whats_new_344">Icônes pour les catégories</string>
+    <string name="icons_for_categories">Icônes pour les catégories</string>
     <string name="required">Obligatoire</string>
     <string name="rollover_edit_invalid">La somme du report attribué à une catégorie et des reports attribués aux sous-catégories ne peut pas dépasser le reliquat.</string>
     <string name="budget_only_current_period">Définir uniquement pour %s</string>
     <string name="budget_table_header_rollover">Report</string>
     <string name="dialog_confirm_rollover_delete">Tous les montants de report pour cette période seront supprimés.</string>
+    <string name="content_description_attachment">Pièce jointe</string>
+    <string name="redesign">Refonte</string>
+    <string name="upgrade_info_557">Comment trouvez-vous le nouveau design \? Faites-le nous savoir. Une variante plus proche de l\'ancien design peut être activée dans les paramètres (%1$s -&gt; %2$s).</string>
+    <string name="select_all_list_too_large">La commande %s n\'est pas disponible car la liste n\'est que partiellement chargée. Veuillez utiliser la fonctionnalité de recherche afin de réduire la taille de la liste.</string>
+    <string name="menu_reconfigure">Reconfigurer</string>
+    <string name="encrypt_database">Chiffrer la base de données</string>
+    <string name="encrypt_database_info">La base de données sera cryptée avec une phrase secrète qui ne peut pas être extraite de cet appareil. Par conséquent, elle ne sera pas sauvegardé par le service de sauvegarde de votre appareil.</string>
+    <string name="database_is_encrypted">La base de données est cryptée.</string>
 </resources>

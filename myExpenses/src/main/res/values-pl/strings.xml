@@ -46,7 +46,6 @@
     <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Wykres kołowy (Wydatki na kategorie)</string>
     <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Nieograniczona ilość planów</string>
     <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Eksport listy transakcji do PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Szablon widget</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Import CSV</string>
     <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Nieograniczona liczba podzielonych szablonów</string>
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>Wysyłaj pocztę e-mail</b> z reakcją gwarantowaną po upływie 2 dni roboczych</string>
@@ -68,10 +67,6 @@
     <string name="description">Opis</string>
     <string name="dialog_balance_delete">Usuń pojednane transakcje</string>
     <string name="dialog_confirm_discard_changes">Odrzucić zmiany?</string>
-    <string name="dialog_confirm_discard_new_transaction">Odrzucić nową transakcję?</string>
-    <string name="dialog_confirm_discard_new_template">Odrzucić nowy szablon?</string>
-    <string name="dialog_confirm_discard_new_account">Odrzucić nowe konto?</string>
-    <string name="dialog_confirm_discard_new_method">Odrzucić nową metodę płatności?</string>
     <string name="dialog_command_disabled_balance">Brak rozliczonych transakcji do uzgodnienia.</string>
     <string name="dialog_command_disabled_insert_transfer">Transakcje transferowe wymagają drugiego konta.</string>
     <string name="dialog_command_disabled_reset_account">Brak transakcji do eksportu</string>
@@ -133,7 +128,6 @@
     <string name="help_heading_credits">O programie</string>
     <string name="help_heading_license">Licencja</string>
     <string name="help_heading_whats_new">Co nowego</string>
-    <string name="important_upgrade_information_heading">Ważna informacja</string>
     <string name="import_select_transactions">Transakcje</string>
     <string name="income">Dochód</string>
     <string name="invalid_number_format">Format dziesiętny nie jest rozpoznawalny przez twoją lokalizację. Proszę użyć %1$s</string>
@@ -288,8 +282,8 @@
     <string name="pref_contrib_purchase_title_in_app">Płatność Wewnątrz Aplikacji</string>
     <string name="pref_custom_currency_title">Dostosuj waluty</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Jeżeli otrzymałeś klucz, otrzymasz dostęp do funkcji premium.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Wprowadź klucz</string>
+    <string name="pref_enter_licence_summary">Jeżeli otrzymałeś klucz, otrzymasz dostęp do funkcji premium.</string>
+    <string name="pref_enter_licence_title">Wprowadź klucz</string>
     <string name="pref_export_format_title">Format daty</string>
     <string name="pref_import_from_grisbi_summary">Kategorie importu oraz partii Grisbi XML.</string>
     <string name="pref_import_from_grisbi_title">Import z Grisbi</string>
@@ -341,7 +335,6 @@
     <string name="pref_visit_website_summary">Dziennik zmian i Często zadawane pytania</string>
     <string name="pref_visit_website_title">Odwiedź stronę internetową</string>
     <string name="progress_dialog_deleting">Usuwanie obiektów</string>
-    <string name="progress_dialog_loading">Wczytywanie obiektu z bazy danych</string>
     <string name="progress_dialog_printing">Generowanie pliku %s</string>
     <string name="qif_parse_result">Zanalizowano: %1$s kont; %2$s kategorii oraz %3$s partii</string>
     <string name="qif_parse_failure_found_multiple_accounts">Znaleziono wiele kont w pliku QIF.</string>
@@ -470,7 +463,6 @@
     <string name="comparison_operator_date_after">po</string>
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Zakup nie udał się lub został anulowany.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$dkonta z walutą %2$s zostały zaktualizowane. </string>
-    <string name="learn_more">Dowiedz się więcej</string>
     <string name="import_source_file">Plik</string>
     <string name="restore_calendar_handling">Obsługa danych kalendarza</string>
     <string name="restore_calendar_handling_configured">Przywróć plany do aktualnie skonfigurowanego kalendarza</string>
@@ -627,7 +619,6 @@
     <string name="onboarding_restore_from_cloud_backup">Kopie zapasowe</string>
     <string name="onboarding_restore_from_local">Przywróć lokalną kopię</string>
     <string name="dialog_button_add">Dodaj</string>
-    <string name="template_create_error">Błąd podczas zapisywania szablonu</string>
     <string name="contributed_by">Wniesione przez %s</string>
     <string name="pref_sync_notification_summary">Powiadamiaj o postępie synchronizacji</string>
     <string name="pref_debug_logging_summary">Zapisuj informacje debugowania w dzienniku systemowym</string>
@@ -637,7 +628,6 @@
     <string name="progress_validating_licence">Sprawdzanie poprawności licencji</string>
     <string name="licence_validation_error_expired">Licencja wygasła</string>
     <string name="licence_validation_error_device_limit_exceeded">Przekroczono limit urządzeń. Usuń licencję z innego urządzenia.</string>
-    <string name="error">Błąd (%s)</string>
     <string name="button_validate">Sprawdzanie poprawności licencji</string>
     <string name="licence_key">Klucz licencji</string>
     <string name="licence_removal_information">Jeśli nie potrzebujesz już funkcji premium na tym urządzeniu, możesz usunąć klucz licencyjny. To uwalnia klucz do aktywacji na jeszcze jednym urządzeniu. Klucz można aktywować na %durządzeniach.</string>
@@ -662,7 +652,6 @@
     <string name="always">zawsze</string>
     <string name="sync_auth_exception">Autoryzacja się nie powiodła.</string>
     <string name="sync_login_again">Zaloguj się proszę ponowie.</string>
-    <string name="sync_loading_accounts_from_backend">Wczytywanie dostępnych kont z zaplecza.</string>
     <plurals name="delete_success">
         <item quantity="one">Z powodzeniem usunięto jeden obiekt.</item>
         <item quantity="few">Z powodzeniem usunięto %d obiektów.</item>
@@ -691,8 +680,6 @@
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">Rozgrupuj podział</string>
     <string name="split_transaction_one_success">Transakcja z powodzeniem zamieniona w podział.</string>
-    <string name="split_transaction_one_error">Zamiana transakcji w podział nie była możliwa</string>
-    <string name="split_transaction_group_error">Nie można było zgrupować kilku transakcji w podział.</string>
     <string name="pref_transaction_time_summary">Pozwól na ustawienie dokładnego czasu transakcji.</string>
     <string name="pref_value_date_summary">Pozwól na ustawienie nie tylko daty księgowania ale i daty wartości. Czas transakcji zostanie ukryty. To ustawienie nie tyczy się kont gotówkowych.</string>
     <!-- the date on which the transaction took place, aka transaction date, as opposed to value date -->
@@ -796,4 +783,10 @@
     <string name="ui_refinement">Dopracowanie interfejsu użytkownika</string>
     <string name="whats_new_338">Arbitralnie głęboka hierarchia kategorii</string>
     <string name="dialog_title_purge_backups">Wyczyść stare kopie zapasowe</string>
+    <plurals name="dialog_title_warning_delete_account">
+        <item quantity="one">Usunąć konto\?</item>
+        <item quantity="few">Usunąć %1$d konta\?</item>
+        <item quantity="many">Usunąć %1$d kont\?</item>
+        <item quantity="other">Usunąć %1$d kont\?</item>
+    </plurals>
 </resources>

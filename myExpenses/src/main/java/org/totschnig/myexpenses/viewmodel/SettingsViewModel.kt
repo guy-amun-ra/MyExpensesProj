@@ -1,10 +1,14 @@
 package org.totschnig.myexpenses.viewmodel
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.liveData
 import androidx.lifecycle.viewModelScope
+import app.cash.copper.flow.mapToOne
+import app.cash.copper.flow.observeQuery
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.exception.ExternalStorageNotAvailableException
@@ -19,7 +23,7 @@ import org.totschnig.myexpenses.util.AppDirHelper
 import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.convAmount
-import org.totschnig.myexpenses.util.io.FileUtils
+import org.totschnig.myexpenses.util.io.displayName
 import java.io.File
 import java.io.IOException
 import javax.inject.Inject
@@ -29,18 +33,16 @@ class SettingsViewModel(application: Application) : ContentResolvingAndroidViewM
     @Inject
     lateinit var exchangeRateRepository: ExchangeRateRepository
 
-    private val _appDirInfo: MutableLiveData<Result<Pair<String, Boolean>>> = MutableLiveData()
-    val appDirInfo: LiveData<Result<Pair<String, Boolean>>> = _appDirInfo
-    val hasStaleImages: LiveData<Boolean> by lazy {
-        val liveData = MutableLiveData<Boolean>()
-        disposable = briteContentResolver.createQuery(
+    data class AppDirInfo(val uri: Uri, val displayName: String, val isWriteable: Boolean)
+
+    private val _appDirInfo: MutableLiveData<Result<AppDirInfo>> = MutableLiveData()
+    val appDirInfo: LiveData<Result<AppDirInfo>> = _appDirInfo
+
+    val hasStaleImages: Flow<Boolean>
+        get() = contentResolver.observeQuery(
             TransactionProvider.STALE_IMAGES_URI,
             arrayOf("count(*)"), null, null, null, true
-        )
-            .mapToOne { cursor -> cursor.getInt(0) > 0 }
-            .subscribe { liveData.postValue(it) }
-        return@lazy liveData
-    }
+        ).mapToOne { cursor -> cursor.getInt(0) > 0 }
 
     fun logData() = liveData<Array<String>>(context = coroutineContext()) {
         getApplication<MyApplication>().getExternalFilesDir(null)?.let { dir ->
@@ -91,14 +93,13 @@ class SettingsViewModel(application: Application) : ContentResolvingAndroidViewM
     fun loadAppDirInfo() {
         viewModelScope.launch(context = coroutineContext()) {
             if (AppDirHelper.isExternalStorageAvailable) {
-                AppDirHelper.getAppDir(getApplication())?.let {
+                AppDirHelper.getAppDir(getApplication())?.let { documentFile ->
                     _appDirInfo.postValue(
                         Result.success(
-                            Pair(
-                                FileUtils.getPath(
-                                    getApplication(),
-                                    it.uri
-                                ), AppDirHelper.isWritableDirectory(it)
+                            AppDirInfo(
+                                documentFile.uri,
+                                documentFile.displayName,
+                                AppDirHelper.isWritableDirectory(documentFile)
                             )
                         )
                     )

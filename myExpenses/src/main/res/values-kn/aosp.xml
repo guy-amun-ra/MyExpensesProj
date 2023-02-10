@@ -14,13 +14,17 @@
     <string name="toast_text_copied">"ಪಠ್ಯವನ್ನು ನಕಲಿಸಲಾಗಿದೆ"</string>
     <string name="copy_text">"ಕ್ಲಿಪ್‌ಬೋರ್ಡ್‌ಗೆ ನಕಲಿಸಿ"</string>
     <string name="stop">"ನಿಲ್ಲಿಸು"</string>
+    <string name="style">"ಶೈಲಿ"</string>
+    <string name="loading">"ಲೋಡ್ ಮಾಡಲಾಗುತ್ತಿದೆ…"</string>
     <string name="no_network">"ಯಾವುದೇ ನೆಟ್‌ವರ್ಕ್‌ ಸಂಪರ್ಕಗಳಿಲ್ಲ."</string>
     <string name="button_label_continue">"ಮುಂದುವರಿಸು"</string>
     <string name="autofill">"ಸ್ವಯಂತುಂಬುವಿಕೆ"</string>
     <string name="discard">"ತಿರಸ್ಕರಿಸು"</string>
     <string name="dialog_dismiss">"ವಜಾಗೊಳಿಸು"</string>
+    <string name="details">"ವಿವರಗಳು"</string>
     <string name="response_yes">"ಹೌದು"</string>
     <string name="response_no">"ಇಲ್ಲ"</string>
+    <string name="experimental">"ಪ್ರಾಯೋಗಿಕ"</string>
     <string name="add_widget">"ವಿಜೆಟ್ ಸೇರಿಸಿ"</string>
     <string name="calendar">"ಕ್ಯಾಲೆಂಡರ್‌"</string>
     <string name="permissions_label">"ಅನುಮತಿಗಳು"</string>
@@ -28,5 +32,10 @@
     <string name="setup">"ಸೆಟಪ್"</string>
     <string name="clear_cache">"ಕ್ಯಾಷ್ ಅಳಿಸಿ"</string>
     <string name="customize">"ಕಸ್ಟಮೈಸ್"</string>
+    <string name="compact">ಕಾಂಪ್ಯಾಕ್ಟ್‌‌</string>
+    <string name="storage_description">"ಸ್ಥಳೀಯ ಸಂಗ್ರಹಣೆ"</string>
+    <string name="encryption">"ಎನ್‌ಕ್ರಿಪ್ಷನ್"</string>
+    <string name="learn_more">"ಇನ್ನಷ್ಟು ತಿಳಿಯಿರಿ"</string>
+    <string name="show_all">"ಎಲ್ಲ ತೋರಿಸು"</string>
 </resources>
 

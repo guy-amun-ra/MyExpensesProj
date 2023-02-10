@@ -2,7 +2,6 @@ package org.totschnig.myexpenses.export
 
 import android.content.Context
 import android.database.Cursor
-import android.net.Uri
 import androidx.documentfile.provider.DocumentFile
 import org.apache.commons.lang3.StringUtils
 import org.totschnig.myexpenses.R
@@ -14,7 +13,6 @@ import org.totschnig.myexpenses.model.PaymentMethod
 import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.model.TransactionDTO
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.TRANSFER_ACCOUNT_LABEL
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.asSequence
@@ -22,6 +20,7 @@ import org.totschnig.myexpenses.provider.filter.WhereFilter
 import org.totschnig.myexpenses.provider.getLongOrNull
 import org.totschnig.myexpenses.provider.getString
 import org.totschnig.myexpenses.provider.getStringOrNull
+import org.totschnig.myexpenses.provider.useAndMap
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.enumValueOrDefault
 import org.totschnig.myexpenses.util.epoch2ZonedDateTime
@@ -58,7 +57,9 @@ abstract class AbstractExporter
 
     abstract fun TransactionDTO.marshall(categoryPaths: Map<Long, List<String>>): String
 
-    val categoryTree: MutableMap<Long, Pair<String, Long>> = mutableMapOf()
+    open val useCategoryOfFirstPartForParent = true
+
+    private val categoryTree: MutableMap<Long, Pair<String, Long>> = mutableMapOf()
     val categoryPaths: MutableMap<Long, List<String>> = mutableMapOf()
 
     @Throws(IOException::class)
@@ -66,7 +67,7 @@ abstract class AbstractExporter
         context: Context,
         outputStream: Lazy<Result<DocumentFile>>,
         append: Boolean
-    ): Result<Uri> {
+    ): Result<DocumentFile> {
         Timber.i("now starting export")
         context.contentResolver.query(
             TransactionProvider.CATEGORIES_URI,
@@ -104,8 +105,8 @@ abstract class AbstractExporter
         )
 
         fun Cursor.ingestCategoryPaths() {
-            asSequence.forEach {
-                it.getLongOrNull(KEY_CATID)?.takeIf { it != SPLIT_CATID }?.let { categoryId ->
+            asSequence.forEach { cursor ->
+                cursor.getLongOrNull(KEY_CATID)?.takeIf { it != SPLIT_CATID }?.let { categoryId ->
                     categoryPaths.computeIfAbsent(categoryId) {
                         var catId: Long? = categoryId
                         buildList {
@@ -124,9 +125,9 @@ abstract class AbstractExporter
             }
         }
 
-        fun Cursor.toDTO(isPart: Boolean = false) : TransactionDTO {
+        fun Cursor.toDTO(isPart: Boolean = false): TransactionDTO {
             val rowId = getLong(getColumnIndexOrThrow(KEY_ROWID)).toString()
-            val catId = DbUtils.getLongOrNull(this, KEY_CATID)
+            val catId = getLongOrNull(KEY_CATID)
             val isSplit = SPLIT_CATID == catId
             val splitCursor = if (isSplit) context.contentResolver.query(
                 Transaction.CONTENT_URI,
@@ -135,22 +136,24 @@ abstract class AbstractExporter
                 arrayOf(rowId),
                 null
             ) else null
-            val readCat = splitCursor?.takeIf { it.moveToFirst() } ?: this
+            val readCat =
+                splitCursor?.takeIf { useCategoryOfFirstPartForParent && it.moveToFirst() } ?: this
 
+            //noinspection Recycle
             val tagList = context.contentResolver.query(
                 TransactionProvider.TRANSACTIONS_TAGS_URI,
                 arrayOf(KEY_LABEL),
                 "$KEY_TRANSACTIONID = ?",
                 arrayOf(rowId),
                 null
-            )?.use { tagCursor -> tagCursor.asSequence.map { it.getString(0) }.toList() }?.takeIf { it.isNotEmpty() }
+            )?.useAndMap { it.getString(0) }?.takeIf { it.isNotEmpty() }
 
             val transactionDTO = TransactionDTO(
                 getString(KEY_UUID),
                 epoch2ZonedDateTime(getLong(getColumnIndexOrThrow(KEY_DATE))),
                 getStringOrNull(KEY_PAYEE_NAME),
                 Money(account.currencyUnit, getLong(getColumnIndexOrThrow(KEY_AMOUNT))).amountMajor,
-                DbUtils.getLongOrNull(readCat, KEY_CATID),
+                readCat.getLongOrNull(KEY_CATID),
                 readCat.getStringOrNull(KEY_TRANSFER_ACCOUNT_LABEL),
                 getStringOrNull(KEY_COMMENT)?.takeIf { it.isNotEmpty() },
                 if (isPart) null else getString(getColumnIndexOrThrow(KEY_METHOD_LABEL)),
@@ -186,8 +189,8 @@ abstract class AbstractExporter
             } else {
                 cursor.ingestCategoryPaths()
 
-                val uri = outputStream.value.getOrThrow().uri
-                (context.contentResolver.openOutputStream(uri, if (append) "wa" else "w")
+                val output = outputStream.value.getOrThrow()
+                (context.contentResolver.openOutputStream(output.uri, if (append) "wa" else "w")
                     ?: throw IOException("openOutputStream returned null")).use { outputStream ->
                     OutputStreamWriter(outputStream, encoding).use { out ->
                         cursor.moveToFirst()
@@ -202,7 +205,7 @@ abstract class AbstractExporter
 
                         footer()?.let { out.write(it) }
 
-                        Result.success(uri)
+                        Result.success(output)
                     }
                 }
             }

@@ -46,11 +46,10 @@
     <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">圆饼统计图 (会根据每个类别作出统计图表)</string>
     <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">无限数量的收支计划</string>
     <string name="contrib_feature_print_label" tools:ignore="UnusedResources">可将交易记录清单以PDF的文件型式导出</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">模板小部件</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">导入 CSV</string>
     <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">无限数量的拆分款项模板</string>
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>电子邮件支持</b>，保证在2个工作日内回复</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">对<b>程序开发者的未来蓝图 </b>进行投票</string>
+    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">对<b>程序开发者的未来蓝图</b>进行投票</string>
     <string name="contrib_feature_history_label" tools:ignore="UnusedResources">收支历史图表</string>
     <string name="licence_status_free">免费版</string>
     <string name="contrib_key">贡献版密钥(Contrib Key)</string>
@@ -68,10 +67,6 @@
     <string name="description">描述</string>
     <string name="dialog_balance_delete">删除已对帐的交易</string>
     <string name="dialog_confirm_discard_changes">放弃更改？</string>
-    <string name="dialog_confirm_discard_new_transaction">放弃新建的交易？</string>
-    <string name="dialog_confirm_discard_new_template">放弃新建的模板？</string>
-    <string name="dialog_confirm_discard_new_account">放弃新建的账户？</string>
-    <string name="dialog_confirm_discard_new_method">放弃新建的付款方法?</string>
     <string name="dialog_command_disabled_balance">没有已结算或已入帐的交易需要去对帐。</string>
     <string name="dialog_command_disabled_insert_transfer">需要建立第二个账户才可以互相转账。</string>
     <string name="dialog_command_disabled_reset_account">没有交易数据可被导出。</string>
@@ -136,7 +131,6 @@
     <string name="help_heading_credits">鸣谢</string>
     <string name="help_heading_license">许可</string>
     <string name="help_heading_whats_new">最新消息</string>
-    <string name="important_upgrade_information_heading">重要资讯</string>
     <string name="import_select_transactions">交易</string>
     <string name="income">收入</string>
     <string name="invalid_number_format">本机设备无法辨识十进制格式。请使用%1$s</string>
@@ -285,8 +279,8 @@
     <string name="pref_contrib_purchase_title_in_app">应用程序内付款</string>
     <string name="pref_custom_currency_title">自定义货币</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">如果您收到密钥，则可以使用高级功能。</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">输入密钥</string>
+    <string name="pref_enter_licence_summary">如果您收到密钥，则可以使用高级功能。</string>
+    <string name="pref_enter_licence_title">输入密钥</string>
     <string name="pref_export_format_title">数据格式</string>
     <string name="pref_import_from_grisbi_summary">从 Grisbi XML 文件导入类别和交易对象</string>
     <string name="pref_import_from_grisbi_title">从 Grisbi 导入</string>
@@ -338,7 +332,6 @@
     <string name="pref_visit_website_summary">活动日志和常见问题</string>
     <string name="pref_visit_website_title">浏览官方网站</string>
     <string name="progress_dialog_deleting">删除对象</string>
-    <string name="progress_dialog_loading">从数据库加载对象</string>
     <string name="progress_dialog_printing">生成%s</string>
     <string name="qif_parse_result">已解析：%1$s 个账户； %2$s 个类别和 %3$s 个交易对象</string>
     <string name="qif_parse_failure_found_multiple_accounts">在QIF文件中找到多个账户。</string>
@@ -459,7 +452,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">购买失败或被取消。</string>
     <string name="hint_auto_fill">当交易对象（收款人/付款人）相同时，是否自动填入上次交易的内容？您可以随时在设置中更改此行为。</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">货币为 %2$s 的账户 %1$d 已更新。</string>
-    <string name="learn_more">了解更多</string>
     <string name="import_source_file">文件</string>
     <string name="restore_calendar_handling">日历数据处理中</string>
     <string name="restore_calendar_handling_configured">将计划还原到当前配置的日历</string>
@@ -618,7 +610,6 @@
     <string name="onboarding_restore_from_cloud_backup">备份文件</string>
     <string name="onboarding_restore_from_local">恢复本地备份文件</string>
     <string name="dialog_button_add">添加</string>
-    <string name="template_create_error">保存模板时出错</string>
     <string name="contributed_by">由%s贡献</string>
     <string name="pref_sync_notification_summary">通知同步进度</string>
     <string name="pref_debug_logging_summary">将调试信息写入系统日志</string>
@@ -628,7 +619,6 @@
     <string name="progress_validating_licence">验证许可证</string>
     <string name="licence_validation_error_expired">许可证已过期</string>
     <string name="licence_validation_error_device_limit_exceeded">超出设备限制。请从其他设备上删除许可证。</string>
-    <string name="error">错误（%s）</string>
     <string name="button_validate">验证</string>
     <string name="licence_key">许可证密钥</string>
     <string name="licence_removal_information">如果您不再需要此设备上的高级功能，则可以删除许可证密钥。这样可以释放密钥，以便在另一台设备上激活。该密钥最多可以在%d台设备上激活。</string>
@@ -654,7 +644,6 @@
     <string name="auto_fill_account_from_aggregate_only">仅当从汇总账户启动时。</string>
     <string name="sync_auth_exception">授权失败。</string>
     <string name="sync_login_again">请重新登录。</string>
-    <string name="sync_loading_accounts_from_backend">从后端加载可用账户中...</string>
     <plurals name="delete_success">
         <item quantity="other">已成功删除 %d 个对象。</item>
     </plurals>
@@ -680,14 +669,9 @@
     <string name="warning_ungroup_split_transactions">您所选的拆分交易将被取消分组，也就是说，它们的拆分款项将各自成为一般交易。</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">解散拆分交易的组合</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="other">已成功将 %1$d 笔分拆交易变为未分组状态。</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">解散拆分交易组合时，拆分交易%2$d中的%1$d解散失败。</string>
+    <string name="ungroup_split_transaction_success">已成功将 1 笔分拆交易变为未分组状态。</string>
     <string name="split_transaction_one_success">已成功将交易转换为拆分款项。</string>
-    <string name="split_transaction_one_error">不能将交易转换为拆分款项。</string>
     <string name="split_transaction_group_success">%1$d数笔交易已成功地组成一个拆分交易。</string>
-    <string name="split_transaction_group_error">无法将这些交易组成一个拆分交易。</string>
     <string name="split_transaction_not_possible">只有具有相同账户、收款人和状态的交易，才能被组成一个拆分交易。</string>
     <string name="pref_transaction_time_summary">允许设置确切的交易时间。</string>
     <string name="pref_value_date_summary">除了\"账面交易日期(booking date)\"外，还可以设置\"生效日期(value date)\"。交易时间将被隐藏。此设置不适用于现金账户。</string>
@@ -767,7 +751,6 @@
     <string name="button_label_no_encryption">没有加密</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">或</string>
-    <string name="pref_account_list_fast_scroll_summary">启用账户列表快速滚动。在某些设备上可能导致显示不正确</string>
     <string name="menu_hide">隐藏</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">关闭</string>
@@ -803,7 +786,6 @@
     <string name="discover_feature_expense_income_switch">可以使用此开关钮切换记录支出或收入。</string>
     <string name="menu_create_budget">新建预算</string>
     <string name="budget_onetime">一次性</string>
-    <string name="dialog_confirm_discard_new_budget">放弃新建的预算？</string>
     <string name="budget_duration_from">从</string>
     <string name="budget_duration_to">到</string>
     <string name="no_budgets">点击 + 按钮定义您的第一笔预算。</string>
@@ -979,7 +961,6 @@
     <string name="purge_backups">以下旧备份文件将被删除：</string>
     <string name="menu_new_debt">新债务</string>
     <string name="debt_I_owe">债主 %s</string>
-    <string name="dialog_confirm_discard_new_debt">舍弃新债务？</string>
     <plurals name="debt_mapped_transactions">
         <item quantity="other">债务“%1$s”有 %2$d 笔映射交易。</item>
     </plurals>
@@ -998,4 +979,18 @@
     <string name="debt_owes_me">欠债人 %s</string>
     <string name="warning_party_delete_debt">删除该交易对象时，相关的债务也将一并删除。</string>
     <string name="whats_new_340">支持多行备注</string>
+    <string name="webui_warning_move_transaction">交易将移至账户 {account}。</string>
+    <string name="pref_csv_export_split_date_time_summary">日期和时间单独一列</string>
+    <string name="pref_csv_export_split_amount_summary">收入和支出单独一列</string>
+    <string name="budget_only_current_period">仅为“%s”设置</string>
+    <string name="rollover_edit_invalid">分配给一个类别的展期数额和分配给子类别的展期数额之和不能超过余额。</string>
+    <string name="budget_table_header_rollover">展期</string>
+    <string name="required">必填</string>
+    <string name="dialog_confirm_rollover_delete">此期间的所有展期金额将被删除。</string>
+    <string name="icons_for_categories">类别图标</string>
+    <string name="pref_csv_export_split_categories_summary">每个类别层次结构级别单独一列</string>
+    <string name="content_description_attachment">附件</string>
+    <string name="redesign">重新设计</string>
+    <string name="upgrade_info_557">您觉得新设计如何？请告知我们，可在设置中激活更接近于旧版的变体 (%1$s -&gt; %2$s).</string>
+    <string name="select_all_list_too_large">命令 %s 不可用，因为只加载了部分列表。请使用搜索功能以减少列表大小</string>
 </resources>

@@ -17,7 +17,6 @@ import org.totschnig.myexpenses.export.CsvExporter
 import org.totschnig.myexpenses.export.JSONExporter
 import org.totschnig.myexpenses.export.QifExporter
 import org.totschnig.myexpenses.export.createFileFailure
-import org.totschnig.myexpenses.fragment.BaseTransactionList
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.AggregateAccount
 import org.totschnig.myexpenses.model.ExportFormat
@@ -26,12 +25,13 @@ import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.filter.KEY_FILTER
 import org.totschnig.myexpenses.provider.filter.WhereFilter
 import org.totschnig.myexpenses.ui.ContextHelper
 import org.totschnig.myexpenses.util.AppDirHelper
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import org.totschnig.myexpenses.util.io.FileUtils
+import org.totschnig.myexpenses.util.io.displayName
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
@@ -74,7 +74,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                     val encoding = args.getString(KEY_ENCODING)!!
                     val handleDelete = args.getInt(KEY_EXPORT_HANDLE_DELETED)
                     val filter =
-                        WhereFilter(args.getParcelableArrayList(BaseTransactionList.KEY_FILTER)!!)
+                        WhereFilter(args.getParcelableArrayList(KEY_FILTER)!!)
                     val fileName = args.getString(KEY_FILE_NAME)!!
                     val delimiter = args.getChar(KEY_DELIMITER)
 
@@ -163,12 +163,14 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                         )
                                     }
                                     val result = exporter.export(context, lazy {
-                                        Result.success(
-                                            AppDirHelper.buildFile(
-                                                destDir, fileNameForAccount, format.mimeType,
-                                                append, true
-                                            ) ?: throw createFileFailure(context, destDir, fileName)
-                                        )
+                                        AppDirHelper.buildFile(
+                                            destDir,
+                                            "$fileNameForAccount.${format.extension}",
+                                            format.mimeType,
+                                            append
+                                        )?.let {
+                                            Result.success(it)
+                                        } ?: Result.failure(createFileFailure(context, destDir, fileName))
                                     }, append)
                                     result.onSuccess {
                                         if (!append && prefHandler.getBoolean(
@@ -176,13 +178,13 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                                 false
                                             )
                                         ) {
-                                            add(it)
+                                            add(it.uri)
                                         }
                                         successfullyExported.add(account)
                                         publishProgress(
                                             "..." + context.getString(
                                                 R.string.export_sdcard_success,
-                                                FileUtils.getPath(context, it)
+                                                it.displayName
                                             )
                                         )
                                     }.onFailure {
@@ -201,8 +203,11 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                             for (a in successfullyExported) {
                                 try {
                                     if (deleteP) {
-                                        check(!a.isSealed) { "Trying to reset account that is sealed" }
-                                        reset(a, filter, handleDelete, fileName)
+                                        if (a.isSealed) {
+                                            publishProgress(getString(R.string.object_sealed))
+                                        } else {
+                                            reset(a, filter, handleDelete, fileName)
+                                        }
                                     } else {
                                         a.markAsExported(filter)
                                     }

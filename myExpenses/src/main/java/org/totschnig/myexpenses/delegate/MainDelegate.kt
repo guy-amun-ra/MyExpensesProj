@@ -19,7 +19,14 @@ import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
 import org.totschnig.myexpenses.databinding.OneExpenseBinding
-import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.*
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_COMMAND_NEGATIVE
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_COMMAND_POSITIVE
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_MESSAGE
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_NEGATIVE_BUTTON_LABEL
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_POSITIVE_BUTTON_LABEL
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_PREFKEY
+import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_TITLE
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.PrefKey.AUTO_FILL_HINT_SHOWN
@@ -54,14 +61,14 @@ abstract class MainDelegate<T : ITransaction>(
 
     override fun bind(
         transaction: T?,
-        newInstance: Boolean,
+        withTypeSpinner: Boolean,
         savedInstanceState: Bundle?,
         recurrence: Plan.Recurrence?,
         withAutoFill: Boolean
     ) {
         super.bind(
             transaction,
-            newInstance,
+            withTypeSpinner,
             savedInstanceState,
             recurrence,
             withAutoFill
@@ -84,12 +91,12 @@ abstract class MainDelegate<T : ITransaction>(
 
     override fun buildTransaction(
         forSave: Boolean,
-        accountId: Long
+        account: Account
     ): T? {
         val amount = validateAmountInput(forSave, currentAccount()!!.currency).getOrNull()
             ?: //Snackbar is shown in validateAmountInput
             return null
-        return buildMainTransaction(accountId).apply {
+        return buildMainTransaction(account).apply {
             this.amount = amount
             payee = viewBinding.Payee.text.toString()
             this.debtId = this@MainDelegate.debtId
@@ -134,10 +141,10 @@ abstract class MainDelegate<T : ITransaction>(
         handleDebts()
     }
 
-    override fun createAdapters(newInstance: Boolean, withAutoFill: Boolean) {
+    override fun createAdapters(withTypeSpinner: Boolean, withAutoFill: Boolean) {
         createPayeeAdapter(withAutoFill)
         createStatusAdapter()
-        if (newInstance) {
+        if (withTypeSpinner) {
             createOperationTypeAdapter()
         }
     }
@@ -148,7 +155,7 @@ abstract class MainDelegate<T : ITransaction>(
             viewBinding.Payee.setText(transaction.payee)
     }
 
-    abstract fun buildMainTransaction(accountId: Long): T
+    abstract fun buildMainTransaction(account: Account): T
 
     private fun createPayeeAdapter(withAutoFill: Boolean) {
         payeeAdapter = SimpleCursorAdapter(
@@ -188,7 +195,7 @@ abstract class MainDelegate<T : ITransaction>(
                             if (shouldStartAutoFill(prefHandler)) {
                                 host.startAutoFill(it, false)
                             } else if (!prefHandler.getBoolean(AUTO_FILL_HINT_SHOWN, false)) {
-                                newInstance(Bundle().apply {
+                                ConfirmationDialogFragment.newInstance(Bundle().apply {
                                     putLong(KEY_ROWID, it)
                                     putInt(KEY_TITLE, R.string.dialog_title_information)
                                     putString(

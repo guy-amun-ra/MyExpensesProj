@@ -4,25 +4,34 @@ import android.content.ContentProvider
 import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
-import android.database.sqlite.SQLiteDatabase
-import android.database.sqlite.SQLiteQueryBuilder
+import android.database.CursorWrapper
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.sqlite.db.SupportSQLiteOpenHelper
+import androidx.sqlite.db.SupportSQLiteQueryBuilder
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.MyApplication
+import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.compose.FutureCriterion
 import org.totschnig.myexpenses.di.AppComponent
-import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.model.AccountGrouping
-import org.totschnig.myexpenses.model.AccountType
-import org.totschnig.myexpenses.model.AggregateAccount
-import org.totschnig.myexpenses.model.CurrencyContext
+import org.totschnig.myexpenses.di.DataModule
+import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider.KEY_RESULT
+import org.totschnig.myexpenses.provider.TransactionProvider.QUERY_PARAMETER_CALLER_IS_IN_BULK
 import org.totschnig.myexpenses.util.ResultUnit
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import org.totschnig.myexpenses.util.enumValueOrDefault
 import org.totschnig.myexpenses.util.io.FileCopyUtils
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
 import timber.log.Timber
@@ -31,6 +40,12 @@ import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Named
+import javax.inject.Provider
+import kotlin.math.abs
+import kotlin.math.pow
+
+fun Uri.Builder.appendBooleanQueryParameter(key: String): Uri.Builder =
+    appendQueryParameter(key, "1")
 
 abstract class BaseTransactionProvider : ContentProvider() {
     var dirty = false
@@ -41,14 +56,28 @@ abstract class BaseTransactionProvider : ContentProvider() {
             field = value
         }
 
-    lateinit var transactionDatabase: TransactionDatabase
+    fun maybeSetDirty(uriMatch: Int) {
+        if (uriMatch != EVENT_CACHE) {
+            dirty = true
+        }
+    }
+
+    @Volatile
+    private var _helper: SupportSQLiteOpenHelper? = null
+
+    val helper: SupportSQLiteOpenHelper
+        get() = _helper
+            ?: synchronized(this) {
+                if (_helper == null) {
+                    _helper = openHelperProvider.get()
+                }
+                return _helper!!
+            }
 
     @Inject
     @Named(AppComponent.DATABASE_NAME)
-    lateinit var databaseName: String
-
-    @set:Inject
-    var cursorFactory: SQLiteDatabase.CursorFactory? = null
+    @JvmSuppressWildcards
+    lateinit var provideDatabaseName: (Boolean) -> String
 
     @Inject
     lateinit var userLocaleProvider: UserLocaleProvider
@@ -59,7 +88,66 @@ abstract class BaseTransactionProvider : ContentProvider() {
     @Inject
     lateinit var currencyContext: CurrencyContext
 
+    @Inject
+    lateinit var dataStore: DataStore<Preferences>
+
+    @Inject
+    lateinit var openHelperProvider: Provider<SupportSQLiteOpenHelper>
+
+    val collate: String
+        get() = prefHandler.collate
+
+    val wrappedContext: Context
+        get() = userLocaleProvider.wrapContext(context!!)
+
     private var shouldLog = false
+
+    var bulkInProgress = false
+
+    private val bulkNotificationUris = mutableSetOf<Pair<Uri, Boolean>>()
+
+    fun notifyAccountChange() {
+        notifyChange(TransactionProvider.ACCOUNTS_BASE_URI, false)
+        notifyChange(TransactionProvider.ACCOUNTS_MINIMAL_URI, false)
+    }
+
+    fun notifyChange(uri: Uri, syncToNetwork: Boolean) {
+        if (!bulkInProgress && callerIsNotInBulkOperation(uri)) {
+            notifyChangeDo(uri, syncToNetwork)
+        } else {
+            synchronized(bulkNotificationUris) {
+                bulkNotificationUris.add(uri to syncToNetwork)
+            }
+        }
+    }
+
+    private fun notifyChangeDo(uri: Uri, syncToNetwork: Boolean) {
+        context!!.contentResolver.notifyChange(
+            uri, null,
+            syncToNetwork && prefHandler.getBoolean(PrefKey.SYNC_CHANGES_IMMEDIATELY, true)
+        )
+    }
+
+    fun notifyBulk() {
+        synchronized(bulkNotificationUris) {
+            val iterator = bulkNotificationUris.iterator()
+            for ((uri, syncToNetwork) in iterator) {
+                notifyChangeDo(uri, syncToNetwork)
+                iterator.remove()
+            }
+        }
+    }
+
+    fun callerIsNotSyncAdapter(uri: Uri): Boolean {
+        return !uri.getBooleanQueryParameter(
+            TransactionProvider.QUERY_PARAMETER_CALLER_IS_SYNCADAPTER,
+            false
+        )
+    }
+
+    fun callerIsNotInBulkOperation(uri: Uri): Boolean {
+        return !uri.getBooleanQueryParameter(QUERY_PARAMETER_CALLER_IS_IN_BULK, false)
+    }
 
     companion object {
         const val CURRENCIES_USAGES_TABLE_EXPRESSION =
@@ -92,7 +180,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                 KEY_DESCRIPTION,
                 KEY_PAYEE_NAME,
                 KEY_SEALED,
-                "(select sum($KEY_AMOUNT) from $TABLE_TRANSACTIONS where $KEY_DEBT_ID = $TABLE_DEBTS.$KEY_ROWID $exclusionClause) AS $KEY_SUM"
+                "coalesce((select sum($KEY_AMOUNT) from $TABLE_TRANSACTIONS where $KEY_DEBT_ID = $TABLE_DEBTS.$KEY_ROWID $exclusionClause),0) AS $KEY_SUM"
             )
         }
 
@@ -108,6 +196,75 @@ abstract class BaseTransactionProvider : ContentProvider() {
         const val DEBT_LABEL_EXPRESSION =
             "(SELECT $KEY_LABEL FROM $TABLE_DEBTS WHERE $KEY_ROWID = $KEY_DEBT_ID) AS $KEY_DEBT_LABEL"
         const val TAG = "TransactionProvider"
+
+        fun defaultBudgetAllocationUri(accountId: Long, grouping: Grouping): Uri =
+            TransactionProvider.BUDGETS_URI.buildUpon()
+                .appendPath(TransactionProvider.URI_SEGMENT_DEFAULT_BUDGET_ALLOCATIONS)
+                .appendPath(accountId.toString())
+                .appendPath(grouping.name)
+                .build()
+
+        protected const val TRANSACTIONS = 1
+        protected const val TRANSACTION_ID = 2
+        protected const val CATEGORIES = 3
+        protected const val ACCOUNTS = 4
+        protected const val ACCOUNTS_BASE = 5
+        protected const val ACCOUNT_ID = 6
+        protected const val PAYEES = 7
+        protected const val METHODS = 8
+        protected const val METHOD_ID = 9
+        protected const val ACCOUNTTYPES_METHODS = 10
+        protected const val TEMPLATES = 11
+        protected const val TEMPLATE_ID = 12
+        protected const val CATEGORY_ID = 13
+        protected const val PAYEE_ID = 15
+        protected const val METHODS_FILTERED = 16
+        protected const val TEMPLATES_INCREASE_USAGE = 17
+        protected const val SQLITE_SEQUENCE_TABLE = 19
+        protected const val AGGREGATE_ID = 20
+        protected const val UNCOMMITTED = 21
+        protected const val TRANSACTIONS_GROUPS = 22
+        protected const val TRANSACTIONS_SUMS = 24
+        protected const val TRANSACTION_MOVE = 25
+        protected const val PLANINSTANCE_TRANSACTION_STATUS = 26
+        protected const val CURRENCIES = 27
+        protected const val TRANSACTION_TOGGLE_CRSTATUS = 29
+        protected const val MAPPED_METHODS = 31
+        protected const val DUAL = 32
+        protected const val CURRENCIES_CHANGE_FRACTION_DIGITS = 33
+        protected const val EVENT_CACHE = 34
+        protected const val DEBUG_SCHEMA = 35
+        protected const val STALE_IMAGES = 36
+        protected const val STALE_IMAGES_ID = 37
+        protected const val TRANSACTION_UNDELETE = 38
+        protected const val TRANSACTIONS_LASTEXCHANGE = 39
+        protected const val ACCOUNTS_SWAP_SORT_KEY = 40
+        protected const val MAPPED_TRANSFER_ACCOUNTS = 41
+        protected const val CHANGES = 42
+        protected const val SETTINGS = 43
+        protected const val TEMPLATES_UNCOMMITTED = 44
+        protected const val ACCOUNT_ID_GROUPING = 45
+        protected const val ACCOUNT_ID_SORT_DIRECTION = 46
+        protected const val AUTOFILL = 47
+        protected const val ACCOUNT_EXCHANGE_RATE = 48
+        protected const val UNSPLIT = 49
+        protected const val BUDGETS = 50
+        protected const val BUDGET_ID = 51
+        protected const val BUDGET_CATEGORY = 52
+        protected const val CURRENCIES_CODE = 53
+        protected const val ACCOUNTS_MINIMAL = 54
+        protected const val TAGS = 55
+        protected const val TRANSACTIONS_TAGS = 56
+        protected const val TAG_ID = 57
+        protected const val TEMPLATES_TAGS = 58
+        protected const val UNCOMMITTED_ID = 59
+        protected const val PLANINSTANCE_STATUS_SINGLE = 60
+        protected const val TRANSACTION_LINK_TRANSFER = 61
+        protected const val ACCOUNTS_TAGS = 62
+        protected const val DEBTS = 63
+        protected const val DEBT_ID = 64
+        protected const val BUDGET_ALLOCATIONS = 65
+        protected const val ACCOUNT_DEFAULT_BUDGET_ALLOCATIONS = 66
     }
 
     val homeCurrency: String
@@ -119,75 +276,79 @@ abstract class BaseTransactionProvider : ContentProvider() {
     val budgetTableJoin =
         "$TABLE_BUDGETS LEFT JOIN $TABLE_ACCOUNTS ON ($KEY_ACCOUNTID = $TABLE_ACCOUNTS.$KEY_ROWID)"
 
-    private val fullAccountProjection =
-        Account.PROJECTION_BASE.copyOf(Account.PROJECTION_BASE.size + 13).also {
-            val baseLength = Account.PROJECTION_BASE.size
-            it[baseLength] =
-                "$KEY_OPENING_BALANCE + coalesce($KEY_CURRENT,0) AS $KEY_CURRENT_BALANCE"
-            it[baseLength + 1] = KEY_SUM_INCOME
-            it[baseLength + 2] = KEY_SUM_EXPENSES
-            it[baseLength + 3] = KEY_SUM_TRANSFERS
-            it[baseLength + 4] = "$KEY_OPENING_BALANCE + coalesce($KEY_TOTAL,0) AS $KEY_TOTAL"
-            it[baseLength + 5] =
-                "$KEY_OPENING_BALANCE + coalesce($KEY_CLEARED_TOTAL,0) AS $KEY_CLEARED_TOTAL"
-            it[baseLength + 6] =
-                "$KEY_OPENING_BALANCE + coalesce($KEY_RECONCILED_TOTAL,0) AS $KEY_RECONCILED_TOTAL"
-            it[baseLength + 7] = KEY_USAGES
-            it[baseLength + 8] =
-                "0 AS $KEY_IS_AGGREGATE"//this is needed in the union with the aggregates to sort real accounts first
-            it[baseLength + 9] = KEY_HAS_FUTURE
-            it[baseLength + 10] = KEY_HAS_CLEARED
-            it[baseLength + 11] = AccountType.sqlOrderExpression()
-            it[baseLength + 12] = KEY_LAST_USED
-        }
+    private val fullAccountProjection = Account.PROJECTION_BASE + arrayOf(
+        "$KEY_OPENING_BALANCE + coalesce($KEY_CURRENT,0) AS $KEY_CURRENT_BALANCE",
+        KEY_SUM_INCOME,
+        KEY_SUM_EXPENSES,
+        KEY_SUM_TRANSFERS,
+        "$KEY_OPENING_BALANCE + coalesce($KEY_TOTAL,0) AS $KEY_TOTAL",
+        "$KEY_OPENING_BALANCE + coalesce($KEY_CLEARED_TOTAL,0) AS $KEY_CLEARED_TOTAL",
+        "$KEY_OPENING_BALANCE + coalesce($KEY_RECONCILED_TOTAL,0) AS $KEY_RECONCILED_TOTAL",
+        KEY_USAGES,
+        "0 AS $KEY_IS_AGGREGATE",//this is needed in the union with the aggregates to sort real accounts first
+        KEY_HAS_FUTURE,
+        KEY_HAS_CLEARED,
+        AccountType.sqlOrderExpression(),
+        KEY_LAST_USED
+    )
+
+    val aggregateFunction: String
+        get() = if (prefHandler.getBoolean(
+                PrefKey.DB_SAFE_MODE,
+                false
+            )
+        ) "total" else "sum"
 
     fun buildAccountQuery(
-        qb: SQLiteQueryBuilder,
         minimal: Boolean,
         mergeAggregate: String?,
         selection: String?,
         sortOrder: String?
     ): String {
 
-        val aggregateFunction = TransactionProvider.aggregateFunction(
-            prefHandler.getBoolean(
-                PrefKey.DB_SAFE_MODE,
-                false
+        val aggregateFunction = this.aggregateFunction
+
+        val futureStartsNow = runBlocking {
+            enumValueOrDefault(
+                dataStore.data.first()[stringPreferencesKey(
+                    prefHandler.getKey(
+                        PrefKey.CRITERION_FUTURE
+                    )
+                )], FutureCriterion.EndOfDay
             )
-        )
-        val cte = accountQueryCTE(
-            homeCurrency,
-            prefHandler.getString(PrefKey.CRITERION_FUTURE, "end_of_day") == "current",
-            aggregateFunction
-        )
+        } == FutureCriterion.Current
+
+        val cte = accountQueryCTE(homeCurrency, futureStartsNow, aggregateFunction)
+
         val joinWithAggregates =
             "$TABLE_ACCOUNTS LEFT JOIN aggregates ON $TABLE_ACCOUNTS.$KEY_ROWID = $KEY_ACCOUNTID"
-        qb.tables = if (minimal) TABLE_ACCOUNTS else joinWithAggregates
+
+        val accountQueryBuilder =
+            SupportSQLiteQueryBuilder.builder(if (minimal) TABLE_ACCOUNTS else joinWithAggregates)
+
         val query = if (mergeAggregate == null) {
-            qb.buildQuery(
-                fullAccountProjection, selection, null,
-                null, null, null
-            )
+            accountQueryBuilder.columns(fullAccountProjection).selection(selection, emptyArray())
+                .create().sql
         } else {
             val subQueries: MutableList<String> = ArrayList()
             if (mergeAggregate == "1") {
                 subQueries.add(
-                    qb.buildQuery(
+                    accountQueryBuilder.columns(
                         if (minimal) arrayOf(
                             KEY_ROWID,
                             KEY_LABEL,
                             KEY_CURRENCY,
                             "0 AS $KEY_IS_AGGREGATE"
-                        ) else fullAccountProjection, selection, null,
-                        null, null, null
+                        ) else fullAccountProjection
                     )
+                        .selection(selection, emptyArray()).create().sql
                 )
             }
             //Currency query
             if (mergeAggregate != Account.HOME_AGGREGATE_ID.toString()) {
-                qb.tables =
+                val qb = SupportSQLiteQueryBuilder.builder(
                     "$joinWithAggregates LEFT JOIN $TABLE_CURRENCIES on $KEY_CODE = $KEY_CURRENCY"
-
+                )
                 val rowIdColumn = "0 - $TABLE_CURRENCIES.$KEY_ROWID AS $KEY_ROWID"
                 val labelColumn = "$KEY_CURRENCY AS $KEY_LABEL"
                 val aggregateColumn = "1 AS $KEY_IS_AGGREGATE"
@@ -211,7 +372,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                         "0 AS $KEY_EXCLUDE_FROM_TOTALS",
                         "null AS $KEY_SYNC_ACCOUNT_NAME",
                         "null AS $KEY_UUID",
-                        "'DESC' AS $KEY_SORT_DIRECTION",
+                        "$TABLE_CURRENCIES.$KEY_SORT_DIRECTION",
                         "1 AS $KEY_EXCHANGE_RATE",
                         "0 AS $KEY_CRITERION",
                         "0 AS $KEY_SEALED",
@@ -231,28 +392,28 @@ abstract class BaseTransactionProvider : ContentProvider() {
                     )
                 }
                 subQueries.add(
-                    qb.buildQuery(
-                        currencyProjection,
-                        "$KEY_EXCLUDE_FROM_TOTALS = 0",
-                        KEY_CURRENCY,
-                        if (mergeAggregate == "1") "count(*) > 1" else "$TABLE_CURRENCIES.$KEY_ROWID = " +
-                                mergeAggregate.substring(1),
-                        null,
-                        null
-                    )
+                    qb.columns(currencyProjection)
+                        .selection("$KEY_EXCLUDE_FROM_TOTALS = 0", emptyArray())
+                        .groupBy(KEY_CURRENCY)
+                        .having(
+                            if (mergeAggregate == "1") "count(*) > 1" else "$TABLE_CURRENCIES.$KEY_ROWID = " +
+                                    mergeAggregate.substring(1)
+                        ).create().sql
                 )
             }
             //home query
             if (mergeAggregate == Account.HOME_AGGREGATE_ID.toString() || mergeAggregate == "1") {
-                qb.tables = joinWithAggregates
+                val qb = SupportSQLiteQueryBuilder.builder(joinWithAggregates)
 
                 val grouping = prefHandler.getString(AggregateAccount.GROUPING_AGGREGATE, "NONE")
+                val sortDirection =
+                    prefHandler.getString(AggregateAccount.SORT_DIRECTION_AGGREGATE, "DESC")
                 val rowIdColumn = Account.HOME_AGGREGATE_ID.toString() + " AS " + KEY_ROWID
-                val labelColumn = "'' AS $KEY_LABEL"
+                val labelColumn =
+                    "'${wrappedContext.getString(R.string.grand_total)}' AS $KEY_LABEL"
                 val currencyColumn =
                     "'" + AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE + "' AS " + KEY_CURRENCY
-                val aggregateColumn =
-                    AggregateAccount.AGGREGATE_HOME.toString() + " AS " + KEY_IS_AGGREGATE
+                val aggregateColumn = "${AggregateAccount.AGGREGATE_HOME} AS $KEY_IS_AGGREGATE"
                 val homeProjection = if (minimal) {
                     arrayOf(
                         rowIdColumn,
@@ -276,7 +437,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                         "0 AS $KEY_EXCLUDE_FROM_TOTALS",
                         "null AS $KEY_SYNC_ACCOUNT_NAME",
                         "null AS $KEY_UUID",
-                        "'DESC' AS $KEY_SORT_DIRECTION",
+                        "'$sortDirection' AS $KEY_SORT_DIRECTION",
                         "1 AS $KEY_EXCHANGE_RATE",
                         "0 AS $KEY_CRITERION",
                         "0 AS $KEY_SEALED",
@@ -296,14 +457,11 @@ abstract class BaseTransactionProvider : ContentProvider() {
                     )
                 }
                 subQueries.add(
-                    qb.buildQuery(
-                        homeProjection,
-                        "$KEY_EXCLUDE_FROM_TOTALS = 0",
-                        "1",
-                        "(select count(distinct $KEY_CURRENCY) from $TABLE_ACCOUNTS WHERE $KEY_CURRENCY != '$homeCurrency') > 0",
-                        null,
-                        null
-                    )
+                    qb.columns(homeProjection)
+                        .selection("$KEY_EXCLUDE_FROM_TOTALS = 0", emptyArray())
+                        .groupBy("1")
+                        .having("(select count(distinct $KEY_CURRENCY) from $TABLE_ACCOUNTS WHERE $KEY_CURRENCY != '$homeCurrency') > 0")
+                        .create().sql
                 )
             }
             val grouping = if (!minimal) {
@@ -321,20 +479,21 @@ abstract class BaseTransactionProvider : ContentProvider() {
                     else -> KEY_IS_AGGREGATE
                 }
             } else KEY_IS_AGGREGATE
-            qb.buildUnionQuery(
-                subQueries.toTypedArray(),
-                "$grouping,$sortOrder",
-                null
-            )
+            buildUnionQuery(subQueries.toTypedArray(), "$grouping,$sortOrder")
         }
         return "$cte\n$query"
     }
 
+    @Synchronized
     fun backup(context: Context, backupDir: File): Result<Unit> {
-        val currentDb = File(transactionDatabase.readableDatabase.path)
-        transactionDatabase.readableDatabase.beginTransaction()
-        return try {
-            backupDb(getBackupDbFile(backupDir), currentDb).mapCatching {
+        val currentDb = File(helper.readableDatabase.path!!)
+        helper.close()
+        _helper = null
+        return (if (prefHandler.encryptDatabase) decrypt(currentDb, backupDir) else backupDb(
+            currentDb,
+            backupDir
+        ))
+            .mapCatching {
                 val backupPrefFile = getBackupPrefFile(backupDir)
                 // Samsung has special path on some devices
                 // http://stackoverflow.com/questions/5531289/copy-the-shared-preferences-xml-file-from-data-on-samsung-device-failed
@@ -360,12 +519,29 @@ abstract class BaseTransactionProvider : ContentProvider() {
                     throw Throwable(message)
                 }
             }
-        } finally {
-            transactionDatabase.readableDatabase.endTransaction()
-        }
     }
 
-    fun budgetCategoryUpsert(db: SQLiteDatabase, uri: Uri, values: ContentValues): Int {
+    @Synchronized
+    open fun restore(backupFile: File, encrypt: Boolean): Boolean {
+        val dataDir = File(getInternalAppDir(), "databases")
+        dataDir.mkdir()
+        val currentDb = File(dataDir, provideDatabaseName(encrypt))
+        helper.close()
+        _helper = null
+        val result: Boolean = try {
+            if (encrypt) {
+                DataModule.cryptProvider.encrypt(context!!, backupFile, currentDb)
+                true
+            } else {
+                FileCopyUtils.copy(backupFile, currentDb)
+            }
+        } finally {
+            prefHandler.putBoolean(PrefKey.ENCRYPT_DATABASE, encrypt)
+        }
+        return result
+    }
+
+    fun budgetCategoryUpsert(db: SupportSQLiteDatabase, uri: Uri, values: ContentValues): Int {
         val (budgetId, catId) = parseBudgetCategoryUri(uri)
         val year: String? = values.getAsString(KEY_YEAR)
         val second: String? = values.getAsString(KEY_SECOND_GROUP)
@@ -422,19 +598,65 @@ abstract class BaseTransactionProvider : ContentProvider() {
         return statement.executeUpdateDelete()
     }
 
+    fun budgetDefaultSelect(
+        db: SupportSQLiteDatabase,
+        uri: Uri
+    ): Long? {
+        val accountId = uri.pathSegments[2].toLong()
+        val group = uri.pathSegments[3]
+        val (accountSelection, accountSelectionArg) = when {
+            accountId > 0 -> "$KEY_ACCOUNTID = ?" to accountId
+            accountId == AggregateAccount.HOME_AGGREGATE_ID -> "$KEY_CURRENCY = ?" to AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE
+            else -> "$KEY_CURRENCY = (select $KEY_CURRENCY from $TABLE_CURRENCIES where $KEY_ROWID = ?)" to accountId
+        }
+        return db.query(
+            TABLE_BUDGETS,
+            arrayOf(KEY_ROWID),
+            "$KEY_IS_DEFAULT = 1 AND $KEY_GROUPING = ? AND $accountSelection",
+            arrayOf(group, accountSelectionArg)
+        )
+            .use { it.takeIf { it.moveToFirst() }?.getLong(0) }
+    }
+
+    fun hiddenAccountCount(db: SupportSQLiteDatabase): Bundle = Bundle(1).apply {
+        putInt(
+            KEY_COUNT,
+            db.query("select count(*) from $TABLE_ACCOUNTS where $KEY_HIDDEN = 1").use {
+                it.moveToFirst()
+                it.getInt(0)
+            }
+        )
+    }
+
+    fun uuidForTransaction(db: SupportSQLiteDatabase, id: Long): String = db.query(
+        table = TABLE_TRANSACTIONS,
+        columns = arrayOf(KEY_UUID),
+        selection = "$KEY_ROWID = ?",
+        selectionArgs = arrayOf(id)
+    ).use {
+        it.moveToFirst()
+        it.getString(0)
+    }
+
     /**
      * @return number of corrupted entries
      */
     fun checkCorruptedData987() = Bundle(1).apply {
-        putLongArray(KEY_RESULT, transactionDatabase.readableDatabase.rawQuery(
-            "select distinct transactions.parent_id from transactions left join transactions parent on transactions.parent_id = parent._id where transactions.parent_id is not null and parent.account_id != transactions.account_id",
-            null
-        ).use { cursor ->
-            cursor.asSequence.map { it.getLong(0) }.toList().toLongArray()
-        })
+        putLongArray(
+            KEY_RESULT, helper.readableDatabase.query(
+                "select distinct transactions.parent_id from transactions left join transactions parent on transactions.parent_id = parent._id where transactions.parent_id is not null and parent.account_id != transactions.account_id",
+            ).useAndMap { it.getLong(0) }.toLongArray()
+        )
     }
 
-    private fun backupDb(backupDb: File, currentDb: File): Result<Unit> {
+    private fun decrypt(currentDb: File, backupDir: File): Result<Unit> {
+        val backupDb = getBackupDbFile(backupDir)
+        DataModule.cryptProvider.decrypt(context!!, currentDb, backupDb)
+        return ResultUnit
+    }
+
+    private fun backupDb(currentDb: File, backupDir: File): Result<Unit> {
+        val backupDb = getBackupDbFile(backupDir)
         if (currentDb.exists()) {
             if (FileCopyUtils.copy(currentDb, backupDb)) {
                 return ResultUnit
@@ -442,10 +664,6 @@ abstract class BaseTransactionProvider : ContentProvider() {
             return Result.failure(Throwable("Error while copying ${currentDb.path} to ${backupDb.path}"))
         }
         return Result.failure(Throwable("Could not find database at ${currentDb.path}"))
-    }
-
-    fun initOpenHelper() {
-        transactionDatabase = TransactionDatabase(context, databaseName, cursorFactory)
     }
 
     fun getInternalAppDir(): File {
@@ -456,9 +674,9 @@ abstract class BaseTransactionProvider : ContentProvider() {
         Timber.tag(TAG).i(message, *args)
     }
 
-    fun SQLiteQueryBuilder.measureAndLogQuery(
+    fun SupportSQLiteQueryBuilder.measureAndLogQuery(
         uri: Uri,
-        db: SQLiteDatabase,
+        db: SupportSQLiteDatabase,
         projection: Array<String>?,
         selection: String?,
         selectionArgs: Array<String>?,
@@ -466,50 +684,109 @@ abstract class BaseTransactionProvider : ContentProvider() {
         having: String?,
         sortOrder: String?,
         limit: String?
-    ): Cursor = measure(block = {
-        query(
-            db,
-            projection,
-            selection,
-            selectionArgs,
-            groupBy,
-            having,
-            sortOrder,
-            limit
-        )
-    }) {
-        "$uri - ${
-            buildQuery(
-                projection,
-                selection,
-                groupBy,
-                having,
-                sortOrder,
-                limit
-            )
-        } - (${selectionArgs?.joinToString()})"
+    ): Cursor {
+        val query =
+            columns(projection).selection(selection, selectionArgs).groupBy(groupBy).having(having)
+                .orderBy(sortOrder).apply {
+                    if (limit != null) {
+                        limit(limit)
+                    }
+                }.create()
+        return measure(block = {
+            db.query(query)
+        }) {
+            "$uri - ${query.sql} - (${selectionArgs?.joinToString()})"
+        }
     }
 
-    fun SQLiteDatabase.measureAndLogQuery(
+    fun updateFractionDigits(
+        db: SupportSQLiteDatabase,
+        currency: String,
+        newValue: Int
+    ): Int {
+        val oldValue = currencyContext[currency].fractionDigits
+        if (oldValue == newValue) {
+            return 0
+        }
+        val bindArgs = arrayOf(currency)
+        val count = db.query(
+            SupportSQLiteQueryBuilder.builder(TABLE_ACCOUNTS)
+                .columns(arrayOf("count(*)"))
+                .selection("$KEY_CURRENCY=?", bindArgs)
+                .create()
+        ).use {
+            if (it.moveToFirst()) it.getInt(0) else 0
+        }
+        val increase: Boolean = oldValue < newValue
+        val operation = if (increase) "*" else "/"
+        val inverseOperation = if (increase) "/" else "*"
+        val factor = 10.0.pow(abs(oldValue - newValue).toDouble()).toInt()
+        safeUpdateWithSealed(db) {
+            db.execSQL(
+                "UPDATE $TABLE_ACCOUNTS SET $KEY_OPENING_BALANCE=$KEY_OPENING_BALANCE$operation$factor WHERE $KEY_CURRENCY=?",
+                bindArgs
+            )
+            db.execSQL(
+                "UPDATE $TABLE_TRANSACTIONS SET $KEY_AMOUNT=$KEY_AMOUNT$operation$factor WHERE $KEY_ACCOUNTID IN (SELECT $KEY_ROWID FROM $TABLE_ACCOUNTS WHERE $KEY_CURRENCY=?)",
+                bindArgs
+            )
+            db.execSQL(
+                "UPDATE $TABLE_TEMPLATES SET $KEY_AMOUNT=$KEY_AMOUNT$operation$factor WHERE $KEY_ACCOUNTID IN (SELECT $KEY_ROWID FROM $TABLE_ACCOUNTS WHERE $KEY_CURRENCY=?)",
+                bindArgs
+            )
+            db.execSQL(
+                "UPDATE $TABLE_ACCOUNT_EXCHANGE_RATES SET $KEY_EXCHANGE_RATE=$KEY_EXCHANGE_RATE$operation$factor WHERE $KEY_CURRENCY_OTHER=?",
+                bindArgs
+            )
+            db.execSQL(
+                "UPDATE $TABLE_ACCOUNT_EXCHANGE_RATES SET $KEY_EXCHANGE_RATE=$KEY_EXCHANGE_RATE$inverseOperation$factor WHERE $KEY_CURRENCY_SELF=?",
+                bindArgs
+            )
+            val totalBudgetClause =
+                if (homeCurrency == currency) " OR $KEY_CURRENCY = '${AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE}'" else ""
+            db.execSQL(
+                """UPDATE $TABLE_BUDGET_ALLOCATIONS SET
+                    $KEY_BUDGET=$KEY_BUDGET$operation$factor,
+                    $KEY_BUDGET_ROLLOVER_PREVIOUS=$KEY_BUDGET_ROLLOVER_PREVIOUS$operation$factor,
+                    $KEY_BUDGET_ROLLOVER_NEXT=$KEY_BUDGET_ROLLOVER_NEXT$operation$factor
+                    WHERE $KEY_BUDGETID IN (
+                        SELECT $KEY_ROWID FROM $TABLE_BUDGETS WHERE
+                            $KEY_CURRENCY=? OR
+                            $KEY_ACCOUNTID IN (
+                                SELECT $KEY_ROWID FROM $TABLE_ACCOUNTS WHERE $KEY_CURRENCY=?
+                            )
+                            $totalBudgetClause
+                    )
+                """.trimIndent(),
+                arrayOf(currency, currency)
+            )
+            db.execSQL(
+                "UPDATE $TABLE_DEBTS SET $KEY_AMOUNT=$KEY_AMOUNT$operation$factor WHERE $KEY_CURRENCY=?",
+                bindArgs
+            )
+
+            currencyContext.storeCustomFractionDigits(currency, newValue)
+        }
+        return count
+    }
+
+    fun SupportSQLiteDatabase.measureAndLogQuery(
         uri: Uri,
         selection: String?,
         sql: String,
         selectionArgs: Array<String>?
-    ): Cursor = measure(block = { rawQuery(sql, selectionArgs) }) {
+    ): Cursor = measure(block = { query(sql, selectionArgs ?: emptyArray()) }) {
         "$uri - $selection - $sql - (${selectionArgs?.joinToString()})"
     }
 
-    private fun <T : Any> measure(block: () -> T, lazyMessage: () -> String): T {
-        if (shouldLog) {
-            val startTime = Instant.now()
-            val result = block()
-            val endTime = Instant.now()
-            val duration = Duration.between(startTime, endTime)
-            log("${lazyMessage()} : $duration")
-            return result
-        }
-        return block()
-    }
+    private fun <T : Any> measure(block: () -> T, lazyMessage: () -> String): T = if (shouldLog) {
+        val startTime = Instant.now()
+        val result = block()
+        val endTime = Instant.now()
+        val duration = Duration.between(startTime, endTime)
+        log("${lazyMessage()}\n$duration")
+        result
+    } else block()
 
     fun report(e: String) {
         CrashHandler.report(Exception(e), TAG)
@@ -518,7 +795,37 @@ abstract class BaseTransactionProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         MyApplication.getInstance().appComponent.inject(this)
         shouldLog = prefHandler.getBoolean(PrefKey.DEBUG_LOGGING, BuildConfig.DEBUG)
-        initOpenHelper()
         return true
+    }
+
+    fun wrapWithResultCompat(cursor: Cursor, extras: Bundle) = when {
+        extras.isEmpty -> cursor
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> cursor.apply {
+            setExtras(extras)
+        }
+        else -> object : CursorWrapper(cursor) {
+            override fun getExtras() = extras
+        }
+    }
+
+    fun handleAccountProperty(
+        db: SupportSQLiteDatabase,
+        uri: Uri,
+        key: String
+    ): Int {
+        val subject = uri.pathSegments[1]
+        val id: Long? = subject.toLongOrNull()
+        val isAggregate = id == null || id < 0
+        val contentValues = ContentValues(1).apply {
+            put(key, uri.pathSegments[2])
+        }
+        return db.update(
+            if (isAggregate) TABLE_CURRENCIES else TABLE_ACCOUNTS,
+            contentValues,
+            (if (id == null) KEY_CODE else KEY_ROWID) + " = ?",
+            arrayOf(
+                if (id == null) subject else abs(id).toString()
+            )
+        )
     }
 }

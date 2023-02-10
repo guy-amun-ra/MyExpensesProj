@@ -6,11 +6,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.CompoundButton
-import android.widget.SeekBar
-import android.widget.TextView
+import android.widget.*
 import androidx.core.view.isVisible
 import com.squareup.picasso.Picasso
 import icepick.Icepick
@@ -18,26 +14,16 @@ import icepick.State
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
-import org.totschnig.myexpenses.adapter.AccountAdapter
+import org.totschnig.myexpenses.adapter.IdAdapter
 import org.totschnig.myexpenses.adapter.CrStatusAdapter
 import org.totschnig.myexpenses.adapter.NothingSelectedSpinnerAdapter
 import org.totschnig.myexpenses.adapter.RecurrenceAdapter
-import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_SPLIT
-import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSACTION
-import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSFER
+import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.*
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
 import org.totschnig.myexpenses.databinding.OneExpenseBinding
 import org.totschnig.myexpenses.di.AppComponent
-import org.totschnig.myexpenses.model.AccountType
-import org.totschnig.myexpenses.model.ContribFeature
-import org.totschnig.myexpenses.model.CrStatus
-import org.totschnig.myexpenses.model.CurrencyContext
-import org.totschnig.myexpenses.model.CurrencyUnit
-import org.totschnig.myexpenses.model.ITransaction
-import org.totschnig.myexpenses.model.Money
-import org.totschnig.myexpenses.model.Plan
-import org.totschnig.myexpenses.model.Template
+import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
@@ -45,14 +31,9 @@ import org.totschnig.myexpenses.ui.AmountInput
 import org.totschnig.myexpenses.ui.DateButton
 import org.totschnig.myexpenses.ui.MyTextWatcher
 import org.totschnig.myexpenses.ui.SpinnerHelper
-import org.totschnig.myexpenses.util.CurrencyFormatter
-import org.totschnig.myexpenses.util.PermissionHelper
+import org.totschnig.myexpenses.util.*
 import org.totschnig.myexpenses.util.TextUtils.appendCurrencyDescription
 import org.totschnig.myexpenses.util.TextUtils.appendCurrencySymbol
-import org.totschnig.myexpenses.util.UiUtils
-import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.addChipsBulk
-import org.totschnig.myexpenses.util.epoch2ZonedDateTime
 import org.totschnig.myexpenses.viewmodel.data.Account
 import org.totschnig.myexpenses.viewmodel.data.Currency
 import org.totschnig.myexpenses.viewmodel.data.PaymentMethod
@@ -63,6 +44,7 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import javax.inject.Inject
+import kotlin.Result
 
 abstract class TransactionDelegate<T : ITransaction>(
     val viewBinding: OneExpenseBinding,
@@ -112,14 +94,19 @@ abstract class TransactionDelegate<T : ITransaction>(
             isSplitPart -> ExpenseEdit.HelpVariant.splitPartCategory
             else -> ExpenseEdit.HelpVariant.transaction
         }
-    open val title
-        get() = with(context) {
+
+    fun title(newInstance: Boolean) = with(context) {
+        if (newInstance) {
+            labelForNewInstance(operationType)
+        } else {
             when {
                 isTemplate -> getString(R.string.menu_edit_template) + " (" + getString(typeResId) + ")"
                 isSplitPart -> getString(editPartResId)
                 else -> getString(editResId)
             }
         }
+    }
+
     open val typeResId = R.string.transaction
     open val editResId = R.string.menu_edit_transaction
     open val editPartResId = R.string.menu_edit_split_part_category
@@ -197,7 +184,7 @@ abstract class TransactionDelegate<T : ITransaction>(
 
     protected var mAccounts = mutableListOf<Account>()
 
-    private val planButton: DateButton
+    val planButton: DateButton
         get() = viewBinding.PB
     private val planExecutionButton: CompoundButton
         get() = viewBinding.TB
@@ -220,7 +207,7 @@ abstract class TransactionDelegate<T : ITransaction>(
 
     open fun bind(
         transaction: T?,
-        newInstance: Boolean,
+        withTypeSpinner: Boolean,
         savedInstanceState: Bundle?,
         recurrence: Plan.Recurrence?,
         withAutoFill: Boolean
@@ -244,16 +231,13 @@ abstract class TransactionDelegate<T : ITransaction>(
         } else {
             Icepick.restoreInstanceState(this, savedInstanceState)
         }
-        setVisibility(viewBinding.toolbar.OperationType, newInstance)
+        setVisibility(viewBinding.toolbar.OperationType, withTypeSpinner)
         originTemplateId?.let { host.loadOriginTemplate(it) }
 
         if (isMainTemplate) {
             viewBinding.TitleRow.visibility = View.VISIBLE
             viewBinding.DefaultActionRow.visibility = View.VISIBLE
             setPlannerRowVisibility(true)
-            val recurrenceAdapter = RecurrenceAdapter(context)
-            recurrenceSpinner.adapter = recurrenceAdapter
-            recurrenceSpinner.setOnItemSelectedListener(this)
             planButton.setOnClickListener {
                 planId?.let {
                     host.launchPlanView(false, it)
@@ -262,17 +246,18 @@ abstract class TransactionDelegate<T : ITransaction>(
                 }
             }
             viewBinding.AttachImage.visibility = View.GONE
-        } else if (!isSplitPart) {
+        }
+        if (!isSplitPart) {
             //we set adapter even if spinner is not immediately visible, since it might become visible
             //after SAVE_AND_NEW action
             val recurrenceAdapter = RecurrenceAdapter(context)
             recurrenceSpinner.adapter = recurrenceAdapter
-            if (missingRecurrenceFeature() == null) {
-                recurrence?.let {
-                    recurrenceSpinner.setSelection(
-                        recurrenceAdapter.getPosition(it)
-                    )
+            recurrence?.let {
+                recurrenceSpinner.setSelection(recurrenceAdapter.getPosition(it))
+                if (isTemplate && it != Plan.Recurrence.NONE) {
+                    configurePlanDependents(true)
                 }
+                configureLastDayButton()
             }
             recurrenceSpinner.setOnItemSelectedListener(this)
         }
@@ -280,7 +265,7 @@ abstract class TransactionDelegate<T : ITransaction>(
             viewBinding.DateTimeRow.visibility = View.GONE
         }
 
-        createAdapters(newInstance, withAutoFill)
+        createAdapters(withTypeSpinner, withAutoFill)
 
         //when we have a savedInstance, fields have already been populated
         if (savedInstanceState == null) {
@@ -545,7 +530,16 @@ abstract class TransactionDelegate<T : ITransaction>(
     val host: ExpenseEdit
         get() = context as ExpenseEdit
 
-    abstract fun createAdapters(newInstance: Boolean, withAutoFill: Boolean)
+    abstract fun createAdapters(withTypeSpinner: Boolean, withAutoFill: Boolean)
+
+    private fun labelForNewInstance(type: Int) = context.getString(
+        when (type) {
+            TYPE_SPLIT -> if (isTemplate) R.string.menu_create_template_for_split else R.string.menu_create_split
+            TYPE_TRANSFER -> if (isSplitPart) R.string.menu_create_split_part_transfer else if (isTemplate) R.string.menu_create_template_for_transfer else R.string.menu_create_transfer
+            TYPE_TRANSACTION -> if (isSplitPart) R.string.menu_create_split_part_category else if (isTemplate) R.string.menu_create_template_for_transaction else R.string.menu_create_transaction
+            else -> throw IllegalStateException("Unknown operationType $type")
+        }
+    )
 
     protected fun createOperationTypeAdapter() {
         val allowedOperationTypes: MutableList<Int> = ArrayList()
@@ -556,14 +550,7 @@ abstract class TransactionDelegate<T : ITransaction>(
         }
         val objects = allowedOperationTypes.map {
             OperationType(it).apply {
-                label = context.getString(
-                    when (it) {
-                        TYPE_SPLIT -> if (isTemplate) R.string.menu_create_template_for_split else R.string.menu_create_split
-                        TYPE_TRANSFER -> if (isSplitPart) R.string.menu_create_split_part_transfer else if (isTemplate) R.string.menu_create_template_for_transfer else R.string.menu_create_transfer
-                        TYPE_TRANSACTION -> if (isSplitPart) R.string.menu_create_split_part_category else if (isTemplate) R.string.menu_create_template_for_transaction else R.string.menu_create_transaction
-                        else -> throw IllegalStateException("Unknown operationType $it")
-                    }
-                )
+                label = labelForNewInstance(it)
             }
         }
         operationTypeAdapter =
@@ -586,6 +573,7 @@ abstract class TransactionDelegate<T : ITransaction>(
 
     private fun createMethodAdapter() {
         methodsAdapter =
+            //TODO Use IdAdapter
             object : ArrayAdapter<PaymentMethod>(context, android.R.layout.simple_spinner_item) {
                 override fun getItemId(position: Int): Long {
                     return getItem(position)?.id() ?: 0L
@@ -601,11 +589,7 @@ abstract class TransactionDelegate<T : ITransaction>(
 
     fun resetOperationType() {
         operationTypeSpinner.setSelection(
-            operationTypeAdapter.getPosition(
-                OperationType(
-                    operationType
-                )
-            )
+            operationTypeAdapter.getPosition(OperationType(operationType))
         )
     }
 
@@ -764,13 +748,12 @@ abstract class TransactionDelegate<T : ITransaction>(
         return null
     }
 
-    //TODO make getTypedNewInstance return non-null
-    protected fun buildTemplate(accountId: Long) =
-        Template.getTypedNewInstance(operationType, accountId, false, parentId)!!
+    protected fun buildTemplate(account: Account) =
+        Template.getTypedNewInstance(operationType, account.id, account.currency, false, parentId)!!
 
     abstract fun buildTransaction(
         forSave: Boolean,
-        accountId: Long
+        account: Account
     ): T?
 
     abstract val operationType: Int
@@ -779,7 +762,7 @@ abstract class TransactionDelegate<T : ITransaction>(
         return currentAccount()?.let {
             buildTransaction(
                 forSave && !isMainTemplate,
-                it.id
+                it
             )
         }?.apply {
             originTemplateId = this@TransactionDelegate.originTemplateId
@@ -824,7 +807,7 @@ abstract class TransactionDelegate<T : ITransaction>(
                     }
                     this.defaultAction =
                         Template.Action.values()[viewBinding.DefaultAction.selectedItemPosition]
-                    if (this.amount.amountMinor == 0L) {
+                    if (this.amount.amountMinor == 0L && forSave) {
                         if (plan == null && this.defaultAction == Template.Action.SAVE) {
                             host.showSnackBar(context.getString(R.string.template_default_action_without_amount_hint))
                             return null
@@ -918,14 +901,18 @@ abstract class TransactionDelegate<T : ITransaction>(
     }
 
     private fun configureDateInput(account: Account) {
-        val dateMode = UiUtils.getDateMode(account.type, prefHandler)
+        val dateMode = getDateMode(account.type, prefHandler)
         setVisibility(dateEditBinding.TimeButton, dateMode == UiUtils.DateMode.DATE_TIME)
         setVisibility(dateEditBinding.Date2Button, dateMode == UiUtils.DateMode.BOOKING_VALUE)
         setVisibility(dateEditBinding.DateLink, dateMode == UiUtils.DateMode.BOOKING_VALUE)
 
         viewBinding.DateTimeLabel.text = when (dateMode) {
-            UiUtils.DateMode.BOOKING_VALUE -> context.getString(R.string.booking_date) + "/" + context.getString(R.string.value_date)
-            UiUtils.DateMode.DATE_TIME -> context.getString(R.string.date) + " / " + context.getString(R.string.time)
+            UiUtils.DateMode.BOOKING_VALUE -> context.getString(R.string.booking_date) + "/" + context.getString(
+                R.string.value_date
+            )
+            UiUtils.DateMode.DATE_TIME -> context.getString(R.string.date) + " / " + context.getString(
+                R.string.time
+            )
             UiUtils.DateMode.DATE -> context.getString(R.string.date)
         }
     }
@@ -949,7 +936,7 @@ abstract class TransactionDelegate<T : ITransaction>(
     open fun setAccounts(data: List<Account>, currencyExtra: String?) {
         mAccounts.clear()
         mAccounts.addAll(data)
-        accountSpinner.adapter = AccountAdapter(context, data).apply {
+        accountSpinner.adapter = IdAdapter(context, data).apply {
             setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
         }
 

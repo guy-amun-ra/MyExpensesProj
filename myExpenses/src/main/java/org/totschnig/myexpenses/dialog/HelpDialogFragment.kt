@@ -105,7 +105,7 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>() {
             "hidden_accounts" to R.drawable.design_ic_visibility_off,
             "hide" to R.drawable.design_ic_visibility_off,
             "close.reopen" to R.drawable.ic_lock,
-            "remap" to null,
+            "remap" to R.drawable.redo,
             "scan_mode" to R.drawable.ic_scan,
             "save_and_new" to R.drawable.ic_action_save_new,
             "link" to R.drawable.ic_hchain,
@@ -140,6 +140,7 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>() {
         helper = HelpDialogHelper(ctx)
         context = args.getString(KEY_CONTEXT)
         variant = args.getString(KEY_VARIANT)
+        if (context == null) return onError("context extra missing")
         val builder = initBuilder {
             HelpDialogBinding.inflate(it)
         }
@@ -204,9 +205,8 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>() {
             }
             val titleResId =
                 if (variant != null) helper.resolveString("help_" + context + "_" + variant + "_title") else 0
-            val title = args.getString(KEY_TITLE) ?:
-                if (titleResId == 0) {
-                    helper.resolveStringOrThrowIf0("help_" + context + "_title")
+            val title = args.getString(KEY_TITLE) ?: if (titleResId == 0) {
+                helper.getStringOrThrowIf0("help_" + context + "_title")
             } else {
                 getString(titleResId)
             }
@@ -221,11 +221,14 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>() {
                 .create()
         } catch (e: Resources.NotFoundException) {
             CrashHandler.report(e)
-            return MaterialAlertDialogBuilder(ctx)
-                .setMessage("Error generating Help dialog")
-                .create()
+            return onError("Error generating Help dialog")
         }
     }
+
+    private fun onError(message: String) = MaterialAlertDialogBuilder(requireActivity())
+        .setMessage(message)
+        .create()
+
 
     private fun showLongTapHint(componentName: String) =
         !arrayOf(
@@ -233,7 +236,8 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>() {
             "ManageTemplates_planner_cabitems",
             "ManageParties_manage_cabitems",
             "ManageCategories_manage_cabitems",
-            "ManageCategories_select_filter_cabitems"
+            "ManageCategories_select_filter_cabitems",
+            "MyExpenses_cabitems"
         )
             .contains(componentName)
 
@@ -257,16 +261,14 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>() {
         prefix: String,
         container: ViewGroup
     ) {
-        var resIdString: String
-        var resId: Int?
         for (item in menuItems) {
             val rowBinding =
                 HelpDialogActionRowBinding.inflate(materialLayoutInflater, container, false)
-            val title =  helper.resolveTitle(item, prefix)
+            val title = helper.resolveTitle(item, prefix)
             rowBinding.title.text = title
             if (prefix != "form") {
                 if (iconMap.containsKey(item)) {
-                    resId = iconMap[item]
+                    val resId = iconMap[item]
                     if (resId != null) {
                         with(rowBinding.listImage) {
                             visibility = View.VISIBLE
@@ -283,21 +285,19 @@ class HelpDialogFragment : DialogViewBinding<HelpDialogBinding>() {
             //we look for a help text specific to the variant first, then to the activity
             //and last a generic one
             //We look for an array first, which allows us to compose messages of parts
-            var helpText: CharSequence?
-            helpText = helper.resolveStringOrArray(
-                prefix + "_" + context + "_" + variant + "_" + item + "_help_text",
+            val helpText = variant?.let {
+                helper.resolveStringOrArray(
+                    prefix + "_" + context + "_" + it + "_" + item + "_help_text",
+                    false
+                )
+            }?.takeIf { it.isNotEmpty() } ?: helper.resolveStringOrArray(
+                prefix + "_" + context + "_" + item + "_help_text",
                 false
-            )
-            if (TextUtils.isEmpty(helpText)) {
-                helpText =
-                    helper.resolveStringOrArray(prefix + "_" + context + "_" + item + "_help_text", false)
-                if (TextUtils.isEmpty(helpText)) {
-                    resIdString = prefix + "_" + item + "_help_text"
-                    helpText = helper.resolveStringOrArray(resIdString, false)
-                    if (TextUtils.isEmpty(helpText)) {
-                        throw Resources.NotFoundException(resIdString)
-                    }
-                }
+            )?.takeIf { it.isNotEmpty() } ?: kotlin.run {
+                val resIdString = prefix + "_" + item + "_help_text"
+                helper.resolveStringOrArray(resIdString, false)
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: throw Resources.NotFoundException(resIdString)
             }
             rowBinding.helpText.text = helpText
             container.addView(rowBinding.root)

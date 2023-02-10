@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.lifecycleScope
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import org.totschnig.myexpenses.MyApplication
@@ -71,15 +72,23 @@ abstract class BaseDialogFragment : DialogFragment() {
         duration: Int = Snackbar.LENGTH_LONG,
         snackBarAction: SnackbarAction? = null
     ) {
-        val view = dialogView ?: dialog!!.window!!.decorView
-        snackBar = Snackbar.make(view, message, duration).also {
+        snackBar = Snackbar.make(snackBarContainer, message, duration).also {
             UiUtils.increaseSnackbarMaxLines(it)
             if (snackBarAction != null) {
-                it.setAction(snackBarAction.resId, snackBarAction.listener)
+                it.setAction(snackBarAction.label, snackBarAction.listener)
             }
             it.show()
         }
     }
+
+    fun showDetails(transactionId: Long) {
+        lifecycleScope.launchWhenResumed {
+            TransactionDetailFragment.show(transactionId, parentFragmentManager)
+        }
+    }
+
+    protected val snackBarContainer
+        get() = dialogView ?: dialog!!.window!!.decorView
 
     protected fun dismissSnackBar() {
         snackBar?.dismiss()

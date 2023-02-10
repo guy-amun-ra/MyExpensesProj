@@ -46,7 +46,6 @@
     <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">Carta pai (Agihan per katagori)</string>
     <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Bilang plan tidak terhad</string>
     <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Eksport senarai transaksi menjadi PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Widget  templat</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Import CSV</string>
     <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">Bilang templat berasingan tidak terhad</string>
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>Sokongan emel</b> dengan maklumbalas dijamin selepas 2 hari bekerja</string>
@@ -68,10 +67,6 @@
     <string name="description">Keterangan</string>
     <string name="dialog_balance_delete">Padam transaksi tersesuai</string>
     <string name="dialog_confirm_discard_changes">Singkir perubahan?</string>
-    <string name="dialog_confirm_discard_new_transaction">Singkir transaksi baharu?</string>
-    <string name="dialog_confirm_discard_new_template">Singkir templat baharu?</string>
-    <string name="dialog_confirm_discard_new_account">Singkir akaun baharu?</string>
-    <string name="dialog_confirm_discard_new_method">Singkir kaedah pembayaran baharu?</string>
     <string name="dialog_command_disabled_balance">Tiada transaksi selesai yang disesuaikan.</string>
     <string name="dialog_command_disabled_insert_transfer">Transaksi pemindahan memerlukan akaun kedua.</string>
     <string name="dialog_command_disabled_reset_account">Tiada transaksi dieksport.</string>
@@ -136,7 +131,6 @@
     <string name="help_heading_credits">Penghargaan</string>
     <string name="help_heading_license">Lesen</string>
     <string name="help_heading_whats_new">Apa yang terbaharu</string>
-    <string name="important_upgrade_information_heading">Maklumat penting</string>
     <string name="import_select_transactions">Transaksi</string>
     <string name="income">Pendapatan</string>
     <string name="invalid_number_format">Format perpuluhan tidak dikenali oleh lokal anda. Sila guna %1$s</string>
@@ -283,8 +277,8 @@
     <string name="pref_contrib_purchase_title_in_app">Pembayaran In-App</string>
     <string name="pref_custom_currency_title">Suaikan matawang</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Jika anda menerima kunci, dapatkan capaian ke fitur premium.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Masukkan kunci</string>
+    <string name="pref_enter_licence_summary">Jika anda menerima kunci, dapatkan capaian ke fitur premium.</string>
+    <string name="pref_enter_licence_title">Masukkan kunci</string>
     <string name="pref_export_format_title">Format data</string>
     <string name="pref_import_from_grisbi_summary">Import kategori dan pihak dari fail XML Grisbi</string>
     <string name="pref_import_from_grisbi_title">Import dari Grisbi</string>
@@ -336,7 +330,6 @@
     <string name="pref_visit_website_summary">Log Perubahan dan FAQ</string>
     <string name="pref_visit_website_title">Lawati Laman Sesawang</string>
     <string name="progress_dialog_deleting">Memadam objek</string>
-    <string name="progress_dialog_loading">Memuatkan objek dari pangkalan data</string>
     <string name="progress_dialog_printing">Menjana %s</string>
     <string name="qif_parse_result">Dihurai: %1$s akaun; %2$s kategori dan %3$s pihak</string>
     <string name="qif_parse_failure_found_multiple_accounts">Akaun berbilang ditemui dalam fail QIF.</string>
@@ -455,7 +448,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Pembelian gagal atau dibatalkan.</string>
     <string name="hint_auto_fill">Sepatutnya data terisi secara automatik dari transaksi terakhir bagi penerima/pembayar yang sama? Tetapi anda boleh ubah kelakuan ini melalui tetapan.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d akaun dengan matawang %2$s telah dikemaskini.</string>
-    <string name="learn_more">Ketahui lagi</string>
     <string name="import_source_file">Fail</string>
     <string name="restore_calendar_handling">Pengendalian data kalendar</string>
     <string name="restore_calendar_handling_configured">Pulih plan ke kalender terkonfigur semasa</string>
@@ -611,7 +603,6 @@
     <string name="onboarding_restore_from_cloud">Pulihkan melalui penyegerakan awan</string>
     <string name="onboarding_restore_from_local">Pulih fail sandar setempat</string>
     <string name="dialog_button_add">Tambah</string>
-    <string name="template_create_error">Ralat ketika menyimpan templat</string>
     <string name="contributed_by">%sDisumbang oleh </string>
     <string name="pref_sync_notification_summary">Makluman berkenaan kemajuan penyegerakan</string>
     <string name="pref_debug_logging_summary">Tuli maklumat penyahpepijatan ke dalam log sistem</string>
@@ -621,7 +612,6 @@
     <string name="progress_validating_licence">Mengesahkan lesen</string>
     <string name="licence_validation_error_expired">Lesen telah tampat tempoh</string>
     <string name="licence_validation_error_device_limit_exceeded">Had peranti dicapai. Sila buang lesen daripada peranti lain.</string>
-    <string name="error">Ralat (%s)</string>
     <string name="button_validate">Sahkan</string>
     <string name="licence_key">Kunci Lesen</string>
     <string name="licence_removal_information">Jika anda tidak lagi memerlukan kefungsian premium dalam peranti ini, anda boleh buang kunci lesen. Ia membebaskan kunci pengaktifan untuk satu lagi peranti lain. Kunci boleh mengaktifkan sehingga %d peranti.</string>
@@ -647,7 +637,6 @@
     <string name="auto_fill_account_from_aggregate_only">Hanya bermula dari akaun beragregat.</string>
     <string name="sync_auth_exception">Pengesahihan gagal.</string>
     <string name="sync_login_again">Sila daftar masuk sekali lagi.</string>
-    <string name="sync_loading_accounts_from_backend">Memuatkan akaun tersedia dari bahagian belakang.</string>
     <plurals name="delete_success">
         <item quantity="other">%d objek berjaya dipadamkan.</item>
     </plurals>
@@ -673,14 +662,9 @@
     <string name="warning_ungroup_split_transactions">Transaksi pengasingan terpilih akan dinyahkumpulkan, iaitu bahagian asing mereka akan menjadi transaksi biasa.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">Nyahkumpul asing</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="other">Transaksi pengasingan %1$d berjaya dinyakumpulkan.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">Ketika menyahkumpul transaksi pengasingan, %1$d dari %2$d gagal.</string>
+    <string name="ungroup_split_transaction_success">Transaksi pengasingan 1 berjaya dinyakumpulkan.</string>
     <string name="split_transaction_one_success">Transaksi berjaya diubah untuk diasingkan.</string>
-    <string name="split_transaction_one_error">Tidak dapat ubah transaksi untuk pengasingan.</string>
     <string name="split_transaction_group_success">Transaki %1$d berjaya dikumpulkan menjadi satu transaksi pengasingan.</string>
-    <string name="split_transaction_group_error">Tidak dapat kumpulkan transaksi menjadi pengasingan.</string>
     <string name="split_transaction_not_possible">Hanya transaksi yang mempunyai akaun, pembayar, dan status yang sama boleh dikumpulkan menjadi satu transaksi pengasingan.</string>
     <string name="pref_transaction_time_summary">Benarkan penetapan waktu transaksi.</string>
     <string name="pref_value_date_summary">Benarkan penetapan tarikh nilai selain dari tarikh tempahan. Waktu transaksi akan disembunyikan. Tetapan ini tidak dilaksanakan pada akaun tunai.</string>
@@ -748,7 +732,6 @@
     <string name="button_label_no_encryption">Tanpa penyulitan</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">atau</string>
-    <string name="pref_account_list_fast_scroll_summary">Benarkan tatal pantas untuk senarai akaun. Boleh mengakibatkan paparan salah pada sesetengah peranti</string>
     <string name="menu_hide">Sembunyi</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">Tutup</string>
@@ -798,5 +781,5 @@
     <string name="debt_managment">Pengurusan hutang</string>
     <string name="ui_refinement">Penghalusan antaramuka pengguna</string>
     <string name="whats_new_338">Hierarki kategori yang mendalam secara sewenang-wenangnya</string>
-    <string name="whats_new_344">Ikon-ikon untuk kategori-kategori</string>
+    <string name="icons_for_categories">Ikon-ikon untuk kategori-kategori</string>
 </resources>

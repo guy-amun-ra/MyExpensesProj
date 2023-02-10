@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string-array name="versions">
-        <item>556;3.4.5.2</item>
-        <item>555;3.4.5.1</item>
+        <item>587;3.5.1.1</item>
+        <item>586;3.5.1</item>
+        <item>582;3.5.0</item>
+        <item>575;3.4.9</item>
+        <item>573;3.4.8</item>
+        <item>571;3.4.7</item>
+        <item>566;3.4.6</item>
         <item>554;3.4.5</item>
         <item>541;3.4.4</item>
         <item>538;3.4.3</item>
@@ -80,6 +85,12 @@
     <string name="version_more_info_343">108747302097004279</string>
     <string name="version_more_info_344">108809607824665506</string>
     <string name="version_more_info_345">108935518422101199</string>
+    <string name="version_more_info_346">109286685602682940</string>
+    <string name="version_more_info_347">109483685675967566</string>
+    <string name="version_more_info_348">109563991653414173</string>
+    <string name="version_more_info_349">109643054367091295</string>
+    <string name="version_more_info_350">109752659104831459</string>
+    <string name="version_more_info_351">109818360069127682</string>
 
     <!-- Github -->
     <string name="project_board_314">30#column-10686300</string>
@@ -114,8 +125,12 @@
     <string name="project_board_343">73#column-19080863</string>
     <string name="project_board_344">74#column-19103001</string>
     <string name="project_board_345">76#column-19128229</string>
-    <string name="project_board_3451">78#column-19162241</string>
-    <string name="project_board_3452">79#column-19168803</string>
+    <string name="project_board_346">77#column-19151870</string>
+    <string name="project_board_347">83#column-19256564</string>
+    <string name="project_board_348">84#column-19269697</string>
+    <string name="project_board_349">85#column-19278068</string>
+    <string name="project_board_350">86#column-19285466</string>
+    <string name="project_board_351">87#column-19319144</string>
 
     <string-array name="whats_new_314">
         <item>@string/title_scan_receipt_feature</item>
@@ -133,10 +148,7 @@
         <item>@string/whats_new_336_1</item>
         <item>@string/whats_new_336_2</item>
     </string-array>
-    <string-array name="whats_new_3451">
-        <item>@string/bug_fixes</item>
-    </string-array>
-    <string-array name="whats_new_3452">
-        <item>@string/bug_fixes</item>
+    <string-array name="whats_new_3511">
+        <item>@string/stability_improvements</item>
     </string-array>
 </resources>

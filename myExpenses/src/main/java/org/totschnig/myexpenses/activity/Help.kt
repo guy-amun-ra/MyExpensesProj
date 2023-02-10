@@ -15,22 +15,17 @@
 package org.totschnig.myexpenses.activity
 
 import android.os.Bundle
-import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.dialog.HelpDialogFragment
 import org.totschnig.myexpenses.dialog.HelpDialogFragment.Companion.newInstance
-import org.totschnig.myexpenses.util.Utils
 
 class Help : ProtectedFragmentActivity() {
     public override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         newInstance(
-            context = intent.getStringExtra(HelpDialogFragment.KEY_CONTEXT)
-                ?: throw java.lang.IllegalArgumentException("context extra missing"),
+            context = intent.getStringExtra(HelpDialogFragment.KEY_CONTEXT),
             variant = intent.getStringExtra(HelpDialogFragment.KEY_VARIANT),
             title = intent.getStringExtra(HelpDialogFragment.KEY_TITLE)
         ).show(supportFragmentManager, "HELP")
     }
-
-    override val snackBarContainerId get() = R.id.content
 }

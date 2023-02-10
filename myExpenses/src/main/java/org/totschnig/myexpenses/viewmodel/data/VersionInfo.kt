@@ -73,11 +73,30 @@ class VersionInfo(val code: Int, val name: String) : Parcelable {
                 "${ctx.getString(R.string.export_to_format, "JSON")}: 2.0",
             )
             "344" -> arrayOf(
-                "${t(R.string.whats_new_344)}: 2.0"
+                "${t(R.string.icons_for_categories)}: 2.0"
             )
             "345" -> arrayOf(
                 "${t(R.string.menu_budget)}: 3.0",
                 "${t(R.string.title_webui)}: https",
+            )
+            "346" -> arrayOf(
+                "${t(R.string.help_MyExpenses_title)}: ${t(R.string.redesign)}"
+            )
+            "347" -> arrayOf(
+                "${t(R.string.synchronization)}: ${t(R.string.storage_description)}"
+            )
+            "348" -> arrayOf(
+                "${t(R.string.pref_translation_title)} : ${Locale("nl").displayLanguage}",
+            )
+            "349" -> arrayOf(
+                "${t(R.string.synchronization)} (WebDAV): ${t(R.string.menu_reconfigure)}",
+                "${t(R.string.pref_translation_title)} : ${Locale("ur").displayLanguage}",
+            )
+            "350" -> arrayOf(
+                "${t(R.string.encrypt_database)} (${t(R.string.experimental)})"
+            )
+            "351" -> arrayOf(
+                "${t(R.string.debt_managment)}: ${t(R.string.ui_refinement)}"
             )
             else -> {
                 val resId = res.getIdentifier(

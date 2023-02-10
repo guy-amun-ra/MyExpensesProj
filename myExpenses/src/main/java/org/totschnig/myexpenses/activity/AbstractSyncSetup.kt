@@ -1,6 +1,6 @@
 package org.totschnig.myexpenses.activity
 
-import android.annotation.SuppressLint
+import android.accounts.AccountManager
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
@@ -59,11 +59,14 @@ abstract class AbstractSyncSetup<T : AbstractSetupViewModel> : ProtectedFragment
     abstract fun instantiateViewModel(): T
 
     fun success(folder: Pair<String, String>) {
-        setResult(RESULT_OK, buildSuccessIntent(folder))
+        setResult(RESULT_OK, Intent().apply {
+            putExtra(AccountManager.KEY_ACCOUNT_NAME, viewModel.backendService.buildAccountName(folder.second))
+            buildSuccessIntent(folder) }
+        )
         finish()
     }
 
-    abstract fun buildSuccessIntent(folder: Pair<String, String>): Intent
+    abstract fun Intent.buildSuccessIntent(folder: Pair<String, String>)
 
     private fun showSelectFolderDialog(pairs: List<Pair<String, String>>) {
         if (supportFragmentManager.findFragmentByTag(DIALOG_TAG_FOLDER_SELECT) == null) {

@@ -12,10 +12,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID;
 
 import android.content.Intent;
-import android.content.OperationApplicationException;
-import android.os.RemoteException;
 
-import androidx.annotation.NonNull;
 import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.espresso.matcher.CursorMatchers;
@@ -36,14 +33,8 @@ import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.testutils.BaseUiTest;
 import org.totschnig.myexpenses.testutils.MockLicenceHandler;
 
-import java.util.Currency;
-import java.util.Objects;
-
 //TODO test CAB actions
 public class ManageTemplatesTest extends BaseUiTest<ManageTemplates> {
-
-  private ActivityScenario<ManageTemplates> activityScenario = null;
-
   private static Account account1, account2;
 
   @Before
@@ -58,35 +49,34 @@ public class ManageTemplatesTest extends BaseUiTest<ManageTemplates> {
     createInstances(Template.Action.SAVE);
     createInstances(Template.Action.EDIT);
     Intent i = new Intent(getTargetContext(), ManageTemplates.class);
-    activityScenario = ActivityScenario.launch(i);
+    testScenario = ActivityScenario.launch(i);
     Intents.init();
   }
 
   public void createInstances(Template.Action defaultAction) {
-    Template template = new Template(account1, TYPE_TRANSACTION, null);
+    Template template = new Template(account1.getId(), account1.getCurrencyUnit(), TYPE_TRANSACTION, null);
     template.setAmount(new Money(account1.getCurrencyUnit(), -1200L));
     template.setDefaultAction(defaultAction);
     template.setTitle("Espresso Transaction Template " + defaultAction.name());
     template.save();
-    template = Template.getTypedNewInstance(TYPE_TRANSFER, account1.getId(), false, null);
+    template = Template.getTypedNewInstance(TYPE_TRANSFER, account1, false, null);
     template.setAmount(new Money(account1.getCurrencyUnit(), -1200L));
     template.setTransferAccountId(account2.getId());
     template.setTitle("Espresso Transfer Template " + defaultAction.name());
     template.setDefaultAction(defaultAction);
     template.save();
-    template = Template.getTypedNewInstance(TYPE_SPLIT, account1.getId(), false, null);
+    template = Template.getTypedNewInstance(TYPE_SPLIT, account1, false, null);
     template.setAmount(new Money(account1.getCurrencyUnit(), -1200L));
     template.setTitle("Espresso Split Template " + defaultAction.name());
     template.setDefaultAction(defaultAction);
     template.save(true);
-    Template part = Template.getTypedNewInstance(TYPE_SPLIT, account1.getId(), false, template.getId());
+    Template part = Template.getTypedNewInstance(TYPE_SPLIT, account1, false, template.getId());
     part.save();
     assertThat(Transaction.countPerAccount(account1.getId())).isEqualTo(0);
   }
 
   @After
-  public void tearDown() throws RemoteException, OperationApplicationException {
-    Account.delete(account1.getId());
+  public void tearDown() {
     Intents.release();
   }
 
@@ -145,11 +135,5 @@ public class ManageTemplatesTest extends BaseUiTest<ManageTemplates> {
     final AppComponent appComponent = getApp().getAppComponent();
     MockLicenceHandler licenceHandler = ((MockLicenceHandler) appComponent.licenceHandler());
     licenceHandler.setLockState(false);
-  }
-
-  @NonNull
-  @Override
-  protected ActivityScenario<ManageTemplates> getTestScenario() {
-    return Objects.requireNonNull(activityScenario);
   }
 }

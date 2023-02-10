@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.dynamic-feature'
+    id 'org.jetbrains.kotlin.android'
+}
+android {
+    namespace 'org.totschnig.sqlcrypt'
+    compileSdkVersion project.compileSdkVersion
+
+    defaultConfig {
+        missingDimensionStrategy 'textRecognition', 'intern'
+        minSdkVersion project.minSdkVersion
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    flavorDimensions 'distribution'
+
+    productFlavors {
+        play {
+            dimension "distribution"
+        }
+        amazon {
+            dimension "distribution"
+        }
+        huawei {
+            dimension "distribution"
+        }
+    }
+}
+
+dependencies {
+    implementation project(":myExpenses")
+    implementation "androidx.security:security-crypto:1.1.0-alpha04"
+    testImplementation 'junit:junit:4.13.2'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.5'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+    androidTestImplementation 'androidx.annotation:annotation:1.5.0'
+
+    implementation "net.zetetic:android-database-sqlcipher:4.5.3"
+    implementation "androidx.sqlite:sqlite-ktx:$androidxSqlite"
+}

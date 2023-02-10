@@ -5,7 +5,6 @@ import android.app.Application
 import android.content.ContentProviderOperation
 import android.content.ContentValues
 import android.content.OperationApplicationException
-import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteException
 import android.net.Uri
 import android.os.Bundle
@@ -27,13 +26,16 @@ import org.totschnig.myexpenses.model.Template
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.BACKUP_DB_FILE_NAME
 import org.totschnig.myexpenses.provider.BACKUP_PREF_FILE_NAME
+import org.totschnig.myexpenses.provider.CALENDAR_FULL_PATH_PROJECTION
 import org.totschnig.myexpenses.provider.DATABASE_VERSION
 import org.totschnig.myexpenses.provider.DatabaseConstants
+import org.totschnig.myexpenses.provider.DatabaseVersionPeekHelper
 import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.filter.WhereFilter
 import org.totschnig.myexpenses.provider.getBackupDbFile
 import org.totschnig.myexpenses.provider.getBackupPrefFile
+import org.totschnig.myexpenses.provider.getCalendarPath
 import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.sync.SyncAdapter
 import org.totschnig.myexpenses.sync.SyncBackendProvider
@@ -50,6 +52,7 @@ import java.io.IOException
 import java.io.PushbackInputStream
 import java.security.GeneralSecurityException
 import java.util.*
+import javax.inject.Inject
 
 class RestoreViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
 
@@ -57,6 +60,9 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
     private val _result: MutableStateFlow<Result<Unit>?> = MutableStateFlow(null)
     val publishProgress: SharedFlow<String?> = _publishProgress
     val result: StateFlow<Result<Unit>?> = _result
+
+    @Inject
+    lateinit var versionPeekHelper: DatabaseVersionPeekHelper
 
     private fun failureResult(throwable: Throwable) {
         _result.update {
@@ -95,12 +101,11 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
             val backupFromSync: String? =
                 if (fileUri == null) args.getString(KEY_BACKUP_FROM_SYNC) else null
             val password: String? = args.getString(KEY_PASSWORD)
-            val workingDir: File
             var currentPlannerId: String? = null
             var currentPlannerPath: String? = null
             val application = getApplication<MyApplication>()
 
-            workingDir = AppDirHelper.cacheDir(application)
+            val workingDir = AppDirHelper.cacheDir(application)
             try {
 
                 val syncBackendProvider: SyncBackendProvider
@@ -183,22 +188,17 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
 
             //peek into file to inspect version
             try {
-                SQLiteDatabase.openDatabase(
-                    backupFile.path,
-                    null,
-                    SQLiteDatabase.OPEN_READONLY
-                ).use {
-                    val version = it.version
-                    if (version > DATABASE_VERSION) {
-                        failureResult(
-                            R.string.restore_cannot_downgrade,
-                            version, DATABASE_VERSION
-                        )
-                        return@launch
-                    }
+                val version = versionPeekHelper.peekVersion(backupFile.path)
+                if (version > DATABASE_VERSION) {
+                    failureResult(
+                        R.string.restore_cannot_downgrade,
+                        version, DATABASE_VERSION
+                    )
+                    return@launch
                 }
             } catch (e: SQLiteException) {
-                failureResult(R.string.restore_db_not_valid)
+                CrashHandler.report(e)
+                failureResult(e)
                 return@launch
             }
 
@@ -227,47 +227,55 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                 return@launch
             }
             val backupPref = application.getSharedPreferences("backup_temp", 0)
-            if (restorePlanStrategy == R.id.restore_calendar_handling_configured) {
-                currentPlannerId = application.checkPlanner()
-                currentPlannerPath = prefHandler.getString(PrefKey.PLANNER_CALENDAR_PATH,"")
-                if (MyApplication.INVALID_CALENDAR_ID == currentPlannerId) {
-                    failureResult(R.string.restore_not_possible_local_calendar_missing)
-                    return@launch
+            when (restorePlanStrategy) {
+                R.id.restore_calendar_handling_create_new -> {
+                    currentPlannerId = MyApplication.getInstance().createPlanner(false)
+                    currentPlannerPath = getCalendarPath(contentResolver, currentPlannerId)
                 }
-            } else if (restorePlanStrategy == R.id.restore_calendar_handling_backup) {
-                var found = false
-                val calendarId = backupPref
-                    .getString(prefHandler.getKey(PrefKey.PLANNER_CALENDAR_ID), "-1")
-                val calendarPath = backupPref
-                    .getString(prefHandler.getKey(PrefKey.PLANNER_CALENDAR_PATH), "")
-                if (!(calendarId == "-1" || calendarPath == "")) {
-
-                    try {
-                        contentResolver.query(
-                            CalendarContract.Calendars.CONTENT_URI,
-                            arrayOf(CalendarContract.Calendars._ID),
-                            MyApplication.getCalendarFullPathProjection() + " = ?",
-                            arrayOf(calendarPath),
-                            null
-                        )?.use {
-                            if (it.moveToFirst()) {
-                                found = true
-                            }
-                        }
-                    } catch (e: SecurityException) {
-                        failureResult(e)
+                R.id.restore_calendar_handling_configured -> {
+                    currentPlannerId = application.checkPlanner()
+                    currentPlannerPath = prefHandler.getString(PrefKey.PLANNER_CALENDAR_PATH,"")
+                    if (MyApplication.INVALID_CALENDAR_ID == currentPlannerId) {
+                        failureResult(R.string.restore_not_possible_local_calendar_missing)
                         return@launch
                     }
                 }
-                if (!found) {
-                    failureResult(
-                        R.string.restore_not_possible_target_calendar_missing,
-                        calendarPath
-                    )
-                    return@launch
+                R.id.restore_calendar_handling_backup -> {
+                    var found = false
+                    val calendarId = backupPref
+                        .getString(prefHandler.getKey(PrefKey.PLANNER_CALENDAR_ID), "-1")
+                    val calendarPath = backupPref
+                        .getString(prefHandler.getKey(PrefKey.PLANNER_CALENDAR_PATH), "")
+                    if (!(calendarId == "-1" || calendarPath == "")) {
+
+                        try {
+                            contentResolver.query(
+                                CalendarContract.Calendars.CONTENT_URI,
+                                arrayOf(CalendarContract.Calendars._ID),
+                                "$CALENDAR_FULL_PATH_PROJECTION = ?",
+                                arrayOf(calendarPath),
+                                null
+                            )?.use {
+                                if (it.moveToFirst()) {
+                                    found = true
+                                }
+                            }
+                        } catch (e: SecurityException) {
+                            failureResult(e)
+                            return@launch
+                        }
+                    }
+                    if (!found) {
+                        failureResult(
+                            R.string.restore_not_possible_target_calendar_missing,
+                            calendarPath
+                        )
+                        return@launch
+                    }
                 }
             }
-            if (DbUtils.restore(backupFile)) {
+            val encrypt = args.getBoolean(KEY_ENCRYPT, false)
+            if (DbUtils.restore(backupFile, encrypt)) {
                 publishProgress(R.string.restore_db_success)
 
                 //since we already started reading settings, we can not just copy the file
@@ -322,14 +330,13 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                     edit.remove(prefHandler.getKey(PrefKey.PLANNER_CALENDAR_PATH))
                     edit.remove(prefHandler.getKey(PrefKey.PLANNER_CALENDAR_ID))
                 }
+                edit.putBoolean(prefHandler.getKey(PrefKey.ENCRYPT_DATABASE), encrypt)
                 edit.apply()
                 application.settings
                     .registerOnSharedPreferenceChangeListener(application)
                 tempPrefFile.delete()
-                if (fileUri != null) {
-                    backupFile.delete()
-                    backupPrefFile.delete()
-                }
+                backupFile.delete()
+                backupPrefFile.delete()
                 publishProgress(R.string.restore_preferences_success)
                 //if a user restores a backup we do not want past plan instances to flood the database
                 prefHandler.putLong(PrefKey.PLANNER_LAST_EXECUTION_TIMESTAMP, System.currentTimeMillis())
@@ -474,7 +481,8 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
         var message = ""
         val application = getApplication<MyApplication>()
         val accountManager = AccountManager.get(application)
-        val accounts = Arrays.asList(*GenericAccountService.getAccountNames(application))
+        val accounts = listOf(*GenericAccountService.getAccountNames(application))
+        val activeAccounts = mutableSetOf<String>()
         val projection =
             arrayOf(DatabaseConstants.KEY_ROWID, DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)
         contentResolver.query(
@@ -503,6 +511,7 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                             remoteKey,
                             sharedPreferences.getString(remoteKey, null)
                         )
+                        activeAccounts.add(accountName)
                         restored++
                     } else {
                         failed++
@@ -513,6 +522,9 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                 editor.apply()
                 if (restored > 0) {
                     message += getString(R.string.sync_state_restored, restored)
+                    activeAccounts.forEach { account ->
+                        GenericAccountService.activateSync(account, prefHandler)
+                    }
                 }
                 if (failed > 0) {
                     message += getString(
@@ -522,7 +534,6 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                 }
                 Account.checkSyncAccounts(application)
             }
-            it.close()
         }
         return message
     }
@@ -546,6 +557,6 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
         const val KEY_RESTORE_PLAN_STRATEGY = "restorePlanStrategy"
         const val KEY_PASSWORD = "passwordEncryption"
         const val KEY_FILE_PATH = "filePath"
-
+        const val KEY_ENCRYPT = "encrypt"
     }
 }

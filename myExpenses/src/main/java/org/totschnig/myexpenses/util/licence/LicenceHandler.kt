@@ -38,7 +38,6 @@ open class LicenceHandler(
 ) {
     private var hasOurLicence = false
     private val isSandbox = BuildConfig.DEBUG
-    private val localBackend = false
     var licenceStatus: LicenceStatus? = null
         protected set(value) {
             crashHandler.putCustomData("Licence", value?.name ?: "null")
@@ -53,6 +52,7 @@ open class LicenceHandler(
 
     //called from PlayStoreLicenceHandler
     fun maybeUpgradeAddonFeatures(features: List<ContribFeature>, newPurchase: Boolean) {
+        log().i("maybeUpgradeAddonFeatures ${features.joinToString()}, newPurchase: $newPurchase")
         if (!hasOurLicence && !newPurchase) {
             addOnFeatures.clear()
         }
@@ -272,15 +272,7 @@ open class LicenceHandler(
 
     fun getPaypalUri(aPackage: Package): String {
         val host = if (isSandbox) "www.sandbox.paypal.com" else "www.paypal.com"
-        var uri = String.format(
-            Locale.US,
-            "https://%s/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=%s&on0=%s&os0=%s&lc=%s&currency_code=EUR",
-            host,
-            aPackage.payPalButtonId(isSandbox),
-            aPackage.optionName,
-            aPackage::class.java.simpleName,
-            paypalLocale
-        )
+        var uri = "https://$host/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=${aPackage.payPalButtonId(isSandbox)}&on0=${aPackage.optionName}&os0=${aPackage::class.java.simpleName}&lc=$paypalLocale&currency_code=EUR"
         prefHandler.getString(PrefKey.LICENCE_EMAIL, null)?.let {
             uri += "&custom=" + Uri.encode(it)
         }
@@ -289,8 +281,7 @@ open class LicenceHandler(
     }
 
     val backendUri = when {
-        localBackend -> "http://10.0.2.2:3000/"
-        isSandbox -> "https://myexpenses-licencedb-staging.herokuapp.com"
+        isSandbox -> "http://10.0.2.2:3000/"
         else -> "https://licencedb.myexpenses.mobi/"
     }
 
@@ -336,7 +327,7 @@ open class LicenceHandler(
     fun prettyPrintStatus(context: Context): String? {
         var result = licenceStatus?.let { context.getString(it.resId) }
         addOnFeatures.takeIf { it.isNotEmpty() }
-            ?.joinToString { context.getString(it.getLabelResIdOrThrow(context)) }?.let {
+            ?.joinToString { context.getString(it.labelResId) }?.let {
             if (result == null) {
                 result = ""
             } else {
@@ -358,7 +349,7 @@ open class LicenceHandler(
             Package.Upgrade -> R.string.pref_contrib_purchase_title_upgrade
             Package.Extended -> LicenceStatus.EXTENDED.resId
             is ProfessionalPackage -> LicenceStatus.PROFESSIONAL.resId
-            is AddOnPackage -> aPackage.feature.getLabelResIdOrThrow(context)
+            is AddOnPackage -> aPackage.feature.labelResId
         }
         return String.format(
             "%s (%s)",

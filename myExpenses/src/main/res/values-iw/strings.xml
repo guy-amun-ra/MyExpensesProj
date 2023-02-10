@@ -40,16 +40,15 @@
     <string name="color">צבע</string>
     <string name="comment">הערות</string>
     <string name="confirmation_dialog_dont_show_again">אל תציג שוב</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">ללא פרסומות</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">מספר חשבונות בלתי מוגבל</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">צרף תמונה לעסקה</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">תרשים עוגה (הפצה לקטגוריה)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">מספר תוכניות בלתי מוגבל</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">ייצא רשימת עסקאות ל- PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">תבנית widget</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">ייבוא CSV</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">מספר בלתי מוגבל של תבניות מפוצלות</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>שלח תמיכה</b> בדוא\"ל עם תגובה מובטחת בתוך 2 ימי עסקים</string>
+    <string name="contrib_feature_ad_free_label">ללא פרסומות</string>
+    <string name="contrib_feature_accounts_unlimited_label">מספר חשבונות בלתי מוגבל</string>
+    <string name="contrib_feature_attach_picture_label">צרף תמונה לעסקה</string>
+    <string name="contrib_feature_distribution_label">תרשים עוגה (הפצה לקטגוריה)</string>
+    <string name="contrib_feature_plans_unlimited_label">מספר תוכניות בלתי מוגבל</string>
+    <string name="contrib_feature_print_label">ייצא רשימת עסקאות ל- PDF</string>
+    <string name="contrib_feature_csv_import_label">ייבוא CSV</string>
+    <string name="contrib_feature_split_template_label">מספר בלתי מוגבל של תבניות מפוצלות</string>
+    <string name="contrib_feature_pro_support_label"><b>שלח תמיכה</b> בדוא\"ל עם תגובה מובטחת בתוך 2 ימי עסקים</string>
     <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">זכות הצבעה על <b>מפת דרכים לפיתוח</b></string>
     <string name="contrib_feature_history_label" tools:ignore="UnusedResources">תרשים היסטוריה</string>
     <string name="licence_status_free">חופשי</string>
@@ -68,10 +67,6 @@
     <string name="description">תאור</string>
     <string name="dialog_balance_delete">מחק עסקאות שאומתו reconciled</string>
     <string name="dialog_confirm_discard_changes">למחוק שינויים?</string>
-    <string name="dialog_confirm_discard_new_transaction">למחוק עסקאות חדשות?</string>
-    <string name="dialog_confirm_discard_new_template">למחוק תבנית חדשה?</string>
-    <string name="dialog_confirm_discard_new_account">למחוק חשבון חדש?</string>
-    <string name="dialog_confirm_discard_new_method">למחוק שיטת תשלום חדשה?</string>
     <string name="dialog_command_disabled_balance">אין עסקאות מסולקות cleared  שיש ליישב reconciled.</string>
     <string name="dialog_command_disabled_insert_transfer">עסקאות העברה דורשות חשבון שני.</string>
     <string name="dialog_command_disabled_reset_account">אין עסקאות לייצוא.</string>
@@ -139,7 +134,6 @@
     <string name="help_heading_credits">נקודות זכות</string>
     <string name="help_heading_license">רשיון</string>
     <string name="help_heading_whats_new">מה חדש</string>
-    <string name="important_upgrade_information_heading">מידע חשוב</string>
     <string name="import_select_transactions">עסקאות</string>
     <string name="income">הכנסה</string>
     <string name="invalid_number_format">תבנית עשרונית לא מזוהה לפי האזור שלך. השתמש ב- %1$s</string>
@@ -294,8 +288,8 @@
     <string name="pref_contrib_purchase_title_in_app">תשלום מתוך האפליקציה</string>
     <string name="pref_custom_currency_title">התאמה אישית של מטבעות</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">אם קיבלת מפתח, קבל גישה לתכונות פרימיום.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">הכנס מפתח</string>
+    <string name="pref_enter_licence_summary">אם קיבלת מפתח, קבל גישה לתכונות פרימיום.</string>
+    <string name="pref_enter_licence_title">הכנס מפתח</string>
     <string name="pref_export_format_title">פורמט נתונים</string>
     <string name="pref_import_from_grisbi_summary">ייבוא קטגוריות וקבוצות מקובץ XML של Grisbi</string>
     <string name="pref_import_from_grisbi_title">יבא מ- Grisbi</string>
@@ -347,7 +341,6 @@
     <string name="pref_visit_website_summary">רשימת עדכונים ושאלות נפוצות</string>
     <string name="pref_visit_website_title">בקר באתר</string>
     <string name="progress_dialog_deleting">מחיקת אובייקטים</string>
-    <string name="progress_dialog_loading">טוען אובייקט ממסד הנתונים</string>
     <string name="progress_dialog_printing">מיצר קובץ %s</string>
     <string name="qif_parse_result">מנותח:%1$sחשבונות; %2$s קטגוריות %3$sוחלקים</string>
     <string name="qif_parse_failure_found_multiple_accounts">נמצאו מספר חשבונות בקובץ QIF.</string>
@@ -480,7 +473,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">הרכישה נכשלה או בוטלה.</string>
     <string name="hint_auto_fill">האם הנתונים צריכים להיות מלאים באופן אוטומטי מהעסקה האחרונה עבור אותו מקבל / המשלם? תוכל תמיד לשנות התנהגות זו מההגדרות.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d חשבון עם מטבע %2$sעודכן.</string>
-    <string name="learn_more">למד עוד</string>
     <string name="import_source_file">קובץ</string>
     <string name="restore_calendar_handling">טיפול בנתונים בלוח השנה</string>
     <string name="restore_calendar_handling_configured">שחזר תוכניות ליומן שהוגדר כעת</string>
@@ -639,7 +631,6 @@
     <string name="onboarding_restore_from_cloud_backup">גיבויים</string>
     <string name="onboarding_restore_from_local">שחזור קובץ גיבוי מקומי</string>
     <string name="dialog_button_add">הוסף</string>
-    <string name="template_create_error">שגיאה בעת שמירת תבנית</string>
     <string name="contributed_by">נתרם על ידי %s</string>
     <string name="pref_sync_notification_summary">הודע על התקדמות הסנכרון</string>
     <string name="pref_debug_logging_summary">כתוב מידע לצורך פתרון באגים ביומן המערכת</string>
@@ -649,7 +640,6 @@
     <string name="progress_validating_licence">אימות רשיון</string>
     <string name="licence_validation_error_expired">רשיון פג תוקף</string>
     <string name="licence_validation_error_device_limit_exceeded">חריגה ממגבלת המכשירים. הסר רישיון ממכשיר אחר.</string>
-    <string name="error">שגיאה (%s)</string>
     <string name="button_validate">אמת רשיון</string>
     <string name="licence_key">מפתח רשיון</string>
     <string name="licence_removal_information">אם אינך זקוק עוד לפונקציונליות פרימיום במכשיר זה, באפשרותך להסיר את מפתח הרישיון. זה משחרר את המפתח להפעלה במכשיר אחד נוסף. ניתן להפעיל את המפתח על עד %d התקנים.</string>
@@ -675,7 +665,6 @@
     <string name="auto_fill_account_from_aggregate_only">רק כאשר הותחל מחשבון מצטבר.</string>
     <string name="sync_auth_exception">ההרשאה נכשלה.</string>
     <string name="sync_login_again">היכנס שוב.</string>
-    <string name="sync_loading_accounts_from_backend">טוען חשבונות זמינים מ backend.</string>
     <plurals name="delete_success">
         <item quantity="one">אובייקט אחד נמחק בהצלחה.</item>
         <item quantity="two">%dאובייקטים  נמחקו בהצלחה.</item>
@@ -704,17 +693,9 @@
     <string name="warning_ungroup_split_transactions">העסקאות המפוצלות שנבחרו לא יקובצו, כלומר החלקים המפוצלים שלהן יהפכו לעסקאות רגילות.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">פצל קבוצה</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">עסקת הפיצול בוטלה בהצלחה.</item>
-        <item quantity="two">%1$d עסקאות מפוצלות הוצאו מקבוצה בהצלחה.</item>
-        <item quantity="many">%1$d עסקאות מפוצלות הוצאו מקבוצה בהצלחה.</item>
-        <item quantity="other">%1$d עסקאות מפוצלות הוצאו מקבוצה בהצלחה.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">במהלך ביטול קיבוץ לקבוצה פיצול עסקאות, %1$d מתוך  %2$d נכשל.</string>
+    <string name="ungroup_split_transaction_success">עסקת הפיצול בוטלה בהצלחה.</string>
     <string name="split_transaction_one_success">העסקה השתנתה בהצלחה לפיצול.</string>
-    <string name="split_transaction_one_error">לא ניתן היה לשנות את העסקה לפיצול.</string>
     <string name="split_transaction_group_success">%1$d עסקאות קובצו בהצלחה לעסקה מפוצלת אחת.</string>
-    <string name="split_transaction_group_error">לא ניתן לקבץ עסקאות לפיצול.</string>
     <string name="split_transaction_not_possible">רק עסקאות שיש להן אותו חשבון, מקבל תשלום ומעמד ניתן לקבץ לעסקה מפוצלת אחת.</string>
     <string name="pref_transaction_time_summary">אפשר להגדיר זמן עסקה מדויק.</string>
     <string name="pref_value_date_summary">אפשר לקבוע תאריך ערך בנוסף לתאריך ההזמנה. זמן העסקה יהיה מוסתר. הגדרה זו אינה חלה על חשבונות מזומנים.</string>
@@ -796,7 +777,6 @@
     <string name="button_label_no_encryption">ללא הצפנה</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">או</string>
-    <string name="pref_account_list_fast_scroll_summary">הפעלת גלילה מהירה עבור רשימת חשבונות. עלול להוביל להצגה שגויה במכשירים מסוימים</string>
     <string name="menu_hide">הסתר</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">סגור</string>
@@ -832,7 +812,6 @@
     <string name="discover_feature_expense_income_switch">השתמש בלחצן זה כדי לרשום הכנסה.</string>
     <string name="menu_create_budget">תקציב חדש</string>
     <string name="budget_onetime">חד פעמי</string>
-    <string name="dialog_confirm_discard_new_budget">למחוק תקציב חדש?</string>
     <string name="budget_duration_from">מקור</string>
     <string name="budget_duration_to">אל</string>
     <string name="no_budgets">הגדר את התקציב הראשון שלך על ידי לחיצה על כפתור +.</string>
@@ -1007,7 +986,6 @@
     <string name="debt_managment">ניהול חובות</string>
     <string name="object_sealed_debt">הפריט מתייחס לחוב שנסגר.</string>
     <string name="dialog_title_delete_debt">למחוק חוב\?</string>
-    <string name="dialog_confirm_discard_new_debt">להתעלם מחוב חדש\?</string>
     <string name="debts">חובות</string>
     <string name="debt_I_owe">חוב ממני לטובת %s</string>
     <string name="debt_owes_me">חוב כלפי מצד %s</string>
@@ -1051,10 +1029,18 @@
     <string name="pref_csv_export_split_categories_summary">להשתמש בעמודות נפרדות לכל רמה של היררכיית קטגוריות</string>
     <string name="pref_csv_export_split_amount_summary">להשתמש בעמודות נפרדות להכנסות והוצאות</string>
     <string name="pref_csv_export_split_date_time_summary">להשתמש בעמודות נפרדות לתאריך ולשעה</string>
-    <string name="whats_new_344">סמלים לקטגוריות</string>
+    <string name="icons_for_categories">סמלים לקטגוריות</string>
     <string name="required">חובה</string>
     <string name="budget_only_current_period">להגדיר רק עבור %s</string>
     <string name="budget_table_header_rollover">גלגול</string>
     <string name="dialog_confirm_rollover_delete">כל סכומי הגלגול לתקופה זו יימחקו.</string>
     <string name="rollover_edit_invalid">סכום הגלגול שמוקצה לקטגוריה והגלגולים שמוקצים לתת־קטגוריות לא יכולים לחרוג מהשארית.</string>
+    <string name="content_description_attachment">קובץ מצורף</string>
+    <string name="redesign">עיצוב מחדש</string>
+    <string name="upgrade_info_557">איך העיצוב החדש\? נא לשתף אותנו. אפשר להשתמש בעיצוב שמזכיר את העיצוב הישן דרך ההגדרות (%1$s ‏-&gt; %2$s).</string>
+    <string name="select_all_list_too_large">הפקודה %s אינה זמינה כיוון שהרשימה נטענה באופן חלקי. נא להשתמש בחיפוש כדי לצמצם את גודל הרשימה.</string>
+    <string name="menu_reconfigure">הגדרה מחדש</string>
+    <string name="encrypt_database">הצפנת מסד הנתונים</string>
+    <string name="encrypt_database_info">מסד הנתונים יוצפן עם מילת מפתח שלא ניתן לחלץ מהמכשיר הזה. כתוצאה מכך הוא לא יגובה על ידי שירות הגיבוי של המכשיר שלך.</string>
+    <string name="database_is_encrypted">מסד הנתונים מוצפן.</string>
 </resources>

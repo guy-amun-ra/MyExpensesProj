@@ -28,15 +28,15 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ManageSyncBackends
 import org.totschnig.myexpenses.model.CurrencyContext
+import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
 import org.totschnig.myexpenses.service.SyncNotificationDismissHandler
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.deactivateSync
 import org.totschnig.myexpenses.sync.SequenceNumber.Companion.parse
-import org.totschnig.myexpenses.sync.SyncBackendProvider.AuthException
-import org.totschnig.myexpenses.sync.SyncBackendProvider.EncryptionException
-import org.totschnig.myexpenses.sync.SyncBackendProvider.SyncParseException
+import org.totschnig.myexpenses.sync.SyncBackendProvider.*
 import org.totschnig.myexpenses.sync.json.AccountMetaData
 import org.totschnig.myexpenses.sync.json.TransactionChange
 import org.totschnig.myexpenses.util.NotificationBuilderWrapper
@@ -44,17 +44,22 @@ import org.totschnig.myexpenses.util.TextUtils.concatResStrings
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.io.isConnectedWifi
+import org.totschnig.myexpenses.util.safeMessage
 import timber.log.Timber
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import kotlin.math.pow
 
 class SyncAdapter : AbstractThreadedSyncAdapter {
     private val syncDelegate: SyncDelegate
     private val notificationContent = SparseArray<MutableList<StringBuilder>?>()
     private var shouldNotify = true
+
+    @Inject
+    lateinit var prefHandler: PrefHandler
 
     constructor(context: Context, autoInitialize: Boolean) : this(context, autoInitialize, false)
 
@@ -82,9 +87,10 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
         provider: ContentProviderClient, syncResult: SyncResult
     ) {
         log().i("onPerformSync %s", extras)
-        val canceledDelayUntil = extras.getLong(KEY_NOTIFICATION_CANCELLED)
-        if (canceledDelayUntil > 0L) {
-            syncResult.delayUntil = System.currentTimeMillis() / 1000 + canceledDelayUntil
+        if (extras.getBoolean(KEY_NOTIFICATION_CANCELLED, false)) {
+            if (ContentResolver.isSyncPending(account, authority)) {
+                ContentResolver.cancelSync(account, authority);
+            }
             notificationContent.remove(account.hashCode())
             return
         }
@@ -117,20 +123,13 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
             )
             return
         }
-        SyncBackendProviderFactory.get(context, account, false).onFailure { throwable ->
+        SyncBackendProviderFactory[context, account, false].onFailure { throwable ->
             if (throwable is SyncParseException || throwable is EncryptionException) {
                 syncResult.databaseError = true
                 (throwable as? SyncParseException)?.let { report(it) }
-                deactivateSync(account)
-                accountManager.setUserData(account, GenericAccountService.KEY_BROKEN, "1")
-                notifyUser(
-                    "Synchronization backend deactivated", String.format(
-                        Locale.ROOT,
-                        "The backend could not be instantiated. Reason: %s. Please try to delete and recreate it.",
-                        throwable.message
-                    ),
-                    null,
-                    manageSyncBackendsIntent
+                nonRecoverableError(
+                    account,
+                    "The backend could not be instantiated. Reason: ${throwable.message}. Please try to delete and recreate it."
                 )
             } else if (!handleAuthException(throwable, account)) {
                 if (throwable is IOException) {
@@ -193,8 +192,16 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                                 null
                             )
                             //make sure user data did not stick around after a user might have cleared data
-                            accountManager.setUserData(account, KEY_LAST_SYNCED_LOCAL(accountId), null)
-                            accountManager.setUserData(account, KEY_LAST_SYNCED_REMOTE(accountId), null)
+                            accountManager.setUserData(
+                                account,
+                                KEY_LAST_SYNCED_LOCAL(accountId),
+                                null
+                            )
+                            accountManager.setUserData(
+                                account,
+                                KEY_LAST_SYNCED_REMOTE(accountId),
+                                null
+                            )
                         } catch (e: RemoteException) {
                             syncResult.databaseError = true
                             notifyDatabaseError(e, account)
@@ -218,10 +225,10 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                 syncResult.databaseError = true
                 notifyDatabaseError(e, account)
                 return
-            }?.use {
-                if (it.moveToFirst()) {
+            }?.use { cursor ->
+                if (cursor.moveToFirst()) {
                     do {
-                        val accountId = it.getLong(0)
+                        val accountId = cursor.getLong(0)
                         val lastLocalSyncKey = KEY_LAST_SYNCED_LOCAL(accountId)
                         val lastRemoteSyncKey = KEY_LAST_SYNCED_REMOTE(accountId)
                         var lastSyncedLocal = getUserDataWithDefault(
@@ -301,12 +308,13 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                         var successLocal2Remote = 0
                         try {
                             val changeSetSince =
-                                backend.getChangeSetSince(lastSyncedRemote, context)
-                            var remoteChanges: List<TransactionChange> = if (changeSetSince != null) {
-                                lastSyncedRemote = changeSetSince.sequenceNumber
-                                log().i("lastSyncedRemote: $lastSyncedRemote")
-                                changeSetSince.changes
-                            } else emptyList()
+                                backend.getChangeSetSince(lastSyncedRemote)
+                            var remoteChanges: List<TransactionChange> =
+                                if (changeSetSince != null) {
+                                    lastSyncedRemote = changeSetSince.sequenceNumber
+                                    log().i("lastSyncedRemote: $lastSyncedRemote")
+                                    changeSetSince.changes
+                                } else emptyList()
                             var localChanges: MutableList<TransactionChange> = mutableListOf()
                             var sequenceToTest = lastSyncedLocal
                             while (true) {
@@ -419,7 +427,7 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                             notifyDatabaseError(e, account)
                         } catch (e: SQLiteException) {
                             syncResult.databaseError = true
-                            notifyDatabaseError(e, account)
+                            nonRecoverableError(account, e.safeMessage)
                         } catch (e: Exception) {
                             appendToNotification(
                                 "ERROR (${e.javaClass.simpleName}): ${e.message} ",
@@ -453,7 +461,7 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                                 }
                             }
                         }
-                    } while (it.moveToNext())
+                    } while (cursor.moveToNext())
                 }
             }
         }
@@ -490,7 +498,7 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                 )
             ).withValues(values).build()
         )
-        val homeCurrency = PrefKey.HOME_CURRENCY.getString(null)
+        val homeCurrency = prefHandler.getString(PrefKey.HOME_CURRENCY,null)
         val exchangeRate = accountMetaData.exchangeRate()
         if (exchangeRate != null && homeCurrency != null && homeCurrency == accountMetaData.exchangeRateOtherCurrency()) {
             val uri =
@@ -525,7 +533,7 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
     ) {
         val autoBackupFileUri = getStringSetting(provider, KEY_UPLOAD_AUTO_BACKUP_URI)
         if (autoBackupFileUri != null) {
-            val autoBackupCloud = getStringSetting(provider, PrefKey.AUTO_BACKUP_CLOUD.key)
+            val autoBackupCloud = getStringSetting(provider, prefHandler.getKey(PrefKey.AUTO_BACKUP_CLOUD))
             if (autoBackupCloud != null && autoBackupCloud == account.name) {
                 var fileName = getStringSetting(provider, KEY_UPLOAD_AUTO_BACKUP_NAME)
                 try {
@@ -669,6 +677,16 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
         )
     }
 
+    private fun nonRecoverableError(account: Account, message: String) {
+        deactivateSync(account)
+        AccountManager.get(context).setUserData(account, GenericAccountService.KEY_BROKEN, "1")
+        notifyUser(
+            "Synchronization backend deactivated", message,
+            null,
+            manageSyncBackendsIntent
+        )
+    }
+
     private val notificationTitle: String
         get() = concatResStrings(context, " ", R.string.app_name, R.string.synchronization)
 
@@ -688,9 +706,8 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
             //we must take care to not decrease it here
             provider.update(
                 TransactionProvider.ACCOUNTS_URI.buildUpon()
-                    .appendQueryParameter(
-                        TransactionProvider.QUERY_PARAMETER_CALLER_IS_SYNCADAPTER,
-                        "1"
+                    .appendBooleanQueryParameter(
+                        TransactionProvider.QUERY_PARAMETER_CALLER_IS_SYNCADAPTER
                     ).build(),
                 currentSyncIncrease,
                 DatabaseConstants.KEY_ROWID + " = ? AND " + DatabaseConstants.KEY_SYNC_SEQUENCE_LOCAL + " < ?",
@@ -752,7 +769,7 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
     private fun buildInitializationUri(accountId: Long): Uri {
         return TransactionProvider.CHANGES_URI.buildUpon()
             .appendQueryParameter(DatabaseConstants.KEY_ACCOUNTID, accountId.toString())
-            .appendQueryParameter(TransactionProvider.QUERY_PARAMETER_INIT, "1")
+            .appendBooleanQueryParameter(TransactionProvider.QUERY_PARAMETER_INIT)
             .build()
     }
 
@@ -769,25 +786,23 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
         prefKey: PrefKey,
         defaultValue: Boolean
     ): Boolean {
-        val value = getStringSetting(provider, prefKey.key)
+        val value = getStringSetting(provider, prefHandler.getKey(prefKey))
         return if (value != null) value == java.lang.Boolean.TRUE.toString() else defaultValue
     }
 
     private fun getStringSetting(provider: ContentProviderClient, prefKey: String): String? {
-        var result: String? = null
-        try {
-            val cursor = provider.query(
+        val result: String? = try {
+            provider.query(
                 TransactionProvider.SETTINGS_URI, arrayOf(DatabaseConstants.KEY_VALUE),
                 DatabaseConstants.KEY_KEY + " = ?", arrayOf(prefKey), null
-            )
-            if (cursor != null) {
-                if (cursor.moveToFirst()) {
-                    result = cursor.getString(0)
-                }
-                cursor.close()
+            )?.use {
+                if (it.moveToFirst()) {
+                    it.getString(0)
+                } else null
             }
         } catch (remoteException: RemoteException) {
             CrashHandler.report(remoteException)
+            null
         }
         return result
     }
@@ -810,7 +825,6 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
         const val KEY_UPLOAD_AUTO_BACKUP_URI = "upload_auto_backup_uri"
         const val KEY_UPLOAD_AUTO_BACKUP_NAME = "upload_auto_backup_name"
 
-        //we pass the delay to the next sync via this extra
         const val KEY_NOTIFICATION_CANCELLED = "notification_cancelled"
         val LOCK_TIMEOUT_MINUTES = if (BuildConfig.DEBUG) 1 else 5
         private val IO_DEFAULT_DELAY_SECONDS = TimeUnit.MINUTES.toSeconds(5)

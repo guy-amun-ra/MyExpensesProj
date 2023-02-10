@@ -8,7 +8,7 @@ import android.widget.AdapterView
 import icepick.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
-import org.totschnig.myexpenses.adapter.AccountAdapter
+import org.totschnig.myexpenses.adapter.IdAdapter
 import org.totschnig.myexpenses.contract.TransactionsContract
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
@@ -42,7 +42,7 @@ class TransferDelegate(
     override val operationType = TransactionsContract.Transactions.TYPE_TRANSFER
 
     private val lastExchangeRateRelevantInputs = intArrayOf(INPUT_EXCHANGE_RATE, INPUT_AMOUNT)
-    private lateinit var transferAccountsAdapter: AccountAdapter
+    private lateinit var transferAccountsAdapter: IdAdapter<Account>
 
     @JvmField
     @State
@@ -66,7 +66,7 @@ class TransferDelegate(
 
     override fun bind(
         transaction: ITransfer?,
-        newInstance: Boolean,
+        withTypeSpinner: Boolean,
         savedInstanceState: Bundle?,
         recurrence: Plan.Recurrence?,
         withAutoFill: Boolean
@@ -84,7 +84,7 @@ class TransferDelegate(
         viewBinding.AccountLabel.setText(R.string.transfer_from_account)
         super.bind(
             transaction,
-            newInstance,
+            withTypeSpinner,
             savedInstanceState,
             recurrence,
             withAutoFill
@@ -106,9 +106,9 @@ class TransferDelegate(
 
     }
 
-    override fun createAdapters(newInstance: Boolean, withAutoFill: Boolean) {
+    override fun createAdapters(withTypeSpinner: Boolean, withAutoFill: Boolean) {
         createStatusAdapter()
-        if (newInstance) {
+        if (withTypeSpinner) {
             createOperationTypeAdapter()
         }
     }
@@ -164,7 +164,7 @@ class TransferDelegate(
         val transferAccountCurrencyUnit = transferAccount.currency
         val isSame = currency == transferAccountCurrencyUnit
         setVisibility(viewBinding.TransferAmountRow, !isSame)
-        setVisibility(viewBinding.ERR.root as ViewGroup, !isSame /*&& mTransaction !is Template*/)
+        setVisibility(viewBinding.ERR.root as ViewGroup, !isSame && !isTemplate)
         addCurrencyToInput(
             viewBinding.TransferAmountLabel,
             viewBinding.TransferAmount,
@@ -173,17 +173,11 @@ class TransferDelegate(
         )
         viewBinding.TransferAmount.setFractionDigits(transferAccountCurrencyUnit.fractionDigits)
         viewBinding.ERR.ExchangeRate.setCurrencies(currency, transferAccountCurrencyUnit)
-        //TODO check history of this dead code
-        val bundle = Bundle(2)
-        bundle.putStringArray(
-            DatabaseConstants.KEY_CURRENCY,
-            arrayOf(currency.code, transferAccountCurrencyUnit.code)
-        )
     }
 
     private fun requireTransferAccountsAdapter() {
         if (!::transferAccountsAdapter.isInitialized) {
-            transferAccountsAdapter = AccountAdapter(context)
+            transferAccountsAdapter = IdAdapter(context)
             transferAccountsAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
             transferAccountSpinner.adapter = transferAccountsAdapter
             transferAccountSpinner.setOnItemSelectedListener(this)
@@ -273,7 +267,7 @@ class TransferDelegate(
 
     override fun buildTransaction(
         forSave: Boolean,
-        accountId: Long
+        account: Account
     ): ITransfer? {
         val currentAccount = currentAccount()!!
         val transferAccount = transferAccount()!!
@@ -289,11 +283,11 @@ class TransferDelegate(
         return if (isTemplate) {
             if (amount == null && transferAmount == null) {
                 null
-            } else buildTemplate(accountId).apply {
+            } else buildTemplate(account).apply {
                 if (amount != null) {
                     this.amount = amount
                     setTransferAccountId(transferAccount.id)
-                } else if (!isSame && transferAmount != null) {
+                } else if (!isSame) {
                     this.accountId = transferAccount.id
                     setTransferAccountId(currentAccount.id)
                     this.amount = transferAmount
@@ -303,7 +297,7 @@ class TransferDelegate(
         } else {
             if (amount == null || transferAmount == null) {
                 null
-            } else Transfer(accountId, transferAccount.id, parentId).apply {
+            } else Transfer(account.id, transferAccount.id, parentId).apply {
                 transferPeer = this@TransferDelegate.transferPeer
                 setAmountAndTransferAmount(amount, transferAmount)
             }

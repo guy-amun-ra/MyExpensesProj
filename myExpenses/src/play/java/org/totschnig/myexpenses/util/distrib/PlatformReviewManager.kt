@@ -46,10 +46,10 @@ class PlatformReviewManager(val prefHandler: PrefHandler): ReviewManager {
         val lastReminder = prefHandler.getLong(PrefKey.LAST_REQUEST_RATE_PLAY, 0L)
         val nextReminder = if (lastReminder == 0L) {
             val nextReminderLegacy = prefHandler.getLong(PrefKey.NEXT_REMINDER_RATE, 0L)
-            nextReminderLegacy.takeIf { it > 0L } ?: when(nextReminderLegacy) {
-                    0L -> Utils.getInstallTime(activity)
-                    else -> System.currentTimeMillis()
-                } + DateUtils.DAY_IN_MILLIS * 30
+            nextReminderLegacy.takeIf { it > 0L } ?: (when (nextReminderLegacy) {
+                0L -> Utils.getInstallTime(activity)
+                else -> System.currentTimeMillis()
+            } + DateUtils.DAY_IN_MILLIS * 30)
         } else lastReminder + DateUtils.DAY_IN_MILLIS * prefHandler.getInt(PrefKey.REQUEST_RATE_PLAY_OFFSET_DAYS, OFFSET_START)
         return nextReminder < System.currentTimeMillis()
     }

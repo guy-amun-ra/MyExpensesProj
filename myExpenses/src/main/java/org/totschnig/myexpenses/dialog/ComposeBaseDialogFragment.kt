@@ -4,10 +4,12 @@ import android.os.Bundle
 import androidx.appcompat.app.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
-import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
+import androidx.compose.ui.unit.dp
 import org.totschnig.myexpenses.compose.AppTheme
 
 abstract class ComposeBaseDialogFragment: BaseDialogFragment() {
+
+    val dialogPadding = 8.dp
 
     @Composable
     abstract fun BuildContent()
@@ -16,7 +18,7 @@ abstract class ComposeBaseDialogFragment: BaseDialogFragment() {
         super.initBuilder().apply {
             setView(ComposeView(context).apply {
                 setContent {
-                    AppTheme(activity = requireActivity() as ProtectedFragmentActivity) {
+                    AppTheme {
                         BuildContent()
                     }
                 }

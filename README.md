@@ -33,7 +33,6 @@ Credits
 =====
 *My Expenses* relies on a couple of open source libraries :
 
-- <a href="https://github.com/emilsjolander/StickyListHeaders">StickyListHeaders</a>
 - <a href="http://itextpdf.com/">Itext</a>
 - <a href="https://github.com/PhilJay/MPAndroidChart">MPAndroidChart</a>
 - <a href="https://github.com/MrBIMC/MaterialSeekBarPreference">MaterialSeekBarPreference</a>
@@ -47,7 +46,7 @@ Credits
 and on the contribution of many users that helped make My Expenses available in 34 different 
 <a href="http://www.myexpenses.mobi/en/#translate">languages</a>.
 
-Various components (CalculatorInput, QifParser, FolderBrowser, HomeScreenWidgets, WhereFilter and AutoBackupService) have been inspired by [Financisto](https://launchpad.net/financisto). WebDAV setup inspired by [Car report](https://bitbucket.org/frigus02/car-report/).
+Various components (CalculatorInput, QifParser, HomeScreenWidgets, WhereFilter) have been inspired by [Financisto](https://launchpad.net/financisto). WebDAV setup inspired by [Car report](https://bitbucket.org/frigus02/car-report/).
 
 Code has also been contributed by:
 
@@ -58,12 +57,24 @@ Code has also been contributed by:
 Build
 =====
 
-```
+```sh
 git clone --depth 1 https://github.com/mtotschnig/MyExpenses.git
 cd MyExpenses
 export ANDROID_HOME={sdk-dir}
 ./gradlew build
 ```
+
+If gradlew gives you a "Failed to install the following Android SDK packages"
+error message, the packages can be installed manually with commands such as:
+
+```sh
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --install --sdk_root=$ANDROID_HOME "platforms;android-32"
+$ANDROID_HOME/cmdline-tools/bin/sdkmanager --install --sdk_root=$ANDROID_HOME "build-tools;30.0.3"
+```
+
+If gradlew errors out with "Could not dispatch a message to the daemon", just
+re-run the command. This can happen when the system is low on memory. The same
+is true for the "Gradle build daemon disappeared unexpectedly" error.
 
 Integrate
 =========

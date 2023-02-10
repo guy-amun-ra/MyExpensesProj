@@ -3,38 +3,30 @@ package org.totschnig.myexpenses.sync
 import android.Manifest
 import android.content.Context
 import com.vmadalin.easypermissions.EasyPermissions
-import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.feature.Feature
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import org.totschnig.myexpenses.util.distrib.DistributionHelper.isGithub
+import org.totschnig.myexpenses.util.distrib.DistributionHelper
 
 enum class BackendService(
     private val className: String,
     val id: Int,
     val label: String,
-    val feature: Feature?
+    val feature: Feature?,
+    val supportsReconfiguration: Boolean = false
 ) {
     DRIVE(
         "org.totschnig.drive.sync.GoogleDriveBackendProviderFactory",
         R.id.SYNC_BACKEND_DRIVE,
         "Drive",
         Feature.DRIVE
-    ) {
-        override fun isAvailable(context: Context) = !isGithub
-    },
-    LOCAL(
-        "org.totschnig.myexpenses.sync.LocalFileBackendProviderFactory",
+    ),
+    SAF(
+        "org.totschnig.myexpenses.sync.StorageAccessFrameworkBackendProviderFactory",
         R.id.SYNC_BACKEND_LOCAL,
-        "Local",
+        "SAF",
         null
-    ) {
-        override fun isAvailable(context: Context) =
-            BuildConfig.DEBUG && EasyPermissions.hasPermissions(
-                context,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
-    },
+    ),
     DROPBOX(
         "org.totschnig.dropbox.sync.DropboxProviderFactory",
         R.id.SYNC_BACKEND_DROPBOX,
@@ -45,10 +37,17 @@ enum class BackendService(
         "org.totschnig.webdav.sync.WebDavBackendProviderFactory",
         R.id.SYNC_BACKEND_WEBDAV,
         "WebDAV",
-        Feature.WEBDAV
+        Feature.WEBDAV,
+        true
     );
 
-    open fun isAvailable(context: Context) = true
+
+    open fun isAvailable(context: Context) = if (DistributionHelper.isGithub) try {
+        Class.forName(className, false, this::class.java.classLoader)
+        true
+    } catch (e: Exception) {
+        false
+    } else true
 
     fun instantiate(): SyncBackendProviderFactory? = try {
         Class.forName(className).newInstance() as? SyncBackendProviderFactory
@@ -62,7 +61,7 @@ enum class BackendService(
     }
 
     companion object {
-        fun forAccount(account: String) = values().find { account.startsWith(it.label) }
+        fun forAccount(account: String) = values().first { account.startsWith(it.label) }
         fun allAvailable(context: Context) = values().filter { it.isAvailable(context) }
     }
 }

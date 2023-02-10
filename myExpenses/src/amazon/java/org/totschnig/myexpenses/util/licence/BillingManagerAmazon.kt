@@ -61,7 +61,7 @@ class BillingManagerAmazon(val context: Context, private val mBillingUpdatesList
             override fun onPurchaseUpdatesResponse(purchaseUpdatesResponse: PurchaseUpdatesResponse) {
                 val status = purchaseUpdatesResponse.requestStatus
                 val requestId = purchaseUpdatesResponse.requestId
-                log().d("onProductDataResponse() reqStatus: %s, reqId: %s", status, requestId)
+                log().d("onPurchaseUpdatesResponse() reqStatus: %s, reqId: %s", status, requestId)
 
                 when (status) {
                     PurchaseUpdatesResponse.RequestStatus.SUCCESSFUL -> {

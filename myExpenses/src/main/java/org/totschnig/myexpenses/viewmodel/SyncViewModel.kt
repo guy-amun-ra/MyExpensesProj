@@ -1,6 +1,6 @@
 package org.totschnig.myexpenses.viewmodel
 
-import android.accounts.AccountManager
+import android.accounts.AccountManager.*
 import android.accounts.AuthenticatorException
 import android.accounts.OperationCanceledException
 import android.app.Application
@@ -17,9 +17,12 @@ import kotlinx.parcelize.Parcelize
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.asSequence
+import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.filter.WhereFilter
+import org.totschnig.myexpenses.provider.useAndMap
 import org.totschnig.myexpenses.sync.GenericAccountService
+import org.totschnig.myexpenses.sync.GenericAccountService.Companion.KEY_SYNC_PROVIDER_URL
+import org.totschnig.myexpenses.sync.GenericAccountService.Companion.KEY_SYNC_PROVIDER_USERNAME
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.getAccount
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.getSyncBackendProvider
 import org.totschnig.myexpenses.sync.SyncAdapter
@@ -29,7 +32,6 @@ import org.totschnig.myexpenses.sync.json.AccountMetaData
 import org.totschnig.myexpenses.util.ResultUnit
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import java.io.IOException
-import java.lang.IllegalStateException
 
 open class SyncViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
 
@@ -39,7 +41,7 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
             if (accountId == -1L) {
                 emit(Result.failure(IllegalStateException("Account with uuid ${account.uuid} not found")))
             } else {
-                emit(deleteAccountsInternal(arrayOf(accountId)).also {
+                emit(deleteAccountsInternal(longArrayOf(accountId)).also {
                     it.onSuccess {
                         account.save()
                     }
@@ -65,15 +67,64 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
         })
     }
 
+    fun getReconfigurationData(syncAccount: String) = Bundle().apply {
+        val accountManager = get(getApplication())
+        val account = getAccount(syncAccount)
+        putString(KEY_ORIGINAL_ACCOUNT_NAME, syncAccount)
+        putString(KEY_PASSWORD, accountManager.getPassword(account))
+        putString(KEY_SYNC_PROVIDER_URL, accountManager.getUserData(account, KEY_SYNC_PROVIDER_URL))
+        putString(
+            KEY_SYNC_PROVIDER_USERNAME,
+            accountManager.getUserData(account, KEY_SYNC_PROVIDER_USERNAME)
+        )
+    }
+
+    fun reconfigure(data: Bundle): LiveData<Boolean> =
+        liveData(context = coroutineContext()) {
+            val accountManager = get(getApplication())
+            val oldName = data.getString(KEY_ORIGINAL_ACCOUNT_NAME)!!
+            var account = getAccount(oldName)
+            val newName = data.getString(KEY_ACCOUNT_NAME)
+            if (data.getString(KEY_ORIGINAL_ACCOUNT_NAME) != newName) {
+                val accountManagerFuture =
+                    accountManager.renameAccount(account, newName, null, null)
+                account = accountManagerFuture.result
+                if (account.name != newName) emit(false)
+                val contentValues = ContentValues(1).apply {
+                    put(KEY_SYNC_ACCOUNT_NAME, newName)
+                }
+                contentResolver.update(
+                    TransactionProvider.ACCOUNTS_URI,
+                    contentValues,
+                    "$KEY_SYNC_ACCOUNT_NAME = ?",
+                    arrayOf(oldName)
+                )
+            }
+            accountManager.setPassword(account, data.getString(KEY_PASSWORD))
+            val userData = data.getBundle(KEY_USERDATA)!!
+            accountManager.setUserData(
+                account,
+                KEY_SYNC_PROVIDER_URL,
+                userData.getString(KEY_SYNC_PROVIDER_URL)
+            )
+            accountManager.setUserData(
+                account,
+                KEY_SYNC_PROVIDER_USERNAME,
+                userData.getString(KEY_SYNC_PROVIDER_USERNAME)
+            )
+            emit(true)
+        }
+
     fun createSyncAccount(args: Bundle): LiveData<Result<SyncAccountData>> =
         liveData(context = coroutineContext()) {
-            val accountName = args.getString(AccountManager.KEY_ACCOUNT_NAME)!!
-            val password = args.getString(AccountManager.KEY_PASSWORD)
-            val userData = args.getBundle(AccountManager.KEY_USERDATA)
-            val authToken = args.getString(AccountManager.KEY_AUTHTOKEN)
+            val accountName = args.getString(KEY_ACCOUNT_NAME)!!
+            val password = args.getString(KEY_PASSWORD)
+            val userData = args.getBundle(KEY_USERDATA)
+            val authToken = args.getString(KEY_AUTHTOKEN)
             val shouldReturnBackups = args.getBoolean(KEY_RETURN_BACKUPS)
+            val shouldQueryLocalAccounts = args.getBoolean(KEY_QUERY_LOCAL_ACCOUNTS)
             val encryptionPassword = args.getString(GenericAccountService.KEY_PASSWORD_ENCRYPTION)
-            val accountManager = AccountManager.get(getApplication())
+            val accountManager = get(getApplication())
             val account = getAccount(accountName)
             emit(if (accountManager.addAccountExplicitly(account, password, userData)) {
                 if (authToken != null) {
@@ -91,13 +142,11 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
                     )
                 }
                 GenericAccountService.storePassword(
-                    contentResolver,
-                    accountName,
+                    getApplication(),
+                    account,
                     encryptionPassword
                 )
-                buildResult(accountName, shouldReturnBackups, true).onSuccess {
-                    GenericAccountService.activateSync(account, prefHandler)
-                }.onFailure {
+                buildResult(accountName, shouldReturnBackups, shouldQueryLocalAccounts, true).onFailure {
                     //we try to remove a failed account immediately, otherwise user would need to do it, before
                     //being able to try again
                     @Suppress("DEPRECATION") val accountManagerFuture =
@@ -129,14 +178,15 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
     private fun buildResult(
         accountName: String,
         shouldReturnBackups: Boolean,
+        shouldQueryLocalAccounts: Boolean,
         create: Boolean
     ): Result<SyncAccountData> {
-        val localAccounts = contentResolver.query(
+        //noinspection Recycle
+        val localAccounts = if (shouldQueryLocalAccounts) contentResolver.query(
             Account.CONTENT_URI,
             arrayOf(KEY_ROWID, KEY_LABEL, KEY_UUID, "$KEY_SYNC_ACCOUNT_NAME IS NULL", KEY_SEALED),
             null, null, null
-        )?.use { cursor ->
-            cursor.asSequence.mapNotNull {
+        )?.useAndMap {
                 val uuid = it.getString(2)
                 if (uuid == null) {
                     CrashHandler.report(Exception("Account with null uuid"))
@@ -150,8 +200,7 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
                         isSealed = it.getInt(4) == 1
                     )
                 }
-            }.toList()
-        } ?: emptyList()
+            }?.filterNotNull() ?: emptyList() else emptyList()
 
         val account = getAccount(accountName)
         return SyncBackendProviderFactory[getApplication(), account, create].mapCatching { syncBackendProvider ->
@@ -213,7 +262,7 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
                     if (numberOfRestoredAccounts == 0) {
                         emit(Result.failure(Throwable("No accounts were restored")))
                     } else {
-                        GenericAccountService.requestSync(accountName)
+                        GenericAccountService.activateSync(accountName, prefHandler)
                         emit(ResultUnit)
                     }
                 }
@@ -225,12 +274,12 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
 
     fun fetchAccountData(accountName: String): LiveData<Result<SyncAccountData>> =
         liveData(context = coroutineContext()) {
-            emit(buildResult(accountName, shouldReturnBackups = true, create = false))
+            emit(buildResult(accountName, shouldReturnBackups = true, shouldQueryLocalAccounts = false, create = false))
         }
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP_MR1)
     fun removeBackend(accountName: String) =
-        AccountManager.get(getApplication()).removeAccountExplicitly(getAccount(accountName))
+        get(getApplication()).removeAccountExplicitly(getAccount(accountName))
 
     fun save(account: Account): LiveData<Uri?> =
         liveData(context = coroutineContext()) {
@@ -238,7 +287,9 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
         }
 
     companion object {
+        const val KEY_ORIGINAL_ACCOUNT_NAME = "originalAccountName"
         const val KEY_RETURN_BACKUPS = "returnRemoteDataList"
+        const val KEY_QUERY_LOCAL_ACCOUNTS = "queryLocalAccounts"
     }
 
     @Parcelize

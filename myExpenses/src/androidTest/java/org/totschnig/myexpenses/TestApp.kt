@@ -15,7 +15,6 @@ import org.totschnig.myexpenses.testutils.TestDataModule
 import org.totschnig.myexpenses.testutils.TestFeatureModule
 import org.totschnig.myexpenses.testutils.TestViewModelModule
 import org.totschnig.myexpenses.ui.IDiscoveryHelper
-import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider
 import org.totschnig.myexpenses.util.locale.UserLocaleProviderImpl
@@ -46,11 +45,14 @@ class TestApp : MyApplication() {
         .appmodule(object : AppModule() {
             override fun provideUserLocaleProvider(
                 prefHandler: PrefHandler,
-                locale: Locale
+                systemLocale: Locale
             ): UserLocaleProvider {
-                return object: UserLocaleProviderImpl(prefHandler, locale) {
-                    override fun wrapContext(context: Context) = context
-                    override fun getLocalCurrency(context: Context) = Utils.getSaveDefault()
+                return object: UserLocaleProviderImpl(prefHandler, systemLocale) {
+                    override fun getLocalCurrency(context: Context): Currency {
+                        val locale = context.resources.configuration.locale
+                        return if (locale.country == "VI") Currency.getInstance("VND") else
+                            Currency.getInstance(locale)
+                    }
                 }
             }
         })

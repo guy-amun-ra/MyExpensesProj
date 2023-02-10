@@ -3,6 +3,7 @@ package org.totschnig.myexpenses.sync
 import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.Context
+import android.content.Intent
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.loadPassword
 import org.totschnig.myexpenses.sync.SyncBackendProvider.SyncParseException
@@ -23,9 +24,10 @@ abstract class SyncBackendProviderFactory {
         accountManager: AccountManager
     ): SyncBackendProvider
 
-    abstract fun startSetup(activity: ProtectedFragmentActivity)
+    abstract val setupActivityClass: Class<out ProtectedFragmentActivity>
 
     companion object {
+        const val ACTION_RECONFIGURE = "reconfigure"
         @JvmStatic
         fun getLegacy(
             context: Context,
@@ -41,13 +43,13 @@ abstract class SyncBackendProviderFactory {
         ): Result<SyncBackendProvider> {
             val accountManager = AccountManager.get(context)
             return BackendService.forAccount(account.name)
-                ?.instantiate()
+                .instantiate()
                 ?.from(context, account, accountManager)
                 ?.mapCatching {
                     it.setUp(
                         accountManager,
                         account,
-                        loadPassword(context.contentResolver, account.name),
+                        loadPassword(context, account),
                         create
                     )
                     it

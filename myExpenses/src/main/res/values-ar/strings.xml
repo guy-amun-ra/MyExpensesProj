@@ -40,18 +40,17 @@
     <string name="color">اللون</string>
     <string name="comment">ملاحظات</string>
     <string name="confirmation_dialog_dont_show_again">لا تظهر مرة أخرى</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">بدون إعلانات</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">عدد حسابات غير محدود</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">إرفاق صورة إلى عملية</string>
-    <string name="contrib_feature_distribution_label" tools:ignore="UnusedResources">مخطط دائري (التوزيع حسب الفئة)</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">عدد غير محدود من الخطط</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">تصدير قائمة العمليات إلى PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">مختصر النموذج</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">إستيراد ملف CSV</string>
-    <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">عدد غير محدود من القوالب المنقسمة</string>
-    <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b>دعم البريد الإلكتروني</b> مع استجابة مضمونة في غضون يومي عمل</string>
-    <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">حق التصويت على <b> مخططات التنمية</b></string>
-    <string name="contrib_feature_history_label" tools:ignore="UnusedResources">مخطط زمني</string>
+    <string name="contrib_feature_ad_free_label">بدون إعلانات</string>
+    <string name="contrib_feature_accounts_unlimited_label">عدد حسابات غير محدود</string>
+    <string name="contrib_feature_attach_picture_label">إرفاق صورة إلى عملية</string>
+    <string name="contrib_feature_distribution_label">مخطط دائري (التوزيع حسب الفئة)</string>
+    <string name="contrib_feature_plans_unlimited_label">عدد غير محدود من الخطط</string>
+    <string name="contrib_feature_print_label">تصدير قائمة العمليات إلى PDF</string>
+    <string name="contrib_feature_csv_import_label">إستيراد ملف CSV</string>
+    <string name="contrib_feature_split_template_label">عدد غير محدود من القوالب المنقسمة</string>
+    <string name="contrib_feature_pro_support_label"><b>دعم البريد الإلكتروني</b> مع استجابة مضمونة في غضون يومي عمل</string>
+    <string name="contrib_feature_roadmap_voting_label">حق التصويت على <b> مخططات التنمية</b></string>
+    <string name="contrib_feature_history_label">مخطط زمني</string>
     <string name="licence_status_free">خالي</string>
     <string name="contrib_key">مفتاح المساهمة</string>
     <string name="extended_key">مفتاح موسع</string>
@@ -68,10 +67,6 @@
     <string name="description">الوصف</string>
     <string name="dialog_balance_delete">حذف المعاملات التي تمت تسويتها</string>
     <string name="dialog_confirm_discard_changes">تجاهل التغييرات؟</string>
-    <string name="dialog_confirm_discard_new_transaction">هل تريد تجاهل معاملة جديدة؟</string>
-    <string name="dialog_confirm_discard_new_template">هل تريد تجاهل النموذج الجديد؟</string>
-    <string name="dialog_confirm_discard_new_account">هل تودّ تجاهل الحساب الجديد؟</string>
-    <string name="dialog_confirm_discard_new_method">هل تريد الغاء طريقة الدفع الجديدة؟</string>
     <string name="dialog_command_disabled_balance">لا توجد معاملات تمت تسويتها.</string>
     <string name="dialog_command_disabled_insert_transfer">تتطلب معاملات التحويل حساباً ثانياً.</string>
     <string name="dialog_command_disabled_reset_account">لا يوجد عمليات لتصديرها.</string>
@@ -141,7 +136,6 @@
     <string name="help_heading_credits">النقاط</string>
     <string name="help_heading_license">الترخيص</string>
     <string name="help_heading_whats_new">آخر الاخبار</string>
-    <string name="important_upgrade_information_heading">معلومات مهمة</string>
     <string name="import_select_transactions">العمليات</string>
     <string name="income">الدخل</string>
     <string name="invalid_number_format">لا يمكن استخدام الاعداد العشرية. فضلا استخدم %1$s</string>
@@ -300,8 +294,8 @@
     <string name="pref_contrib_purchase_title_in_app">الشراء داخل التطبيق</string>
     <string name="pref_custom_currency_title">تخصيص العملات</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">إذا حصلت على المفتاح, يمكنك الحصول على الميزات الكاملة.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">أدخل المفتاح</string>
+    <string name="pref_enter_licence_summary">إذا حصلت على المفتاح, يمكنك الحصول على الميزات الكاملة.</string>
+    <string name="pref_enter_licence_title">أدخل المفتاح</string>
     <string name="pref_export_format_title">تنسيق البيانات</string>
     <string name="pref_import_from_grisbi_summary">استيراد التصنيفات والأطراف  Grisbi XML </string>
     <string name="pref_import_from_grisbi_title">استيراد من Grisbi</string>
@@ -353,7 +347,6 @@
     <string name="pref_visit_website_summary">التغييرات والاسئلة المتكررة</string>
     <string name="pref_visit_website_title">زيارة الموقع</string>
     <string name="progress_dialog_deleting">جارِ حذف الكائنات</string>
-    <string name="progress_dialog_loading">جاري التحميل من قاعدة البيانات</string>
     <string name="progress_dialog_printing">انشاء ملف %s</string>
     <string name="qif_parse_result">تم إيجاد: %1$s حسابات; %2$s تصنيفات و %3$s أطراف</string>
     <string name="qif_parse_failure_found_multiple_accounts">تم العثور على أكثر من حساب في ملف QIF.</string>
@@ -494,7 +487,6 @@
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">عملية الشراء فشلت أو ألغيت.</string>
     <string name="hint_auto_fill">هل يجب ملء البيانات تلقائياً من آخر معاملة لنفس المستفيد / الدافع؟ يمكنك دائماً تغيير هذا السلوك من الإعدادات.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">تم تحديث %1$d حسابات بعملة %2$s.</string>
-    <string name="learn_more">معرفة المزيد</string>
     <string name="import_source_file">ملف</string>
     <string name="restore_calendar_handling">معالجة بيانات التقويم</string>
     <string name="restore_calendar_handling_configured">استعادة الخطط للتقويم المهيأ حالياً</string>
@@ -613,7 +605,7 @@
     <string name="link_account_failure_3">يمكن حل التعارض يدوياً من قائمة سياق الإدخال.</string>
     <string name="progress_dialog_checking_sync_backend">التحقق من الواجهة الخلفية</string>
     <string name="template">نموذج</string>
-    <string name="contrib_feature_synchronization_label" tools:ignore="UnusedResources">تزامن سحابي</string>
+    <string name="contrib_feature_synchronization_label">تزامن سحابي</string>
     <string name="all_contrib_key_features">جميع ميزات مفتاح المساهمة</string>
     <string name="all_extended_key_features">جميع ميزات Extended Key</string>
     <!-- button leading user to purchase flow for licence keys -->
@@ -652,7 +644,6 @@
     <string name="onboarding_restore_from_cloud_backup">النسخ الاحتياطية</string>
     <string name="onboarding_restore_from_local">استعادة ملف النسخ الاحتياطي المحلي</string>
     <string name="dialog_button_add">إضافة</string>
-    <string name="template_create_error">خطأ أثناء حفظ النموذج</string>
     <string name="contributed_by">تمت المساهمة بواسطة %s</string>
     <string name="pref_sync_notification_summary">قم بالإخطار حول تقدم المزامنة المُحرز</string>
     <string name="pref_debug_logging_summary">اكتب معلومات التصحيح في سجل النظام</string>
@@ -662,7 +653,6 @@
     <string name="progress_validating_licence">جارِ التحقق من صحة الترخيص</string>
     <string name="licence_validation_error_expired">انتهت صلاحية الترخيص</string>
     <string name="licence_validation_error_device_limit_exceeded">تم تجاوز حد الترخيص لهذا الجهاز. يُرجى إزالة الترخيص من جهاز آخر.</string>
-    <string name="error">خطأ (%s)</string>
     <string name="button_validate">التحقق من صحة</string>
     <string name="licence_key">مفتاح الترخيص</string>
     <string name="licence_removal_information">إذا لم تعد بحاجة إلى وظائف متميزة على هذا الجهاز، فيمكنك إزالة مفتاح الترخيص. هذا يحرر مفتاح التنشيط على جهاز آخر آخر. يمكن تنشيط المفتاح على ما يصل إلى  %d من الأجهزة.</string>
@@ -688,7 +678,6 @@
     <string name="auto_fill_account_from_aggregate_only">فقط عندما تبدأ من الحساب الكلي.</string>
     <string name="sync_auth_exception">تعذَّر التخويل.</string>
     <string name="sync_login_again">الرجاء تسجيل الدخول مرةً أخرى.</string>
-    <string name="sync_loading_accounts_from_backend">تحميل الحسابات المتاحة من الخلفية.</string>
     <plurals name="delete_success">
         <item quantity="zero">تم حذف %d كائنات بنجاح.</item>
         <item quantity="one">تم حذف كائن واحد بنجاح.</item>
@@ -719,19 +708,9 @@
     <string name="warning_ungroup_split_transactions">سيتم إلغاء تجميع المعاملات المجزأة المحددة، أي ستصبح أجزائها المجزأة معاملات عادية.</string>
     <!-- This is the label for the action that breaks up a split transaction into its parts. -->
     <string name="menu_ungroup_split_transaction">فك تجميع المعاملة المجزأة</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="zero">تم فك تجميع %1$d صفقات مقسمة بنجاح.</item>
-        <item quantity="one">تم فك تجميع الصفقة المقسمة بنجاح.</item>
-        <item quantity="two">تم فك تجميع %1$d صفقات مقسمة بنجاح.</item>
-        <item quantity="few">تم فك تجميع %1$d صفقات مقسمة بنجاح.</item>
-        <item quantity="many">تم فك تجميع %1$d صفقات مقسمة بنجاح.</item>
-        <item quantity="other">تم فك تجميع %1$d صفقات مقسمة بنجاح.</item>
-    </plurals>
-    <string name="ungroup_split_transaction_failure">أثناء فك تجميع المعاملات المجزأة، فشل %1$d من أصل %2$d.</string>
+    <string name="ungroup_split_transaction_success">تم فك تجميع الصفقة المقسمة بنجاح.</string>
     <string name="split_transaction_one_success">تحولت المعاملة بنجاح إلى معاملة مجزأة.</string>
-    <string name="split_transaction_one_error">لا يمكن تحويل المعاملة إلى معاملة مجزأة.</string>
     <string name="split_transaction_group_success">تم تجميع %1$d معاملات بنجاح في معاملة منقسمة واحدة.</string>
-    <string name="split_transaction_group_error">لا يمكن تجميع المعاملات في معاملة مجزأة.</string>
     <string name="split_transaction_not_possible">يمكن فقط تجميع المعاملات التي لها نفس الحساب والمستفيد والحالة في معاملة مجزأة واحدة.</string>
     <string name="pref_transaction_time_summary">السماح لضبط الوقت المحدد للمعاملة.</string>
     <string name="pref_value_date_summary">السماح بتحديد تاريخ القيمة بالإضافة إلى تاريخ الحجز. سيتم إخفاء وقت المعاملة. لم يتم تطبيق هذا الإعداد على الحسابات النقدية.</string>
@@ -811,7 +790,6 @@
     <string name="button_label_no_encryption">بدون تشفير</string>
     <!-- this resource is used to join a series of alternatives between which user can choose, like "A or B or C" -->
     <string name="joining_or">أو</string>
-    <string name="pref_account_list_fast_scroll_summary">تمكين التمرير السريع لقائمة الحسابات. قد يؤدي إلى عرض غير صحيح على بعض الأجهزة</string>
     <string name="menu_hide">إخفاء</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">إغلاق</string>
@@ -847,7 +825,6 @@
     <string name="discover_feature_expense_income_switch">استخدم زر التبديل هذا لتسجيل الدخل.</string>
     <string name="menu_create_budget">ميزانية جديدة</string>
     <string name="budget_onetime">مرة واحدة</string>
-    <string name="dialog_confirm_discard_new_budget">تجاهل الميزانية الجديدة؟</string>
     <string name="budget_duration_from">من</string>
     <string name="budget_duration_to">إلى</string>
     <string name="no_budgets">حدد ميزانيتك الأولى بالضغط على زر +.</string>
@@ -1007,5 +984,7 @@
     <string name="debt_managment">إدارة الديون</string>
     <string name="whats_new_338">تسلسل هرمي عميق بشكل تعسفي للفئات</string>
     <string name="dialog_title_purge_backups">تطهير النسخ الاحتياطية القديمة</string>
-    <string name="whats_new_344">ايقونات الفئات</string>
+    <string name="icons_for_categories">ايقونات الفئات</string>
+    <string name="contrib_feature_category_tree_label" tools:ignore="UnusedResources">الفئات</string>
+    <string name="menu_reconfigure">إعادة التكوين</string>
 </resources>

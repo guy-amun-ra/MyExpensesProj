@@ -13,13 +13,17 @@
     <string name="toast_text_copied">"បាន​ចម្លង​អត្ថបទ"</string>
     <string name="copy_text">"ចម្លង​ទៅអង្គចងចាំ"</string>
     <string name="stop">"ឈប់"</string>
+    <string name="style">"រចនាប័ទ្ម"</string>
+    <string name="loading">"កំពុងដំណើរការ…"</string>
     <string name="no_network">"មិន​មាន​ការ​តភ្ជាប់​បណ្ដាញ។"</string>
     <string name="button_label_continue">បន្ត</string>
     <string name="autofill">"បំពេញ​ដោយស្វ័យ​ប្រវត្តិ"</string>
     <string name="discard">"បោះបង់"</string>
     <string name="dialog_dismiss">"បដិសេធ"</string>
+    <string name="details">"ព័ត៌មាន​លម្អិត"</string>
     <string name="response_yes">"បាទ/ចាស"</string>
     <string name="response_no">"ទេ"</string>
+    <string name="experimental">"ពិសោធន៍"</string>
     <string name="add_widget">"បន្ថែម​ធាតុ​ក្រាហ្វិក​។"</string>
     <string name="calendar">"ប្រតិទិន"</string>
     <string name="permissions_label">"ការអនុញ្ញាត"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"ការរៀបចំ"</string>
     <string name="clear_cache">"សម្អាត​ឃ្លាំងបម្រុង"</string>
     <string name="customize">"ប្តូរតាមបំណង"</string>
+    <string name="compact">បង្រួម</string>
+    <string name="storage_description">"ទំហំផ្ទុកមូលដ្ឋាន"</string>
+    <string name="encryption">"ការអ៊ីនគ្រីប"</string>
+    <string name="learn_more">"ស្វែងយល់បន្ថែម"</string>
+    <string name="show_all">"បង្ហាញ​ទាំងអស់"</string>
 </resources>
 

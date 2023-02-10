@@ -13,13 +13,17 @@
     <string name="toast_text_copied">"文字已複製"</string>
     <string name="copy_text">"複製到剪貼簿"</string>
     <string name="stop">"停止"</string>
+    <string name="style">"樣式"</string>
+    <string name="loading">"載入中…"</string>
     <string name="no_network">"沒有網路連線。"</string>
     <string name="button_label_continue">"繼續"</string>
     <string name="autofill">"自動填入"</string>
     <string name="discard">"捨棄"</string>
     <string name="dialog_dismiss">"關閉"</string>
+    <string name="details">"詳細資訊"</string>
     <string name="response_yes">"是"</string>
     <string name="response_no">"否"</string>
+    <string name="experimental">"實驗性"</string>
     <string name="add_widget">"新增小工具"</string>
     <string name="calendar">"日曆"</string>
     <string name="permissions_label">"權限"</string>
@@ -27,5 +31,10 @@
     <string name="setup">"設定"</string>
     <string name="clear_cache">"清除快取"</string>
     <string name="customize">"自訂"</string>
+    <string name="compact">精簡</string>
+    <string name="storage_description">"本機儲存空間"</string>
+    <string name="encryption">"加密"</string>
+    <string name="learn_more">"瞭解詳情"</string>
+    <string name="show_all">"全部顯示"</string>
 </resources>
 

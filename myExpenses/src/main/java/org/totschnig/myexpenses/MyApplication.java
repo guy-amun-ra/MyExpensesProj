@@ -15,6 +15,16 @@
 
 package org.totschnig.myexpenses;
 
+import static org.totschnig.myexpenses.feature.WebUiFeatureKt.RESTART_ACTION;
+import static org.totschnig.myexpenses.feature.WebUiFeatureKt.START_ACTION;
+import static org.totschnig.myexpenses.feature.WebUiFeatureKt.STOP_ACTION;
+import static org.totschnig.myexpenses.preference.PrefKey.DEBUG_LOGGING;
+import static org.totschnig.myexpenses.preference.PrefKey.UI_WEB;
+import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_HTTPS;
+import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_PASSWORD;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.CALENDAR_FULL_PATH_PROJECTION;
+
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.Application;
 import android.content.ComponentName;
@@ -35,12 +45,23 @@ import android.provider.CalendarContract;
 import android.provider.CalendarContract.Calendars;
 import android.provider.CalendarContract.Events;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatDelegate;
+import androidx.lifecycle.DefaultLifecycleObserver;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ProcessLifecycleOwner;
+import androidx.preference.PreferenceManager;
+
+import org.acra.util.StreamReader;
 import org.totschnig.myexpenses.activity.OnboardingActivity;
-import org.totschnig.myexpenses.activity.ProtectedFragmentActivity;
 import org.totschnig.myexpenses.di.AppComponent;
 import org.totschnig.myexpenses.di.DaggerAppComponent;
 import org.totschnig.myexpenses.feature.FeatureManager;
 import org.totschnig.myexpenses.feature.OcrFeature;
+import org.totschnig.myexpenses.model.Account;
+import org.totschnig.myexpenses.model.AggregateAccount;
+import org.totschnig.myexpenses.model.CurrencyContext;
 import org.totschnig.myexpenses.model.Template;
 import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.preference.PrefHandler;
@@ -48,18 +69,18 @@ import org.totschnig.myexpenses.preference.PrefKey;
 import org.totschnig.myexpenses.provider.BaseTransactionProvider;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.DbUtils;
+import org.totschnig.myexpenses.provider.MoreDbUtilsKt;
 import org.totschnig.myexpenses.provider.TransactionProvider;
-import org.totschnig.myexpenses.service.DailyScheduler;
+import org.totschnig.myexpenses.service.AutoBackupWorker;
 import org.totschnig.myexpenses.service.PlanExecutor;
 import org.totschnig.myexpenses.sync.SyncAdapter;
 import org.totschnig.myexpenses.ui.ContextHelper;
+import org.totschnig.myexpenses.util.CurrencyFormatter;
 import org.totschnig.myexpenses.util.MoreUiUtilsKt;
 import org.totschnig.myexpenses.util.NotificationBuilderWrapper;
-import org.totschnig.myexpenses.util.Result;
 import org.totschnig.myexpenses.util.Utils;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 import org.totschnig.myexpenses.util.io.NetworkUtilsKt;
-import org.totschnig.myexpenses.util.io.StreamReader;
 import org.totschnig.myexpenses.util.licence.LicenceHandler;
 import org.totschnig.myexpenses.util.locale.UserLocaleProvider;
 import org.totschnig.myexpenses.util.log.TagFilterFileLoggingTree;
@@ -72,23 +93,7 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatDelegate;
-import androidx.lifecycle.DefaultLifecycleObserver;
-import androidx.lifecycle.Lifecycle;
-import androidx.lifecycle.LifecycleOwner;
-import androidx.lifecycle.OnLifecycleEvent;
-import androidx.lifecycle.ProcessLifecycleOwner;
-import androidx.preference.PreferenceManager;
 import timber.log.Timber;
-
-import static org.totschnig.myexpenses.feature.WebUiFeatureKt.START_ACTION;
-import static org.totschnig.myexpenses.feature.WebUiFeatureKt.STOP_ACTION;
-import static org.totschnig.myexpenses.preference.PrefKey.DEBUG_LOGGING;
-import static org.totschnig.myexpenses.preference.PrefKey.UI_WEB;
-import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_HTTPS;
-import static org.totschnig.myexpenses.preference.PrefKey.WEBUI_PASSWORD;
 
 public class MyApplication extends Application implements
     OnSharedPreferenceChangeListener, DefaultLifecycleObserver {
@@ -108,6 +113,12 @@ public class MyApplication extends Application implements
   @Inject
   SharedPreferences mSettings;
 
+  @Inject
+  CurrencyContext currencyContext;
+
+  @Inject
+  CurrencyFormatter currencyFormatter;
+
   public static final String PLANNER_CALENDAR_NAME = "MyExpensesPlanner";
   public static final String PLANNER_ACCOUNT_NAME = "Local Calendar";
   public static final String INVALID_CALENDAR_ID = "-1";
@@ -119,13 +130,6 @@ public class MyApplication extends Application implements
   private long mLastPause = 0;
 
   private boolean isLocked;
-
-  public static String getCalendarFullPathProjection() {
-    return "ifnull("
-        + Calendars.ACCOUNT_NAME + ",'') || '/' ||" + "ifnull("
-        + Calendars.ACCOUNT_TYPE + ",'') || '/' ||" + "ifnull(" + Calendars.NAME
-        + ",'')";
-  }
 
   public AppComponent getAppComponent() {
     return appComponent;
@@ -139,7 +143,6 @@ public class MyApplication extends Application implements
     this.isLocked = isLocked;
   }
 
-  public static final String FEEDBACK_EMAIL = "support@myexpenses.mobi";
   public static final String INVOICES_EMAIL = "billing@myexpenses.mobi";
   // public static int BACKDOOR_KEY = KeyEvent.KEYCODE_CAMERA;
 
@@ -164,7 +167,6 @@ public class MyApplication extends Application implements
     if (!syncService) {
       ProcessLifecycleOwner.get().getLifecycle().addObserver(this);
       mSettings.registerOnSharedPreferenceChangeListener(this);
-      DailyScheduler.updatePlannerAlarms(this, false, false);
       WidgetObserver.Companion.register(this);
     }
     licenceHandler.init();
@@ -175,7 +177,7 @@ public class MyApplication extends Application implements
   public void onStart(@NonNull LifecycleOwner owner) {
     if (prefHandler.getBoolean(UI_WEB, false)) {
       if (NetworkUtilsKt.isConnectedWifi(this)) {
-        controlWebUi(true);
+        controlWebUi(START_ACTION);
       } else {
         prefHandler.putBoolean(UI_WEB, false);
       }
@@ -243,7 +245,9 @@ public class MyApplication extends Application implements
         CrashHandler.report(e);
       }
     }
-    crashHandler.setupLogging(this, prefHandler);
+    if (prefHandler.getBoolean(PrefKey.CRASHREPORT_ENABLED,true)) {
+      crashHandler.setupLogging(this);
+    }
   }
 
   @Deprecated
@@ -275,7 +279,7 @@ public class MyApplication extends Application implements
     return mLastPause;
   }
 
-  public void setLastPause(ProtectedFragmentActivity ctx) {
+  public void setLastPause(Activity ctx) {
     if (ctx instanceof OnboardingActivity) return;
     if (!isLocked()) {
       // if we are dealing with an activity called from widget that allows to
@@ -303,7 +307,7 @@ public class MyApplication extends Application implements
    * from widget or from an activity called from widget and passwordless
    * data entry from widget is allowed sets isLocked as a side effect
    */
-  public boolean shouldLock(ProtectedFragmentActivity ctx) {
+  public boolean shouldLock(@Nullable Activity ctx) {
     if (ctx instanceof OnboardingActivity) return false;
     boolean isStartFromWidget = ctx == null
         || ctx.getIntent().getBooleanExtra(
@@ -332,7 +336,7 @@ public class MyApplication extends Application implements
   private String checkPlannerInternal(String calendarId) {
     ContentResolver cr = getContentResolver();
     Cursor c = cr.query(Calendars.CONTENT_URI,
-        new String[]{getCalendarFullPathProjection() + " AS path", Calendars.SYNC_EVENTS},
+        new String[]{CALENDAR_FULL_PATH_PROJECTION + " AS path", Calendars.SYNC_EVENTS},
         Calendars._ID + " = ?", new String[]{calendarId}, null);
     boolean result = true;
     if (c == null) {
@@ -380,7 +384,7 @@ public class MyApplication extends Application implements
    */
   @Nullable
   public String checkPlanner() {
-    mPlannerCalendarId = prefHandler.getString(PrefKey.PLANNER_CALENDAR_ID, INVALID_CALENDAR_ID);
+    mPlannerCalendarId = prefHandler.requireString(PrefKey.PLANNER_CALENDAR_ID, INVALID_CALENDAR_ID);
     if (!mPlannerCalendarId.equals(INVALID_CALENDAR_ID)) {
       final String checkedId = checkPlannerInternal(mPlannerCalendarId);
       if (INVALID_CALENDAR_ID.equals(checkedId)) {
@@ -461,7 +465,7 @@ public class MyApplication extends Application implements
       Timber.i("successfully set up new calendar: %s", plannerCalendarId);
     }
     if (persistToSharedPref) {
-      // onSharedPreferenceChanged should now trigger initPlanner
+      // onSharedPreferenceChanged should now trigger DailyScheduler.updatePlannerAlarms
       prefHandler.putString(PrefKey.PLANNER_CALENDAR_ID, plannerCalendarId);
     }
     return plannerCalendarId;
@@ -523,12 +527,12 @@ public class MyApplication extends Application implements
     return updated > 0;
   }
 
-  private void controlWebUi(boolean start) {
+  private void controlWebUi(String action) {
     final Intent intent = WebUiViewModel.Companion.getServiceIntent();
     if (intent != null) {
-      intent.setAction(start ? START_ACTION : STOP_ACTION);
+      intent.setAction(action);
       ComponentName componentName;
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && start) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && action.equals(START_ACTION)) {
         componentName = startForegroundService(intent);
       } else {
         componentName = startService(intent);
@@ -548,13 +552,20 @@ public class MyApplication extends Application implements
     if (!key.equals(prefHandler.getKey(PrefKey.AUTO_BACKUP_DIRTY))) {
       markDataDirty();
     }
+    if (key.equals(prefHandler.getKey(PrefKey.UI_LANGUAGE))) {
+      userLocaleProvider.invalidate();
+    }
     if (key.equals(prefHandler.getKey(DEBUG_LOGGING))) {
       setupLogging();
     }
     else if (key.equals(prefHandler.getKey(UI_WEB)) ||
             key.equals(prefHandler.getKey(WEBUI_PASSWORD)) ||
             key.equals(prefHandler.getKey(WEBUI_HTTPS))) {
-      controlWebUi(sharedPreferences.getBoolean(prefHandler.getKey(UI_WEB), false));
+      boolean webUiRunning = sharedPreferences.getBoolean(prefHandler.getKey(UI_WEB), false);
+      //If user configures https or password, while the web ui is not running, there is nothing to do
+      if (key.equals(prefHandler.getKey(UI_WEB)) || webUiRunning) {
+        controlWebUi(webUiRunning ? RESTART_ACTION : STOP_ACTION);
+      }
     }
     // TODO: move to TaskExecutionFragment
     else if (key.equals(prefHandler.getKey(PrefKey.PLANNER_CALENDAR_ID))) {
@@ -576,12 +587,8 @@ public class MyApplication extends Application implements
         // to protect against cases where a user wipes the data of the calendar
         // provider
         // and then accidentally we link to the wrong calendar
-        Uri uri = ContentUris.withAppendedId(Calendars.CONTENT_URI,
-            Long.parseLong(mPlannerCalendarId));
-        Cursor c = cr.query(uri, new String[]{getCalendarFullPathProjection()
-            + " AS path"}, null, null, null);
-        if (c != null && c.moveToFirst()) {
-          String path = c.getString(0);
+        String path = MoreDbUtilsKt.getCalendarPath(cr, mPlannerCalendarId);
+        if (path != null) {
           Timber.i("storing calendar path %s ", path);
           prefHandler.putString(PrefKey.PLANNER_CALENDAR_PATH, path);
         } else {
@@ -591,14 +598,11 @@ public class MyApplication extends Application implements
           prefHandler.remove(PrefKey.PLANNER_CALENDAR_PATH);
           prefHandler.putString(PrefKey.PLANNER_CALENDAR_ID, INVALID_CALENDAR_ID);
         }
-        if (c != null) {
-          c.close();
-        }
         if (mPlannerCalendarId.equals(INVALID_CALENDAR_ID)) {
           return;
         }
         if (oldValue.equals(INVALID_CALENDAR_ID)) {
-          DailyScheduler.updatePlannerAlarms(this, false, true);
+          PlanExecutor.Companion.enqueueSelf(this, prefHandler, true);
         } else if (safeToMovePlans) {
           ContentValues eventValues = new ContentValues();
           eventValues.put(Events.CALENDAR_ID, Long.parseLong(newValue));
@@ -662,7 +666,7 @@ public class MyApplication extends Application implements
     int restoredPlansCount = 0;
     if (!(calendarId.equals(INVALID_CALENDAR_ID) || calendarPath.equals(""))) {
       Cursor c = cr.query(Calendars.CONTENT_URI,
-          new String[]{Calendars._ID}, getCalendarFullPathProjection()
+          new String[]{Calendars._ID}, CALENDAR_FULL_PATH_PROJECTION
               + " = ?", new String[]{calendarPath}, null);
       if (c != null) {
         if (c.moveToFirst()) {
@@ -746,7 +750,7 @@ public class MyApplication extends Application implements
   public void markDataDirty() {
     try {
       prefHandler.putBoolean(PrefKey.AUTO_BACKUP_DIRTY, true);
-      DailyScheduler.updateAutoBackupAlarms(this);
+      AutoBackupWorker.Companion.enqueueOrCancel(this, prefHandler);
     } catch (Exception e) {
       CrashHandler.report(e);
     }
@@ -765,5 +769,13 @@ public class MyApplication extends Application implements
       vmPolicyBuilder.detectNonSdkApiUsage();
     }
     StrictMode.setVmPolicy(vmPolicyBuilder.build());
+  }
+
+  public void invalidateHomeCurrency() {
+    currencyContext.invalidateHomeCurrency();
+    currencyFormatter.invalidate(AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE, getContentResolver());
+    Transaction.buildProjection(this);
+    Account.buildProjection();
+    getContentResolver().notifyChange(TransactionProvider.TRANSACTIONS_URI, null, false);
   }
 }

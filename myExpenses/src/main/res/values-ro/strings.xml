@@ -45,7 +45,6 @@
     <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Ataseaza imagine la tranzactie</string>
     <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Număr nelimitat de scadenţe</string>
     <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Export listă tranzacţii în PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Şablon widget</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">CSV import</string>
     <string name="licence_status_free">Gratuit</string>
     <string name="contrib_key">Cheie Contrib</string>
@@ -120,7 +119,6 @@
     <string name="help_heading_credits">Generic</string>
     <string name="help_heading_license">Licenţă</string>
     <string name="help_heading_whats_new">Noutăţi</string>
-    <string name="important_upgrade_information_heading">Informaţii importante</string>
     <string name="import_select_transactions">Tranzacţii</string>
     <string name="income">Venituri</string>
     <string name="invalid_number_format">Format zecimal necunoscut de localizarea dvs. Utilizaţi %1$s</string>
@@ -268,8 +266,8 @@
     <string name="pref_contrib_purchase_title_in_app">In-App plată</string>
     <string name="pref_custom_currency_title">Personalizează valutele</string>
     <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">Dacă aţi primit o cheie, veţi avea acces la funcţionalităţile premium.</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">Introduceţi cheia</string>
+    <string name="pref_enter_licence_summary">Dacă aţi primit o cheie, veţi avea acces la funcţionalităţile premium.</string>
+    <string name="pref_enter_licence_title">Introduceţi cheia</string>
     <string name="pref_export_format_title">Format date</string>
     <string name="pref_import_from_grisbi_summary">Import categorii şi terţi din fişier Grisbi XML</string>
     <string name="pref_import_from_grisbi_title">Import din Grisbi</string>
@@ -319,7 +317,6 @@
     <string name="pref_visit_website_summary">Jurnal modificări şi FAQ</string>
     <string name="pref_visit_website_title">Vizitează site web</string>
     <string name="progress_dialog_deleting">Ştergere obiecte</string>
-    <string name="progress_dialog_loading">Încărcare obiect din baza de date</string>
     <string name="progress_dialog_printing">Generare %s</string>
     <string name="qif_parse_result">Analizat: %1$s conturi; %2$s categorii şi %3$s terţi</string>
     <string name="qif_parse_failure_found_multiple_accounts">Multiple conturi găsite în  fişierul QIF .</string>
@@ -435,7 +432,6 @@
     <string name="comparison_operator_date_after">după</string>
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">Cumpărare eşuată sau anulată.</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%1$d  conturi cu moneda %2$s au fost actualizate.</string>
-    <string name="learn_more">Învaţă mai mult</string>
     <string name="import_source_file">Fişier</string>
     <string name="restore_calendar_handling">Manipulare date calendar</string>
     <string name="restore_calendar_handling_configured">Restaurează scadenţe în calendarul curent configurat</string>
@@ -496,7 +492,6 @@
     <string name="template">Şablon</string>
     <string name="contrib_feature_synchronization_label" tools:ignore="UnusedResources">Sincronizare în cloud</string>
     <string name="professional_key">Cheie profesională</string>
-    <string name="split_transaction_one_error">Imposibil de transformat tranzacţia în repartizare.</string>
     <!-- Action of closing an account. A closed account does not allow any modifications on its data. -->
     <string name="menu_close">Închide</string>
     <!-- Content description for icon that indicates that a synchronization backend is encrypted. -->

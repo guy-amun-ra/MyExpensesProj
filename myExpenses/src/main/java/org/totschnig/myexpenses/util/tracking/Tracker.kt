@@ -2,9 +2,10 @@ package org.totschnig.myexpenses.util.tracking
 
 import android.content.Context
 import android.os.Bundle
+import org.totschnig.myexpenses.util.licence.LicenceStatus
 
 interface Tracker {
-    fun init(context: Context)
+    fun init(context: Context, licenceStatus: LicenceStatus?)
     fun logEvent(eventName: String, params: Bundle?)
     fun setEnabled(enabled: Boolean)
 
@@ -20,6 +21,9 @@ interface Tracker {
         const val EVENT_AD_CUSTOM = "ad_custom"
         const val EVENT_PREFERENCE_CLICK = "preference_click"
         const val EVENT_RATING_DIALOG = "rating_dialog"
+        const val EVENT_BACKUP_PERFORMED = "backup_performed"
+        const val EVENT_BACKUP_SKIPPED = "backup_skipped"
+        const val EVENT_RESTORE_FINISHED = "restore_finished"
 
         //only used for interstitial
         const val EVENT_AD_SHOWN = "ad_shown"

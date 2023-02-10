@@ -14,13 +14,17 @@
     <string name="toast_text_copied">"Testua kopiatu da"</string>
     <string name="copy_text">"Kopiatu arbelean"</string>
     <string name="stop">"Gelditu"</string>
+    <string name="style">"Estiloa"</string>
+    <string name="loading">"Kargatzen…"</string>
     <string name="no_network">"Ez dago sareko konexiorik."</string>
     <string name="button_label_continue">Jarraitu</string>
     <string name="autofill">"Betetze automatikoa"</string>
     <string name="discard">"Baztertu"</string>
     <string name="dialog_dismiss">"Baztertu"</string>
+    <string name="details">"Xehetasunak"</string>
     <string name="response_yes">"Bai"</string>
     <string name="response_no">"Ez"</string>
+    <string name="experimental">"Esperimentala"</string>
     <string name="add_widget">"Gehitu widgeta"</string>
     <string name="calendar">"Egutegia"</string>
     <string name="permissions_label">"Baimenak"</string>
@@ -28,5 +32,10 @@
     <string name="setup">"Konfigurazioa"</string>
     <string name="clear_cache">"Garbitu cachea"</string>
     <string name="customize">"Pertsonalizatua"</string>
+    <string name="compact">trinkoa</string>
+    <string name="storage_description">"Biltegi lokala"</string>
+    <string name="encryption">"Enkriptatzea"</string>
+    <string name="learn_more">"Lortu informazio gehiago"</string>
+    <string name="show_all">"Erakutsi guztiak"</string>
 </resources>
 

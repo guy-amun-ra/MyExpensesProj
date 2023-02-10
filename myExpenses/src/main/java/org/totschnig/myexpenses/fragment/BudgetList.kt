@@ -28,6 +28,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
 import org.totschnig.myexpenses.provider.filter.FilterPersistence
 import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.addChipsBulk
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.BudgetViewModel
 import org.totschnig.myexpenses.viewmodel.data.Budget
 import org.totschnig.myexpenses.viewmodel.data.Budget.Companion.DIFF_CALLBACK
@@ -75,22 +76,37 @@ class BudgetList : Fragment() {
                 addItemDecoration(DividerItemDecoration(activity, it.orientation))
             }
         }
-        viewModel.data.observe(viewLifecycleOwner) {
-            adapter.submitList(it)
-            binding.empty.isVisible = it.isEmpty()
-            binding.recyclerView.isVisible = it.isNotEmpty()
-        }
-        lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.CREATED) {
-                viewModel.amounts.collect { tuple ->
-                    val (position, id, spent, allocated) = tuple
-                    budgetAmounts[id] = spent to allocated
-                    adapter.notifyItemChanged(position)
+        with(viewLifecycleOwner) {
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    viewModel.data.collect {
+                        adapter.submitList(it)
+                        binding.empty.isVisible = it.isEmpty()
+                        binding.recyclerView.isVisible = it.isNotEmpty()
+                    }
                 }
             }
         }
+
+        with(viewLifecycleOwner) {
+            lifecycleScope.launch {
+                repeatOnLifecycle(Lifecycle.State.CREATED) {
+                    viewModel.amounts.collect { (position, id, spent, allocated) ->
+                        budgetAmounts[id] = spent to allocated
+                        if (binding.recyclerView.isComputingLayout) {
+                            CrashHandler.report(Exception("Budget amount received while recyclerView is computing layout"))
+                            binding.recyclerView.post {
+                                adapter.notifyItemChanged(position)
+                            }
+                        } else {
+                            adapter.notifyItemChanged(position)
+                        }
+                    }
+                }
+            }
+        }
+
         binding.recyclerView.adapter = adapter
-        viewModel.loadAllBudgets()
     }
 
     override fun onDestroyView() {
@@ -98,6 +114,7 @@ class BudgetList : Fragment() {
         _binding = null
     }
 
+    @Deprecated("Deprecated in Java")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         lastClickedPosition?.let {
             if (resultCode != Activity.RESULT_FIRST_USER) { //budget was deleted
@@ -129,26 +146,26 @@ class BudgetList : Fragment() {
                     }
                     budgetSummary.bind(budget, -spent, allocated, currencyFormatter)
 
-                    val filterList = mutableListOf<String>()
-                    filterList.add(budget.label(requireContext()))
-                    val filterPersistence = FilterPersistence(
-                        prefHandler,
-                        BudgetViewModel.prefNameForCriteria(budget.id),
-                        null,
-                        immediatePersist = false,
-                        restoreFromPreferences = true
-                    )
-                    filterPersistence.whereFilter.criteria.forEach { criterion ->
-                        filterList.add(
-                            criterion.prettyPrint(context)
-                        )
-                    }
-                    filter.addChipsBulk(filterList)
+                    filter.addChipsBulk(buildList {
+                        this.add(budget.label(requireContext()))
+                        FilterPersistence(
+                            prefHandler,
+                            BudgetViewModel.prefNameForCriteria(budget.id),
+                            null,
+                            immediatePersist = false,
+                            restoreFromPreferences = true
+                        ).whereFilter.criteria.forEach { criterion ->
+                            this.add(
+                                criterion.prettyPrint(context)
+                            )
+                        }
+                    })
+
                     root.setOnClickListener {
                         val i = Intent(context, BudgetActivity::class.java)
                         i.putExtra(KEY_ROWID, budget.id)
                         i.flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        lastClickedPosition = holder.adapterPosition
+                        lastClickedPosition = holder.bindingAdapterPosition
                         startActivityForResult(i, 0)
                     }
                 }

@@ -34,13 +34,7 @@ class ManageTemplates : ProtectedFragmentActivity(), ConfirmationDialogListener,
     var calledFromCalendarWithId = NOT_CALLED
         private set
 
-    @VisibleForTesting
-    override fun getCurrentFragment(): TemplatesList {
-        return mListFragment
-    }
-
     private lateinit var mListFragment: TemplatesList
-
 
     enum class HelpVariant {
         templates, plans, planner
@@ -50,7 +44,7 @@ class ManageTemplates : ProtectedFragmentActivity(), ConfirmationDialogListener,
         super.onCreate(savedInstanceState)
         setHelpVariant(HelpVariant.templates, true)
         setContentView(R.layout.manage_templates)
-        setupToolbar(true)
+        setupToolbar()
         title = getString(R.string.menu_manage_plans)
         val uriString = intent.getStringExtra(CalendarContract.Events.CUSTOM_APP_URI)
         if (uriString != null) {

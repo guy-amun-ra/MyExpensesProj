@@ -157,12 +157,14 @@ val categoryTreeForView = """
     WITH Tree as (
     SELECT
         main.$KEY_LABEL AS $KEY_PATH,
+        $KEY_ICON,
         $KEY_ROWID
     FROM $TABLE_CATEGORIES main
     WHERE $KEY_PARENTID IS NULL
     UNION ALL
     SELECT
         Tree.$KEY_PATH || ' > ' || subtree.$KEY_LABEL,
+        subtree.$KEY_ICON,
         subtree.$KEY_ROWID
     FROM $TABLE_CATEGORIES subtree
     JOIN Tree ON Tree.$KEY_ROWID = subtree.$KEY_PARENTID
@@ -300,9 +302,17 @@ fun transactionMappedObjectQuery(selection: String): String = """
 with data as
  (select $KEY_ROWID, $KEY_CATID, $KEY_METHODID, $KEY_PAYEEID, $KEY_TRANSFER_ACCOUNT, $KEY_TAGID from $TABLE_TRANSACTIONS left join $TABLE_TRANSACTIONS_TAGS on $KEY_TRANSACTIONID = $KEY_ROWID where $KEY_CR_STATUS != '${CrStatus.VOID.name}' AND $selection)
  SELECT
+       exists(select 1 from data) AS $KEY_COUNT,
        exists(select 1 from data where $KEY_CATID > 0) AS $KEY_MAPPED_CATEGORIES,
        exists(select 1 from data where $KEY_METHODID > 0) AS $KEY_MAPPED_METHODS,
        exists(select 1 from data where $KEY_PAYEEID > 0) AS $KEY_MAPPED_PAYEES,
        exists(select 1 from data where $KEY_TRANSFER_ACCOUNT > 0) AS $KEY_HAS_TRANSFERS,
        exists(select 1 from data where $KEY_TAGID is not null) AS $KEY_MAPPED_TAGS
 """.trimIndent()
+
+fun tagListExpression(supportsJson: Boolean) = if (supportsJson) {
+    "json_group_array($TABLE_TAGS.$KEY_LABEL) filter ( where $TABLE_TAGS.$KEY_LABEL is not null )  AS $KEY_TAGLIST"
+} else  {
+    "group_concat($TABLE_TAGS.$KEY_LABEL, ', ') AS $KEY_TAGLIST"
+
+}

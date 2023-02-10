@@ -30,13 +30,12 @@
     <string name="color">Cor</string>
     <string name="comment">Notas</string>
     <string name="confirmation_dialog_dont_show_again">Non volver mostrar</string>
-    <string name="contrib_feature_ad_free_label" tools:ignore="UnusedResources">Sen anuncios</string>
-    <string name="contrib_feature_accounts_unlimited_label" tools:ignore="UnusedResources">Número ilimitado de contas</string>
-    <string name="contrib_feature_attach_picture_label" tools:ignore="UnusedResources">Anexar imaxe á transacción</string>
-    <string name="contrib_feature_plans_unlimited_label" tools:ignore="UnusedResources">Número de plans ilimitado</string>
-    <string name="contrib_feature_print_label" tools:ignore="UnusedResources">Exportar a listaxe de transaccións a PDF</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">Modelo de widget</string>
-    <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">Importar CSV</string>
+    <string name="contrib_feature_ad_free_label">Sen anuncios</string>
+    <string name="contrib_feature_accounts_unlimited_label">Número ilimitado de contas</string>
+    <string name="contrib_feature_attach_picture_label">Anexar imaxe á transacción</string>
+    <string name="contrib_feature_plans_unlimited_label">Número de plans ilimitado</string>
+    <string name="contrib_feature_print_label">Exportar a listaxe de transaccións a PDF</string>
+    <string name="contrib_feature_csv_import_label">Importar CSV</string>
     <string name="currency">Moeda</string>
     <string name="current_balance">Saldo actual</string>
     <string name="date">Data</string>
@@ -46,10 +45,6 @@
     <string name="decimal_separator">Separador de decimais</string>
     <string name="description">Descrición</string>
     <string name="dialog_confirm_discard_changes">Rexeitar os cambios?</string>
-    <string name="dialog_confirm_discard_new_transaction">Rexeitar a nova transacción?</string>
-    <string name="dialog_confirm_discard_new_template">Rexeitar o novo modelo?</string>
-    <string name="dialog_confirm_discard_new_account">Rexeitar a nova conta¿</string>
-    <string name="dialog_confirm_discard_new_method">Rexeitar o novo método de pagamento?</string>
     <string name="dialog_command_disabled_reset_account">Sen transaccións para exportar.</string>
     <string name="dialog_export_not_yet_exported">Exportar só as transaccións aínda non exportadas</string>
     <string name="dialog_password_activate_protection">Activar a protección con contrasinal</string>
@@ -84,7 +79,6 @@
     <string name="help_heading_credits">Créditos</string>
     <string name="help_heading_license">Licenza</string>
     <string name="help_heading_whats_new">Novidades</string>
-    <string name="important_upgrade_information_heading">Información importante</string>
     <string name="import_select_transactions">Transaccións</string>
     <string name="income">Ingresos</string>
     <string name="label">Etiqueta</string>
@@ -229,7 +223,6 @@
     <string name="comparison_operator_date_before">antes</string>
     <!-- Used in dialogue where user can filter transactions based on their date. This is one of three possible values populating a dropdown. Allows to select transactions after a specified date. -->
     <string name="comparison_operator_date_after">despois</string>
-    <string name="learn_more">Saber máis</string>
     <string name="import_source_file">Ficheiro</string>
     <string name="restore_calendar_handling_ignore">Non restaurar plans</string>
     <string name="file_name">Nome do ficheiro</string>

@@ -21,12 +21,9 @@ import android.text.Editable
 import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
-import android.widget.AdapterView
-import android.widget.ArrayAdapter
-import android.widget.Spinner
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.color.SimpleColorDialog
 import icepick.State
@@ -37,15 +34,12 @@ import org.totschnig.myexpenses.adapter.CurrencyAdapter
 import org.totschnig.myexpenses.databinding.OneAccountBinding
 import org.totschnig.myexpenses.dialog.DialogUtils
 import org.totschnig.myexpenses.dialog.MessageDialogFragment
-import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.model.AccountType
-import org.totschnig.myexpenses.model.ContribFeature
-import org.totschnig.myexpenses.model.CurrencyUnit
-import org.totschnig.myexpenses.model.Money
+import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.getAccountNames
+import org.totschnig.myexpenses.sync.GenericAccountService.Companion.requestSync
 import org.totschnig.myexpenses.ui.AmountInput
 import org.totschnig.myexpenses.ui.ExchangeRateEdit
 import org.totschnig.myexpenses.ui.SpinnerHelper
@@ -68,7 +62,8 @@ import java.time.LocalDate
  *
  * @author Michael Totschnig
  */
-class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Host, AdapterView.OnItemSelectedListener, ContribIFace, OnDialogResultListener {
+class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Host,
+    AdapterView.OnItemSelectedListener, ContribIFace, OnDialogResultListener {
     lateinit var binding: OneAccountBinding
     private lateinit var currencySpinner: SpinnerHelper
     private lateinit var accountTypeSpinner: SpinnerHelper
@@ -107,17 +102,13 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
     val rowId: Long
         get() = intent.getLongExtra(DatabaseConstants.KEY_ROWID, 0)
 
-    public override fun getDiscardNewMessage(): Int {
-        return R.string.dialog_confirm_discard_new_account
-    }
-
     @SuppressLint("InlinedApi")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = OneAccountBinding.inflate(layoutInflater)
         binding.TagRow.TagLabel.setText(R.string.active_tags)
         setContentView(binding.root)
-        setupToolbar()
+        setupToolbarWithClose()
         val viewModelProvider = ViewModelProvider(this)
         currencyViewModel = viewModelProvider[CurrencyViewModel::class.java]
         viewModel = viewModelProvider[AccountEditViewModel::class.java]
@@ -149,8 +140,10 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
                 }
             } else {
                 populateFields(Account().apply {
-                    setCurrency(currencyContext[extras?.getString(DatabaseConstants.KEY_CURRENCY)
-                            ?: currencyViewModel.default.code])
+                    setCurrency(
+                        currencyContext[extras?.getString(DatabaseConstants.KEY_CURRENCY)
+                            ?: currencyViewModel.default.code]
+                    )
                 })
             }
         } else {
@@ -158,7 +151,7 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
             setup()
         }
         linkInputsWithLabels()
-        viewModel.getTags().observe(this) {
+        viewModel.tagsLiveData.observe(this) {
             showTags(it) { tag ->
                 viewModel.removeTag(tag)
                 setDirty()
@@ -168,16 +161,15 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
 
     private fun setup() {
         configureSyncBackendAdapter()
-        currencyViewModel.getCurrencies().observe(this) { currencies: List<Currency?> ->
-            currencyAdapter.addAll(currencies)
-            currencySpinner.setSelection(
-                currencyAdapter.getPosition(
-                    create(
-                        currencyUnit.code,
-                        this
+        lifecycleScope.launchWhenStarted {
+            currencyViewModel.currencies.collect { currencies: List<Currency?> ->
+                currencyAdapter.addAll(currencies)
+                currencySpinner.setSelection(
+                    currencyAdapter.getPosition(
+                        create(currencyUnit.code, this@AccountEdit)
                     )
                 )
-            )
+            }
         }
         UiUtils.setBackgroundOnButton(binding.colorInput.ColorIndicator, color)
         setupListeners()
@@ -209,8 +201,10 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
     }
 
     private fun configureSyncBackendAdapter() {
-        val syncBackendAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item,
-                ArrayUtils.insert(0, getAccountNames(this), getString(R.string.synchronization_none)))
+        val syncBackendAdapter = ArrayAdapter(
+            this, android.R.layout.simple_spinner_item,
+            ArrayUtils.insert(0, getAccountNames(this), getString(R.string.synchronization_none))
+        )
         syncBackendAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
         syncSpinner.adapter = syncBackendAdapter
         if (syncAccountName != null) {
@@ -261,7 +255,10 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
         val isHomeAccount = currencyUnit.code == homeCurrencyPref
         binding.ERR.root.visibility = if (isHomeAccount) View.GONE else View.VISIBLE
         if (!isHomeAccount) {
-            binding.ERR.ExchangeRate.setCurrencies(currencyUnit, currencyContext[homeCurrencyPref!!])
+            binding.ERR.ExchangeRate.setCurrencies(
+                currencyUnit,
+                currencyContext[homeCurrencyPref!!]
+            )
         }
     }
 
@@ -278,7 +275,13 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
         val openingBalance: BigDecimal = validateAmountInput(true) ?: return
         val currency = (currencySpinner.selectedItem as Currency).code
         val currencyUnit = currencyContext[currency]
-        val account = Account(label, currencyUnit, Money(currencyUnit, openingBalance), binding.Description.text.toString(), accountTypeSpinner.selectedItem as AccountType, color).apply {
+        val account = Account(
+            label,
+            Money(currencyUnit, openingBalance),
+            binding.Description.text.toString(),
+            accountTypeSpinner.selectedItem as AccountType,
+            color
+        ).apply {
             id = rowId
             uuid = this@AccountEdit.uuid
             if (syncSpinner.selectedItemPosition > 0) {
@@ -293,12 +296,17 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
             setCriterion(binding.Criterion.typedValue)
             excludeFromTotals = this@AccountEdit.excludeFromTotals
         }
-        viewModel.save(account).observe(this) {
-            if (it < 0) {
+        viewModel.save(account).observe(this) { id ->
+            if (id < 0) {
                 showSnackBar("ERROR")
             } else {
-                account.requestSync()
-                intent.putExtra(DatabaseConstants.KEY_ROWID, it)
+                account.syncAccountName?.let {
+                    requestSync(
+                        accountName = it,
+                        uuid = account.uuid!!
+                    )
+                }
+                intent.putExtra(DatabaseConstants.KEY_ROWID, id)
                 setResult(RESULT_OK, intent)
                 currencyContext.ensureFractionDigitsAreCached(account.currencyUnit)
                 finish()
@@ -306,8 +314,10 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
         }
     }
 
-    override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int,
-                                id: Long) {
+    override fun onItemSelected(
+        parent: AdapterView<*>, view: View?, position: Int,
+        id: Long
+    ) {
         setDirty()
         val parentId = parent.id
         if (parentId == R.id.Currency) {
@@ -333,7 +343,12 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         super.onCreateOptionsMenu(menu)
-        menu.add(Menu.NONE, R.id.EXCLUDE_FROM_TOTALS_COMMAND, 0, R.string.menu_exclude_from_totals).isCheckable =
+        menu.add(
+            Menu.NONE,
+            R.id.EXCLUDE_FROM_TOTALS_COMMAND,
+            0,
+            R.string.menu_exclude_from_totals
+        ).isCheckable =
             true
         return true
     }
@@ -404,12 +419,14 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
         if (!mNewInstance && syncSpinner.selectedItemPosition > 0) {
             showSnackBar(R.string.progress_dialog_checking_sync_backend)
             uuid?.let { uuid ->
-                syncViewModel.syncCheck(uuid, syncSpinner.selectedItem as String).observe(this) { result ->
-                    result.onFailure {
-                    syncSpinner.setSelection(0)
-                    showHelp(it.safeMessage)
-                }
-            } }
+                syncViewModel.syncCheck(uuid, syncSpinner.selectedItem as String)
+                    .observe(this) { result ->
+                        result.onFailure {
+                            syncSpinner.setSelection(0)
+                            showHelp(it.safeMessage)
+                        }
+                    }
+            }
         }
     }
 
@@ -425,21 +442,26 @@ class AccountEdit : AmountActivity<AccountEditViewModel>(), ExchangeRateEdit.Hos
 
     private fun showHelp(message: String) {
         MessageDialogFragment.newInstance(
-                null,
-                message,
-                MessageDialogFragment.Button(R.string.pref_category_title_manage, R.id.SYNC_SETTINGS_COMMAND, null),
-                MessageDialogFragment.okButton(),
-                null)
-                .show(supportFragmentManager, "SYNC_HELP")
+            null,
+            message,
+            MessageDialogFragment.Button(
+                R.string.pref_category_title_manage,
+                R.id.SYNC_SETTINGS_COMMAND,
+                null
+            ),
+            MessageDialogFragment.okButton(),
+            null
+        )
+            .show(supportFragmentManager, "SYNC_HELP")
     }
 
     fun editAccountColor(@Suppress("UNUSED_PARAMETER") view: View?) {
         SimpleColorDialog.build()
-                .allowCustom(true)
-                .cancelable(false)
-                .neut()
-                .colorPreset(color)
-                .show(this, EDIT_COLOR_DIALOG)
+            .allowCustom(true)
+            .cancelable(false)
+            .neut()
+            .colorPreset(color)
+            .show(this, EDIT_COLOR_DIALOG)
     }
 
     override fun onResult(dialogTag: String, which: Int, extras: Bundle): Boolean {

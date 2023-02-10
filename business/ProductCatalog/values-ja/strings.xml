@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="splittemplate_title">しい分割テンプレート</string>
+    <string name="splittemplate_description">無制限の数の テンプレートと分割取引の計画</string>
+    <string name="history_title">履歴チャート</string>
+    <string name="history_description">財政状況が時間とともにどのように変化するかを理解</string>
+    <string name="budget_title">予算作成</string>
+    <string name="budget_description">年間、月次、または週次の予算でどれぐらい消費する予定があるかを定義</string>
+    <string name="professional_benefit_2">メールサポート</string>
+    <string name="professional_benefit_3">開発ロードマップ の投票権</string>
+    <string name="ocr_title">レシートのスキャン</string>
+    <string name="webui_description">データ入力にデスクトップブラウザを使用する</string>
+    <string name="professional_benefit_1">すべてのプレミアム機能のロックを解除する</string>
+    <string name="ocr_description">金額、日付、受取人を自動的に抽出する</string>
+    <string name="webui_title">ウェブユーザーインターフェイス</string>
+    <string name="accountsunlimited_title">無制限の勘定数</string>
+    <string name="accountsunlimited_description">5つ以上のアカウントを作成する機能のアンロック。</string>
+    <string name="adfree_title">広告なし</string>
+    <string name="adfree_description">広告なし。</string>
+    <string name="plansunlimited_title">無制限の計画数</string>
+    <string name="plansunlimited_description">定期的なトランザクションに対して3つ以上のプランを作成する機能のロックを解除します。</string>
+    <string name="print_description">取引リストを PDF ファイルに 印刷</string>
+    <string name="synchronization_description">データを複数のデバイス間で同期できます。</string>
+    <string name="categorytree_title">カテゴリツリー</string>
+    <string name="distribution_title">円グラフ</string>
+    <string name="distribution_description">異なる期間にわたる分類ごとの取引の統計的分布を視覚化します (年、月、週、日)</string>
+    <string name="csvimport_description">洗練されたカスタマイズ可能なCSV インポート (スプレッドシート アプリケーション)</string>
+    <string name="categorytree_description">任意に深いカテゴリー階層</string>
+    <string name="csvimport_title">CSV インポート</string>
+    <string name="print_title">印刷</string>
+    <string name="splittransaction_title">取引を分割</string>
+    <string name="synchronization_title">クラウド同期</string>
+    <string name="splittransaction_description">一つの取引を複数の部分に分割できます (分類と振込)。</string>
+</resources>

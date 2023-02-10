@@ -16,7 +16,6 @@
     <string name="menu_reopen">తిరిగి తెరవండి</string>
     <string name="menu_close">దగ్గరగా</string>
     <string name="menu_hide">దాచు</string>
-    <string name="pref_account_list_fast_scroll_summary">ఖాతా జాబితా కోసం వేగవంతమైన స్క్రోల్‌ను ప్రారంభించండి. కొన్ని పరికరాల్లో తప్పు ప్రదర్శనకు దారితీయవచ్చు</string>
     <string name="joining_or">లేదా</string>
     <string name="button_label_no_encryption">గుప్తీకరణ లేకుండా</string>
     <string name="input_label_passphrase">పాస్ఫ్రేజ్</string>
@@ -69,15 +68,9 @@
     <string name="pref_value_date_summary">బుకింగ్ తేదీకి అదనంగా విలువ తేదీని సెట్ చేయడానికి అనుమతించండి. లావాదేవీ సమయం దాచబడుతుంది. ఈ సెట్టింగ్ నగదు ఖాతాలకు వర్తించదు.</string>
     <string name="pref_transaction_time_summary">ఖచ్చితమైన లావాదేవీ సమయాన్ని సెట్ చేయడానికి అనుమతించండి.</string>
     <string name="split_transaction_not_possible">ఒకే ఖాతా, చెల్లింపుదారు మరియు స్థితిని కలిగి ఉన్న లావాదేవీలను మాత్రమే ఒక స్ప్లిట్ లావాదేవీగా వర్గీకరించవచ్చు.</string>
-    <string name="split_transaction_group_error">లావాదేవీలను విభజించలేము.</string>
     <string name="split_transaction_group_success">%1$d లావాదేవీలు విజయవంతంగా ఒక స్ప్లిట్ లావాదేవీలుగా వర్గీకరించబడ్డాయి.</string>
-    <string name="split_transaction_one_error">లావాదేవీని స్ప్లిట్‌గా మార్చడం సాధ్యం కాలేదు.</string>
     <string name="split_transaction_one_success">లావాదేవీ విజయవంతంగా విడిపోయింది.</string>
-    <string name="ungroup_split_transaction_failure">స్ప్లిట్ లావాదేవీలను సమూహపరచనప్పుడు, %2$d లో %1$d విఫలమైంది.</string>
-    <plurals name="ungroup_split_transaction_success">
-        <item quantity="one">స్ప్లిట్ లావాదేవీ విజయవంతంగా సమూహపరచబడలేదు.</item>
-        <item quantity="other">%1$d స్ప్లిట్ లావాదేవీలు విజయవంతంగా సమూహపరచబడలేదు.</item>
-    </plurals>
+    <string name="ungroup_split_transaction_success">స్ప్లిట్ లావాదేవీ విజయవంతంగా సమూహపరచబడలేదు.</string>
     <string name="menu_ungroup_split_transaction">సమూహ విభజన</string>
     <string name="warning_ungroup_split_transactions">ఎంచుకున్న స్ప్లిట్ లావాదేవీలు సమూహపరచబడవు, అనగా వాటి స్ప్లిట్ భాగాలు సాధారణ లావాదేవీలుగా మారతాయి.</string>
     <string name="warning_split_transactions">ఎంచుకున్న లావాదేవీలు ఒక స్ప్లిట్ లావాదేవీలుగా వర్గీకరించబడతాయి. వారి తేదీ సమాచారం పోతుంది, అనగా వాటి సగటుతో భర్తీ చేయబడుతుంది.</string>
@@ -101,7 +94,6 @@
         <item quantity="one">ఒక వస్తువు విజయవంతంగా తొలగించబడింది.</item>
         <item quantity="other">%d వస్తువులు విజయవంతంగా తొలగించబడ్డాయి.</item>
     </plurals>
-    <string name="sync_loading_accounts_from_backend">బ్యాకెండ్ నుండి అందుబాటులో ఉన్న ఖాతాలను లోడ్ చేస్తోంది.</string>
     <string name="sync_auth_exception">ప్రామాణీకరణ విఫలమైంది.</string>
     <string name="sync_login_again">దయచేసి మళ్ళీ లాగిన్ అవ్వండి.</string>
     <string name="auto_fill_account_from_aggregate_only">మొత్తం ఖాతా నుండి ప్రారంభించినప్పుడు మాత్రమే.</string>
@@ -127,7 +119,6 @@
     <string name="licence_removal_information">మీకు ఇకపై ఈ పరికరంలో ప్రీమియం కార్యాచరణ అవసరం లేకపోతే, మీరు లైసెన్స్ కీని తీసివేయవచ్చు. ఇది మరొక పరికరంలో సక్రియం చేయడానికి కీని విముక్తి చేస్తుంది. కీని %d పరికరాల్లో సక్రియం చేయవచ్చు.</string>
     <string name="licence_key">లైసెన్స్ కీ</string>
     <string name="button_validate">ధృవీకరించండి</string>
-    <string name="error">లోపం (%s)</string>
     <string name="licence_validation_error_device_limit_exceeded">పరికర పరిమితి మించిపోయింది. దయచేసి మరొక పరికరం నుండి లైసెన్స్‌ను తొలగించండి.</string>
     <string name="licence_validation_error_expired">లైసెన్స్ గడువు ముగిసింది</string>
     <string name="progress_validating_licence">లైసెన్స్ ధృవీకరిస్తోంది</string>
@@ -137,7 +128,6 @@
     <string name="pref_debug_logging_summary">సిస్టమ్ లాగ్‌లో డీబగ్గింగ్ సమాచారాన్ని వ్రాయండి</string>
     <string name="pref_sync_notification_summary">సమకాలీకరణ పురోగతి గురించి తెలియజేయండి</string>
     <string name="contributed_by">%s తోడ్పడింది</string>
-    <string name="template_create_error">టెంప్లేట్‌ను సేవ్ చేస్తున్నప్పుడు లోపం</string>
     <string name="dialog_button_add">జోడించు</string>
     <string name="onboarding_restore_from_local">స్థానిక బ్యాకప్ ఫైల్‌ను పునరుద్ధరించండి</string>
     <string name="onboarding_restore_from_cloud_backup">బ్యాకప్</string>
@@ -267,7 +257,6 @@
     <string name="restore_calendar_handling_configured">ప్రస్తుతం కాన్ఫిగర్ చేసిన క్యాలెండర్‌కు ప్రణాళికలను పునరుద్ధరించండి</string>
     <string name="restore_calendar_handling">క్యాలెండర్ డేటా నిర్వహణ</string>
     <string name="import_source_file">ఫైల్</string>
-    <string name="learn_more">ఇంకా నేర్చుకో</string>
     <string name="change_fraction_digits_result" tools:ignore="PluralsCandidate">%2$s కరెన్సీ ఉన్న%1$d ఖాతాలు నవీకరించబడ్డాయి.</string>
     <string name="hint_auto_fill">అదే చెల్లింపుదారు / చెల్లించువారు కోసం చివరి లావాదేవీ నుండి డేటా స్వయంచాలకంగా నింపాలా\? మీరు ఈ ప్రవర్తనను ఎల్లప్పుడూ సెట్టింగ్‌ల నుండి మార్చవచ్చు.</string>
     <string name="premium_failed_or_canceled" tools:ignore="UnusedResources">కొనుగోలు విఫలమైంది లేదా రద్దు చేయబడింది.</string>
@@ -401,7 +390,6 @@
     <string name="qif_parse_failure_found_multiple_accounts">QIF ఫైల్‌లో బహుళ ఖాతాలు కనుగొనబడ్డాయి.</string>
     <string name="qif_parse_result">అన్వయించబడింది: %1$s ఖాతాలు; %2$s వర్గాలు మరియు %3$s పార్టీలు</string>
     <string name="progress_dialog_printing">%s ను ఉత్పత్తి చేస్తోంది</string>
-    <string name="progress_dialog_loading">డేటాబేస్ నుండి వస్తువును లోడ్ చేస్తోంది</string>
     <string name="progress_dialog_deleting">వస్తువులను తొలగిస్తోంది</string>
     <string name="pref_visit_website_title">వెబ్‌సైట్‌ను సందర్శించండి</string>
     <string name="pref_visit_website_summary">చేంజ్లాగ్ మరియు తరచుగా అడిగే ప్రశ్నలు</string>
@@ -448,8 +436,8 @@
     <string name="pref_import_from_grisbi_title">గ్రిస్బీ నుండి దిగుమతి</string>
     <string name="pref_import_from_grisbi_summary">గ్రిస్బీ XML ఫైల్ నుండి వర్గాలు మరియు పార్టీలను దిగుమతి చేయండి</string>
     <string name="pref_export_format_title">డేటా ఫార్మాట్</string>
-    <string name="pref_enter_licence_title" tools:ignore="UnusedResources">కీని నమోదు చేయండి</string>
-    <string name="pref_enter_licence_summary" tools:ignore="UnusedResources">మీరు కీని అందుకుంటే, ప్రీమియం లక్షణాలకు ప్రాప్యతను పొందండి.</string>
+    <string name="pref_enter_licence_title">కీని నమోదు చేయండి</string>
+    <string name="pref_enter_licence_summary">మీరు కీని అందుకుంటే, ప్రీమియం లక్షణాలకు ప్రాప్యతను పొందండి.</string>
     <string name="pref_custom_currency_title">కరెన్సీలను అనుకూలీకరించండి</string>
     <string name="pref_contrib_purchase_title_in_app">అనువర్తనంలో చెల్లింపు</string>
     <string name="pref_contrib_purchase_title_upgrade">కీని అప్‌గ్రేడ్ చేయండి</string>
@@ -507,7 +495,6 @@
     <string name="label">లేబుల్</string>
     <string name="income">ఆదాయం</string>
     <string name="import_select_transactions">లావాదేవీలు</string>
-    <string name="important_upgrade_information_heading">ముఖ్యమైన సమాచారం</string>
     <string name="help_heading_whats_new">కొత్తది ఏమిటి</string>
     <string name="help_heading_license">లైసెన్స్</string>
     <string name="help_heading_credits">క్రెడిట్స్</string>
@@ -563,10 +550,6 @@
     <string name="dialog_command_disabled_reset_account">ఎగుమతి చేయడానికి లావాదేవీలు లేవు.</string>
     <string name="dialog_command_disabled_insert_transfer">బదిలీ లావాదేవీలకు రెండవ ఖాతా అవసరం.</string>
     <string name="dialog_command_disabled_balance">రాజీపడటానికి క్లియర్ చేసిన లావాదేవీలు లేవు.</string>
-    <string name="dialog_confirm_discard_new_method">క్రొత్త చెల్లింపు పద్ధతిని విస్మరించాలా\?</string>
-    <string name="dialog_confirm_discard_new_account">క్రొత్త ఖాతాను విస్మరించాలా\?</string>
-    <string name="dialog_confirm_discard_new_template">క్రొత్త టెంప్లేట్‌ను విస్మరించాలా\?</string>
-    <string name="dialog_confirm_discard_new_transaction">క్రొత్త లావాదేవీని విస్మరించాలా\?</string>
     <string name="dialog_confirm_discard_changes">మార్పులను విస్మరించు\?</string>
     <string name="dialog_balance_delete">రాజీ చేసిన లావాదేవీలను తొలగించండి</string>
     <string name="description">వివరణ</string>
@@ -587,7 +570,6 @@
     <string name="contrib_feature_pro_support_label" tools:ignore="UnusedResources"><b> ఇమెయిల్ మద్దతు </b> 2 పనిదినాలలో హామీ ప్రతిస్పందనతో</string>
     <string name="contrib_feature_split_template_label" tools:ignore="UnusedResources">స్ప్లిట్ టెంప్లేట్ల అపరిమిత సంఖ్య</string>
     <string name="contrib_feature_csv_import_label" tools:ignore="UnusedResources">CSV దిగుమతి</string>
-    <string name="contrib_feature_template_widget_label" tools:ignore="UnusedResources">మూస విడ్జెట్</string>
     <string name="export_to_format">%s కి ఎగుమతి చేయండి</string>
     <string name="io_error_unable_to_create_file">%2$s ఫోల్డర్‌లో %1$s ఫైల్‌ను సృష్టించడం సాధ్యం కాలేదు</string>
     <string name="menu_undelete_transaction">రాబట్టుకోవటం</string>
@@ -821,7 +803,6 @@
     <string name="no_budgets">+ బటన్‌ను నొక్కడం ద్వారా మీ మొదటి బడ్జెట్‌ను నిర్వచించండి.</string>
     <string name="budget_duration_to">వరకు</string>
     <string name="budget_duration_from">నుండి</string>
-    <string name="dialog_confirm_discard_new_budget">కొత్త బడ్జెట్‌ను విస్మరించాలా\?</string>
     <string name="budget_onetime">ఒక్కసారి</string>
     <string name="menu_create_budget">కొత్త బడ్జెట్</string>
     <string name="discover_feature_expense_income_switch">ఆదాయాన్ని రికార్డ్ చేయడానికి ఈ స్విచ్ బటన్‌ను ఉపయోగించండి.</string>
@@ -858,7 +839,6 @@
         <item quantity="other">%1$s రుణానికి %2$d మ్యాప్ చేయబడిన లావాదేవీలు ఉన్నాయి.</item>
     </plurals>
     <string name="dialog_title_delete_debt">రుణాన్ని తొలగించాలా\?</string>
-    <string name="dialog_confirm_discard_new_debt">కొత్త రుణాన్ని విస్మరించాలా\?</string>
     <string name="warning_party_delete_debt">ఈ పార్టీని తొలగించేటప్పుడు, దాని కోసం నిర్వచించబడిన అప్పులు కూడా తొలగించబడతాయి.</string>
     <string name="debts">అప్పులు</string>
     <string name="debt_I_owe">నేను %s కి రుణపడి ఉన్నాను</string>
@@ -897,7 +877,7 @@
     <string name="pref_csv_export_split_categories_summary">వర్గం సోపానక్రమం యొక్క ప్రతి స్థాయికి ప్రత్యేక నిలువు వరుసలను ఉపయోగించండి</string>
     <string name="pref_csv_export_split_amount_summary">ఆదాయం మరియు ఖర్చుల కోసం ప్రత్యేక నిలువు వరుసలను ఉపయోగించండి</string>
     <string name="pref_csv_export_split_date_time_summary">తేదీ మరియు సమయం కోసం ప్రత్యేక నిలువు వరుసలను ఉపయోగించండి</string>
-    <string name="whats_new_344">వర్గాలకు చిహ్నాలు</string>
+    <string name="icons_for_categories">వర్గాలకు చిహ్నాలు</string>
     <string name="webui_warning_move_transaction">లావాదేవీ ఖాతా {account}కి తరలించబడుతుంది.</string>
     <string name="required">అవసరం</string>
 </resources>

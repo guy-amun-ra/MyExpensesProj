@@ -9,13 +9,17 @@
     <string name="toast_text_copied">"පෙළ පිටපත් කරන ලදී"</string>
     <string name="copy_text">"පසුරු පුවරුවට පිටපත් කරන්න"</string>
     <string name="stop">"නතර කරන්න"</string>
+    <string name="style">"විලාසය"</string>
+    <string name="loading">"පූරණය කරමින්…"</string>
     <string name="no_network">"ජාල සම්බන්ධයක් නොමැත."</string>
     <string name="button_label_continue">"ඉදිරියට යන්න"</string>
     <string name="autofill">"ස්වයංක්‍රිය පිරවුම"</string>
     <string name="discard">"ඉවත ලන්න"</string>
     <string name="dialog_dismiss">"ඉවත ලන්න"</string>
+    <string name="details">"විස්තර"</string>
     <string name="response_yes">"ඔව්"</string>
     <string name="response_no">"නැත"</string>
+    <string name="experimental">"පරීක්ෂණාත්මක"</string>
     <string name="add_widget">"විජටය එක් කරන්න"</string>
     <string name="calendar">"දින දර්ශනය"</string>
     <string name="permissions_label">"අවසර"</string>
@@ -23,4 +27,9 @@
     <string name="setup">"පිහිටුවීම"</string>
     <string name="clear_cache">"හැඹිලිය හිස් කරන්න"</string>
     <string name="customize">"අභිරුචිකරණය"</string>
+    <string name="compact">සංයුක්ත</string>
+    <string name="storage_description">"පෙදෙසි ආචයනය"</string>
+    <string name="encryption">"සංකේතනය"</string>
+    <string name="learn_more">"තව දැන ගන්න"</string>
+    <string name="show_all">"සියල්ල පෙන්වන්න"</string>
 </resources>

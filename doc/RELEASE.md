@@ -7,6 +7,7 @@
 * Test and assemble
   * ./gradlew lintPlayWithAdsInternRelease
   * ./gradlew testPlayWithAdsInternDebugUnitTest (-PBETA=true)
+  * adb uninstall org.totschnig.myexpenses.debug
   * ./gradlew clean connectedPlayWithAdsInternDebugAndroidTest
   * ./gradlew clean bundlePlayWithAdsInternRelease
 * test upgrade mechanism
