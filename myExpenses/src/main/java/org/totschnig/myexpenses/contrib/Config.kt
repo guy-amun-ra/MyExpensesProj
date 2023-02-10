@@ -30,6 +30,6 @@ object Config {
     const val SKU_EXTENDED2PROFESSIONAL_12 = "sku_extended2professional_yearly"
 
     val amazonSkus = listOf(SKU_PREMIUM, SKU_EXTENDED, SKU_PREMIUM2EXTENDED, SKU_PROFESSIONAL_1, SKU_PROFESSIONAL_12, SKU_EXTENDED2PROFESSIONAL_1, SKU_EXTENDED2PROFESSIONAL_12)
-    val playInAppSkus = listOf(SKU_PREMIUM, SKU_EXTENDED, SKU_PREMIUM2EXTENDED, *AddOnPackage::class.sealedSubclasses.mapNotNull { it.objectInstance?.sku }.toTypedArray())
+    val playInAppSkus = listOf(SKU_PREMIUM, SKU_EXTENDED, SKU_PREMIUM2EXTENDED, *AddOnPackage.values.map { it.sku }.toTypedArray())
     val playSubsSkus = listOf(SKU_PROFESSIONAL_1, SKU_PROFESSIONAL_12)
 }
