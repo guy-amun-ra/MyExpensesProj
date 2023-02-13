@@ -23,9 +23,13 @@ import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.snackbar.Snackbar
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.EDIT_REQUEST
@@ -77,18 +81,21 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
         (requireActivity().applicationContext as MyApplication).appComponent.inject(viewModel)
         val rowId = requireArguments().getLong(DatabaseConstants.KEY_ROWID)
         viewModel.transaction(rowId).observe(this) { o -> fillData(o) }
-        viewModel.tags.observe(this) { tags ->
-            if (tags.isNotEmpty()) {
-                binding.TagGroup.addChipsBulk(tags)
-            } else {
-                binding.TagRow.visibility = View.GONE
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.loadOriginalTags(
+                    rowId,
+                    TransactionProvider.TRANSACTIONS_TAGS_URI,
+                    DatabaseConstants.KEY_TRANSACTIONID
+                ).collect {
+                    if (it.isNotEmpty()) {
+                        binding.TagGroup.addChipsBulk(it)
+                    } else {
+                        binding.TagRow.visibility = View.GONE
+                    }
+                }
             }
         }
-        viewModel.loadOriginalTags(
-            rowId,
-            TransactionProvider.TRANSACTIONS_TAGS_URI,
-            DatabaseConstants.KEY_TRANSACTIONID
-        )
         val alertDialog =
             builder.setTitle(R.string.loading) //.setIcon(android.R.color.transparent)
                 .setNegativeButton(android.R.string.ok, this)
