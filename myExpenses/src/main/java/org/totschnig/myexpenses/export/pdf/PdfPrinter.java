@@ -26,6 +26,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_WEEK;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_YEAR;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_YEAR_OF_WEEK_START;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.SPLIT_CATID;
+import static org.totschnig.myexpenses.util.ArrayUtilsKt.joinArrays;
 import static org.totschnig.myexpenses.util.CurrencyFormatterKt.convAmount;
 import static org.totschnig.myexpenses.util.CurrencyFormatterKt.formatMoney;
 
@@ -114,7 +115,7 @@ public class PdfPrinter {
     String[] selectionArgs = account.getSelectionArgsForTransactionList();
     if (filter != null && !filter.isEmpty()) {
       selection += " AND " + filter.getSelectionForParents(DatabaseConstants.VIEW_EXTENDED);
-      selectionArgs = Utils.joinArrays(selectionArgs, filter.getSelectionArgs(false));
+      selectionArgs = joinArrays(selectionArgs, filter.getSelectionArgs(false));
     }
     Cursor transactionCursor;
     String fileName = account.getLabel().replaceAll("\\W", "");
@@ -447,7 +448,7 @@ public class PdfPrinter {
       cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
       table.addCell(cell);
       String comment = transactionCursor.getString(columnIndexComment);
-      List<String> tagList = MoreDbUtilsKt.getStringListFromJson(transactionCursor, KEY_TAGLIST);
+      List<String> tagList = MoreDbUtilsKt.splitStringList(transactionCursor, KEY_TAGLIST);
       final boolean hasComment = comment != null && comment.length() > 0;
       final boolean hasTags = tagList.size() > 0;
       if (hasComment || hasTags) {

@@ -188,7 +188,7 @@ SELECT
     $KEY_USAGES,
     $KEY_LAST_USED,
     1 AS $KEY_LEVEL,
-    ${matches ?: "1"} AS $KEY_MATCHES_FILTER
+    ${matches?.replace("_Tree_","main") ?: "1"} AS $KEY_MATCHES_FILTER
 FROM $TABLE_CATEGORIES main
 WHERE ${rootExpression?.let { " $KEY_ROWID $it" } ?: "$KEY_PARENTID IS NULL"}
 UNION ALL
@@ -207,7 +207,7 @@ SELECT
     subtree.$KEY_USAGES,
     subtree.$KEY_LAST_USED,
     level + 1,
-    ${matches ?: "1"} AS $KEY_MATCHES_FILTER
+    ${matches?.replace("_Tree_","subtree") ?: "1"} AS $KEY_MATCHES_FILTER
 FROM $TABLE_CATEGORIES subtree
 JOIN Tree ON Tree._id = subtree.parent_id
 ORDER BY $KEY_LEVEL DESC${sortOrder?.let { ", $it" } ?: ""}
@@ -310,9 +310,4 @@ with data as
        exists(select 1 from data where $KEY_TAGID is not null) AS $KEY_MAPPED_TAGS
 """.trimIndent()
 
-fun tagListExpression(supportsJson: Boolean) = if (supportsJson) {
-    "json_group_array($TABLE_TAGS.$KEY_LABEL) filter ( where $TABLE_TAGS.$KEY_LABEL is not null )  AS $KEY_TAGLIST"
-} else  {
-    "group_concat($TABLE_TAGS.$KEY_LABEL, ', ') AS $KEY_TAGLIST"
-
-}
+const val TAG_LIST_EXPRESSION = "group_concat($TABLE_TAGS.$KEY_LABEL,'') AS $KEY_TAGLIST"

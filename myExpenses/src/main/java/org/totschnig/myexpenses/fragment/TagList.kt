@@ -11,9 +11,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.SavedStateViewModelFactory
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -22,13 +21,11 @@ import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener.BUTTON_POSITIVE
 import eltos.simpledialogfragment.input.SimpleInputDialog
-import org.totschnig.myexpenses.ACTION_MANAGE
-import org.totschnig.myexpenses.ACTION_SELECT_FILTER
-import org.totschnig.myexpenses.ACTION_SELECT_MAPPING
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
-import org.totschnig.myexpenses.activity.ManageTags
+import org.totschnig.myexpenses.activity.Action
 import org.totschnig.myexpenses.activity.ProtectedFragmentActivity
+import org.totschnig.myexpenses.activity.asAction
 import org.totschnig.myexpenses.databinding.TagListBinding
 import org.totschnig.myexpenses.viewmodel.TagBaseViewModel.Companion.KEY_DELETED_IDS
 import org.totschnig.myexpenses.viewmodel.TagListViewModel
@@ -37,17 +34,14 @@ import org.totschnig.myexpenses.viewmodel.data.Tag
 
 class TagList : Fragment(), OnDialogResultListener {
     private var _binding: TagListBinding? = null
-    private lateinit var viewModel: TagListViewModel
+    private val viewModel: TagListViewModel by activityViewModels()
     private lateinit var adapter: Adapter
-    private lateinit var action: String
 
     // This property is only valid between onCreateView and onDestroyView.
     private val binding get() = _binding!!
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val factory = SavedStateViewModelFactory(requireActivity().application, this, null)
-        viewModel = ViewModelProvider(this, factory)[TagListViewModel::class.java]
         (requireActivity().application as MyApplication).appComponent.inject(viewModel)
     }
 
@@ -60,16 +54,14 @@ class TagList : Fragment(), OnDialogResultListener {
         return binding.root
     }
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        action = (context as? ManageTags)?.intent?.action ?: ACTION_SELECT_MAPPING
-    }
+    private val action
+        get() = requireActivity().intent.asAction
 
     private val shouldManage: Boolean
-        get() = action == ACTION_MANAGE
+        get() = action == Action.MANAGE
 
     private val allowModifications: Boolean
-        get() = action != ACTION_SELECT_FILTER
+        get() = action != Action.SELECT_FILTER
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

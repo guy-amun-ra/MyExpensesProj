@@ -22,9 +22,12 @@ import android.text.InputType
 import android.text.TextUtils
 import android.view.*
 import android.widget.CompoundButton
+import androidx.activity.viewModels
 import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -43,9 +46,11 @@ import icepick.Icepick
 import icepick.State
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.*
+import org.totschnig.myexpenses.activity.Action
 import org.totschnig.myexpenses.activity.DebtEdit
 import org.totschnig.myexpenses.activity.DebtOverview
 import org.totschnig.myexpenses.activity.ManageParties
+import org.totschnig.myexpenses.activity.asAction
 import org.totschnig.myexpenses.databinding.PartiesListBinding
 import org.totschnig.myexpenses.databinding.PayeeRowBinding
 import org.totschnig.myexpenses.dialog.DebtDetailsDialogFragment
@@ -59,6 +64,7 @@ import org.totschnig.myexpenses.util.configureSearch
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.formatMoney
 import org.totschnig.myexpenses.util.prepareSearch
+import org.totschnig.myexpenses.viewmodel.CategoryViewModel
 import org.totschnig.myexpenses.viewmodel.PartyListViewModel
 import org.totschnig.myexpenses.viewmodel.data.Party
 import javax.inject.Inject
@@ -148,7 +154,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
             }
             val index2IdMap: MutableMap<Int, Long> = mutableMapOf()
             with(PopupMenu(requireContext(), binding.root)) {
-                if (action == ACTION_SELECT_MAPPING) {
+                if (action == Action.SELECT_MAPPING) {
                     menu.add(Menu.NONE, SELECT_COMMAND, Menu.NONE, R.string.select)
                         .setIcon(R.drawable.ic_menu_done)
                 }
@@ -156,7 +162,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
                     .setIcon(R.drawable.ic_menu_edit)
                 menu.add(Menu.NONE, DELETE_COMMAND, Menu.NONE, R.string.menu_delete)
                     .setIcon(R.drawable.ic_menu_delete)
-                if (action == ACTION_MANAGE) {
+                if (action == Action.MANAGE) {
                     val debts = viewModel.getDebts(getItem(position).party.id)
                     val subMenu = if ((debts?.size ?: 0) > 0)
                         menu.addSubMenu(Menu.NONE, DEBT_SUB_MENU, Menu.NONE, R.string.debts)
@@ -287,7 +293,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     private fun updateFabEnabled() {
         manageParties.setFabEnabled(
             adapter.checkedCount >=
-                    if (mergeMode) 2 else if (action == ACTION_SELECT_FILTER) 1 else 0
+                    if (mergeMode) 2 else if (action == Action.SELECT_FILTER) 1 else 0
         )
     }
 
@@ -312,7 +318,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     }
 
     lateinit var adapter: PayeeAdapter
-    lateinit var viewModel: PartyListViewModel
+    private val viewModel: PartyListViewModel by activityViewModels()
     private var _binding: PartiesListBinding? = null
 
     // This property is only valid between onCreateView and onDestroyView.
@@ -326,7 +332,6 @@ class PartiesList : Fragment(), OnDialogResultListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        viewModel = ViewModelProvider(this)[PartyListViewModel::class.java]
         with((requireActivity().application as MyApplication).appComponent) {
             inject(this@PartiesList)
             inject(viewModel)
@@ -355,7 +360,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
         if (activity == null) return
         inflater.inflate(R.menu.search, menu)
-        if (action == ACTION_MANAGE) {
+        if (action == Action.MANAGE) {
             mergeMenuItem = menu.add(Menu.NONE, R.id.MERGE_COMMAND, 0, R.string.menu_merge).apply {
                 setIcon(R.drawable.ic_menu_split_transaction)
                 isCheckable = true
@@ -413,8 +418,8 @@ class PartiesList : Fragment(), OnDialogResultListener {
         return true
     }
 
-    private val action: String
-        get() = manageParties.action
+    private val action
+        get() = requireActivity().intent.asAction
 
     private fun doSingleSelection(party: Party) {
         requireActivity().apply {
@@ -439,12 +444,12 @@ class PartiesList : Fragment(), OnDialogResultListener {
         viewModel.loadDebts().observe(viewLifecycleOwner) {
             lifecycleScope.launch {
                 repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    viewModel.parties(requireActivity().intent.getLongExtra(KEY_ACCOUNTID, 0))
+                    viewModel.parties
                         .collect { parties: List<Party> ->
                             if (viewModel.filter.isNullOrEmpty()) {
                                 activity?.invalidateOptionsMenu()
                             }
-                            if (action != ACTION_SELECT_FILTER) {
+                            if (action != Action.SELECT_FILTER) {
                                 binding.empty.visibility =
                                     if (parties.isEmpty()) View.VISIBLE else View.GONE
                                 binding.list.visibility =
@@ -452,7 +457,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
                             }
                             val elements = parties.map { PartyWrapper(it) }
                             adapter.submitList(
-                                if (action == ACTION_SELECT_FILTER)
+                                if (action == Action.SELECT_FILTER)
                                     listOf(
                                         PartyWrapper(
                                             Party(
@@ -475,7 +480,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     }
 
     private fun hasSelectMultiple(): Boolean {
-        return action == ACTION_SELECT_FILTER || mergeMode
+        return action == Action.SELECT_FILTER || mergeMode
     }
 
     companion object {
@@ -543,7 +548,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     }
 
     fun dispatchFabClick() {
-        if (action == ACTION_SELECT_FILTER) {
+        if (action == Action.SELECT_FILTER) {
             val selected = adapter.getSelected().map { it.party }
             val itemIds = selected.map { it.id }
             val labels = selected.map { it.name }

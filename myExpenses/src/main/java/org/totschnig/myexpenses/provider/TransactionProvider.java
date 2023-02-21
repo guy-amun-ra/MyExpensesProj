@@ -15,28 +15,41 @@
 
 package org.totschnig.myexpenses.provider;
 
-import android.content.*;
+import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
+import static android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE;
+import static org.totschnig.myexpenses.model.AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE;
+import static org.totschnig.myexpenses.model.AggregateAccount.GROUPING_AGGREGATE;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.budgetAllocation;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.budgetSelect;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.categoryTreeSelect;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.categoryTreeWithBudget;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.categoryTreeWithMappedObjects;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.checkForSealedAccount;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.transactionMappedObjectQuery;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.computeWhere;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.groupByForPaymentMethodQuery;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.havingForPaymentMethodQuery;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.mapPaymentMethodProjection;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.suggestNewCategoryColor;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.tableForPaymentMethodQuery;
+import static org.totschnig.myexpenses.util.ArrayUtilsKt.joinArrays;
+import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
+
+import android.content.ContentProviderOperation;
+import android.content.ContentProviderResult;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.OperationApplicationException;
+import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.database.sqlite.SQLiteConstraintException;
 import android.net.Uri;
 import android.os.Bundle;
 import android.text.TextUtils;
-
-import org.totschnig.myexpenses.BuildConfig;
-import org.totschnig.myexpenses.MyApplication;
-import org.totschnig.myexpenses.model.*;
-import org.totschnig.myexpenses.preference.PrefKey;
-import org.totschnig.myexpenses.provider.filter.WhereFilter;
-import org.totschnig.myexpenses.sync.json.TransactionChange;
-import org.totschnig.myexpenses.util.Preconditions;
-import org.totschnig.myexpenses.util.Utils;
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
-import org.totschnig.myexpenses.util.cursor.PlanInfoCursorWrapper;
-import org.totschnig.myexpenses.util.io.FileCopyUtils;
-
-import java.io.File;
-import java.util.*;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -45,14 +58,30 @@ import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 
-import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
-import static android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE;
-import static org.totschnig.myexpenses.model.AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE;
-import static org.totschnig.myexpenses.model.AggregateAccount.GROUPING_AGGREGATE;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
-import static org.totschnig.myexpenses.provider.DbConstantsKt.*;
-import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.*;
-import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
+import org.totschnig.myexpenses.BuildConfig;
+import org.totschnig.myexpenses.model.Account;
+import org.totschnig.myexpenses.model.CrStatus;
+import org.totschnig.myexpenses.model.Grouping;
+import org.totschnig.myexpenses.model.Model;
+import org.totschnig.myexpenses.model.PaymentMethod;
+import org.totschnig.myexpenses.model.Sort;
+import org.totschnig.myexpenses.model.Template;
+import org.totschnig.myexpenses.model.Transaction;
+import org.totschnig.myexpenses.preference.PrefKey;
+import org.totschnig.myexpenses.provider.filter.WhereFilter;
+import org.totschnig.myexpenses.sync.json.TransactionChange;
+import org.totschnig.myexpenses.util.Preconditions;
+import org.totschnig.myexpenses.util.Utils;
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
+import org.totschnig.myexpenses.util.cursor.PlanInfoCursorWrapper;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 
 public class TransactionProvider extends BaseTransactionProvider {
 
@@ -208,8 +237,9 @@ public class TransactionProvider extends BaseTransactionProvider {
    */
   public static final String QUERY_PARAMETER_ACCOUNTY_TYPE_LIST = "accountTypeList";
 
-
   public static final String QUERY_PARAMETER_WITH_HIDDEN_ACCOUNT_COUNT = "withHiddenAccountCount";
+
+  public static final String QUERY_PARAMETER_WITH_FILTER = "withFilter";
   @Deprecated
   public static final String METHOD_BULK_START = "bulkStart";
   @Deprecated
@@ -318,7 +348,7 @@ public class TransactionProvider extends BaseTransactionProvider {
         String amountCalculation;
         qb = SupportSQLiteQueryBuilder.builder(VIEW_WITH_ACCOUNT);
         if (accountSelector != null) {
-          selectionArgs = Utils.joinArrays(new String[]{accountSelector}, selectionArgs);
+          selectionArgs = joinArrays(new String[]{accountSelector}, selectionArgs);
           additionalWhere.append(" AND " + KEY_ACCOUNTID).append(accountSelectionQuery);
           amountCalculation = KEY_AMOUNT;
         } else {
@@ -422,7 +452,7 @@ public class TransactionProvider extends BaseTransactionProvider {
         selection = accountSelectionQuery
             + (selection != null ? " AND " + selection : "");
         if (accountSelector != null) {
-          selectionArgs = Utils.joinArrays(
+          selectionArgs = joinArrays(
               new String[]{accountSelector},
               selectionArgs);
         }
@@ -537,7 +567,7 @@ public class TransactionProvider extends BaseTransactionProvider {
       case PAYEES:
         qb = SupportSQLiteQueryBuilder.builder(TABLE_PAYEES);
         if (sortOrder == null) {
-          sortOrder = KEY_PAYEE_NAME;
+          sortOrder = KEY_PAYEE_NAME + " COLLATE " + getCollate();
         }
         if (projection == null)
           projection = Companion.getPAYEE_PROJECTION();
@@ -755,11 +785,22 @@ public class TransactionProvider extends BaseTransactionProvider {
       }
       case TAGS:
         boolean withCount = uri.getBooleanQueryParameter(QUERY_PARAMETER_WITH_COUNT, false);
-        qb = SupportSQLiteQueryBuilder.builder(withCount ? TABLE_TAGS + " LEFT JOIN " + TABLE_TRANSACTIONS_TAGS + " ON (" + KEY_ROWID + " = " + KEY_TAGID + ")" : TABLE_TAGS);
+        boolean withFilter = uri.getBooleanQueryParameter(QUERY_PARAMETER_WITH_FILTER, false);
+        String tableName;
         if (withCount) {
+          tableName = TABLE_TAGS + " LEFT JOIN " + TABLE_TRANSACTIONS_TAGS + " ON (" + KEY_ROWID + " = " + KEY_TAGID + ")";
           projection = new String[]{KEY_ROWID, KEY_LABEL, String.format("count(%s) AS %s", KEY_TAGID, KEY_COUNT)};
           groupBy = KEY_ROWID;
         }
+        else if (withFilter) {
+          tableName = TABLE_TAGS + " LEFT JOIN " + TABLE_TRANSACTIONS_TAGS + " ON (" + TABLE_TAGS + "." + KEY_ROWID + " = " + KEY_TAGID + ") LEFT JOIN " +
+                  TABLE_TRANSACTIONS + " ON (" + TABLE_TRANSACTIONS + "." + KEY_ROWID + " = " + KEY_TRANSACTIONID  + ")";
+          projection = new String[]{TABLE_TAGS + "." + KEY_ROWID, KEY_LABEL};
+          groupBy = TABLE_TAGS + "." + KEY_ROWID;
+        } else {
+          tableName = TABLE_TAGS;
+        }
+        qb = SupportSQLiteQueryBuilder.builder(tableName);
         break;
       case TRANSACTIONS_TAGS:
         qb = SupportSQLiteQueryBuilder.builder(TABLE_TRANSACTIONS_TAGS + " LEFT JOIN " + TABLE_TAGS + " ON (" + KEY_TAGID + " = " + KEY_ROWID + ")");
