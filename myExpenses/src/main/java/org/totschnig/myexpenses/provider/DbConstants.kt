@@ -180,6 +180,7 @@ fun categoryTreeCTE(
 WITH Tree as (
 SELECT
     $KEY_LABEL,
+    $KEY_UUID,
     ${maybeEscapeLabel(categorySeparator, "main")} AS $KEY_PATH,
     $KEY_COLOR,
     $KEY_ICON,
@@ -194,6 +195,7 @@ WHERE ${rootExpression?.let { " $KEY_ROWID $it" } ?: "$KEY_PARENTID IS NULL"}
 UNION ALL
 SELECT
     subtree.$KEY_LABEL,
+    subtree.$KEY_UUID,
     Tree.$KEY_PATH || '${categorySeparator ?: " > "}' || ${
     maybeEscapeLabel(
         categorySeparator,
@@ -220,13 +222,12 @@ fun fullCatCase(categorySeparator: String?) = "(" + categoryTreeSelect(
     categorySeparator = categorySeparator
 ) + ")"
 
-fun fullLabel(categorySeparator: String?) = "CASE WHEN " +
-        "  " + KEY_TRANSFER_ACCOUNT + " " +
-        " THEN " +
-        "  (SELECT " + KEY_LABEL + " FROM " + TABLE_ACCOUNTS + " WHERE " + KEY_ROWID + " = " + KEY_TRANSFER_ACCOUNT + ") " +
-        " ELSE " +
-        fullCatCase(categorySeparator) +
-        " END AS  " + KEY_LABEL
+fun categoryPathFromLeave(rowId: String) = """
+    WITH Tree as (SELECT parent_id, label, icon, uuid, color  from categories child where _id = $rowId
+    UNION ALL
+    SELECT parent.parent_id, parent.label, parent.icon, parent.uuid, parent.color from categories parent JOIN Tree on Tree.parent_id = parent._id
+    ) SELECT * FROM Tree
+""".trimIndent()
 
 /**
  * for transfer label of transfer_account, for transaction full breadcrumb of category
@@ -255,7 +256,6 @@ WITH now as (
         $KEY_TRANSFER_PEER,
         $KEY_CR_STATUS,
         $KEY_DATE,
-        coalesce($KEY_EXCHANGE_RATE, 1) AS $KEY_EXCHANGE_RATE,
         coalesce(
             CASE
                 WHEN $KEY_PARENTID
@@ -272,7 +272,6 @@ WITH now as (
 ), aggregates AS (
     SELECT
         $KEY_ACCOUNTID,
-        $KEY_EXCHANGE_RATE,
         $aggregateFunction($KEY_AMOUNT) as $KEY_TOTAL,
         $aggregateFunction($KEY_EQUIVALENT_AMOUNT) as equivalent_total,
         $aggregateFunction(CASE WHEN $KEY_AMOUNT > 0 AND $KEY_TRANSFER_PEER IS NULL THEN $KEY_AMOUNT ELSE 0 END) as $KEY_SUM_INCOME,
@@ -291,10 +290,10 @@ WITH now as (
 """
 }
 
-fun exchangeRateJoin(table: String, colum: String, homeCurrency: String) = """
+fun exchangeRateJoin(table: String, colum: String, homeCurrency: String, joinTable: String = table) = """
     $table LEFT JOIN $TABLE_ACCOUNT_EXCHANGE_RATES
-        ON $table.$colum = $TABLE_ACCOUNT_EXCHANGE_RATES.$KEY_ACCOUNTID
-        AND $KEY_CURRENCY_SELF = $table.$KEY_CURRENCY
+        ON $joinTable.$colum = $TABLE_ACCOUNT_EXCHANGE_RATES.$KEY_ACCOUNTID
+        AND $KEY_CURRENCY_SELF = $joinTable.$KEY_CURRENCY
         AND $KEY_CURRENCY_OTHER = '$homeCurrency'
 """.trimIndent()
 

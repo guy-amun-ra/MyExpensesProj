@@ -150,6 +150,9 @@ abstract class BaseTransactionProvider : ContentProvider() {
     }
 
     companion object {
+        val CATEGORY_TREE_URI: Uri
+            get() = TransactionProvider.CATEGORIES_URI.buildUpon()
+                .appendBooleanQueryParameter(TransactionProvider.QUERY_PARAMETER_HIERARCHICAL).build()
         const val CURRENCIES_USAGES_TABLE_EXPRESSION =
             "$TABLE_CURRENCIES LEFT JOIN (SELECT coalesce($KEY_ORIGINAL_CURRENCY, $KEY_CURRENCY) AS currency_coalesced, count(*) AS $KEY_USAGES FROM $VIEW_EXTENDED GROUP BY currency_coalesced) on currency_coalesced = $KEY_CODE"
 
@@ -276,7 +279,22 @@ abstract class BaseTransactionProvider : ContentProvider() {
     val budgetTableJoin =
         "$TABLE_BUDGETS LEFT JOIN $TABLE_ACCOUNTS ON ($KEY_ACCOUNTID = $TABLE_ACCOUNTS.$KEY_ROWID)"
 
-    private val fullAccountProjection = Account.PROJECTION_BASE + arrayOf(
+    private val fullAccountProjection = arrayOf(
+        "$TABLE_ACCOUNTS.$KEY_ROWID AS $KEY_ROWID",
+        KEY_LABEL,
+        "$TABLE_ACCOUNTS.$KEY_DESCRIPTION AS $KEY_DESCRIPTION",
+        KEY_OPENING_BALANCE,
+        "$TABLE_ACCOUNTS.$KEY_CURRENCY AS $KEY_CURRENCY",
+        KEY_COLOR,
+        "$TABLE_ACCOUNTS.$KEY_GROUPING AS $KEY_GROUPING",
+        KEY_TYPE,
+        KEY_SORT_KEY,
+        KEY_EXCLUDE_FROM_TOTALS,
+        KEY_SYNC_ACCOUNT_NAME,
+        KEY_UUID,
+        KEY_SORT_DIRECTION,
+        KEY_CRITERION,
+        KEY_SEALED,
         "$KEY_OPENING_BALANCE + coalesce($KEY_CURRENT,0) AS $KEY_CURRENT_BALANCE",
         KEY_SUM_INCOME,
         KEY_SUM_EXPENSES,
@@ -321,7 +339,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
         val cte = accountQueryCTE(homeCurrency, futureStartsNow, aggregateFunction)
 
         val joinWithAggregates =
-            "$TABLE_ACCOUNTS LEFT JOIN aggregates ON $TABLE_ACCOUNTS.$KEY_ROWID = $KEY_ACCOUNTID"
+            "$TABLE_ACCOUNTS LEFT JOIN aggregates ON $TABLE_ACCOUNTS.$KEY_ROWID = aggregates.$KEY_ACCOUNTID"
 
         val accountQueryBuilder =
             SupportSQLiteQueryBuilder.builder(if (minimal) TABLE_ACCOUNTS else joinWithAggregates)
@@ -373,7 +391,6 @@ abstract class BaseTransactionProvider : ContentProvider() {
                         "null AS $KEY_SYNC_ACCOUNT_NAME",
                         "null AS $KEY_UUID",
                         "$TABLE_CURRENCIES.$KEY_SORT_DIRECTION",
-                        "1 AS $KEY_EXCHANGE_RATE",
                         "0 AS $KEY_CRITERION",
                         "0 AS $KEY_SEALED",
                         "$openingBalanceSum + coalesce($aggregateFunction($KEY_CURRENT),0) AS $KEY_CURRENT_BALANCE",
@@ -403,7 +420,9 @@ abstract class BaseTransactionProvider : ContentProvider() {
             }
             //home query
             if (mergeAggregate == Account.HOME_AGGREGATE_ID.toString() || mergeAggregate == "1") {
-                val qb = SupportSQLiteQueryBuilder.builder(joinWithAggregates)
+                val qb = SupportSQLiteQueryBuilder.builder(
+                    exchangeRateJoin(joinWithAggregates, KEY_ROWID, homeCurrency, TABLE_ACCOUNTS)
+                )
 
                 val grouping = prefHandler.getString(AggregateAccount.GROUPING_AGGREGATE, "NONE")
                 val sortDirection =
@@ -423,7 +442,7 @@ abstract class BaseTransactionProvider : ContentProvider() {
                     )
                 } else {
                     val openingBalanceSum =
-                        "$aggregateFunction($KEY_OPENING_BALANCE * $KEY_EXCHANGE_RATE)"
+                        "$aggregateFunction($KEY_OPENING_BALANCE * coalesce($KEY_EXCHANGE_RATE, 1))"
                     arrayOf(
                         rowIdColumn,
                         labelColumn,
@@ -438,7 +457,6 @@ abstract class BaseTransactionProvider : ContentProvider() {
                         "null AS $KEY_SYNC_ACCOUNT_NAME",
                         "null AS $KEY_UUID",
                         "'$sortDirection' AS $KEY_SORT_DIRECTION",
-                        "1 AS $KEY_EXCHANGE_RATE",
                         "0 AS $KEY_CRITERION",
                         "0 AS $KEY_SEALED",
                         "$openingBalanceSum + coalesce($aggregateFunction(equivalent_current),0) AS $KEY_CURRENT_BALANCE",

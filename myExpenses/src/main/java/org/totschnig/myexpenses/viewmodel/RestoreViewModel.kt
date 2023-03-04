@@ -31,13 +31,13 @@ import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseVersionPeekHelper
 import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.checkSyncAccounts
 import org.totschnig.myexpenses.provider.filter.WhereFilter
 import org.totschnig.myexpenses.provider.getBackupDbFile
 import org.totschnig.myexpenses.provider.getBackupPrefFile
 import org.totschnig.myexpenses.provider.getCalendarPath
 import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.sync.SyncAdapter
-import org.totschnig.myexpenses.sync.SyncBackendProvider
 import org.totschnig.myexpenses.sync.SyncBackendProviderFactory
 import org.totschnig.myexpenses.util.AppDirHelper
 import org.totschnig.myexpenses.util.PictureDirHelper
@@ -50,7 +50,6 @@ import java.io.File
 import java.io.IOException
 import java.io.PushbackInputStream
 import java.security.GeneralSecurityException
-import java.util.*
 import javax.inject.Inject
 
 class RestoreViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
@@ -106,32 +105,22 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
 
             val workingDir = AppDirHelper.cacheDir(application)
             try {
-
-                val syncBackendProvider: SyncBackendProvider
                 val inputStream: PushbackInputStream? = if (syncAccountName != null) {
                     val account = GenericAccountService.getAccount(syncAccountName)
-                    try {
-                        syncBackendProvider =
-                            SyncBackendProviderFactory.getLegacy(application, account, false)
-                    } catch (throwable: Throwable) {
+                    SyncBackendProviderFactory[application, account, false].onFailure {
                         val error = Exception(
                             "Unable to get sync backend provider for $syncAccountName",
-                            throwable
+                            it
                         )
                         CrashHandler.report(error)
                         failureResult(error)
                         return@launch
-                    }
-                    try {
-                        EncryptionHelper.wrap(
-                            syncBackendProvider.getInputStreamForBackup(
-                                backupFromSync!!
-                            )
-                        )
-                    } catch (e: IOException) {
-                        failureResult(e)
+                    }.mapCatching {
+                        EncryptionHelper.wrap(it.getInputStreamForBackup(backupFromSync!!))
+                    }.onFailure {
+                        failureResult(it)
                         return@launch
-                    }
+                    }.getOrNull()
                 } else {
                     EncryptionHelper.wrap(contentResolver.openInputStream(fileUri!!))
                 }
@@ -524,7 +513,7 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                         failed
                     )
                 }
-                Account.checkSyncAccounts(application)
+                checkSyncAccounts(application)
             }
         }
         return message

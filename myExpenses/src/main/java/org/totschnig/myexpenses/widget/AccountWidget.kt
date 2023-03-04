@@ -5,9 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.RemoteViews
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
 import org.totschnig.myexpenses.activity.MyExpenses
@@ -16,7 +13,8 @@ import org.totschnig.myexpenses.fragment.AccountWidgetConfigurationFragment
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import org.totschnig.myexpenses.util.doAsync
+import org.totschnig.myexpenses.util.safeMessage
 
 const val CLICK_ACTION_NEW_TRANSACTION = "newTransaction"
 const val CLICK_ACTION_NEW_TRANSFER = "newTransfer"
@@ -56,20 +54,6 @@ class AccountWidget :
         }
     }
 
-    private fun doAsync(
-        block: suspend () -> Unit
-    ) {
-        val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.IO).launch {
-            block()
-            try {
-                pendingResult.finish()
-            } catch (e: Exception) {
-                CrashHandler.report(e)
-            }
-        }
-    }
-
     override fun onUpdate(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -88,21 +72,27 @@ class AccountWidget :
         appWidgetId: Int,
         accountId: String
     ) {
-        val widget = AccountRemoteViewsFactory.buildCursor(context, accountId)?.use { cursor ->
-            if (cursor.moveToFirst()) {
-                RemoteViews(context.packageName, R.layout.widget_row).also { widget ->
-                    AccountRemoteViewsFactory.populate(
-                        context, widget, cursor,
-                        AccountRemoteViewsFactory.sumColumn(context, appWidgetId),
-                        availableWidth(context, appWidgetManager, appWidgetId),
-                        Pair(appWidgetId, clickBaseIntent(context))
-                    )
+        val widget = kotlin.runCatching {
+            AccountRemoteViewsFactory.buildCursor(context, accountId)
+        }.mapCatching {
+            it?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    RemoteViews(context.packageName, R.layout.widget_row).also { widget ->
+                        AccountRemoteViewsFactory.populate(
+                            context, widget, cursor,
+                            AccountRemoteViewsFactory.sumColumn(context, appWidgetId),
+                            availableWidth(context, appWidgetManager, appWidgetId),
+                            Pair(appWidgetId, clickBaseIntent(context))
+                        )
+                    }
+                } else {
+                    throw Exception(context.getString(R.string.account_deleted))
                 }
-            } else RemoteViews(context.packageName, R.layout.widget_list).apply {
-                setTextViewText(R.id.emptyView, context.getString(R.string.account_deleted))
+            } ?: throw Exception("Cursor returned null")
+        }.getOrElse {
+            RemoteViews(context.packageName, R.layout.widget_list).apply {
+                setTextViewText(R.id.emptyView, it.safeMessage)
             }
-        } ?: RemoteViews(context.packageName, R.layout.widget_list).apply {
-            setTextViewText(R.id.emptyView, "Cursor returned null")
         }
         appWidgetManager.updateAppWidget(appWidgetId, widget)
     }
