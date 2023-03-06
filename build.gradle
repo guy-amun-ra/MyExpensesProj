@@ -17,7 +17,7 @@ plugins {
 }
 
 ext {
-    versionCode = 594
+    versionCode = 595
     versionName = '3.5.2'
     compileSdkVersion = 33
     minSdkVersion = 21
@@ -49,7 +49,7 @@ ext {
     annotations = "1.5.0"
     commonsLang = "3.12.0"
     commonsText = "1.9"
-    ktor = "2.1.0"
+    ktor = "2.2.4"
     bouncycastle = "1.71.1"
     desugarVersion = "2.0.0"
     mlkitTextRecognition = "16.0.0-beta6"
