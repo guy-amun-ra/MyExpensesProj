@@ -505,7 +505,7 @@
     <string name="pref_auto_backup_title">Automatische Datensicherung</string>
     <string name="pref_auto_backup_summary">Sichere Datenbank täglich zur angegebenen Zeit (nur wenn sich die Daten verändert haben).</string>
     <string name="pref_auto_backup_time_title">Zeit für automatische Sicherung</string>
-    <string name="calendar_permission_required"><i>{app_name}</i> benötigt die Berechtigung, auf Ihren Kalender zugreifen, um Pläne für zukünftige und wiederkehrende Buchungen zu erstellen.</string>
+    <string name="calendar_permission_required"><i>{app_name}</i> benötigt die Berechtigung, auf Ihren Kalender zuzugreifen, um Pläne für zukünftige und wiederkehrende Buchungen zu erstellen.</string>
     <string name="button_request_calendar_access" tools:ignore="UnusedResources">Zugriff gewähren</string>
     <string name="switch_on_text">An</string>
     <string name="switch_off_text">Aus</string>
@@ -1015,4 +1015,8 @@
     <string name="encrypt_database_info">Die Datenbank wird mit einer Passphrase verschlüsselt, die nicht von diesem Gerät extrahiert werden kann. Folglich wird sie nicht vom Backup-Service Ihres Geräts gesichert.</string>
     <string name="database_is_encrypted">Die Datenbank ist verschlüsselt.</string>
     <string name="github_sponsors">Lizenzschlüssel werden auch &lt;a href=%s&gt;Github-Sponsoren&lt;/a&gt; zur Verfügung gestellt.</string>
+    <string name="notifications_permission_required_webui">Indem Sie die Erlaubnis zum Senden von Benachrichtigungen erteilen, können Sie den Status des Webservers kontrollieren.</string>
+    <string name="notifications_channel_required">Bitte aktivieren Sie den Kanal %s.</string>
+    <string name="notifications_permission_required_planner"><i>{app_name}</i> benötigt die Berechtigung, Ihnen Benachrichtigungen zu senden, wenn zukünftige Transaktionen gebucht werden.</string>
+    <string name="notifications_permission_required_sync">Indem Sie die Berechtigung zum Senden von Benachrichtigungen erteilen, können Sie den Fortschritt der Synchronisierungsvorgänge überwachen.</string>
 </resources>

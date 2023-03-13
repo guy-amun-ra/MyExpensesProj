@@ -472,11 +472,15 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
         linkInputsWithLabels()
         loadTags()
         loadCurrencies()
-        viewModel.getSplitParts().observe(this) { transactions ->
-            (delegate as? SplitDelegate)?.also {
-                it.showSplits(transactions)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.splitParts.collect { transactions ->
+                    (delegate as? SplitDelegate)?.also {
+                        it.showSplits(transactions)
+                    }
+                        ?: run { CrashHandler.report(java.lang.IllegalStateException("expected SplitDelegate, found ${delegate::class.java.name}")) }
+                }
             }
-                ?: run { CrashHandler.report(java.lang.IllegalStateException("expected SplitDelegate, found ${delegate::class.java.name}")) }
         }
         observeMoveResult()
     }
@@ -508,12 +512,16 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     private fun loadTemplates() {
-        viewModel.getTemplates().observe(this) { templates ->
-            menuItem2TemplateMap.clear()
-            for (template in templates) {
-                val menuId = ViewCompat.generateViewId()
-                menuItem2TemplateMap[menuId] = template
-                invalidateOptionsMenu()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.templates.collect { templates ->
+                    menuItem2TemplateMap.clear()
+                    for (template in templates) {
+                        val menuId = ViewCompat.generateViewId()
+                        menuItem2TemplateMap[menuId] = template
+                        invalidateOptionsMenu()
+                    }
+                }
             }
         }
     }
@@ -540,10 +548,14 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
     }
 
     private fun loadAccounts(fromSavedState: Boolean) {
-        viewModel.getAccounts().observe(this) { accounts ->
-            setAccounts(accounts, fromSavedState)
-            if (operationType == Transactions.TYPE_SPLIT) {
-                viewModel.loadSplitParts(delegate.rowId, isTemplate)
+        lifecycleScope.launch {
+            viewModel.accounts.collect {
+                repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    setAccounts(it, fromSavedState)
+                    if (operationType == Transactions.TYPE_SPLIT) {
+                        viewModel.loadSplitParts(delegate.rowId, isTemplate)
+                    }
+                }
             }
         }
     }
@@ -1383,14 +1395,16 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(),
 
     override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
         super.onPermissionsGranted(requestCode, perms)
-        if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR) {
+        if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR &&
+            PermissionHelper.PermissionGroup.CALENDAR.androidPermissions.all { perms.contains(it) } ) {
             delegate.onCalendarPermissionsResult(true)
         }
     }
 
     override fun onPermissionsDenied(requestCode: Int, perms: List<String>) {
         super.onPermissionsDenied(requestCode, perms)
-        if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR) {
+        if (requestCode == PermissionHelper.PERMISSIONS_REQUEST_WRITE_CALENDAR&&
+            PermissionHelper.PermissionGroup.CALENDAR.androidPermissions.any { perms.contains(it) } ) {
             delegate.onCalendarPermissionsResult(false)
         }
     }

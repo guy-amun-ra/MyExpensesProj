@@ -512,7 +512,7 @@
     <string name="pref_auto_backup_title">Sauvegarde automatique</string>
     <string name="pref_auto_backup_summary">Sauvegarde de la base de données quotidiennement à l\'heure spécifiée (seulement si les données ont changé).</string>
     <string name="pref_auto_backup_time_title">Heure d\'auto-sauvegarde</string>
-    <string name="calendar_permission_required">&lt;i&gt;{app_name} &lt;/i&gt; requiert votre permission d\'accéder à votre calendrier , dans le but de créer des échéances pour des opérations futures et répétitives.</string>
+    <string name="calendar_permission_required"><i>{app_name}</i> requiert votre permission d\'accéder à votre calendrier, dans le but de créer des échéances futures et périodiques.</string>
     <string name="button_request_calendar_access" tools:ignore="UnusedResources">Autoriser l\'accès</string>
     <string name="switch_on_text">Activé</string>
     <string name="switch_off_text">Désactivé</string>
@@ -1028,4 +1028,8 @@
     <string name="encrypt_database_info">La base de données sera cryptée avec une phrase secrète qui ne peut pas être extraite de cet appareil. Par conséquent, elle ne sera pas sauvegardé par le service de sauvegarde de votre appareil.</string>
     <string name="database_is_encrypted">La base de données est cryptée.</string>
     <string name="github_sponsors">Les clés de licence sont également fournies aux &lt;a href=%s&gt;sponsors Github&lt;/a&gt;.</string>
+    <string name="notifications_permission_required_webui">En accordant l’autorisation d’envoyer des notifications, vous pouvez contrôler l’état du serveur Web.</string>
+    <string name="notifications_channel_required">Veuillez activer le canal %s.</string>
+    <string name="notifications_permission_required_planner">i&gt;{app_name}&lt;/i&gt; requiert votre permission d\'envoyer des notifications lorsque des transactions futures sont enregistrées.</string>
+    <string name="notifications_permission_required_sync">En accordant l’autorisation d’envoyer des notifications, vous pouvez surveiller la progression des opérations de synchronisation.</string>
 </resources>

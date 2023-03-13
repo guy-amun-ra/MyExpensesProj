@@ -13,9 +13,11 @@ import android.view.View
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
+import app.cash.copper.flow.mapToList
+import app.cash.copper.flow.mapToOne
+import app.cash.copper.flow.observeQuery
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.MyApplication
@@ -24,9 +26,7 @@ import org.totschnig.myexpenses.provider.CalendarProviderProxy
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSACTIONID
-import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.getLongOrNull
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.getDateTimeFormatter
 import org.totschnig.myexpenses.util.localDateTime2EpochMillis
 import org.totschnig.myexpenses.viewmodel.data.Event
@@ -77,7 +77,7 @@ class PlannerViewModel(application: Application) : ContentResolvingAndroidViewMo
 
     private val formatter: DateTimeFormatter
 
-    private var updateDisposables = CompositeDisposable()
+    private var updateMap: MutableMap<Uri, Flow<PlanInstanceUpdate>> = mutableMapOf()
 
     init {
         val nowZDT = ZonedDateTime.now().toLocalDate()
@@ -120,13 +120,11 @@ class PlannerViewModel(application: Application) : ContentResolvingAndroidViewMo
             val plannerCalendarId = withContext(Dispatchers.Default) {
                 getApplication<MyApplication>().checkPlanner()
             }
-            disposable = briteContentResolver.createQuery(
-                builder.build(), null,
+            contentResolver.observeQuery( builder.build(), null,
                 CalendarContract.Events.CALENDAR_ID + " = " + plannerCalendarId,
-                null, CalendarContract.Instances.BEGIN + " ASC", false
-            )
-                .mapToList(PlanInstance.Companion::fromEventCursor)
-                .subscribe {
+                null, CalendarContract.Instances.BEGIN + " ASC", false)
+                .mapToList(mapper = PlanInstance.Companion::fromEventCursor)
+                .collect {
                     val start = SpannableString(first.startDate().format(formatter))
                     val end = SpannableString(last.endDate().format(formatter))
                     start.setSpan(
@@ -154,7 +152,7 @@ class PlannerViewModel(application: Application) : ContentResolvingAndroidViewMo
     }
 
     fun getUpdateFor(uri: Uri) {
-        try {
+        if (!updateMap.contains(uri)) {
             val templateId = uri.pathSegments[1].toLong()
             val instanceId = uri.pathSegments[2].toLong()
             val mapper = { cursor: Cursor ->
@@ -164,33 +162,24 @@ class PlannerViewModel(application: Application) : ContentResolvingAndroidViewMo
                 val amount = cursor.getLongOrNull(KEY_AMOUNT)
                 PlanInstanceUpdate(templateId, instanceId, newState, transactionId, amount)
             }
-            updateDisposables.add(
-                briteContentResolver.createQuery(uri, null, null, null, null, false)
-                    .mapToOneOrDefault(
-                        mapper,
-                        PlanInstanceUpdate(
-                            templateId,
-                            instanceId,
-                            PlanInstanceState.OPEN,
-                            null,
-                            null
-                        )
-                    )
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe({
-                        updates.value = it
-                    }, {
-                        CrashHandler.report(IllegalStateException("Query for uri failed: $uri", it))
-                    })
-            )
-        } catch (e: Exception) {
-            CrashHandler.report(java.lang.IllegalArgumentException("Cannot provide update for uri $uri"))
+            updateMap[uri] = contentResolver.observeQuery(uri, null, null, null, null, false)
+                .mapToOne(
+                    default = PlanInstanceUpdate(
+                        templateId,
+                        instanceId,
+                        PlanInstanceState.OPEN,
+                        null,
+                        null
+                    ),
+                    mapper = mapper
+                ).also {
+                    viewModelScope.launch {
+                        it.collect {
+                            updates.value = it
+                        }
+                    }
+                }
         }
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        updateDisposables.dispose()
     }
 
     fun applyBulk(selectedInstances: List<PlanInstance>) {

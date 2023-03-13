@@ -129,6 +129,8 @@ open class LicenceHandler(
         if (!keepFeatures) {
             addOnFeatures.clear()
             licenseStatusPrefs.remove(LICENSE_FEATURES)
+        }
+        if (addOnFeatures.isEmpty()) {
             hasOurLicence = false
         }
         licenseStatusPrefs.commit()
