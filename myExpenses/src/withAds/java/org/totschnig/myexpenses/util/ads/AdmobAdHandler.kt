@@ -34,9 +34,6 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
     MobileAds.setRequestConfiguration(configuration);*/
     }
 
-    override val shouldHideBanner: Boolean
-        get() = super.shouldHideBanner || Build.VERSION.SDK_INT == Build.VERSION_CODES.R
-
     override fun startBannerInternal() {
         showBannerAdmob()
     }
@@ -50,6 +47,7 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
             setAdSize(calculateAdSize)
             adUnitId = context.getString(if (isTest) R.string.admob_unitid_test_banner else bannerUnitId)
             adContainer.addView(this)
+            descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
             adListener = object : AdListener() {
                 override fun onAdLoaded() {
                     trackBannerLoaded(PROVIDER_ADMOB)
