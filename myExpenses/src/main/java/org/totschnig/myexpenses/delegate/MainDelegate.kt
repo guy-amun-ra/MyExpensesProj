@@ -13,6 +13,7 @@ import android.widget.FilterQueryProvider
 import android.widget.SimpleCursorAdapter
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.text.bold
+import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.fragment.app.FragmentActivity
 import org.totschnig.myexpenses.R
@@ -37,10 +38,12 @@ import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.ui.MyTextWatcher
 import org.totschnig.myexpenses.util.TextUtils.withAmountColor
 import org.totschnig.myexpenses.util.Utils
+import org.totschnig.myexpenses.util.configurePopupAnchor
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.formatMoney
 import org.totschnig.myexpenses.viewmodel.data.Account
 import org.totschnig.myexpenses.viewmodel.data.Debt
+import java.math.BigDecimal
 import kotlin.math.sign
 
 //Transaction or Split
@@ -239,7 +242,11 @@ abstract class MainDelegate<T : ITransaction>(
         handleDebts()
     }
 
-    private fun updateUiWithDebt(debt: Debt?) {
+    fun updateUiWithDebt() {
+        updateUiWithDebt(debts.find { it.id == debtId })
+    }
+
+    fun updateUiWithDebt(debt: Debt?) {
         if (debt == null) {
             if (viewBinding.DebtCheckBox.isChecked) {
                 viewBinding.DebtCheckBox.isChecked = false
@@ -249,41 +256,97 @@ abstract class MainDelegate<T : ITransaction>(
     }
 
     private fun updateDebtCheckBox(debt: Debt?) {
-        viewBinding.DebtCheckBox.text = debt?.let { formatDebt(it, true) } ?: ""
+        val installment = debt?.let { calculateInstallment(it) }
+        viewBinding.DebtCheckBox.text = debt?.let { formatDebt(it, installment) } ?: ""
+        viewBinding.DebtSummaryPopup.isVisible = installment != null
+        installment?.let {
+            val infoText = formatDebtHelp(debt, it)
+            viewBinding.DebtSummaryPopup.contentDescription = infoText
+            viewBinding.DebtSummaryPopup.configurePopupAnchor(infoText)
+        }
     }
 
-    private fun formatDebt(debt: Debt, withInstallment: Boolean = false): CharSequence {
+    private fun calculateInstallment(debt: Debt) =
+        (if (debt.currency != currentAccount()!!.currency)
+            with(
+                validateAmountInput(
+                    viewBinding.EquivalentAmount,
+                    showToUser = false,
+                    ifPresent = false
+                )
+            ) {
+                if (isIncome) this else this?.negate()
+            }
+        else
+            validateAmountInput()).takeIf { it != BigDecimal.ZERO }
+
+    private fun formatDebtHelp(debt: Debt, installment: BigDecimal) =
+        TextUtils.concat(*buildList {
+            val installmentSign = installment.signum()
+            val debtSign = debt.currentBalance.sign
+
+            add(
+                context.getString(
+                    when (installmentSign) {
+                        1 -> {
+                            when (debtSign) {
+                                1 -> R.string.debt_installment_receive
+                                else -> R.string.debt_borrow_additional
+                            }
+                        }
+                        -1 -> {
+                            when (debtSign) {
+                                -1 -> R.string.debt_installment_pay
+                                else -> R.string.debt_lend_additional
+                            }
+                        }
+                        else -> throw IllegalStateException()
+                    },
+                    currencyFormatter.formatMoney(Money(debt.currency, installment.abs()))
+                )
+            )
+
+            val currentBalance = Money(debt.currency, debt.currentBalance)
+            val futureBalance = Money(debt.currency, currentBalance.amountMajor - installment)
+
+            val futureSign = futureBalance.amountMajor.signum()
+
+            if (futureSign != debtSign) {
+                when (debtSign) {
+                    1 -> context.getString(R.string.debt_paid_off_other, debt.payeeName)
+                    -1 -> context.getString(R.string.debt_paid_off_self)
+                    else -> null
+                }?.let { add(it) }
+            }
+
+            val futureBalanceAbs =
+                currencyFormatter.formatMoney(Money(debt.currency, futureBalance.amountMajor.abs()))
+            when (futureSign) {
+                1 -> context.getString(
+                    R.string.debt_balance_they_owe,
+                    debt.payeeName,
+                    futureBalanceAbs
+                )
+                -1 -> context.getString(R.string.debt_balance_i_owe, futureBalanceAbs)
+                else -> null
+            }?.let { add(it) }
+
+        }.toTypedArray())
+
+    private fun formatDebt(debt: Debt, withInstallment: BigDecimal? = null): CharSequence {
         val amount = debt.currentBalance
         val money = Money(debt.currency, amount)
-        val elements = mutableListOf<CharSequence>().apply {
+        val elements = buildList {
             add(debt.label)
             add(" ")
             add(
                 currencyFormatter.formatMoney(money)
                     .withAmountColor(viewBinding.root.context.resources, amount.sign)
             )
-        }
-        val account = currentAccount()
-        if (withInstallment && account != null) {
-            val isForeignExchangeDebt = debt.currency != account.currency
-
-            val installment = if (isForeignExchangeDebt)
-                with(
-                    validateAmountInput(
-                        viewBinding.EquivalentAmount,
-                        showToUser = false,
-                        ifPresent = false
-                    )
-                ) {
-                    if (isIncome) this else this?.negate()
-                }
-            else
-                validateAmountInput()
-
-            if (installment != null) {
-                elements.add(" ${Transfer.RIGHT_ARROW} ")
-                val futureBalance = money.amountMajor - installment
-                elements.add(
+            withInstallment?.let {
+                add(" ${Transfer.RIGHT_ARROW} ")
+                val futureBalance = money.amountMajor - it
+                add(
                     currencyFormatter.formatMoney(Money(debt.currency, futureBalance))
                         .withAmountColor(
                             viewBinding.root.context.resources,
@@ -292,6 +355,7 @@ abstract class MainDelegate<T : ITransaction>(
                 )
             }
         }
+
         return TextUtils.concat(*elements.toTypedArray())
     }
 
@@ -305,6 +369,17 @@ abstract class MainDelegate<T : ITransaction>(
                 configureEquivalentAmount()
             }
         }
+        if (viewBinding.Payee.text.isEmpty()) {
+            val focussed: Boolean = viewBinding.Payee.hasFocus()
+            if (focussed) {
+                viewBinding.Payee.clearFocus()
+            }
+            viewBinding.Payee.setText(debt.payeeName)
+            if (focussed) {
+                viewBinding.Payee.requestFocus()
+            }
+            payeeId = debt.payeeId
+        }
     }
 
     private val applicableDebts: List<Debt>
@@ -316,12 +391,12 @@ abstract class MainDelegate<T : ITransaction>(
             viewBinding.DebtRow.visibility = if (hasDebts) View.VISIBLE else View.GONE
             if (hasDebts) {
                 if (debtId != null) {
-                    updateUiWithDebt(debts.find { it.id == debtId })
+                    updateUiWithDebt()
                     if (!viewBinding.DebtCheckBox.isChecked) {
                         viewBinding.DebtCheckBox.isChecked = true
                     }
-                } else if (isSingleDebtForPayee(debts)) {
-                    updateUiWithDebt(debts.first())
+                } else {
+                    updateUiWithDebt(singleDebtForPayee(debts))
                 }
             } else {
                 updateUiWithDebt(null)
@@ -329,14 +404,16 @@ abstract class MainDelegate<T : ITransaction>(
         }
     }
 
-    private fun isSingleDebtForPayee(debts: List<Debt>) =
-        debts.size == 1 && debts.first().payeeId == payeeId
+    private fun singleDebtForPayee(debts: List<Debt>) =
+        if (debts.size == 1) debts.first().takeIf { it.payeeId == payeeId } else null
 
     override fun setupListeners(watcher: TextWatcher) {
         super.setupListeners(watcher)
         viewBinding.Payee.addTextChangedListener {
-            payeeId = null
-            handleDebts()
+            if (viewBinding.Payee.isFocused) {
+                payeeId = null
+                handleDebts()
+            }
         }
     }
 
@@ -345,14 +422,15 @@ abstract class MainDelegate<T : ITransaction>(
             applicableDebts.let { debts ->
                 if (isChecked && !host.isFinishing) {
                     when (debts.size) {
-                        0 -> { /*should not happen*/ CrashHandler.throwOrReport(
-                            "Debt checked without applicable debt"
-                        )
+                        0 -> { /*should not happen*/
+                            CrashHandler.throwOrReport(
+                                "Debt checked without applicable debt"
+                            )
                         }
                         else -> {
-                            if (isSingleDebtForPayee(debts)) {
-                                setDebt(debts.first())
-                            } else {
+                            singleDebtForPayee(debts)?.also {
+                                setDebt(it)
+                            } ?: run {
                                 val sortedDebts =
                                     debts.sortedWith(compareBy<Debt> { it.payeeId != payeeId }.thenBy { it.payeeId })
                                 with(PopupMenu(context, viewBinding.DebtCheckBox)) {
@@ -400,9 +478,7 @@ abstract class MainDelegate<T : ITransaction>(
                         }
                     }
                 } else {
-                    if (debts.size > 1) {
-                        updateUiWithDebt(null)
-                    }
+                    updateUiWithDebt(null)
                     debtId = null
                 }
             }

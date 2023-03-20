@@ -1,9 +1,15 @@
 package org.totschnig.myexpenses.util
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
+import android.text.method.LinkMovementMethod
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
+import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.Spinner
 import android.widget.TextView
@@ -13,6 +19,7 @@ import androidx.core.widget.ImageViewCompat
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.model.AccountType
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.model.Grouping
@@ -133,3 +140,28 @@ fun FloatingActionButton.setBackgroundTintList(color: Int) {
     backgroundTintList = ColorStateList.valueOf(color)
     ImageViewCompat.setImageTintList(this, ColorStateList.valueOf(getBestForeground(color)))
 }
+
+fun View.configurePopupAnchor(
+    infoText: CharSequence
+) {
+    setOnClickListener {
+        val host = context.getActivity() ?: throw java.lang.IllegalStateException("BaseActivity expected")
+        host.hideKeyboard()
+        val infoTextView = LayoutInflater.from(host).inflate(R.layout.textview_info, null) as TextView
+        PopupWindow(infoTextView).apply {
+            isOutsideTouchable = true
+            isFocusable = true
+            //without setting background drawable, popup does not close on back button or touch outside, on older API levels
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            width = ViewGroup.LayoutParams.WRAP_CONTENT
+            height = ViewGroup.LayoutParams.WRAP_CONTENT
+
+            infoTextView.text = infoText
+            infoTextView.movementMethod = LinkMovementMethod.getInstance()
+            showAsDropDown(this@configurePopupAnchor)
+        }
+    }
+}
+
+tailrec fun Context.getActivity(): BaseActivity? = this as? BaseActivity
+    ?: (this as? ContextWrapper)?.baseContext?.getActivity()

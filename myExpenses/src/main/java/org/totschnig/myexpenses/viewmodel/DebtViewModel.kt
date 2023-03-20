@@ -12,9 +12,7 @@ import androidx.lifecycle.viewModelScope
 import app.cash.copper.flow.mapToList
 import app.cash.copper.flow.mapToOne
 import app.cash.copper.flow.observeQuery
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.html.*
 import kotlinx.html.stream.appendHTML
@@ -27,8 +25,6 @@ import org.totschnig.myexpenses.viewmodel.data.Debt
 import java.io.File
 import java.time.LocalDate
 import javax.inject.Inject
-import kotlin.math.absoluteValue
-import kotlin.math.sign
 
 open class DebtViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
 
@@ -39,7 +35,7 @@ open class DebtViewModel(application: Application) : ContentResolvingAndroidView
         emit(repository.saveDebt(debt))
     }
 
-    fun loadDebt(debtId: Long): LiveData<Debt> = liveData {
+    fun loadDebt(debtId: Long): StateFlow<Debt?> =
         contentResolver.observeQuery(
             singleDebtUri(debtId),
             null,
@@ -48,8 +44,7 @@ open class DebtViewModel(application: Application) : ContentResolvingAndroidView
             null
         ).mapToOne {
             Debt.fromCursor(it, currencyContext)
-        }.collect(this::emit)
-    }
+        }.stateIn(viewModelScope, SharingStarted.Lazily, null)
 
     private fun singleDebtUri(debtId: Long) =
         ContentUris.withAppendedId(TransactionProvider.DEBTS_URI, debtId)
@@ -64,39 +59,35 @@ open class DebtViewModel(application: Application) : ContentResolvingAndroidView
 
     private fun transactionsFlow(debt: Debt): Flow<List<Transaction>> {
         var runningTotal: Long = 0
+        var runningEquivalentTotal: Long = 0
         val homeCurrency = Utils.getHomeCurrency()
-        val amountColumn = if (debt.currency == homeCurrency) {
-            "CASE WHEN $KEY_CURRENCY = '$homeCurrency' THEN $KEY_AMOUNT ELSE ${
+        val equivalentAmountColumn =
+            "CASE WHEN $KEY_CURRENCY = '${homeCurrency.code}' THEN $KEY_AMOUNT ELSE ${
                 getAmountHomeEquivalent(
                     VIEW_EXTENDED
                 )
             } END"
-        } else {
-            KEY_AMOUNT
-        }
         return contentResolver.observeQuery(
             uri = EXTENDED_URI,
-            projection = arrayOf(KEY_ROWID, KEY_DATE, amountColumn),
+            projection = arrayOf(KEY_ROWID, KEY_DATE, KEY_AMOUNT, equivalentAmountColumn),
             selection = "$KEY_DEBT_ID = ?",
             selectionArgs = arrayOf(debt.id.toString()),
             sortOrder = "$KEY_DATE ASC"
         ).onEach {
             runningTotal = debt.amount
+            runningEquivalentTotal = debt.equivalentAmount?: debt.amount
         }.mapToList {
             val amount = it.getLong(2)
-            val previousBalance = runningTotal
+            val equivalentAmount = it.getLong(3)
             runningTotal -= amount
-            val trend =
-                if (previousBalance.sign * runningTotal.sign == -1)
-                    0
-                else
-                    runningTotal.absoluteValue.compareTo(previousBalance.absoluteValue)
+            runningEquivalentTotal -= equivalentAmount
             Transaction(
                 it.getLong(0),
                 epoch2LocalDate(it.getLong(1)),
                 -amount,
                 runningTotal,
-                trend
+                equivalentAmount,
+                runningEquivalentTotal
             )
         }
     }
@@ -252,7 +243,8 @@ open class DebtViewModel(application: Application) : ContentResolvingAndroidView
         val date: LocalDate,
         val amount: Long,
         val runningTotal: Long,
-        val trend: Int = 0
+        val equivalentAmount: Long = 0,
+        val equivalentRunningTotal: Long = 0,
     )
 
     enum class ExportFormat(val mimeType: String, val resId: Int) {

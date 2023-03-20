@@ -10,6 +10,7 @@ import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.getLongOrNull
 import org.totschnig.myexpenses.util.localDate2Epoch
 import java.math.BigDecimal
 import java.time.LocalDate
@@ -25,7 +26,9 @@ data class Debt(
     val date: Long,
     val payeeName: String? = null,
     val isSealed: Boolean = false,
-    val sum: Long = 0
+    val sum: Long = 0,
+    val equivalentAmount: Long? = null,
+    val equivalentSum: Long? = null
 ) {
     constructor(
         id: Long,
@@ -34,7 +37,8 @@ data class Debt(
         payeeId: Long,
         amount: BigDecimal,
         currency: CurrencyUnit,
-        date: LocalDate
+        date: LocalDate,
+        equivalentAmount: Long?
     ) : this(
         id,
         label,
@@ -42,7 +46,8 @@ data class Debt(
         payeeId,
         Money(currency, amount).amountMinor,
         currency,
-        localDate2Epoch(date)
+        localDate2Epoch(date),
+        equivalentAmount = equivalentAmount
     )
 
     fun title(context: Context) = when (val signum = currentBalance.sign) {
@@ -56,6 +61,9 @@ data class Debt(
     val currentBalance: Long
         get() = amount - sum
 
+    val currentEquivalentBalance: Long
+        get() = (equivalentAmount ?: amount) - (equivalentSum ?: sum)
+
     fun toContentValues() = ContentValues().apply {
         put(KEY_LABEL, label)
         put(KEY_DESCRIPTION, description)
@@ -65,6 +73,9 @@ data class Debt(
         if (id == 0L) {
             //the link between debt and payeeId should not be altered
             put(KEY_PAYEEID, payeeId)
+        }
+        equivalentAmount?.let {
+            put(KEY_EQUIVALENT_AMOUNT, it)
         }
     }
 
@@ -80,7 +91,10 @@ data class Debt(
             cursor.getLong(cursor.getColumnIndexOrThrow(KEY_DATE)),
             cursor.getString(cursor.getColumnIndexOrThrow(KEY_PAYEE_NAME)),
             cursor.getInt(cursor.getColumnIndexOrThrow(KEY_SEALED)) == 1,
-            cursor.getColumnIndex(KEY_SUM).takeIf { it != -1 }?.let { cursor.getLong(it) } ?: 0
+            cursor.getColumnIndex(KEY_SUM).takeIf { it != -1 }?.let { cursor.getLong(it) } ?: 0,
+            cursor.getLongOrNull(KEY_EQUIVALENT_AMOUNT),
+            cursor.getColumnIndex(KEY_EQUIVALENT_SUM).takeIf { it != -1 }?.let { cursor.getLong(it) } ?: 0
+
         )
     }
 }

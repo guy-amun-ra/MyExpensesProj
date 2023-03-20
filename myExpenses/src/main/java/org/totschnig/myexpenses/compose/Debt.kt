@@ -1,18 +1,29 @@
 package org.totschnig.myexpenses.compose
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -37,16 +48,18 @@ import org.totschnig.myexpenses.viewmodel.DebtViewModel
 import org.totschnig.myexpenses.viewmodel.data.Debt
 import timber.log.Timber
 import java.time.LocalDate
+import kotlin.math.absoluteValue
+import kotlin.math.sign
 
 @Composable
 fun DebtCard(
     debt: Debt,
     transactions: List<DebtViewModel.Transaction>,
     expanded: MutableState<Boolean>,
-    onEdit: (Debt) -> Unit,
-    onDelete: (Debt, Int) -> Unit,
-    onToggle: (Debt) -> Unit,
-    onShare: (Debt, DebtViewModel.ExportFormat) -> Unit,
+    onEdit: () -> Unit,
+    onDelete: (Int) -> Unit,
+    onToggle: () -> Unit,
+    onShare: (DebtViewModel.ExportFormat) -> Unit,
     onTransactionClick: (Long) -> Unit
 ) {
     Card(
@@ -65,7 +78,7 @@ fun DebtCard(
             onDelete,
             onToggle,
             onShare,
-            onTransactionClick = onTransactionClick
+            onTransactionClick
         )
     }
 }
@@ -75,12 +88,16 @@ fun DebtRenderer(
     debt: Debt,
     transactions: List<DebtViewModel.Transaction>,
     expanded: Boolean,
-    onEdit: (Debt) -> Unit = {},
-    onDelete: (Debt, Int) -> Unit = { _, _ -> },
-    onToggle: (Debt) -> Unit = {},
-    onShare: (Debt, DebtViewModel.ExportFormat) -> Unit = { _, _ -> },
+    onEdit: () -> Unit = {},
+    onDelete: (Int) -> Unit = {},
+    onToggle: () -> Unit = {},
+    onShare: (DebtViewModel.ExportFormat) -> Unit = {},
     onTransactionClick: (Long) -> Unit = {}
 ) {
+
+    val homeCurrency = LocalHomeCurrency.current
+    val showEquivalentAmount = rememberSaveable { mutableStateOf((debt.currency.code == homeCurrency.code)) }
+
     CompositionLocalProvider(
         LocalColors provides LocalColors.current.copy(
             income = colorResource(id = R.color.colorIncomeOnCard),
@@ -94,6 +111,7 @@ fun DebtRenderer(
                 modifier = Modifier
                     .padding(8.dp)
             ) {
+                val currency = if(showEquivalentAmount.value) homeCurrency else debt.currency
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -139,27 +157,49 @@ fun DebtRenderer(
                     }
                     if (!expanded) {
                         ColoredAmountText(
-                            debt.currentBalance,
-                            debt.currency
+                            if(showEquivalentAmount.value) debt.currentEquivalentBalance else debt.currentBalance,
+                            currency
                         )
                     }
                 }
+                val start = if (showEquivalentAmount.value) debt.equivalentAmount ?: debt.amount else debt.amount
                 if (expanded) {
                     TransactionRenderer(
-                        transaction = DebtViewModel.Transaction(
-                            0, epoch2LocalDate(debt.date), 0, debt.amount
-                        ),
-                        debt.currency,
+                        date = epoch2LocalDate(debt.date),
+                        amount = 0,
+                        runningTotal = start,
+                        currency,
                         boldBalance = false,
-                        withIcon = false
+                        trendIcon = null
                     )
                     val count = transactions.size
                     transactions.forEachIndexed { index, transaction ->
+                        val runningTotal =
+                            if (showEquivalentAmount.value) transaction.equivalentRunningTotal else transaction.runningTotal
+                        val previousBalance = if (index == 0) start else with(transactions.get(index-1)) {
+                            if (showEquivalentAmount.value) equivalentRunningTotal else runningTotal
+                        }
+
+                        val trend =
+                            if (previousBalance.sign * runningTotal.sign == -1)
+                                0
+                            else
+                                runningTotal.absoluteValue.compareTo(previousBalance.absoluteValue)
+                        val trendIcon = when {
+                            runningTotal == 0L -> R.drawable.ic_check
+                            trend > 0 -> R.drawable.ic_debt_up
+                            trend < 0 -> R.drawable.ic_debt_down
+                            else -> R.drawable.ic_swap_vert
+                        }
+
                         TransactionRenderer(
-                            transaction = transaction,
-                            debt.currency,
+                            date = transaction.date,
+                            amount = if (showEquivalentAmount.value) transaction.equivalentAmount else transaction.amount,
+                            runningTotal = runningTotal,
+                            currency,
                             index == count - 1,
-                            onTransactionClick = onTransactionClick
+                            onTransactionClick = { onTransactionClick(transaction.id) },
+                            trendIcon = trendIcon
                         )
                     }
                 }
@@ -169,24 +209,33 @@ fun DebtRenderer(
                     modifier = Modifier.align(Alignment.TopEnd),
                     menu = Menu(buildList {
                         if (!debt.isSealed) {
-                            add(edit { onEdit(it) })
+                            add(edit { onEdit() })
                         }
-                        add(toggle(debt.isSealed) { onToggle(it) })
-                        add(delete { onDelete(it, transactions.size) })
+                        add(toggle(debt.isSealed) { onToggle() })
+                        add(delete { onDelete(transactions.size) })
                         add(
-                            MenuEntry(
+                            SubMenuEntry(
                                 icon = Icons.Filled.Share,
                                 label = R.string.button_label_share_file,
                                 subMenu = Menu(
                                     DebtViewModel.ExportFormat.values().map { format ->
                                         MenuEntry(label = format.resId) {
-                                            onShare(it, format)
+                                            onShare(format)
                                         }
                                     }
                                 )
                             ))
-                    }),
-                    target = debt
+                        if (debt.currency.code != homeCurrency.code) {
+                            add(
+                                CheckableMenuEntry(
+                                    label = R.string.menu_equivalent_amount,
+                                    showEquivalentAmount.value
+                                ) {
+                                    showEquivalentAmount.value = !showEquivalentAmount.value
+                                }
+                            )
+                        }
+                    })
                 )
             }
         }
@@ -195,26 +244,28 @@ fun DebtRenderer(
 
 @Composable
 fun TransactionRenderer(
-    transaction: DebtViewModel.Transaction,
+    date: LocalDate,
+    amount: Long,
+    runningTotal: Long,
     currency: CurrencyUnit,
     boldBalance: Boolean,
-    withIcon: Boolean = true,
-    onTransactionClick: ((Long) -> Unit)? = null
+    @DrawableRes trendIcon: Int? = null,
+    onTransactionClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier.optional(onTransactionClick, ifPresent = {
-            clickable { it(transaction.id) }
+            clickable(onClick = it)
         }),
         verticalAlignment = Alignment.CenterVertically
     ) {
 
         Text(
             modifier = Modifier.padding(start = 4.dp),
-            text = LocalDateFormatter.current.format(transaction.date),
+            text = LocalDateFormatter.current.format(date),
             fontWeight = FontWeight.Light
         )
 
-        transaction.amount.takeIf { it != 0L }?.let {
+       amount.takeIf { it != 0L }?.let {
             Text(
                 modifier = Modifier.weight(1F),
                 textAlign = TextAlign.End,
@@ -223,22 +274,15 @@ fun TransactionRenderer(
         }
 
         ColoredAmountText(
-            amount = transaction.runningTotal,
+            amount = runningTotal,
             currency = currency,
             modifier = Modifier.weight(1F),
             fontWeight = if (boldBalance) FontWeight.Bold else null,
             textAlign = TextAlign.End
         )
-        if (withIcon) {
+        if (trendIcon != null) {
             Icon(
-                painter = painterResource(
-                    id = when {
-                        transaction.runningTotal == 0L -> R.drawable.ic_check
-                        transaction.trend > 0 -> R.drawable.ic_debt_up
-                        transaction.trend < 0 -> R.drawable.ic_debt_down
-                        else -> R.drawable.ic_swap_vert
-                    }
-                ),
+                painter = painterResource(id = trendIcon),
                 contentDescription = null
             )
         } else {
