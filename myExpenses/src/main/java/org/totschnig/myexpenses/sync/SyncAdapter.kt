@@ -6,16 +6,7 @@ import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.AbstractThreadedSyncAdapter
-import android.content.ContentProviderClient
-import android.content.ContentProviderOperation
-import android.content.ContentResolver
-import android.content.ContentUris
-import android.content.ContentValues
-import android.content.Context
-import android.content.Intent
-import android.content.OperationApplicationException
-import android.content.SyncResult
+import android.content.*
 import android.database.sqlite.SQLiteConstraintException
 import android.database.sqlite.SQLiteException
 import android.net.Uri
@@ -25,22 +16,15 @@ import android.os.RemoteException
 import android.util.SparseArray
 import androidx.core.util.Pair
 import org.totschnig.myexpenses.BuildConfig
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ManageSyncBackends
+import org.totschnig.myexpenses.db2.Repository
+import org.totschnig.myexpenses.db2.loadAccount
 import org.totschnig.myexpenses.model.CurrencyContext
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.provider.BaseTransactionProvider
+import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
-import org.totschnig.myexpenses.provider.asSequence
-import org.totschnig.myexpenses.provider.getIntOrNull
-import org.totschnig.myexpenses.provider.getLongOrNull
-import org.totschnig.myexpenses.provider.getString
-import org.totschnig.myexpenses.provider.getStringOrNull
-import org.totschnig.myexpenses.provider.maybeRepairRequerySchema
 import org.totschnig.myexpenses.service.SyncNotificationDismissHandler
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.deactivateSync
 import org.totschnig.myexpenses.sync.SequenceNumber.Companion.parse
@@ -50,9 +34,9 @@ import org.totschnig.myexpenses.sync.json.CategoryInfo
 import org.totschnig.myexpenses.sync.json.TransactionChange
 import org.totschnig.myexpenses.util.NotificationBuilderWrapper
 import org.totschnig.myexpenses.util.TextUtils.concatResStrings
-import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.io.isConnectedWifi
+import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider
 import org.totschnig.myexpenses.util.safeMessage
 import timber.log.Timber
 import java.io.IOException
@@ -62,27 +46,28 @@ import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import kotlin.math.pow
 
-class SyncAdapter : AbstractThreadedSyncAdapter {
-    private val syncDelegate: SyncDelegate
+class SyncAdapter @JvmOverloads constructor(
+    context: Context,
+    autoInitialize: Boolean,
+    allowParallelSyncs: Boolean = false
+) : AbstractThreadedSyncAdapter(context, autoInitialize, allowParallelSyncs) {
     private val notificationContent = SparseArray<MutableList<StringBuilder>?>()
     private var shouldNotify = true
 
     @Inject
     lateinit var prefHandler: PrefHandler
 
-    constructor(context: Context, autoInitialize: Boolean) : this(context, autoInitialize, false)
+    @Inject
+    lateinit var homeCurrencyProvider: HomeCurrencyProvider
 
-    constructor(context: Context, autoInitialize: Boolean, allowParallelSyncs: Boolean) : super(
-        context,
-        autoInitialize,
-        allowParallelSyncs
-    ) {
-        syncDelegate = SyncDelegate(
-            currencyContext,
-            (context.applicationContext as MyApplication).appComponent.featureManager(),
-            (context.applicationContext as MyApplication).appComponent.repository()
-        )
-    }
+    @Inject
+    lateinit var currencyContext: CurrencyContext
+
+    @Inject
+    lateinit var syncDelegate: SyncDelegate
+
+    @Inject
+    lateinit var repository: Repository
 
     @Suppress("SameParameterValue")
     private fun getUserDataWithDefault(
@@ -253,9 +238,8 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                             )
                         )
                         log().i("lastSyncedLocal: $lastSyncedLocal; lastSyncedRemote: $lastSyncedRemote")
-                        val instanceFromDb =
-                            org.totschnig.myexpenses.model.Account.getInstanceFromDb(accountId)
-                                ?: // might have been deleted by user in the meantime
+                        val instanceFromDb = repository.loadAccount(accountId)
+                            ?: // might have been deleted by user in the meantime
                                 continue
                         syncDelegate.account = instanceFromDb
                         if (uuidFromExtras != null && extras.getBoolean(KEY_RESET_REMOTE_ACCOUNT)) {
@@ -478,9 +462,6 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
         }
     }
 
-    private val currencyContext: CurrencyContext
-        get() = (context.applicationContext as MyApplication).appComponent.currencyContext()
-
     @Throws(RemoteException::class, OperationApplicationException::class)
     private fun updateAccountFromMetadata(
         provider: ContentProviderClient,
@@ -517,7 +498,7 @@ class SyncAdapter : AbstractThreadedSyncAdapter {
                     .appendEncodedPath(currency)
                     .appendEncodedPath(homeCurrency).build()
             val minorUnitDelta =
-                Utils.getHomeCurrency().fractionDigits - currencyContext[currency].fractionDigits
+                homeCurrencyProvider.homeCurrencyUnit.fractionDigits - currencyContext[currency].fractionDigits
             ops.add(
                 ContentProviderOperation.newInsert(uri).withValue(
                     KEY_EXCHANGE_RATE,

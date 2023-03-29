@@ -15,16 +15,9 @@ import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.model.SortDirection
 import org.totschnig.myexpenses.model.Transaction
+import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.TransactionProvider
-import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
 import org.totschnig.myexpenses.provider.filter.WhereFilter
-import org.totschnig.myexpenses.provider.getBoolean
-import org.totschnig.myexpenses.provider.getDouble
-import org.totschnig.myexpenses.provider.getInt
-import org.totschnig.myexpenses.provider.getLong
-import org.totschnig.myexpenses.provider.getString
-import org.totschnig.myexpenses.provider.getStringOrNull
 import org.totschnig.myexpenses.util.enumValueOrDefault
 import org.totschnig.myexpenses.util.enumValueOrNull
 
@@ -104,14 +97,8 @@ data class FullAccount(
             sumIncome = cursor.getLong(KEY_SUM_INCOME),
             sumExpense = cursor.getLong(KEY_SUM_EXPENSES),
             sumTransfer = cursor.getLong(KEY_SUM_TRANSFERS),
-            grouping = enumValueOrDefault(
-                cursor.getString(KEY_GROUPING),
-                Grouping.NONE
-            ),
-            sortDirection = enumValueOrDefault(
-                cursor.getString(KEY_SORT_DIRECTION),
-                SortDirection.DESC
-            ),
+            grouping = cursor.getEnum(KEY_GROUPING, Grouping.NONE),
+            sortDirection = cursor.getEnum(KEY_SORT_DIRECTION, SortDirection.DESC),
             syncAccountName = cursor.getStringOrNull(KEY_SYNC_ACCOUNT_NAME),
             reconciledTotal = cursor.getLong(KEY_RECONCILED_TOTAL),
             clearedTotal = cursor.getLong(KEY_CLEARED_TOTAL),
@@ -153,7 +140,7 @@ data class PageAccount(
     }
 
     //Tuple4 of Uri / projection / selection / selectionArgs
-    fun loadingInfo(): Tuple4<Uri, Array<String>, String, Array<String>?> {
+    fun loadingInfo(homeCurrency: String): Tuple4<Uri, Array<String>, String, Array<String>?> {
         val builder = Transaction.EXTENDED_URI.buildUpon()
             .appendBooleanQueryParameter(TransactionProvider.QUERY_PARAMETER_SHORTEN_COMMENT)
         if (id < 0) {
@@ -164,7 +151,7 @@ data class PageAccount(
         val projection = when {
             !isAggregate -> Transaction2.projection(grouping)
             isHomeAggregate -> Transaction2.projection(grouping) +
-                    Transaction2.additionalAggregateColumns + Transaction2.additionGrandTotalColumns
+                    Transaction2.additionalAggregateColumns + Transaction2.getAdditionGrandTotalColumns(homeCurrency)
             else -> Transaction2.projection(grouping) + Transaction2.additionalAggregateColumns
         }
         return Tuple4(uri, projection, selection, selectionArgs)

@@ -1,14 +1,15 @@
 package org.totschnig.myexpenses.viewmodel
 
 import android.app.Application
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
 import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.sync.json.AccountMetaData
 
 class SetupSyncViewModel(application: Application) : SyncViewModel(application) {
-    val dialogState: MutableMap<String, MutableState<SyncSource?>> = mutableMapOf()
+    val dialogState: SnapshotStateMap<String, SyncSource?> = mutableStateMapOf()
 
     fun setupSynchronization(
         accountName: String,
@@ -27,14 +28,14 @@ class SetupSyncViewModel(application: Application) : SyncViewModel(application) 
                 throw it
             }
             (remoteAccounts + syncRemoteList.map { it.second }).map { it.toAccount(currencyContext, accountName) }.forEach {
-                it.save()
-                dialogState[it.uuid]?.value = SyncSource.COMPLETED
+                it.save(homeCurrencyProvider.homeCurrencyUnit)
+                dialogState[it.uuid!!] = SyncSource.COMPLETED
             }
             val uuids =
                 (localAccounts + syncLocalList.map { it.first }).map { it.uuid }.toTypedArray()
             configureLocalAccountForSync(accountName, *uuids)
             for (uuid in uuids) {
-                dialogState[uuid]?.value = SyncSource.COMPLETED
+                dialogState[uuid] = SyncSource.COMPLETED
             }
             GenericAccountService.requestSync(accountName, expedited = false)
         })

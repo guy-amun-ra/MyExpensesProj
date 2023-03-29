@@ -13,21 +13,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.db2.loadAccount
+import org.totschnig.myexpenses.db2.markAsExported
 import org.totschnig.myexpenses.export.CsvExporter
 import org.totschnig.myexpenses.export.JSONExporter
 import org.totschnig.myexpenses.export.QifExporter
 import org.totschnig.myexpenses.export.createFileFailure
-import org.totschnig.myexpenses.model.Account
+import org.totschnig.myexpenses.model.Account.HOME_AGGREGATE_ID
 import org.totschnig.myexpenses.model.AggregateAccount
 import org.totschnig.myexpenses.model.ExportFormat
 import org.totschnig.myexpenses.model.Transaction
+import org.totschnig.myexpenses.model2.Account
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DbUtils
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.filter.KEY_FILTER
 import org.totschnig.myexpenses.provider.filter.WhereFilter
-import org.totschnig.myexpenses.ui.ContextHelper
 import org.totschnig.myexpenses.util.AppDirHelper
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
@@ -99,12 +101,8 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                     }
                     var account: Account?
                     val appDir = AppDirHelper.getAppDir(application)
-                    val context = ContextHelper.wrap(
-                        application,
-                        application.appComponent.userLocaleProvider().getUserPreferredLocale()
-                    )
                     if (appDir == null) {
-                        publishProgress(context.getString(R.string.external_storage_unavailable))
+                        publishProgress(localizedContext.getString(R.string.external_storage_unavailable))
 
                     } else {
                         val oneFile = accountIds.size == 1 || mergeP
@@ -118,7 +116,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                             val simpleDateFormat = SimpleDateFormat("yyyMMdd-HHmmss", Locale.US)
                             val now = Date()
                             for (i in accountIds.indices) {
-                                account = Account.getInstanceFromDb(accountIds[i])
+                                account = repository.loadAccount(accountIds[i])
                                 if (account == null) continue
                                 publishProgress(account.label + " ...")
                                 try {
@@ -131,6 +129,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                     val exporter = when (format) {
                                         ExportFormat.CSV -> CsvExporter(
                                             account,
+                                            currencyContext,
                                             filter,
                                             notYetExportedP,
                                             dateFormat,
@@ -145,6 +144,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                         )
                                         ExportFormat.QIF -> QifExporter(
                                             account,
+                                            currencyContext,
                                             filter,
                                             notYetExportedP,
                                             dateFormat,
@@ -153,6 +153,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                         )
                                         ExportFormat.JSON -> JSONExporter(
                                             account,
+                                            currencyContext,
                                             filter,
                                             notYetExportedP,
                                             dateFormat,
@@ -162,7 +163,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                             appendix = if (mergeP) if (i < accountIds.size - 1) "," else "]" else ""
                                         )
                                     }
-                                    val result = exporter.export(context, lazy {
+                                    val result = exporter.export(localizedContext, lazy {
                                         AppDirHelper.buildFile(
                                             destDir,
                                             "$fileNameForAccount.${format.extension}",
@@ -170,7 +171,13 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                             append
                                         )?.let {
                                             Result.success(it)
-                                        } ?: Result.failure(createFileFailure(context, destDir, fileName))
+                                        } ?: Result.failure(
+                                            createFileFailure(
+                                                localizedContext,
+                                                destDir,
+                                                fileName
+                                            )
+                                        )
                                     }, append)
                                     result.onSuccess {
                                         if (!append && prefHandler.getBoolean(
@@ -182,7 +189,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                         }
                                         successfullyExported.add(account)
                                         publishProgress(
-                                            "..." + context.getString(
+                                            "..." + localizedContext.getString(
                                                 R.string.export_sdcard_success,
                                                 it.displayName
                                             )
@@ -192,7 +199,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                     }
                                 } catch (e: IOException) {
                                     publishProgress(
-                                        "... " + context.getString(
+                                        "... " + localizedContext.getString(
                                             R.string.export_sdcard_failure,
                                             appDir.name,
                                             e.message
@@ -209,7 +216,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                                             reset(a, filter, handleDelete, fileName)
                                         }
                                     } else {
-                                        a.markAsExported(filter)
+                                        repository.markAsExported(a.id!!, filter)
                                     }
                                 } catch (e: Exception) {
                                     publishProgress("ERROR: " + e.message)
@@ -219,7 +226,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                         } else {
                             publishProgress(
                                 "ERROR: " + createFileFailure(
-                                    context,
+                                    localizedContext,
                                     appDir,
                                     fileName
                                 ).message
@@ -247,7 +254,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
 
     fun hasExported(accountId: Long) = liveData(coroutineDispatcher) {
         val (selection, selectionArgs) =
-            if (accountId != Account.HOME_AGGREGATE_ID) {
+            if (accountId != HOME_AGGREGATE_ID) {
                 if (accountId < 0L) {
                     //aggregate account
                     val aa = AggregateAccount.getInstanceFromDb(accountId)

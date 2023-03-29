@@ -1,11 +1,6 @@
 package org.totschnig.myexpenses.sync
 
-import android.content.ContentProviderClient
-import android.content.ContentProviderOperation
-import android.content.ContentUris
-import android.content.ContentValues
-import android.content.Context
-import android.content.OperationApplicationException
+import android.content.*
 import android.net.Uri
 import android.os.RemoteException
 import androidx.annotation.VisibleForTesting
@@ -13,31 +8,23 @@ import androidx.core.util.Pair
 import org.apache.commons.collections4.ListUtils
 import org.totschnig.myexpenses.db2.CategoryHelper
 import org.totschnig.myexpenses.db2.Repository
+import org.totschnig.myexpenses.db2.findAccountByUuid
 import org.totschnig.myexpenses.feature.Feature
 import org.totschnig.myexpenses.feature.FeatureManager
-import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.model.CrStatus
-import org.totschnig.myexpenses.model.CurrencyContext
-import org.totschnig.myexpenses.model.Money
-import org.totschnig.myexpenses.model.Payee
-import org.totschnig.myexpenses.model.PaymentMethod
-import org.totschnig.myexpenses.model.SplitTransaction
-import org.totschnig.myexpenses.model.Transaction
-import org.totschnig.myexpenses.model.Transfer
-import org.totschnig.myexpenses.model.extractTagIds
-import org.totschnig.myexpenses.model.saveTagLinks
+import org.totschnig.myexpenses.model.*
+import org.totschnig.myexpenses.model2.Account
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.sync.json.CategoryInfo
 import org.totschnig.myexpenses.sync.json.TransactionChange
-import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import java.io.IOException
 
-class SyncDelegate @JvmOverloads constructor(
+class SyncDelegate(
     val currencyContext: CurrencyContext,
     val featureManager: FeatureManager,
     val repository: Repository,
+    val homeCurrency: CurrencyUnit,
     val resolver: (accountId: Long, transactionUUid: String) -> Long = Transaction::findByAccountAndUuid
 ) {
 
@@ -255,19 +242,17 @@ class SyncDelegate @JvmOverloads constructor(
             }
             TransactionChange.Type.updated -> {
                 val values: ContentValues = toContentValues(change)
-                if (values.size() > 0) {
-                    val transactionId = resolver(account.id, change.uuid())
-                    if (transactionId != -1L) {
+                val transactionId = resolver(account.id, change.uuid())
+                if (transactionId != -1L) {
+                    if (values.size() > 0) {
                         val builder = ContentProviderOperation.newUpdate(uri)
-                                .withSelection(DatabaseConstants.KEY_ROWID + " = ?", arrayOf(transactionId.toString()))
-                        if (values.size() > 0) {
-                            builder.withValues(values)
-                        }
+                            .withSelection(DatabaseConstants.KEY_ROWID + " = ?", arrayOf(transactionId.toString()))
+                        builder.withValues(values)
                         ops.add(builder.build())
-                        val tagOps: ArrayList<ContentProviderOperation> = saveTagLinks(tagIds, transactionId, null, true)
-                        ops.addAll(tagOps)
-                        tagOpsCount = tagOps.size
                     }
+                    val tagOps: ArrayList<ContentProviderOperation> = saveTagLinks(tagIds, transactionId, null, true)
+                    ops.addAll(tagOps)
+                    tagOpsCount = tagOps.size
                 }
             }
             TransactionChange.Type.deleted -> {
@@ -332,7 +317,6 @@ class SyncDelegate @JvmOverloads constructor(
             values.put(DatabaseConstants.KEY_ORIGINAL_CURRENCY, change.originalCurrency())
         }
         if (change.equivalentAmount() != null && change.equivalentCurrency() != null) {
-            val homeCurrency = Utils.getHomeCurrency()
             if (change.equivalentCurrency() == homeCurrency.code) {
                 values.put(DatabaseConstants.KEY_EQUIVALENT_AMOUNT, change.equivalentAmount())
             }
@@ -353,18 +337,16 @@ class SyncDelegate @JvmOverloads constructor(
                 methodToId[methodLabel] = it
             }
 
-    private fun findTransferAccount(uuid: String): Long =
-            accountUuidToId[uuid] ?: Account.findByUuid(uuid).also {
-                if (it != -1L) {
-                    accountUuidToId[uuid] = it
-                }
+    private fun findTransferAccount(uuid: String): Long? =
+            accountUuidToId[uuid] ?: repository.findAccountByUuid(uuid)?.also {
+                accountUuidToId[uuid] = it
             }
 
     private fun getContentProviderOperationsForCreate(
             change: TransactionChange, offset: Int, parentOffset: Int): ArrayList<ContentProviderOperation> {
         check(change.isCreate)
         val amount = change.amount() ?: 0L
-        val money = Money(account.currencyUnit, amount)
+        val money = Money(currencyContext[account.currency], amount)
         val t: Transaction = if (change.splitParts() != null) {
             SplitTransaction(account.id, money)
         } else {
@@ -372,7 +354,7 @@ class SyncDelegate @JvmOverloads constructor(
                 //if the account exists locally and the peer has already been synced
                 //we create a Transfer, the Transfer class will take care in buildSaveOperations
                 //of linking them together
-                findTransferAccount(transferAccount).takeIf { accountId -> resolver(accountId, change.uuid()) != -1L }?.let { Transfer(account.id, money, it) }
+                findTransferAccount(transferAccount)?.takeIf { accountId -> resolver(accountId, change.uuid()) != -1L }?.let { Transfer(account.id, money, it) }
             } ?: Transaction(account.id, money).apply {
                 if (change.transferAccount() == null) {
                     catId = change.extractCatId()
@@ -408,7 +390,7 @@ class SyncDelegate @JvmOverloads constructor(
         }
         change.equivalentAmount()?.let { equivalentAmount ->
             change.equivalentCurrency()?.let { equivalentCurrency ->
-                with(Utils.getHomeCurrency()) {
+                with(homeCurrency) {
                     if (equivalentCurrency == code) {
                         t.equivalentAmount = Money(this, equivalentAmount)
                     }

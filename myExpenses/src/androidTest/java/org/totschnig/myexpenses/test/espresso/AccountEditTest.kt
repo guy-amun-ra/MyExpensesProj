@@ -13,9 +13,8 @@ import org.junit.After
 import org.junit.Test
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.AccountEdit
-import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.model.AccountType
-import org.totschnig.myexpenses.model.CurrencyUnit
+import org.totschnig.myexpenses.db2.findAnyOpenByLabel
+import org.totschnig.myexpenses.db2.getUuidForAccount
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.testutils.BaseUiTest
 import org.totschnig.myexpenses.testutils.Espresso.wait
@@ -33,14 +32,12 @@ class AccountEditTest : BaseUiTest<AccountEdit>() {
         Espresso.onView(ViewMatchers.withId(R.id.Label)).perform(ViewActions.typeText(LABEL), closeSoftKeyboard())
         Espresso.onView(ViewMatchers.withId(R.id.CREATE_COMMAND)).perform(ViewActions.click())
         assertFinishing()
-        assertThat(Account.findAnyOpen(LABEL) > -1).isTrue
+        assertThat(repository.findAnyOpenByLabel(LABEL)).isNotNull
     }
 
     @Test
     fun shouldKeepUuidAfterSave() {
-        val (id, uuid) = with(Account(LABEL,
-            CurrencyUnit.DebugInstance, 0, "", AccountType.CASH, Account.DEFAULT_COLOR)) {
-            save()
+        val (id, uuid) =  with(buildAccount(LABEL)) {
             id to uuid
         }
         val i = Intent(targetContext, AccountEdit::class.java).apply {
@@ -48,8 +45,7 @@ class AccountEditTest : BaseUiTest<AccountEdit>() {
         }
         testScenario = ActivityScenario.launchActivityForResult(i)
         Espresso.onView(ViewMatchers.withId(R.id.CREATE_COMMAND)).perform(ViewActions.click())
-        val account = Account.getInstanceFromDb(id)
-        assertThat(account.uuid).isEqualTo(uuid)
+        assertThat(repository.getUuidForAccount(id)).isEqualTo(uuid)
     }
 
     companion object {

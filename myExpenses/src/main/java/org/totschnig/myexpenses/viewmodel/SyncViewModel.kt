@@ -15,6 +15,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
 import kotlinx.parcelize.Parcelize
 import org.totschnig.myexpenses.MyApplication
+import org.totschnig.myexpenses.db2.findAccountByUuid
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider
@@ -37,13 +38,13 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
 
     fun syncLinkRemote(account: Account): LiveData<Result<Unit>> =
         liveData(context = coroutineContext()) {
-            val accountId = Account.findByUuid(account.uuid)
-            if (accountId == -1L) {
+            val accountId = repository.findAccountByUuid(account.uuid!!)
+            if (accountId == null) {
                 emit(Result.failure(IllegalStateException("Account with uuid ${account.uuid} not found")))
             } else {
                 emit(deleteAccountsInternal(longArrayOf(accountId)).also {
                     it.onSuccess {
-                        account.save()
+                        account.save(homeCurrencyProvider.homeCurrencyUnit)
                     }
                 })
             }
@@ -257,7 +258,7 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
                             }
                             .sumOf {
                                 @Suppress("USELESS_CAST")
-                                (if (it.save() == null) 0 else 1) as Int
+                                (if (it.save(homeCurrencyProvider.homeCurrencyUnit) == null) 0 else 1) as Int
                             }
                     if (numberOfRestoredAccounts == 0) {
                         emit(Result.failure(Throwable("No accounts were restored")))
@@ -283,7 +284,7 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
 
     fun save(account: Account): LiveData<Uri?> =
         liveData(context = coroutineContext()) {
-            emit(account.save())
+            emit(account.save(homeCurrencyProvider.homeCurrencyUnit))
         }
 
     companion object {

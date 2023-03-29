@@ -29,6 +29,7 @@ import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.db2.CategoryHelper;
 import org.totschnig.myexpenses.db2.Repository;
+import org.totschnig.myexpenses.db2.RepositoryAccountKt;
 import org.totschnig.myexpenses.dialog.DialogUtils;
 import org.totschnig.myexpenses.export.CategoryInfo;
 import org.totschnig.myexpenses.export.qif.QifAccount;
@@ -44,10 +45,10 @@ import org.totschnig.myexpenses.model.Payee;
 import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.TransactionProvider;
-import org.totschnig.myexpenses.ui.ContextHelper;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 import org.totschnig.myexpenses.util.io.FileUtils;
 import org.totschnig.myexpenses.util.licence.LicenceHandler;
+import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -85,6 +86,9 @@ public class QifImportTask extends AsyncTask<Void, String, Void> {
   @Inject
   Repository repository;
 
+  @Inject
+  HomeCurrencyProvider homeCurrencyProvider;
+
   public QifImportTask(TaskExecutionFragment taskExecutionFragment, Bundle b) {
     this.taskExecutionFragment = taskExecutionFragment;
     this.dateFormat = (QifDateFormat) b.getSerializable(TaskExecutionFragment.KEY_DATE_FORMAT);
@@ -118,7 +122,7 @@ public class QifImportTask extends AsyncTask<Void, String, Void> {
   @Override
   protected Void doInBackground(Void... params) {
     final MyApplication application = MyApplication.getInstance();
-    final Context context = ContextHelper.wrap(application, application.getAppComponent().userLocaleProvider().getUserPreferredLocale());
+    final Context context = application.getWrappedContext();
     long t0 = System.currentTimeMillis();
     QifBufferedReader r;
     QifParser parser;
@@ -277,8 +281,8 @@ public class QifImportTask extends AsyncTask<Void, String, Void> {
                 ContribFeature.ACCOUNTS_UNLIMITED.buildRemoveLimitation(context, false));
         break;
       }
-      long dbAccountId = TextUtils.isEmpty(account.memo) ? -1 : Account.findAnyOpen(account.memo);
-      if (dbAccountId != -1) {
+      Long dbAccountId = TextUtils.isEmpty(account.memo) ? null : RepositoryAccountKt.findAnyOpenByLabel(repository, account.memo);
+      if (dbAccountId != null) {
         Account dbAccount = Account.getInstanceFromDb(dbAccountId);
         account.dbAccount = dbAccount;
         if (dbAccount == null) {
@@ -295,7 +299,7 @@ public class QifImportTask extends AsyncTask<Void, String, Void> {
           displayName = displayName.replace('-', ' ').replace('_', ' ');
           a.setLabel(displayName);
         }
-        if (a.save() != null)
+        if (a.save(homeCurrencyProvider.getHomeCurrencyUnit()) != null)
           importCount++;
         account.dbAccount = a;
       }

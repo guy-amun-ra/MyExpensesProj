@@ -36,6 +36,7 @@ import org.totschnig.myexpenses.compose.SelectionHandler
 import org.totschnig.myexpenses.compose.select
 import org.totschnig.myexpenses.compose.toggle
 import org.totschnig.myexpenses.compose.unselect
+import org.totschnig.myexpenses.db2.loadAccount
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.Transaction
@@ -196,6 +197,8 @@ open class MyExpensesViewModel(
             getApplication(),
             account,
             filterPersistence.getValue(account.id).whereFilterAsFlow,
+            homeCurrencyProvider,
+            currencyContext,
             viewModelScope
         )
 
@@ -385,7 +388,7 @@ open class MyExpensesViewModel(
                 )
                 if (reset) {
                     reset(
-                        account = Account.getInstanceFromDb(accountId),
+                        account = repository.loadAccount(accountId)!!,
                         filter = WhereFilter.empty()
                             .put(CrStatusCriterion(arrayOf(CrStatus.RECONCILED))),
                         handleDelete = Account.EXPORT_HANDLE_DELETED_UPDATE_BALANCE,
@@ -441,7 +444,7 @@ open class MyExpensesViewModel(
             var successCount = 0
             var failureCount = 0
             for (id in transactionIds) {
-                val transaction = Transaction.getInstanceFromDb(id)
+                val transaction = Transaction.getInstanceFromDb(id, homeCurrencyProvider.homeCurrencyUnit)
                 transaction.prepareForEdit(true, false)
                 val ops = transaction.buildSaveOperations(true)
                 val newUpdate =
