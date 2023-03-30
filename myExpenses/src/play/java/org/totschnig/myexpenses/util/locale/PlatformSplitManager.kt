@@ -11,7 +11,6 @@ import com.google.android.play.core.splitinstall.SplitInstallStateUpdatedListene
 import com.google.android.play.core.splitinstall.model.SplitInstallSessionStatus
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.MyApplication
-import org.totschnig.myexpenses.MyApplication.DEFAULT_LANGUAGE
 import org.totschnig.myexpenses.feature.*
 import org.totschnig.myexpenses.preference.PrefHandler
 import timber.log.Timber
@@ -19,7 +18,6 @@ import java.util.*
 
 @Keep
 class PlatformSplitManager(
-    private val userLocaleProvider: UserLocaleProvider,
     private val prefHandler: PrefHandler
 ) : FeatureManager() {
     private lateinit var manager: SplitInstallManager
@@ -36,28 +34,21 @@ class PlatformSplitManager(
         SplitCompat.installActivity(activity)
     }
 
-    override fun requestLocale(context: Context) {
-        val userLanguage = userLocaleProvider.getPreferredLanguage()
-        if (userLanguage == DEFAULT_LANGUAGE) {
-            Timber.i("userLanguage == DEFAULT_LANGUAGE")
-            super.requestLocale(context)
+    override fun requestLocale(language: String) {
+        if (language == "en" ||
+            manager.installedLanguages.contains(language)
+        ) {
+            Timber.i("Already installed")
+            callback?.onLanguageAvailable(language)
         } else {
-            val userPreferredLocale = userLocaleProvider.getUserPreferredLocale()
-            if (userPreferredLocale.language.equals("en") ||
-                manager.installedLanguages.contains(userPreferredLocale.language)
-            ) {
-                Timber.i("Already installed")
-                callback?.onLanguageAvailable()
-            } else {
-                callback?.onAsyncStartedLanguage(userPreferredLocale.displayLanguage)
-                val request = SplitInstallRequest.newBuilder()
-                    .addLanguage(userPreferredLocale)
-                    .build()
-                manager.startInstall(request)
-                    .addOnSuccessListener { sessionId -> mySessionId = sessionId }
-                    .addOnFailureListener { exception -> callback?.onError(exception) }
+            callback?.onAsyncStartedLanguage(language)
+            val request = SplitInstallRequest.newBuilder()
+                .addLanguage(Locale.forLanguageTag(language))
+                .build()
+            manager.startInstall(request)
+                .addOnSuccessListener { sessionId -> mySessionId = sessionId }
+                .addOnFailureListener { exception -> callback?.onError(exception) }
 
-            }
         }
     }
 
@@ -67,7 +58,7 @@ class PlatformSplitManager(
             if (state.sessionId() == mySessionId) {
                 if (state.status() == SplitInstallSessionStatus.INSTALLED) {
                     if (state.languages().size > 0) {
-                        this.callback?.onLanguageAvailable()
+                        this.callback?.onLanguageAvailable(state.languages().first())
                     }
                     if (state.moduleNames().size > 0) {
                         this.callback?.onFeatureAvailable(state.moduleNames())
