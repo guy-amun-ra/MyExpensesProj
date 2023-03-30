@@ -35,6 +35,7 @@ class PlatformSplitManager(
     }
 
     override fun requestLocale(language: String) {
+        Timber.i("requestLocale %s", language)
         if (language == "en" ||
             manager.installedLanguages.contains(language)
         ) {
@@ -45,6 +46,7 @@ class PlatformSplitManager(
             val request = SplitInstallRequest.newBuilder()
                 .addLanguage(Locale.forLanguageTag(language))
                 .build()
+            Timber.i("startInstall")
             manager.startInstall(request)
                 .addOnSuccessListener { sessionId -> mySessionId = sessionId }
                 .addOnFailureListener { exception -> callback?.onError(exception) }
