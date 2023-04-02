@@ -255,6 +255,7 @@ dependencies {
     implementation "ch.acra:acra-mail:$acraVersion"
     implementation "ch.acra:acra-dialog:$acraVersion"
     implementation "org.apache.commons:commons-lang3:$commonsLang"
+    //needed for Play and Huawei - TODO refactor
     implementation("com.android.billingclient:billing-ktx:$billingVersion")
     playImplementation 'com.google.android.play:feature-delivery-ktx:2.0.1'
     playImplementation 'com.google.android.play:review-ktx:2.0.1'

@@ -64,9 +64,6 @@ open class MyExpensesViewModel(
     private val hiddenAccountsInternal: MutableStateFlow<Int> = MutableStateFlow(0)
     val hasHiddenAccounts: StateFlow<Int> = hiddenAccountsInternal
 
-    @Inject
-    lateinit var licenceHandler: LicenceHandler
-
     private val showStatusHandlePrefKey = booleanPreferencesKey("showStatusHandle")
 
     fun showStatusHandle() =
@@ -289,19 +286,22 @@ open class MyExpensesViewModel(
                 }
         } else emptyFlow()
 
-    fun sumInfo(account: FullAccount): Flow<SumInfo> = contentResolver.observeQuery(
-        uri = TRANSACTIONS_URI.buildUpon()
-            .appendBooleanQueryParameter(QUERY_PARAMETER_MAPPED_OBJECTS)
-            .build(),
-        selection = account.selection,
-        selectionArgs = account.selectionArgs
-    ).mapToOne {
-        SumInfoLoaded.fromCursor(it)
+    fun sumInfo(account: FullAccount): Flow<SumInfo> {
+        val (selection, selectionArgs) = account.selectionInfo
+        return contentResolver.observeQuery(
+            uri = TRANSACTIONS_URI.buildUpon()
+                .appendBooleanQueryParameter(QUERY_PARAMETER_MAPPED_OBJECTS)
+                .build(),
+            selection = selection,
+            selectionArgs = selectionArgs
+        ).mapToOne {
+            SumInfoLoaded.fromCursor(it)
+        }
     }
 
     fun persistGrouping(accountId: Long, grouping: Grouping) {
         viewModelScope.launch(context = coroutineContext()) {
-            if (accountId == Account.HOME_AGGREGATE_ID) {
+            if (accountId == DataBaseAccount.HOME_AGGREGATE_ID) {
                 AggregateAccount.persistGroupingHomeAggregate(prefHandler, grouping)
                 triggerAccountListRefresh()
             } else {
@@ -317,7 +317,7 @@ open class MyExpensesViewModel(
 
     fun persistSortDirection(accountId: Long, sortDirection: SortDirection) {
         viewModelScope.launch(context = coroutineContext()) {
-            if (accountId == Account.HOME_AGGREGATE_ID) {
+            if (accountId == DataBaseAccount.HOME_AGGREGATE_ID) {
                 persistSortDirectionHomeAggregate(sortDirection)
                 triggerAccountListRefresh()
             } else {
@@ -359,7 +359,7 @@ open class MyExpensesViewModel(
         }
 
     fun setSealed(accountId: Long, isSealed: Boolean) {
-        if (FullAccount.isAggregate(accountId)) {
+        if (DataBaseAccount.isAggregate(accountId)) {
             CrashHandler.report(IllegalStateException("setSealed called on aggregate account"))
         } else {
             viewModelScope.launch(context = coroutineContext()) {

@@ -15,8 +15,6 @@
 
 package org.totschnig.myexpenses.model;
 
-import static android.content.ContentProviderOperation.newUpdate;
-import static org.totschnig.myexpenses.db2.RepositoryAccountKt.updateTransferPeersForTransactionDelete;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CODE;
@@ -29,37 +27,26 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_EXCLUDE_FR
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_GROUPING;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_OPENING_BALANCE;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SORT_DIRECTION;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SORT_KEY;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SYNC_ACCOUNT_NAME;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_PEER;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TYPE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_EXPORTED;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_NONE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNTS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.WHERE_NOT_SPLIT_PART;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.WHERE_NOT_VOID;
-import static org.totschnig.myexpenses.provider.TransactionProvider.ACCOUNTS_TAGS_URI;
 import static org.totschnig.myexpenses.util.ArrayUtilsKt.joinArrays;
+import static org.totschnig.myexpenses.util.ExchangeRateKt.calculateRealExchangeRate;
 
-import android.accounts.AccountManager;
-import android.content.ContentProviderOperation;
-import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
-import android.content.OperationApplicationException;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
-import android.os.RemoteException;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -75,18 +62,12 @@ import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.MoreDbUtilsKt;
 import org.totschnig.myexpenses.provider.TransactionProvider;
 import org.totschnig.myexpenses.provider.filter.WhereFilter;
-import org.totschnig.myexpenses.sync.GenericAccountService;
-import org.totschnig.myexpenses.sync.SyncAdapter;
 import org.totschnig.myexpenses.util.ShortcutHelper;
 import org.totschnig.myexpenses.util.Utils;
 import org.totschnig.myexpenses.util.licence.LicenceHandler;
-import org.totschnig.myexpenses.viewmodel.data.Debt;
 import org.totschnig.myexpenses.viewmodel.data.DistributionAccountInfo;
-import org.totschnig.myexpenses.viewmodel.data.Tag;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Account represents an account stored in the database.
@@ -101,8 +82,6 @@ public class Account extends Model implements DistributionAccountInfo {
   public static final int EXPORT_HANDLE_DELETED_UPDATE_BALANCE = 0;
   public static final int EXPORT_HANDLE_DELETED_CREATE_HELPER = 1;
   public final static long HOME_AGGREGATE_ID = Integer.MIN_VALUE;
-  private final static Uri LINKED_TAGS_URI = ACCOUNTS_TAGS_URI;
-  private final static String LINKED_TAGS_COLUMN = KEY_ACCOUNTID;
 
   private String label;
 
@@ -206,62 +185,9 @@ public class Account extends Model implements DistributionAccountInfo {
     return account;
   }
 
-  public static kotlin.Pair<Account, List<Tag>> getInstanceFromDbWithTags(long id, ContentResolver contentResolver) {
-    Account t = getInstanceFromDb(id);
-    return t == null ? null : new kotlin.Pair<>(t, loadTags(id, contentResolver));
-  }
-
-  @Nullable
-  public static List<Tag> loadTags(long id, ContentResolver contentResolver) {
-    return ModelWithLinkedTagsKt.loadTags(LINKED_TAGS_URI, LINKED_TAGS_COLUMN, id, contentResolver);
-  }
-
-  public boolean saveTags(@Nullable List<Tag> tags, ContentResolver contentResolver) {
-    return ModelWithLinkedTagsKt.saveTags(LINKED_TAGS_URI, LINKED_TAGS_COLUMN, tags, getId(), contentResolver);
-  }
-
-  private Uri buildExchangeRateUri(CurrencyUnit homeCurrency) {
-    return ContentUris.appendId(TransactionProvider.ACCOUNT_EXCHANGE_RATE_URI.buildUpon(), getId())
-        .appendEncodedPath(currencyUnit.getCode())
-        .appendEncodedPath(homeCurrency.getCode()).build();
-  }
-
   private double adjustExchangeRate(double raw, CurrencyUnit homeCurrency) {
-    return Utils.adjustExchangeRate(raw, currencyUnit, homeCurrency);
+    return calculateRealExchangeRate(raw, currencyUnit, homeCurrency);
   }
-
-  private void storeExchangeRate(CurrencyUnit homeCurrency) {
-    if (!currencyUnit.getCode().equals(homeCurrency.getCode())) {
-      ContentValues exchangeRateValues = new ContentValues();
-      int minorUnitDelta = homeCurrency.getFractionDigits() - currencyUnit.getFractionDigits();
-      exchangeRateValues.put(KEY_EXCHANGE_RATE, exchangeRate * Math.pow(10, minorUnitDelta));
-      cr().insert(buildExchangeRateUri(homeCurrency), exchangeRateValues);
-    }
-  }
-
-  public static void delete(long id) throws RemoteException, OperationApplicationException {
-    Account account = getInstanceFromDb(id);
-    if (account == null) {
-      return;
-    }
-    if (account.getSyncAccountName() != null) {
-      AccountManager accountManager = AccountManager.get(MyApplication.getInstance());
-      android.accounts.Account syncAccount = GenericAccountService.getAccount(account.getSyncAccountName());
-      accountManager.setUserData(syncAccount, SyncAdapter.KEY_LAST_SYNCED_LOCAL(account.getId()), null);
-      accountManager.setUserData(syncAccount, SyncAdapter.KEY_LAST_SYNCED_REMOTE(account.getId()), null);
-    }
-    ArrayList<ContentProviderOperation> ops = new ArrayList<>();
-    updateTransferPeersForTransactionDelete(ops,
-        buildTransactionRowSelect(null),
-        new String[]{String.valueOf(account.getId())});
-    ops.add(ContentProviderOperation.newDelete(
-        CONTENT_URI.buildUpon().appendPath(String.valueOf(id)).build())
-        .build());
-    cr().applyBatch(TransactionProvider.AUTHORITY, ops);
-    updateNewAccountEnabled();
-    updateTransferShortcut();
-  }
-
   /**
    * returns an empty Account instance
    */
@@ -366,58 +292,9 @@ public class Account extends Model implements DistributionAccountInfo {
     openingBalance = new Money(this.currencyUnit, openingBalance.getAmountMajor());
   }
 
-  /**
-   * @return the sum of opening balance and all transactions for the account
-   */
-  @VisibleForTesting
-  public Money getTotalBalance() {
-    return new Money(currencyUnit,
-        openingBalance.getAmountMinor() + getTransactionSum(null)
-    );
-  }
-
-  /**
-   * @return sum of all transactions
-   */
-  public long getTransactionSum(WhereFilter filter) {
-    String selection = KEY_ACCOUNTID + " = ? AND " + WHERE_NOT_SPLIT_PART + " AND " + WHERE_NOT_VOID;
-    String[] selectionArgs = new String[]{String.valueOf(getId())};
-    if (filter != null && !filter.isEmpty()) {
-      selection += " AND " + filter.getSelectionForParents(DatabaseConstants.VIEW_COMMITTED);
-      selectionArgs = joinArrays(selectionArgs, filter.getSelectionArgs(false));
-    }
-    Cursor c = cr().query(Transaction.CONTENT_URI,
-        new String[]{"sum(" + KEY_AMOUNT + ")"},
-        selection,
-        selectionArgs,
-        null);
-    c.moveToFirst();
-    long result = c.getLong(0);
-    c.close();
-    return result;
-  }
-
-  public static String buildTransactionRowSelect(WhereFilter filter) {
-    String rowSelect = "SELECT " + KEY_ROWID + " from " + TABLE_TRANSACTIONS + " WHERE " + KEY_ACCOUNTID + " = ?";
-    if (filter != null && !filter.isEmpty()) {
-      rowSelect += " AND " + filter.getSelectionForParents(DatabaseConstants.TABLE_TRANSACTIONS);
-    }
-    return rowSelect;
-  }
-
   @Nullable
   @Override
   public Uri save() {
-    //temporary placeholder until we reimplmented Account model
-    throw new UnsupportedOperationException();
-  }
-
-  /**
-   * Saves the account, creating it new if necessary
-   *
-   * @return the id of the account. Upon creation it is returned from the database
-   */
-  public Uri save(CurrencyUnit homeCurrency) {
     Uri uri;
     ensureCurrency(currencyUnit);
     ContentValues initialValues = new ContentValues();
@@ -446,9 +323,6 @@ public class Account extends Model implements DistributionAccountInfo {
       uri = ContentUris.withAppendedId(CONTENT_URI, getId());
       if (cr().update(uri, initialValues, null, null) == 0) return null;
     }
-    storeExchangeRate(homeCurrency);
-    updateNewAccountEnabled();
-    updateTransferShortcut();
     return uri;
   }
 
@@ -472,20 +346,6 @@ public class Account extends Model implements DistributionAccountInfo {
       }
       case 1: return;
       default: throw new IllegalStateException("Unable to ensure currency (" + currencyUnit + "). Inconsistent query result");
-    }
-  }
-
-  public static int count(String selection, String[] selectionArgs) {
-    Cursor cursor = cr().query(CONTENT_URI, new String[]{"count(*)"},
-        selection, selectionArgs, null);
-    if (cursor.getCount() == 0) {
-      cursor.close();
-      return 0;
-    } else {
-      cursor.moveToFirst();
-      int result = cursor.getInt(0);
-      cursor.close();
-      return result;
     }
   }
 
@@ -558,25 +418,6 @@ public class Account extends Model implements DistributionAccountInfo {
     }
   }
 
-  public static void updateNewAccountEnabled() {
-    boolean newAccountEnabled = true;
-    final AppComponent appComponent = MyApplication.getInstance().getAppComponent();
-    LicenceHandler licenceHandler = appComponent.licenceHandler();
-    PrefHandler prefHandler = appComponent.prefHandler();
-    if (!licenceHandler.hasAccessTo(ContribFeature.ACCOUNTS_UNLIMITED)) {
-      if (count(null, null) >= ContribFeature.FREE_ACCOUNTS) {
-        newAccountEnabled = false;
-      }
-    }
-    prefHandler.putBoolean(PrefKey.NEW_ACCOUNT_ENABLED, newAccountEnabled);
-  }
-
-  public static void updateTransferShortcut() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
-      ShortcutHelper.configureTransferShortcut(MyApplication.getInstance(), count(null, null) > 1);
-    }
-  }
-
   /**
    * @param withType true means, that the query is for either positive (income) or negative (expense) transactions
    *                 in that case, the merge transfer restriction must be skipped, since it is based on only
@@ -611,26 +452,6 @@ public class Account extends Model implements DistributionAccountInfo {
 
   public String[] getExtendedProjectionForTransactionList() {
     return DatabaseConstants.getProjectionExtended();
-  }
-
-  public String getSelectionForTransactionList() {
-    return KEY_ACCOUNTID + " = ?";
-  }
-
-  public String[] getSelectionArgsForTransactionList() {
-    return new String[]{String.valueOf(getId())};
-  }
-
-  final protected Uri.Builder getGroupingBaseUri(Grouping grouping) {
-    return Transaction.CONTENT_URI.buildUpon().appendPath(TransactionProvider.URI_SEGMENT_GROUPS).appendPath(grouping.name());
-  }
-
-  public Uri.Builder getGroupingUri() {
-    return getGroupingUri(grouping);
-  }
-
-  public Uri.Builder getGroupingUri(Grouping grouping) {
-    return getGroupingBaseUri(grouping).appendQueryParameter(KEY_ACCOUNTID, String.valueOf(getId()));
   }
 
   public AccountType getType() {

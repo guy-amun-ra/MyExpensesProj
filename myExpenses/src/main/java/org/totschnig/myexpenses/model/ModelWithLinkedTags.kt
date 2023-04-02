@@ -10,10 +10,10 @@ import org.totschnig.myexpenses.provider.getString
 import org.totschnig.myexpenses.provider.useAndMap
 import org.totschnig.myexpenses.viewmodel.data.Tag
 
-fun loadTags(linkUri: Uri, column: String, id: Long, contentResolver: ContentResolver): List<Tag>? =
+@Deprecated("Use methods in RepositoryTags")
+fun loadTags(linkUri: Uri, column: String, id: Long, contentResolver: ContentResolver): List<Tag> =
         //noinspection Recycle
-        contentResolver.query(linkUri, null, "$column = ?", arrayOf(id.toString()), null)
-            ?.useAndMap {
+        contentResolver.query(linkUri, null, "$column = ?", arrayOf(id.toString()), null)!!.useAndMap {
                 Tag(
                     id = it.getLong(DatabaseConstants.KEY_ROWID),
                     label = it.getString(DatabaseConstants.KEY_LABEL),
@@ -21,6 +21,7 @@ fun loadTags(linkUri: Uri, column: String, id: Long, contentResolver: ContentRes
                 )
             }
 
+@Deprecated("Use methods in RepositoryTags")
 fun saveTags(linkUri: Uri, column: String, tags: List<Tag>?, id: Long, contentResolver: ContentResolver): Boolean {
     val ops = ArrayList<ContentProviderOperation>()
     ops.add(ContentProviderOperation.newDelete(linkUri)

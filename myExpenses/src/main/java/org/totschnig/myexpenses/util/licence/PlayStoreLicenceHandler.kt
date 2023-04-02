@@ -10,6 +10,7 @@ import com.android.billingclient.api.ProductDetailsResponseListener
 import com.android.billingclient.api.Purchase
 import com.google.android.vending.licensing.PreferenceObfuscator
 import org.totschnig.myexpenses.activity.IapActivity
+import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import java.util.*
@@ -18,8 +19,9 @@ open class PlayStoreLicenceHandler(
     context: Application,
     preferenceObfuscator: PreferenceObfuscator,
     crashHandler: CrashHandler,
-    prefHandler: PrefHandler
-) : AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
+    prefHandler: PrefHandler,
+    repository: Repository
+) : AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository) {
     private fun storeSkuDetails(inventory: List<ProductDetails>) {
         val editor = pricesPrefs.edit()
         for (productDetails in inventory) {

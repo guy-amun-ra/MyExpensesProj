@@ -10,6 +10,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
+import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.prefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
@@ -37,9 +38,11 @@ class BaseStoreLicenceHandlerTest {
         Mockito.`when`(obfuscator.getString(ArgumentMatchers.any(), ArgumentMatchers.any()))
             .thenReturn("0")
         licenceHandler = StoreLicenceHandler(
-            application, obfuscator, Mockito.mock(
-                CrashHandler::class.java
-            ), prefHandler
+            application,
+            obfuscator,
+            Mockito.mock(CrashHandler::class.java),
+            prefHandler,
+            Mockito.mock(Repository::class.java)
         )
     }
 

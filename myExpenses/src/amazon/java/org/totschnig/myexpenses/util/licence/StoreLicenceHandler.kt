@@ -5,16 +5,22 @@ import android.content.Context
 import com.amazon.device.iap.model.Product
 import com.amazon.device.iap.model.PurchaseResponse
 import com.amazon.device.iap.model.Receipt
-import com.android.billingclient.api.Purchase
 import com.google.android.vending.licensing.PreferenceObfuscator
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
 import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.contrib.Config.amazonSkus
+import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
-class StoreLicenceHandler(context: Application, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) :
-        AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
+class StoreLicenceHandler(
+    context: Application,
+    preferenceObfuscator: PreferenceObfuscator,
+    crashHandler: CrashHandler,
+    prefHandler: PrefHandler,
+    repository: Repository
+) :
+        AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository) {
 
     override fun initBillingManager(activity: IapActivity, query: Boolean): BillingManager {
         val billingUpdatesListener = object : AmazonBillingUpdatesListener {

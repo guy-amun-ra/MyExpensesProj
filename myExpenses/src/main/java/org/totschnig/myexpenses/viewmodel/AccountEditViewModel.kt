@@ -1,30 +1,52 @@
 package org.totschnig.myexpenses.viewmodel
 
 import android.app.Application
-import android.content.ContentUris
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.liveData
-import org.totschnig.myexpenses.model.Account
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+import org.totschnig.myexpenses.db2.*
+import org.totschnig.myexpenses.model2.Account
+import org.totschnig.myexpenses.util.calculateRawExchangeRate
 
 class AccountEditViewModel(application: Application, savedStateHandle: SavedStateHandle)
     : TagHandlingViewModel(application, savedStateHandle) {
 
-    fun accountWithTags(id: Long): LiveData<Account?> = liveData(context = coroutineContext()) {
-        Account.getInstanceFromDbWithTags(id, contentResolver)?.also { pair ->
-            emit(pair.first)
-            pair.second?.takeIf { it.size > 0 }?.let { updateTags(it, false) }
+    fun loadAccount(id: Long): LiveData<Account?> = liveData(context = coroutineContext()) {
+        emit(repository.loadAccount(id))
+    }
+
+    fun loadTags(accountId: Long) {
+        viewModelScope.launch(coroutineContext()) {
+            updateTags(repository.loadActiveTagsForAccount(accountId), false)
         }
     }
 
-    fun save(account: Account): LiveData<Long> = liveData(context = coroutineContext()) {
-        val result = try {
-            account.save(homeCurrencyProvider.homeCurrencyUnit)?.let { ContentUris.parseId(it) } ?: ERROR_UNKNOWN
-        } catch (e: Exception) {
-            CrashHandler.report(e)
-            ERROR_UNKNOWN
-        }
-        emit(if (result > 0 && !account.saveTags(tagsLiveData.value, contentResolver)) ERROR_WHILE_SAVING_TAGS else result)
+    fun save(account: Account): LiveData<Result<Long>> = liveData(context = coroutineContext()) {
+        emit(kotlin.runCatching {
+            val id = if (account.id == 0L) {
+                account.createIn(repository)
+            } else {
+                repository.updateAccount(account.id, account.toContentValues())
+                account
+            }.id
+            licenceHandler.updateNewAccountEnabled()
+            updateTransferShortcut()
+            repository.saveActiveTagsForAccount(tagsLiveData.value, id)
+            val homeCurrency = homeCurrencyProvider.homeCurrencyUnit
+            if (account.currency != homeCurrency.code) {
+                repository.storeExchangeRate(id,
+                    calculateRawExchangeRate(
+                        account.exchangeRate,
+                        currencyContext[account.currency],
+                        homeCurrency
+                    ),
+                    account.currency,
+                    homeCurrency.code
+                )
+            }
+            id
+        })
     }
 }

@@ -1,11 +1,13 @@
 package org.totschnig.myexpenses.viewmodel
 
+import android.accounts.AccountManager
 import android.app.Application
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.database.Cursor
 import android.database.sqlite.SQLiteConstraintException
+import android.os.Build
 import android.text.TextUtils
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -16,40 +18,29 @@ import app.cash.copper.flow.mapToList
 import app.cash.copper.flow.mapToOne
 import app.cash.copper.flow.observeQuery
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.compose.RenderType
-import org.totschnig.myexpenses.db2.Repository
-import org.totschnig.myexpenses.db2.getTransactionSum
-import org.totschnig.myexpenses.db2.updateTransferPeersForTransactionDelete
+import org.totschnig.myexpenses.db2.*
 import org.totschnig.myexpenses.dialog.select.SelectFromMappedTableDialogFragment
-import org.totschnig.myexpenses.model.Account
+import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.Account.HOME_AGGREGATE_ID
-import org.totschnig.myexpenses.model.AggregateAccount
-import org.totschnig.myexpenses.model.CurrencyContext
-import org.totschnig.myexpenses.model.Grouping
-import org.totschnig.myexpenses.model.Money
-import org.totschnig.myexpenses.model.Template
-import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider.*
 import org.totschnig.myexpenses.provider.filter.WhereFilter
+import org.totschnig.myexpenses.sync.GenericAccountService
+import org.totschnig.myexpenses.sync.SyncAdapter
 import org.totschnig.myexpenses.util.ResultUnit
+import org.totschnig.myexpenses.util.ShortcutHelper
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.joinArrays
+import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider
 import org.totschnig.myexpenses.viewmodel.data.AccountMinimal
 import org.totschnig.myexpenses.viewmodel.data.Budget
@@ -60,7 +51,7 @@ import kotlin.collections.set
 
 const val KEY_ROW_IDS = "rowIds"
 
-object AccountSealedException : IllegalStateException()
+class AccountSealedException : IllegalStateException()
 
 abstract class ContentResolvingAndroidViewModel(application: Application) :
     BaseViewModel(application) {
@@ -79,6 +70,9 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
 
     @Inject
     lateinit var homeCurrencyProvider: HomeCurrencyProvider
+
+    @Inject
+    lateinit var licenceHandler: LicenceHandler
 
     val collate: String
         get() = prefHandler.collate
@@ -239,22 +233,40 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
                 it.getInt(0)
             } == 1
         ) {
-            Result.failure(AccountSealedException)
+            Result.failure(AccountSealedException())
         } else {
             val failures = mutableListOf<Exception>()
             for (accountId in accountIds) {
                 try {
-                    Account.delete(accountId)
+                    repository.deleteAccount(accountId)?.let {
+                        val accountManager = AccountManager.get(getApplication())
+                        val syncAccount = GenericAccountService.getAccount(it)
+                        accountManager.setUserData(syncAccount,
+                            SyncAdapter.KEY_LAST_SYNCED_LOCAL(accountId), null)
+                        accountManager.setUserData(syncAccount,
+                            SyncAdapter.KEY_LAST_SYNCED_REMOTE(accountId), null)
+                    }
                 } catch (e: Exception) {
                     CrashHandler.report(e)
                     failures.add(e)
                 }
             }
+            licenceHandler.updateNewAccountEnabled()
+            updateTransferShortcut()
             if (failures.isEmpty())
                 ResultUnit
             else
                 Result.failure(Exception("${failures.size} exceptions occurred. "))
         }
+
+    open fun updateTransferShortcut() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N_MR1) {
+            ShortcutHelper.configureTransferShortcut(
+                getApplication(),
+                repository.countAccounts(null, null) > 1
+            )
+        }
+    }
 
     /**
      * @param rowId For split transactions, we check if any of their children is linked to a debt,
@@ -302,7 +314,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
             handleDeleteOperation = ContentProviderOperation.newInsert(Transaction.CONTENT_URI)
                 .withValues(helper.buildInitialValues()).build()
         }
-        val rowSelect = Account.buildTransactionRowSelect(filter)
+        val rowSelect = buildTransactionRowSelect(filter)
         var selectionArgs: Array<String>? = arrayOf(account.id.toString())
         if (filter != null && !filter.isEmpty) {
             selectionArgs = joinArrays(selectionArgs, filter.getSelectionArgs(false))

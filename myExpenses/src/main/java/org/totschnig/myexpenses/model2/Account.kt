@@ -5,18 +5,15 @@ import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.db2.createAccount
 import org.totschnig.myexpenses.model.AccountType
 import org.totschnig.myexpenses.model.Grouping
+import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.getBoolean
-import org.totschnig.myexpenses.provider.getEnum
-import org.totschnig.myexpenses.provider.getLong
-import org.totschnig.myexpenses.provider.getString
 
 data class Account(
-    val id: Long = 0L,
-    val label: String,
+    override val id: Long = 0L,
+    val label: String  = "",
     val description: String = "",
     val openingBalance: Long = 0L,
-    val currency: String,
+    override val currency: String,
     val type: AccountType = AccountType.CASH,
     val color: Int = DEFAULT_COLOR,
     val criterion: Long? = null,
@@ -24,11 +21,18 @@ data class Account(
     val excludeFromTotals: Boolean = false,
     val uuid: String? = null,
     val isSealed: Boolean = false,
+    /**
+     * describes rate of this accounts minor unit to homeCurrency minor unit
+     */
     val exchangeRate: Double = 1.0,
-    val grouping: Grouping = Grouping.NONE
-) {
+    override val grouping: Grouping = Grouping.NONE
+): DataBaseAccount() {
 
     fun createIn(repository: Repository) = repository.createAccount(this)
+
+    @Suppress("DeprecatedCallableAddReplaceWith")
+    @Deprecated("Helper for legacy Java code")
+    fun withLabel(label: String) = copy(label = label)
 
     companion object {
 
@@ -55,13 +59,20 @@ data class Account(
         fun fromCursor(cursor: Cursor) =
             Account(
                 id = cursor.getLong(KEY_ROWID),
-                openingBalance = cursor.getLong(KEY_OPENING_BALANCE),
-                currency = cursor.getString(KEY_CURRENCY),
                 label = cursor.getString(KEY_LABEL),
                 description = cursor.getString(KEY_DESCRIPTION),
+                openingBalance = cursor.getLong(KEY_OPENING_BALANCE),
+                currency = cursor.getString(KEY_CURRENCY),
+                type = cursor.getEnum(KEY_TYPE, AccountType.CASH),
+                color = cursor.getInt(KEY_COLOR),
+                criterion = cursor.getLong(KEY_CRITERION),
+                syncAccountName= cursor.getStringOrNull(KEY_SYNC_ACCOUNT_NAME),
+                excludeFromTotals = cursor.getBoolean(KEY_EXCLUDE_FROM_TOTALS),
                 uuid = cursor.getString(KEY_UUID),
                 isSealed = cursor.getBoolean(KEY_SEALED),
+                exchangeRate = cursor.getDouble(KEY_EXCHANGE_RATE),
                 grouping = cursor.getEnum(KEY_GROUPING, Grouping.NONE)
             )
+
     }
 }

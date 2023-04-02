@@ -5,6 +5,7 @@ import android.app.Application;
 import com.google.android.vending.licensing.PreferenceObfuscator;
 
 import org.totschnig.myexpenses.BuildConfig;
+import org.totschnig.myexpenses.db2.Repository;
 import org.totschnig.myexpenses.preference.PrefHandler;
 import org.totschnig.myexpenses.preference.PrefKey;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
@@ -42,8 +43,14 @@ public abstract class ContribStatusLicenceHandler extends LicenceHandler {
 
   private int contribStatus;
 
-  ContribStatusLicenceHandler(Application context, PreferenceObfuscator preferenceObfuscator, CrashHandler crashHandler, PrefHandler prefHandler) {
-    super(context, preferenceObfuscator, crashHandler, prefHandler);
+  ContribStatusLicenceHandler(
+          Application context,
+          PreferenceObfuscator preferenceObfuscator,
+          CrashHandler crashHandler,
+          PrefHandler prefHandler,
+          Repository repository
+  ) {
+    super(context, preferenceObfuscator, crashHandler, prefHandler, repository);
   }
 
   abstract int getLegacyStatus();

@@ -5,11 +5,18 @@ import android.content.Context
 import com.google.android.vending.licensing.PreferenceObfuscator
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contrib.Config
+import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
-class StoreLicenceHandler(context: Application, preferenceObfuscator: PreferenceObfuscator, crashHandler: CrashHandler, prefHandler: PrefHandler) :
-        PlayStoreLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler) {
+class StoreLicenceHandler(
+    context: Application,
+    preferenceObfuscator: PreferenceObfuscator,
+    crashHandler: CrashHandler,
+    prefHandler: PrefHandler,
+    repository: Repository
+) :
+        PlayStoreLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository) {
 
     override val proPackages: Array<ProfessionalPackage>
         get() = arrayOf(ProfessionalPackage.Professional_1, ProfessionalPackage.Professional_12)
