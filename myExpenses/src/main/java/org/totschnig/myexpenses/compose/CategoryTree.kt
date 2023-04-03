@@ -29,10 +29,9 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.semantics.collapse
-import androidx.compose.ui.semantics.expand
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -103,9 +102,17 @@ fun Category(
             }
         } else if (!withRoot || expansionMode.isExpanded(category.id)) {
             LazyColumn(
+                modifier = Modifier
+                    .testTag(TEST_TAG_LIST)
+                    .semantics {
+                        collectionInfo = CollectionInfo(1, filteredChildren.size)
+                    },
                 verticalArrangement = Arrangement.Center
             ) {
-                itemsIndexed(filteredChildren) { index, item ->
+                itemsIndexed(
+                    items = filteredChildren,
+                    key =  { _, item -> item.id }
+                ) { index, item ->
                     Category(
                         category = item,
                         expansionMode = expansionMode,
@@ -338,12 +345,12 @@ sealed class ChoiceMode(
 
     abstract fun toggleSelection(selectedAncestor: Category?, category: Category)
 
-    class MultiChoiceMode(val selectionState: SnapshotStateList<Long>, selectTree: Boolean) :
+    class MultiChoiceMode(val selectionState: SnapshotStateList<Category>, selectTree: Boolean) :
         ChoiceMode(selectTree) {
-        override fun isSelected(id: Long) = selectionState.contains(id)
+        override fun isSelected(id: Long) = selectionState.any { it.id == id }
         override fun toggleSelection(selectedAncestor: Category?, category: Category) {
             (selectedAncestor ?: category).let {
-                if (selectionState.toggle(it.id)) {
+                if (selectionState.toggle(it)) {
                     //when we select a category, children are implicitly selected, so we remove
                     //them from the explicit selection
                     it.recursiveUnselectChildren(selectionState)
