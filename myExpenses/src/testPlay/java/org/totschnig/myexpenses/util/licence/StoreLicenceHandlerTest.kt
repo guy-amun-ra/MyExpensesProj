@@ -13,6 +13,7 @@ import org.mockito.ArgumentMatchers
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.totschnig.myexpenses.MyApplication
+import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
@@ -25,8 +26,19 @@ class StoreLicenceHandlerTest {
     @Throws(Exception::class)
     fun setUp() {
         val context = mock(MyApplication::class.java)
-        `when`(context.getSharedPreferences(ArgumentMatchers.any(), ArgumentMatchers.anyInt())).thenReturn(mock(SharedPreferences::class.java))
-        licenceHandler = StoreLicenceHandler(context, mock(PreferenceObfuscator::class.java), mock(CrashHandler::class.java), mock(PrefHandler::class.java))
+        `when`(
+            context.getSharedPreferences(
+                ArgumentMatchers.any(),
+                ArgumentMatchers.anyInt()
+            )
+        ).thenReturn(mock(SharedPreferences::class.java))
+        licenceHandler = StoreLicenceHandler(
+            context,
+            mock(PreferenceObfuscator::class.java),
+            mock(CrashHandler::class.java),
+            mock(PrefHandler::class.java),
+            mock(Repository::class.java)
+        )
     }
 
     private fun m(sku: String) = mock(Purchase::class.java).also {
@@ -34,7 +46,17 @@ class StoreLicenceHandlerTest {
     }
 
     @Test
-    @Parameters("sku_premium, CONTRIB", "sku_extended, EXTENDED", "sku_premium2extended, EXTENDED", "sku_professional, PROFESSIONAL", "sku_professional_monthly, PROFESSIONAL", "sku_professional_yearly, PROFESSIONAL", "sku_extended2professional, PROFESSIONAL", "sku_extended2professional_monthly, PROFESSIONAL", "sku_extended2professional_yearly, PROFESSIONAL")
+    @Parameters(
+        "sku_premium, CONTRIB",
+        "sku_extended, EXTENDED",
+        "sku_premium2extended, EXTENDED",
+        "sku_professional, PROFESSIONAL",
+        "sku_professional_monthly, PROFESSIONAL",
+        "sku_professional_yearly, PROFESSIONAL",
+        "sku_extended2professional, PROFESSIONAL",
+        "sku_extended2professional_monthly, PROFESSIONAL",
+        "sku_extended2professional_yearly, PROFESSIONAL"
+    )
     fun extractLicenceStatusFromSku(sku: String, licenceStatus: String) {
         val expected = parse(licenceStatus)
         val actual = licenceHandler.extractLicenceStatusFromSku(sku)
@@ -44,7 +66,17 @@ class StoreLicenceHandlerTest {
     }
 
     @Test
-    @Parameters("sku_premium", "sku_extended", "sku_premium2extended", "sku_professional", "sku_professional_monthly", "sku_professional_yearly", "sku_extended2professional", "sku_extended2professional_monthly", "sku_extended2professional_yearly")
+    @Parameters(
+        "sku_premium",
+        "sku_extended",
+        "sku_premium2extended",
+        "sku_professional",
+        "sku_professional_monthly",
+        "sku_professional_yearly",
+        "sku_extended2professional",
+        "sku_extended2professional_monthly",
+        "sku_extended2professional_yearly"
+    )
     fun singleValidSkuIsHighest(provided: String) {
         val mock = m(provided)
         assertEquals(mock, licenceHandler.findHighestValidPurchase(listOf(mock)))
@@ -74,16 +106,35 @@ class StoreLicenceHandlerTest {
         val extended = m("sku_extended")
         val extended2professionalYearly = m("sku_extended2professional_yearly")
         return arrayOf(
-                arrayOf(listOf(premium, premium2extended), premium2extended),
-                arrayOf(listOf(premium2extended, premium), premium2extended),
-                arrayOf(listOf(premium, premium2extended, extended2professionalMonthly), extended2professionalMonthly),
-                arrayOf(listOf(premium, extended2professionalMonthly, premium2extended), extended2professionalMonthly),
-                arrayOf(listOf(premium2extended, premium, extended2professionalMonthly), extended2professionalMonthly),
-                arrayOf(listOf(premium2extended, extended2professionalMonthly, premium), extended2professionalMonthly),
-                arrayOf(listOf(extended2professionalMonthly, premium, premium2extended), extended2professionalMonthly),
-                arrayOf(listOf(extended2professionalMonthly, premium2extended, premium), extended2professionalMonthly),
-                arrayOf(listOf(extended, extended2professionalYearly), extended2professionalYearly),
-                arrayOf(listOf(extended2professionalYearly, extended), extended2professionalYearly))
+            arrayOf(listOf(premium, premium2extended), premium2extended),
+            arrayOf(listOf(premium2extended, premium), premium2extended),
+            arrayOf(
+                listOf(premium, premium2extended, extended2professionalMonthly),
+                extended2professionalMonthly
+            ),
+            arrayOf(
+                listOf(premium, extended2professionalMonthly, premium2extended),
+                extended2professionalMonthly
+            ),
+            arrayOf(
+                listOf(premium2extended, premium, extended2professionalMonthly),
+                extended2professionalMonthly
+            ),
+            arrayOf(
+                listOf(premium2extended, extended2professionalMonthly, premium),
+                extended2professionalMonthly
+            ),
+            arrayOf(
+                listOf(extended2professionalMonthly, premium, premium2extended),
+                extended2professionalMonthly
+            ),
+            arrayOf(
+                listOf(extended2professionalMonthly, premium2extended, premium),
+                extended2professionalMonthly
+            ),
+            arrayOf(listOf(extended, extended2professionalYearly), extended2professionalYearly),
+            arrayOf(listOf(extended2professionalYearly, extended), extended2professionalYearly)
+        )
     }
 
 
