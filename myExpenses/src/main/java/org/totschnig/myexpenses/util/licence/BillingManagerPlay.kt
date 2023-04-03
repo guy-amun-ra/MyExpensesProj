@@ -202,7 +202,7 @@ class BillingManagerPlay(
             val result = billingClient.acknowledgePurchase(
                 AcknowledgePurchaseParams.newBuilder().setPurchaseToken(purchaseToken).build()
             )
-            d("acknowledgePurchase", result)
+            d("acknowledgePurchase $purchaseToken", result)
             if (result.responseCode != BillingResponseCode.OK) {
                 CrashHandler.report(Exception("acknowledgePurchase failed with responseCode ${result.responseCode}"))
             }
