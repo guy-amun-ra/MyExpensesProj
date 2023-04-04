@@ -13,6 +13,7 @@ import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import timber.log.Timber
 import java.util.*
 
 open class PlayStoreLicenceHandler(
@@ -77,11 +78,10 @@ open class PlayStoreLicenceHandler(
 
             override fun onPurchaseCanceled() {
                 log().i("onPurchasesUpdated() - user cancelled the purchase flow - skipping")
-                activity.onPurchaseCancelled()
             }
 
             override fun onPurchaseFailed(resultCode: Int) {
-                log().w("onPurchasesUpdated() got unknown resultCode: %s", resultCode)
+                Timber.e("onPurchasesUpdated() got unknown resultCode: %s", resultCode)
                 activity.onPurchaseFailed(resultCode)
             }
         }

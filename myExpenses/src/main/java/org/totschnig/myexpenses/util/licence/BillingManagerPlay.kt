@@ -17,21 +17,8 @@
 package org.totschnig.myexpenses.util.licence
 
 import androidx.lifecycle.lifecycleScope
-import com.android.billingclient.api.AcknowledgePurchaseParams
-import com.android.billingclient.api.BillingClient
+import com.android.billingclient.api.*
 import com.android.billingclient.api.BillingClient.*
-import com.android.billingclient.api.BillingClientStateListener
-import com.android.billingclient.api.BillingFlowParams
-import com.android.billingclient.api.BillingResult
-import com.android.billingclient.api.ProductDetailsResponseListener
-import com.android.billingclient.api.Purchase
-import com.android.billingclient.api.PurchasesResult
-import com.android.billingclient.api.PurchasesUpdatedListener
-import com.android.billingclient.api.QueryProductDetailsParams
-import com.android.billingclient.api.QueryPurchasesParams
-import com.android.billingclient.api.acknowledgePurchase
-import com.android.billingclient.api.queryProductDetails
-import com.android.billingclient.api.queryPurchasesAsync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.activity.IapActivity
@@ -121,6 +108,9 @@ class BillingManagerPlay(
             throw IllegalStateException("Billing Client: isReady: ${billingClient.isReady}, isServiceConnected: $isServiceConnected")
         }
         log().d("Launching in-app purchase flow. Replace old SKU? %s", oldPurchase != null)
+        if (!isFeatureSupported(FeatureType.PRODUCT_DETAILS)) {
+            throw IllegalStateException("Play Store on your device is outdated. Please update.")
+        }
         billingClient.queryProductDetails(
             QueryProductDetailsParams.newBuilder().setProductList(
                 listOf(
@@ -130,7 +120,7 @@ class BillingManagerPlay(
                         .build()
                 )
             ).build()
-        ).productDetailsList?.getOrNull(0)?.let {
+        ).productDetailsList?.getOrNull(0)?.also {
             val purchaseParams = BillingFlowParams.newBuilder()
             val productDetailsParams =
                 BillingFlowParams.ProductDetailsParams.newBuilder().setProductDetails(it)
@@ -229,8 +219,10 @@ class BillingManagerPlay(
      * a retry-mechanism implemented.
      *
      */
-    private fun areSubscriptionsSupported(): Boolean {
-        val responseCode = billingClient.isFeatureSupported(FeatureType.SUBSCRIPTIONS).responseCode
+    private fun areSubscriptionsSupported() = isFeatureSupported(FeatureType.SUBSCRIPTIONS)
+
+    private fun isFeatureSupported(featureType: String): Boolean {
+        val responseCode = billingClient.isFeatureSupported(featureType).responseCode
         if (responseCode != BillingResponseCode.OK) {
             log().w("areSubscriptionsSupported() got an error response: %s", responseCode)
         }
