@@ -133,7 +133,7 @@ android {
                         def outputFolder = flavor.name == 'play' ? 'bundle' : 'apk_from_bundle'
                         def artifactSuffix = flavor.name == 'play' ? '.aab' : '-universal.apk'
                         def renameTarget = flavor.name == 'huawei' ? '/myExpenses.apk' : ''
-                        println "mkdir ${dir}; mv myExpenses/build/outputs/mapping/${flavor.name}WithAdsInternRelease/mapping.txt ${dir}; mv myExpenses/build/outputs/${outputFolder}/${flavor.name}WithAdsInternRelease/myExpenses-${flavor.name}-withAds-intern-release${artifactSuffix} ${dir}${renameTarget}; git tag r${tag}; git push gitlab r${tag}"
+                        println "mkdir ${dir} && (mv myExpenses/build/outputs/mapping/${flavor.name}WithAdsInternRelease/mapping.txt ${dir}; mv myExpenses/build/outputs/${outputFolder}/${flavor.name}WithAdsInternRelease/myExpenses-${flavor.name}-withAds-intern-release${artifactSuffix} ${dir}${renameTarget}; git tag r${tag}; git push gitlab r${tag})"
                     }
                 }
             }
