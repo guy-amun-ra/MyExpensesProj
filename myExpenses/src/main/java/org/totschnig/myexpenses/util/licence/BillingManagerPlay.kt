@@ -224,7 +224,7 @@ class BillingManagerPlay(
     private fun isFeatureSupported(featureType: String): Boolean {
         val responseCode = billingClient.isFeatureSupported(featureType).responseCode
         if (responseCode != BillingResponseCode.OK) {
-            log().w("areSubscriptionsSupported() got an error response: %s", responseCode)
+            log().w("feature %s is not supported, response: %d", featureType, responseCode)
         }
         return responseCode == BillingResponseCode.OK
     }
