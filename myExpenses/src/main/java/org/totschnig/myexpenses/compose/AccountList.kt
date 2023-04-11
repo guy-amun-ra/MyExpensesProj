@@ -7,26 +7,12 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Divider
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -64,6 +50,7 @@ fun AccountList(
     onDelete: (FullAccount) -> Unit,
     onHide: (Long) -> Unit,
     onToggleSealed: (FullAccount) -> Unit,
+    onToggleExcludeFromTotals: (FullAccount) -> Unit,
     expansionHandlerGroups: ExpansionHandler,
     expansionHandlerAccounts: ExpansionHandler
 ) {
@@ -98,6 +85,7 @@ fun AccountList(
                             onDelete = onDelete,
                             onHide = onHide,
                             onToggleSealed = onToggleSealed,
+                            onToggleExcludeFromTotals = onToggleExcludeFromTotals,
                             toggleExpansion = { expansionHandlerAccounts.toggle(account.id.toString()) }
                         )
                     }
@@ -170,7 +158,8 @@ fun AccountCard(
     onEdit: (Long) -> Unit = {},
     onDelete: (FullAccount) -> Unit = {},
     onHide: (Long) -> Unit = {},
-    onToggleSealed: (FullAccount) -> Unit = { _ -> },
+    onToggleSealed: (FullAccount) -> Unit = {},
+    onToggleExcludeFromTotals: (FullAccount) -> Unit = {},
     toggleExpansion: () -> Unit = { }
 ) {
     val format = LocalCurrencyFormatter.current
@@ -215,6 +204,7 @@ fun AccountCard(
                     color = color
                 )
             }
+
             if (account.sealed) {
                 Icon(
                     imageVector = Icons.Filled.Lock,
@@ -224,6 +214,19 @@ fun AccountCard(
                     )
                 )
             }
+            if (account.excludeFromTotals) {
+                val contentColor = LocalContentColor.current
+                Icon(
+                    modifier = Modifier.drawBehind {
+                        drawLine(contentColor, Offset(size.width/5,size.height/2), Offset(size.width/5*4, size.height/2), 5f)
+                    },
+                    imageVector = Icons.Filled.Functions,
+                    contentDescription = stringResource(
+                        id = R.string.menu_exclude_from_totals
+                    )
+                )
+            }
+
             Column(modifier = Modifier.weight(1f)) {
                 Text(text = account.label)
                 AnimatedVisibility(visible = isCollapsed) {
@@ -253,6 +256,12 @@ fun AccountCard(
                                 onToggleSealed(account)
                             }
                         )
+                        add(CheckableMenuEntry(
+                            isChecked = account.excludeFromTotals,
+                            label = R.string.menu_exclude_from_totals
+                        ) {
+                            onToggleExcludeFromTotals(account)
+                        })
                     }
                 }
             )
@@ -353,7 +362,8 @@ fun AccountPreview() {
             sumExpense = 1000,
             sealed = true,
             type = AccountType.CASH,
-            criterion = 5000
+            criterion = 5000,
+            excludeFromTotals = true
         )
     )
 }
