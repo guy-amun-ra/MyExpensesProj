@@ -5,7 +5,7 @@ import android.text.Editable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
-import icepick.State
+import com.evernote.android.state.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
 import org.totschnig.myexpenses.adapter.IdAdapter
@@ -178,7 +178,7 @@ class TransferDelegate(
     private fun requireTransferAccountsAdapter() {
         if (!::transferAccountsAdapter.isInitialized) {
             transferAccountsAdapter = IdAdapter(context)
-            transferAccountsAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
+            transferAccountsAdapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item)
             transferAccountSpinner.adapter = transferAccountsAdapter
             transferAccountSpinner.setOnItemSelectedListener(this)
         }

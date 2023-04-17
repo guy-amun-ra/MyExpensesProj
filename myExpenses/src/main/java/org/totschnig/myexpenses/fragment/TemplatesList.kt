@@ -38,10 +38,10 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.loader.app.LoaderManager
 import androidx.loader.content.CursorLoader
 import androidx.loader.content.Loader
+import com.evernote.android.state.State
+import com.evernote.android.state.StateSaver
 import com.google.android.material.snackbar.Snackbar
 import eltos.simpledialogfragment.SimpleDialog
-import icepick.Icepick
-import icepick.State
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.*
@@ -127,7 +127,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-        Icepick.restoreInstanceState(this, savedInstanceState)
+        StateSaver.restoreInstanceState(this, savedInstanceState)
         val appComponent = (requireActivity().application as MyApplication).appComponent
         appComponent.inject(this)
         viewModel = ViewModelProvider(this)[TemplatesListViewModel::class.java]
@@ -141,7 +141,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        Icepick.saveInstanceState(this, outState)
+        StateSaver.saveInstanceState(this, outState)
     }
 
     override fun onCreateView(
@@ -790,7 +790,7 @@ class TemplatesList : SortableListFragment(), LoaderManager.LoaderCallbacks<Curs
     override fun inflateContextualActionBar(menu: Menu, listId: Int) {
         if (listId == R.id.list) {
             super.inflateContextualActionBar(menu, listId)
-        } else if (listId == R.id.calendar_gridview) {
+        } else if (listId == com.caldroid.R.id.calendar_gridview) {
             requireActivity().menuInflater.inflate(R.menu.planlist_context, menu)
         }
     }

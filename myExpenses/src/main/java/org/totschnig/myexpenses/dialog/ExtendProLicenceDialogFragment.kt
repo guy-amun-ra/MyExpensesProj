@@ -7,8 +7,8 @@ import android.view.LayoutInflater
 import android.widget.AdapterView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
-import icepick.Icepick
-import icepick.State
+import com.evernote.android.state.State
+import com.evernote.android.state.StateSaver
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ContribInfoDialogActivity
@@ -29,13 +29,13 @@ class ExtendProLicenceDialogFragment : DialogFragment(), DialogInterface.OnClick
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Icepick.restoreInstanceState(this, savedInstanceState)
+        StateSaver.restoreInstanceState(this, savedInstanceState)
         (requireActivity().application as MyApplication).appComponent.inject(this)
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        Icepick.saveInstanceState(this, outState)
+        StateSaver.saveInstanceState(this, outState)
     }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -43,7 +43,7 @@ class ExtendProLicenceDialogFragment : DialogFragment(), DialogInterface.OnClick
         val proPackages = licenceHandler.proPackages.map(licenceHandler::getExtendOrSwitchMessage)
         val adapter = MaterialSpinnerAdapter(
                 requireContext(),
-                R.layout.support_simple_spinner_dropdown_item,
+                androidx.appcompat.R.layout.support_simple_spinner_dropdown_item,
                 proPackages)
         binding.actSelectLicence.setAdapter(adapter)
         binding.actSelectLicence.onItemClickListener = AdapterView.OnItemClickListener { _, _, position, _ -> selectedIndex = position }

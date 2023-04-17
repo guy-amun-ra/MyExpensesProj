@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -97,7 +98,7 @@ fun AccountList(
 
 @Composable
 private fun Header(header: String, onHeaderClick: () -> Unit) {
-    Divider(color = colorResource(id = R.color.material_grey_300), thickness = 2.dp)
+    Divider(color = colorResource(id = androidx.appcompat.R.color.material_grey_300), thickness = 2.dp)
     Text(
         modifier = Modifier
             .fillMaxWidth()
@@ -335,13 +336,14 @@ fun AccountCard(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun SumRow(label: Int, formattedAmount: String, modifier: Modifier = Modifier) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(stringResource(label))
+        Text(stringResource(label), Modifier.weight(1f).basicMarquee(iterations = 1), maxLines = 1)
         Text(formattedAmount, modifier)
     }
 }

@@ -398,7 +398,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
                 color = MaterialTheme.colors.onSurface,
                 thickness = 1.dp
             )
-            Row(modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.activity_horizontal_margin))) {
+            Row(modifier = Modifier.padding(horizontal = dimensionResource(id = eltos.simpledialogfragment.R.dimen.activity_horizontal_margin))) {
                 CompositionLocalProvider(
                     LocalTextStyle provides TextStyle(
                         fontWeight = FontWeight.Bold,
@@ -428,8 +428,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
         categories: State<Category>
     ) {
         if (showChart.value)
-            AndroidView(
-                modifier = modifier,
+            Box(modifier = modifier) { AndroidView(modifier = Modifier.fillMaxSize(),
                 factory = { ctx ->
                     requireChart(ctx)
                     chart.apply {
@@ -472,7 +471,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
                         legend.isEnabled = false
                         setChartData(categories.value.children)
                     }
-                })
+                }) }
     }
 
     private fun PieChart.setCenterText(position: Int) {

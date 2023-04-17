@@ -1,17 +1,20 @@
 package org.totschnig.myexpenses.retrofit
 
 import com.google.common.truth.Truth
+import kotlinx.coroutines.runBlocking
 import org.junit.Assume
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito.mock
+import org.robolectric.RobolectricTestRunner
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.di.DaggerAppComponent
 import org.totschnig.myexpenses.di.NetworkModule
 import java.time.LocalDate
-import java.util.*
 import javax.net.SocketFactory
 
+@RunWith(RobolectricTestRunner::class)
 class ExchangeRateServiceTest {
     private val service: ExchangeRateService = DaggerAppComponent.builder()
         .networkModule(object: NetworkModule() {
@@ -24,16 +27,28 @@ class ExchangeRateServiceTest {
     @Test
     fun openExchangeRateIsAlive() {
         Assume.assumeFalse(BuildConfig.OPEN_EXCHANGE_RATES_API_KEY.isEmpty())
-        val configuration = Configuration(ExchangeRateSource.OPENEXCHANGERATES, BuildConfig.OPEN_EXCHANGE_RATES_API_KEY)
-        val rate = service.getRate(configuration, date, "USD", "EUR")
-        Truth.assertThat(rate.first).isEqualTo(date)
+        runBlocking {
+            val rate = service.getRate(ExchangeRateSource.OpenExchangeRates, BuildConfig.OPEN_EXCHANGE_RATES_API_KEY, date, "USD", "EUR")
+            Truth.assertThat(rate.first).isEqualTo(date)
+        }
     }
 
     @Test
     fun exchangeRateHostIsAlive() {
-        val configuration = Configuration(ExchangeRateSource.EXCHANGE_RATE_HOST)
-        val rate = service.getRate(configuration, date, "USD", "EUR")
-        Truth.assertThat(rate.first).isEqualTo(date)
-        println(rate.second.toString())
+        runBlocking {
+            val rate = service.getRate(ExchangeRateSource.ExchangeRateHost, null, date, "USD", "EUR")
+            Truth.assertThat(rate.first).isEqualTo(date)
+            println(rate.second.toString())
+        }
+    }
+
+    @Test
+    fun coinApiIsAlive() {
+        Assume.assumeFalse(BuildConfig.COIN_API_API_KEY.isEmpty())
+        runBlocking {
+            val rate = service.getRate(ExchangeRateSource.CoinApi, BuildConfig.COIN_API_API_KEY, date, "USD", "EUR")
+            Truth.assertThat(rate.first).isEqualTo(date)
+            println(rate.second.toString())
+        }
     }
 }

@@ -22,8 +22,6 @@ import com.github.mikephil.charting.formatter.IValueFormatter
 import com.github.mikephil.charting.highlight.Highlight
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener
 import com.github.mikephil.charting.utils.ViewPortHandler
-import icepick.Icepick
-import icepick.State
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.BaseActivity
@@ -74,16 +72,10 @@ class HistoryChart : Fragment(), LoaderManager.LoaderCallbacks<Cursor?> {
     @Inject
     lateinit var prefHandler: PrefHandler
 
-    @JvmField
-    @State
     var showBalance = true
 
-    @JvmField
-    @State
     var includeTransfers = false
 
-    @JvmField
-    @State
     var showTotals = true
 
     private val viewModel: HistoryViewModel by activityViewModels()
@@ -102,7 +94,7 @@ class HistoryChart : Fragment(), LoaderManager.LoaderCallbacks<Cursor?> {
         val a = requireActivity().obtainStyledAttributes(typedValue.data, textSizeAttr)
         valueTextSize = a.getDimensionPixelSize(indexOfAttrTextSize, 10) / resources.displayMetrics.density
         a.recycle()
-        textColor = UiUtils.getColor(requireContext(), R.attr.colorOnSurface)
+        textColor = UiUtils.getColor(requireContext(), com.google.android.material.R.attr.colorOnSurface)
         lifecycleScope.launchWhenStarted {
             viewModel.grouping.collect {
                 requireActivity().invalidateOptionsMenu()
@@ -111,11 +103,6 @@ class HistoryChart : Fragment(), LoaderManager.LoaderCallbacks<Cursor?> {
                 }
             }
         }
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        Icepick.saveInstanceState(this, outState)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {

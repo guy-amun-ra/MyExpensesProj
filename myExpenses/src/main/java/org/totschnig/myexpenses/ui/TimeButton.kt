@@ -7,11 +7,10 @@ import android.os.Bundle
 import android.text.format.DateFormat
 import android.util.AttributeSet
 import androidx.fragment.app.DialogFragment
-import icepick.State
+import com.evernote.android.state.State
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import org.totschnig.myexpenses.R
 
 class TimeButton @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -78,7 +77,7 @@ class TimeButton @JvmOverloads constructor(
         override fun onCreateDialog(savedInstanceState: Bundle?): TimePickerDialog {
             val time = requireArguments().getSerializable(KEY_TIME) as LocalTime
             return TimePickerDialog(
-                context, R.style.ThemeOverlay_MaterialComponents_Dialog,
+                context, com.google.android.material.R.style.ThemeOverlay_MaterialComponents_Dialog,
                 { _, hourOfDay, minute ->
                     onTimeSetListener?.onTimeSet(
                         LocalTime.of(

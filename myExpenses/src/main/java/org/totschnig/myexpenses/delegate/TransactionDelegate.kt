@@ -8,9 +8,9 @@ import android.text.TextWatcher
 import android.view.View
 import android.widget.*
 import androidx.core.view.isVisible
+import com.evernote.android.state.State
+import com.evernote.android.state.StateSaver
 import com.squareup.picasso.Picasso
-import icepick.Icepick
-import icepick.State
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
@@ -238,7 +238,7 @@ abstract class TransactionDelegate<T : ITransaction>(
             //editText too late corrupt inputType
             viewBinding.Amount.setFractionDigits(transaction.amount.currencyUnit.fractionDigits)
         } else {
-            Icepick.restoreInstanceState(this, savedInstanceState)
+            StateSaver.restoreInstanceState(this, savedInstanceState)
         }
         setVisibility(viewBinding.toolbar.OperationType, withTypeSpinner)
         originTemplateId?.let { host.loadOriginTemplate(it) }
@@ -564,7 +564,7 @@ abstract class TransactionDelegate<T : ITransaction>(
         }
         operationTypeAdapter =
             ArrayAdapter<OperationType>(context, android.R.layout.simple_spinner_item, objects)
-        operationTypeAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
+        operationTypeAdapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item)
         operationTypeSpinner.adapter = operationTypeAdapter
         resetOperationType()
         operationTypeSpinner.setOnItemSelectedListener(this)
@@ -588,7 +588,7 @@ abstract class TransactionDelegate<T : ITransaction>(
                     return getItem(position)?.id() ?: 0L
                 }
             }
-        methodsAdapter.setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
+        methodsAdapter.setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item)
         methodSpinner.adapter = NothingSelectedSpinnerAdapter(
             methodsAdapter,
             android.R.layout.simple_spinner_item,  // R.layout.contact_spinner_nothing_selected_dropdown, // Optional
@@ -945,7 +945,7 @@ abstract class TransactionDelegate<T : ITransaction>(
         mAccounts.clear()
         mAccounts.addAll(data)
         accountSpinner.adapter = IdAdapter(context, data).apply {
-            setDropDownViewResource(R.layout.support_simple_spinner_dropdown_item)
+            setDropDownViewResource(androidx.appcompat.R.layout.support_simple_spinner_dropdown_item)
         }
 
         viewBinding.Amount.setTypeEnabled(true)
@@ -998,7 +998,7 @@ abstract class TransactionDelegate<T : ITransaction>(
         if (originalInputSelectedCurrency != null) {
             originalCurrencyCode = originalInputSelectedCurrency.code
         }
-        Icepick.saveInstanceState(this, outState)
+        StateSaver.saveInstanceState(this, outState)
     }
 
     private fun disableAccountSpinner() {

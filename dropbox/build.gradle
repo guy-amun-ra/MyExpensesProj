@@ -24,14 +24,18 @@ android {
         huawei {
             dimension "distribution"
         }
+        compileOptions {
+            sourceCompatibility JavaVersion.VERSION_17
+            targetCompatibility JavaVersion.VERSION_17
+        }
     }
     namespace 'org.totschnig.dropbox'
 }
 
 dependencies {
     implementation project(":myExpenses")
-    implementation 'frankiesardo:icepick:3.2.0'
-    kapt 'frankiesardo:icepick-processor:3.2.0'
+    implementation 'com.evernote:android-state:1.4.1'
+    kapt 'com.evernote:android-state-processor:1.4.1'
 
     implementation 'com.dropbox.core:dropbox-core-sdk:5.4.4'
 }
