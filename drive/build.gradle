@@ -23,6 +23,7 @@ android {
         huawei {
             dimension "distribution"
         }
+    }
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
