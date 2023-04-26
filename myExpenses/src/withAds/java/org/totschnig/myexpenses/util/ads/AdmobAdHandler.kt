@@ -34,6 +34,12 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
     MobileAds.setRequestConfiguration(configuration);*/
     }
 
+    override val shouldHideBanner: Boolean
+        get() = super.shouldHideBanner ||
+                (Build.VERSION.SDK_INT in Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2 &&
+                        Build.MODEL == "Redmi Note 9")
+
+
     override fun startBannerInternal() {
         showBannerAdmob()
     }
