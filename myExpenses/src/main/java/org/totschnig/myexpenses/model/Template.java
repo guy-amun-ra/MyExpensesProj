@@ -56,7 +56,6 @@ import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.OperationApplicationException;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteConstraintException;
 import android.net.Uri;
 import android.os.RemoteException;
 
@@ -314,14 +313,7 @@ public class Template extends Transaction implements ITransfer, ISplit {
     final CurrencyContext currencyContext = MyApplication.getInstance().getAppComponent().currencyContext();
     int currencyColumnIndex = c.getColumnIndex(KEY_CURRENCY);
     long accountId = c.getLong(c.getColumnIndexOrThrow(KEY_ACCOUNTID));
-    //we allow the object to be instantiated without instantiation of
-    //the account, because the latter triggers an error (getDatabase called recursively)
-    //when we need a template instance in database onUpgrade
-    if (currencyColumnIndex != -1) {
-      currency = currencyContext.get(c.getString(currencyColumnIndex));
-    } else {
-      currency = Account.getInstanceFromDb(accountId).getCurrencyUnit();
-    }
+    currency = currencyContext.get(c.getString(currencyColumnIndex));
     Money amount = new Money(currency, c.getLong(c.getColumnIndexOrThrow(KEY_AMOUNT)));
     boolean isTransfer = !c.isNull(c.getColumnIndexOrThrow(KEY_TRANSFER_ACCOUNT));
     Long catId = getLongOrNull(c, KEY_CATID);
@@ -377,11 +369,6 @@ public class Template extends Transaction implements ITransfer, ISplit {
             String.format(Locale.ROOT, "Unknown type %d", operationType));
     }
     setParentId(parentId);
-  }
-
-  @Deprecated
-  public static Template getTypedNewInstance(int operationType, Account account, boolean forEdit, Long parentId) {
-    return getTypedNewInstance(operationType, account.getId(), account.getCurrencyUnit(), forEdit, parentId);
   }
 
   @Nullable

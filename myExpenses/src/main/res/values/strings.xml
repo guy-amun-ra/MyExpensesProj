@@ -651,8 +651,6 @@
     <string name="progress_dialog_fetching_data_from_sync_backend">Fetching data from remote backend. This may take some time.</string>
     <string name="donate_button_invoice">Invoice</string>
     <string name="menu_sort_direction">Sort direction</string>
-    <string name="sort_direction_ascending">ascending</string>
-    <string name="sort_direction_descending">descending</string>
     <string name="never">never</string>
     <string name="always">always</string>
     <string name="auto_fill_account_from_aggregate_only">Only when started from aggregate account.</string>
@@ -1062,4 +1060,6 @@
     <string name="debt_balance_i_owe">I now owe %s.</string>
     <!--%1$s is replaced with the name of the debtor. %2$s is replaced with the amount. -->
     <string name="debt_balance_they_owe">%1$s now owes %2$s.</string>
+    <string name="pref_backup_file_prefix_title">File prefix</string>
+    <string name="whats_new_355">Backup file name is now configurable.</string>
 </resources>

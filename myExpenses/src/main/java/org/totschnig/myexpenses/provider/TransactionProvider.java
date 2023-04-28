@@ -17,7 +17,7 @@ package org.totschnig.myexpenses.provider;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_REPLACE;
-import static org.totschnig.myexpenses.model.AggregateAccount.GROUPING_AGGREGATE;
+import static org.totschnig.myexpenses.provider.DataBaseAccount.HOME_AGGREGATE_ID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.budgetAllocation;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.budgetSelect;
@@ -57,7 +57,6 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper;
 import androidx.sqlite.db.SupportSQLiteQueryBuilder;
 
 import org.totschnig.myexpenses.BuildConfig;
-import org.totschnig.myexpenses.model.Account;
 import org.totschnig.myexpenses.model.CrStatus;
 import org.totschnig.myexpenses.model.Grouping;
 import org.totschnig.myexpenses.model.Model;
@@ -514,13 +513,13 @@ public class TransactionProvider extends BaseTransactionProvider {
         } else {
           qb = SupportSQLiteQueryBuilder.builder(getAccountsWithExchangeRate());
           if (projection == null)
-            projection = Account.PROJECTION_BASE;
+            projection = org.totschnig.myexpenses.model2.Account.Companion.getPROJECTION();
           break;
         }
 
       case AGGREGATE_ID:
         String currencyId = uri.getPathSegments().get(2);
-        if (Integer.parseInt(currencyId) == Account.HOME_AGGREGATE_ID) {
+        if (Integer.parseInt(currencyId) == HOME_AGGREGATE_ID) {
           qb = SupportSQLiteQueryBuilder.builder(TABLE_ACCOUNTS);
           projection = aggregateHomeProjection(projection);
         } else {

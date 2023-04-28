@@ -19,12 +19,12 @@ import org.totschnig.myexpenses.export.CsvExporter
 import org.totschnig.myexpenses.export.JSONExporter
 import org.totschnig.myexpenses.export.QifExporter
 import org.totschnig.myexpenses.export.createFileFailure
-import org.totschnig.myexpenses.model.Account.HOME_AGGREGATE_ID
-import org.totschnig.myexpenses.model.AggregateAccount
 import org.totschnig.myexpenses.model.ExportFormat
 import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.model2.Account
 import org.totschnig.myexpenses.preference.PrefKey
+import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.AGGREGATE_HOME_CURRENCY_CODE
+import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.HOME_AGGREGATE_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CODE
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
@@ -41,7 +41,8 @@ import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.io.displayName
 import java.io.IOException
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import kotlin.math.abs
 
 class ExportViewModel(application: Application) : ContentResolvingAndroidViewModel(application) {
@@ -57,6 +58,10 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
         const val KEY_FILE_NAME = "file_name"
         const val KEY_DELIMITER = "export_delimiter"
         const val KEY_MERGE_P = "export_merge_accounts"
+
+        const val EXPORT_HANDLE_DELETED_DO_NOTHING = -1
+        const val EXPORT_HANDLE_DELETED_UPDATE_BALANCE = 0
+        const val EXPORT_HANDLE_DELETED_CREATE_HELPER = 1
     }
 
     private val _publishProgress: MutableSharedFlow<String?> = MutableSharedFlow()
@@ -91,7 +96,7 @@ class ExportViewModel(application: Application) : ContentResolvingAndroidViewMod
                     } else {
                         var selection = "${DatabaseConstants.KEY_EXCLUDE_FROM_TOTALS} = 0"
                         var selectionArgs: Array<String>? = null
-                        if (currency != null && currency != AggregateAccount.AGGREGATE_HOME_CURRENCY_CODE) {
+                        if (currency != null && currency != AGGREGATE_HOME_CURRENCY_CODE) {
                             selection += " AND $KEY_CURRENCY = ?"
                             selectionArgs = arrayOf(currency)
                         }

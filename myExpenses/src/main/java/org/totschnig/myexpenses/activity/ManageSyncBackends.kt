@@ -14,8 +14,8 @@ import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
 import org.totschnig.myexpenses.dialog.SetupSyncDialogFragment
 import org.totschnig.myexpenses.fragment.SyncBackendList
-import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.ContribFeature
+import org.totschnig.myexpenses.model2.Account
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.sync.BackendService
@@ -85,10 +85,10 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
     }
 
     override fun onPositive(args: Bundle, checked: Boolean) {
+        super.onPositive(args, checked)
         when (args.getInt(ConfirmationDialogFragment.KEY_COMMAND_POSITIVE)) {
             R.id.SYNC_UNLINK_COMMAND -> {
                 listFragment.syncUnlink(args.getString(DatabaseConstants.KEY_UUID)!!)
-                return
             }
             R.id.SYNC_REMOVE_BACKEND_COMMAND -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
@@ -98,7 +98,6 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
                 } else {
                     CrashHandler.report(IllegalStateException("Remove backend not supported on API 21"))
                 }
-                return
             }
             R.id.SYNC_LINK_COMMAND_LOCAL_DO -> {
                 val account = args.getSerializable(KEY_ACCOUNT) as Account
@@ -112,7 +111,6 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
                         )
                     }
                 }
-                return
             }
             R.id.SYNC_LINK_COMMAND_REMOTE_DO -> {
                 val account = args.getSerializable(KEY_ACCOUNT) as Account
@@ -126,9 +124,7 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
                         }
                     }
                 }
-                return
             }
-            else -> super.onPositive(args, checked)
         }
     }
 
@@ -230,7 +226,7 @@ class ManageSyncBackends : SyncBackendSetupActivity(), ContribIFace {
                     (item.menuInfo as ExpandableListContextMenuInfo).packedPosition
                 )?.let { account ->
                     viewModel.save(account).observe(this) {
-                        if (it == null) {
+                        it.onFailure {
                             showSnackBar(
                                 String.format(
                                     "There was an error saving account %s",

@@ -178,7 +178,9 @@ enum class PrefKey {
     UI_ITEM_RENDERER_CATEGORY_ICON(R.string.pref_ui_item_renderer_category_icon_key),
     ENCRYPT_DATABASE("encrypt_database"),
     ENCRYPT_DATABASE_INFO(R.string.pref_encrypt_database_info_key),
-    COIN_API_API_KEY(R.string.pref_coin_api_api_key_key)
+    COIN_API_API_KEY(R.string.pref_coin_api_api_key_key),
+    BACKUP_FILE_PREFIX(R.string.pref_backup_file_prefix_key),
+    AUTO_BACKUP_UNENCRYPTED_INFO(R.string.pref_auto_backup_unencrypted_info_key)
     ;
 
     internal val resId: Int

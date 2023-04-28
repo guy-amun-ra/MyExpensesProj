@@ -105,6 +105,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_THIS_YEAR_
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSACTIONID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_AMOUNT;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_CURRENCY;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_PEER;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_PEER_PARENT;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID;
@@ -121,6 +122,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACT
 import static org.totschnig.myexpenses.provider.DatabaseConstants.THIS_DAY;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.THIS_YEAR;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TRANSFER_AMOUNT;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.TRANSFER_CURRENCY;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TRANSFER_PEER_PARENT;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_ALL;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_UNCOMMITTED;
@@ -401,6 +403,8 @@ public class Transaction extends Model implements ITransaction {
 
   @NonNull
   private CrStatus crStatus = CrStatus.UNRECONCILED;
+
+  @Nullable
   transient protected Uri pictureUri;
 
   /**
@@ -413,7 +417,7 @@ public class Transaction extends Model implements ITransaction {
     Transaction t;
     final CurrencyContext currencyContext = MyApplication.getInstance().getAppComponent().currencyContext();
     String[] projection = new String[]{KEY_ROWID, KEY_DATE, KEY_VALUE_DATE, KEY_AMOUNT, KEY_COMMENT, KEY_CATID,
-        FULL_LABEL, KEY_PAYEEID, KEY_PAYEE_NAME, KEY_TRANSFER_PEER, KEY_TRANSFER_ACCOUNT, KEY_DEBT_ID,
+        FULL_LABEL, KEY_PAYEEID, KEY_PAYEE_NAME, KEY_TRANSFER_PEER, KEY_TRANSFER_ACCOUNT, TRANSFER_CURRENCY, KEY_DEBT_ID,
         KEY_ACCOUNTID, KEY_METHODID, KEY_PARENTID, KEY_CR_STATUS, KEY_REFERENCE_NUMBER, KEY_CURRENCY,
         KEY_PICTURE_URI, KEY_METHOD_LABEL, KEY_STATUS, TRANSFER_AMOUNT(VIEW_ALL), KEY_TEMPLATEID, KEY_UUID, KEY_ORIGINAL_AMOUNT, KEY_ORIGINAL_CURRENCY,
         KEY_EQUIVALENT_AMOUNT, CATEGORY_ICON, checkSealedWithAlias(VIEW_ALL, TABLE_TRANSACTIONS)};
@@ -438,7 +442,7 @@ public class Transaction extends Model implements ITransaction {
       Long transferAccountId = getLongOrNull(c, KEY_TRANSFER_ACCOUNT);
       Transfer transfer = new Transfer(account_id, money, transferAccountId, parent_id);
       transfer.setTransferPeer(transfer_peer);
-      transfer.setTransferAmount(new Money(Account.getInstanceFromDb(transferAccountId).getCurrencyUnit(),
+      transfer.setTransferAmount(new Money(currencyContext.get(c.getString(c.getColumnIndexOrThrow(KEY_TRANSFER_CURRENCY))),
           c.getLong(c.getColumnIndexOrThrow(KEY_TRANSFER_AMOUNT))));
       t = transfer;
     } else {
@@ -600,15 +604,6 @@ public class Transaction extends Model implements ITransaction {
   @Override
   public boolean saveTags(@Nullable List<Tag> tags) {
     return ModelWithLinkedTagsKt.saveTags(linkedTagsUri(), linkColumn(), tags, getId(), Model.cr());
-  }
-
-  @Deprecated
-  public static Transaction getNewInstance(Account account, Long parentId) {
-    return getNewInstance(account.getId(), account.getCurrencyUnit(), parentId);
-  }
-  @Deprecated
-  public static Transaction getNewInstance(Account account) {
-    return getNewInstance(account, null);
   }
 
   /**
@@ -934,64 +929,13 @@ public class Transaction extends Model implements ITransaction {
     initialValues.put(KEY_ORIGINAL_CURRENCY, originalAmount == null ? null : originalAmount.getCurrencyUnit().getCode());
     initialValues.put(KEY_EQUIVALENT_AMOUNT, equivalentAmount == null ? null : equivalentAmount.getAmountMinor());
 
-    savePicture(initialValues);
+    initialValues.put(KEY_PICTURE_URI, pictureUri != null ? pictureUri.toString() : null);
     if (getId() == 0) {
       initialValues.put(KEY_PARENTID, getParentId());
       initialValues.put(KEY_STATUS, status);
       initialValues.put(KEY_UUID, requireUuid());
     }
     return initialValues;
-  }
-
-  private void throwExternalNotAvailable() {
-    throw new ExternalStorageNotAvailableException();
-  }
-
-  protected void savePicture(ContentValues initialValues) {
-    if (pictureUri != null) {
-      String pictureUriBase = PictureDirHelper.getPictureUriBase(false);
-      if (pictureUriBase == null) {
-        throwExternalNotAvailable();
-      }
-      if (pictureUri.toString().startsWith(pictureUriBase)) {
-        Timber.d("got Uri in our home space, nothing todo");
-      } else {
-        pictureUriBase = PictureDirHelper.getPictureUriBase(true);
-        if (pictureUriBase == null) {
-          throwExternalNotAvailable();
-        }
-        boolean isInTempFolder = pictureUri.toString().startsWith(pictureUriBase);
-        Uri homeUri = PictureDirHelper.getOutputMediaUri(false);
-        if (homeUri == null) {
-          throwExternalNotAvailable();
-        }
-        try {
-          if (isInTempFolder && homeUri.getScheme().equals("file")) {
-            if (new File(pictureUri.getPath()).renameTo(new File(homeUri.getPath()))) {
-              setPictureUri(homeUri);
-            } else {
-              //fallback
-              copyPictureHelper(true, homeUri);
-            }
-          } else {
-            copyPictureHelper(isInTempFolder, homeUri);
-          }
-        } catch (IOException e) {
-          throw new UnknownPictureSaveException(pictureUri, homeUri, e);
-        }
-      }
-      initialValues.put(KEY_PICTURE_URI, pictureUri.toString());
-    } else {
-      initialValues.putNull(KEY_PICTURE_URI);
-    }
-  }
-
-  private void copyPictureHelper(boolean delete, Uri homeUri) throws IOException {
-    FileCopyUtils.copy(pictureUri, homeUri);
-    if (delete) {
-      new File(pictureUri.getPath()).delete();
-    }
-    setPictureUri(homeUri);
   }
 
   public Uri saveAsNew() {

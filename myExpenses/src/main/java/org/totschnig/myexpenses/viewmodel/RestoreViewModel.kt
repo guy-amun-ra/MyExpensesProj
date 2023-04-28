@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
-import org.totschnig.myexpenses.model.Account
 import org.totschnig.myexpenses.model.Template
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.BACKUP_DB_FILE_NAME
@@ -378,9 +377,12 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                             var restored: Uri? = null
                             if (backupImage?.exists() == true) {
                                 val restoredImage = PictureDirHelper.getOutputMediaFile(
-                                    fileName.substring(0, fileName.lastIndexOf('.')), false, true
+                                    fileName = fileName.substring(0, fileName.lastIndexOf('.')),
+                                    temp = false,
+                                    checkUnique = true,
+                                    application = getApplication()
                                 )
-                                if (restoredImage == null || !FileCopyUtils.copy(
+                                if (!FileCopyUtils.copy(
                                         backupImage,
                                         restoredImage
                                     )
@@ -415,7 +417,7 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                                         accountSelectionArgs.size
                                     )
                                 ops.add(
-                                    ContentProviderOperation.newUpdate(Account.CONTENT_URI)
+                                    ContentProviderOperation.newUpdate(TransactionProvider.ACCOUNTS_URI)
                                         .withValue(DatabaseConstants.KEY_SEALED, -1)
                                         .withSelection(
                                             DatabaseConstants.KEY_SEALED + " = 1 " + accountSelection,
@@ -429,7 +431,7 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                                         .build()
                                 )
                                 ops.add(
-                                    ContentProviderOperation.newUpdate(Account.CONTENT_URI)
+                                    ContentProviderOperation.newUpdate(TransactionProvider.ACCOUNTS_URI)
                                         .withValue(DatabaseConstants.KEY_SEALED, 1)
                                         .withSelection(
                                             DatabaseConstants.KEY_SEALED + " = -1 " + accountSelection,
@@ -520,7 +522,7 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
     }
 
     private fun registerAsStale(secure: Boolean) {
-        val dir = PictureDirHelper.getPictureDir(secure) ?: return
+        val dir = PictureDirHelper.getPictureDir(getApplication(), secure) ?: return
         val files = dir.listFiles() ?: return
         val values = ContentValues()
         for (file: File in files) {

@@ -5,7 +5,6 @@ import android.content.ComponentName
 import android.content.Intent
 import android.content.res.Configuration
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -71,15 +70,15 @@ import org.totschnig.myexpenses.dialog.*
 import org.totschnig.myexpenses.feature.*
 import org.totschnig.myexpenses.feature.Payee
 import org.totschnig.myexpenses.model.*
-import org.totschnig.myexpenses.model.Account.HOME_AGGREGATE_ID
 import org.totschnig.myexpenses.model.Sort.Companion.fromCommandId
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.CheckSealedHandler
+import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.HOME_AGGREGATE_ID
+import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.isHomeAggregate
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionDatabase.SQLiteDowngradeFailedException
 import org.totschnig.myexpenses.provider.TransactionDatabase.SQLiteUpgradeFailedException
 import org.totschnig.myexpenses.provider.filter.*
-import org.totschnig.myexpenses.provider.maybeRepairRequerySchema
 import org.totschnig.myexpenses.sync.GenericAccountService.Companion.requestSync
 import org.totschnig.myexpenses.task.TaskExecutionFragment
 import org.totschnig.myexpenses.ui.DiscoveryHelper
@@ -96,7 +95,6 @@ import org.totschnig.myexpenses.viewmodel.data.FullAccount
 import org.totschnig.myexpenses.viewmodel.data.PageAccount
 import org.totschnig.myexpenses.viewmodel.data.Transaction2
 import timber.log.Timber
-import java.io.File
 import java.io.Serializable
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
@@ -104,6 +102,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.util.*
 import javax.inject.Inject
+import kotlin.Result
 import kotlin.math.sign
 
 const val DIALOG_TAG_OCR_DISAMBIGUATE = "DISAMBIGUATE"
@@ -111,9 +110,6 @@ const val DIALOG_TAG_NEW_BALANCE = "NEW_BALANCE"
 
 @OptIn(ExperimentalFoundationApi::class)
 abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListener, ContribIFace {
-    @JvmField
-    @State
-    var scanFile: File? = null
 
     private val accountData: List<FullAccount>
         get() = viewModel.accountData.value?.getOrNull() ?: emptyList()
@@ -388,13 +384,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
-    open fun maybeRepairRequerySchema() {
-        if (!prefHandler.encryptDatabase && Build.VERSION.SDK_INT == 30 && prefHandler.getInt(PrefKey.CURRENT_VERSION, -1) < 593) {
-            maybeRepairRequerySchema(getDatabasePath("data").path)
-            prefHandler.putBoolean(PrefKey.DB_SAFE_MODE, false)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         initLocaleContext()
@@ -486,6 +475,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 result.count
                             )
                         }
+
                         is DeleteComplete -> {
                             showSnackBar(
                                 buildList {
@@ -778,7 +768,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                 }
                 val bulkDeleteState = viewModel.bulkDeleteState.collectAsState(initial = null)
-                val modificationAllowed = !account.sealed && bulkDeleteState.value !is DeleteProgress
+                val modificationAllowed =
+                    !account.sealed && bulkDeleteState.value !is DeleteProgress
                 TransactionList(
                     modifier = Modifier.weight(1f),
                     lazyPagingItems = lazyPagingItems,
@@ -791,31 +782,53 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 buildList {
                                     add(MenuEntry(
                                         icon = Icons.Filled.Loupe,
-                                        label = R.string.details
+                                        label = R.string.details,
+                                        command = "DETAILS"
                                     ) { showDetails(transaction.id) })
+                                    transaction.pictureUri?.let { uri ->
+                                        add(MenuEntry(
+                                            icon = Icons.Filled.Attachment,
+                                            label = R.string.menu_view_picture,
+                                            command = "VIEW_PICTURE"
+                                        ) {
+                                            imageViewIntentProvider.startViewIntent(
+                                                this@BaseMyExpenses,
+                                                uri
+                                            )
+                                        })
+                                    }
                                     if (modificationAllowed) {
-                                        if (transaction.crStatus != CrStatus.VOID) {
-                                            add(edit { edit(transaction) })
-                                        }
                                         add(MenuEntry(
                                             icon = Icons.Filled.ContentCopy,
-                                            label = R.string.menu_clone_transaction
+                                            label = R.string.menu_clone_transaction,
+                                            command = "CLONE"
                                         ) {
                                             edit(transaction, true)
                                         })
-                                        add(delete { delete(listOf(transaction.id to transaction.crStatus)) })
                                         add(MenuEntry(
                                             icon = myiconpack.IcActionTemplateAdd,
-                                            label = R.string.menu_create_template_from_transaction
+                                            label = R.string.menu_create_template_from_transaction,
+                                            command = "CREATE_TEMPLATE_FROM_TRANACTION"
                                         ) { createTemplate(transaction) })
                                         if (transaction.crStatus == CrStatus.VOID) {
                                             add(MenuEntry(
                                                 icon = Icons.Filled.RestoreFromTrash,
-                                                label = R.string.menu_undelete_transaction
-                                            ) { undelete(listOf(transaction.id)) })
+                                                label = R.string.menu_undelete_transaction,
+                                                command = "UNDELETE_TRANSACTION"
+                                            ) {
+                                                undelete(listOf(transaction.id))
+                                            })
                                         }
+                                        if (transaction.crStatus != CrStatus.VOID) {
+                                            add(edit("EDIT_TRANSACTION") {
+                                                edit(transaction)
+                                            })
+                                        }
+                                        add(delete("DELETE_TRANSACTION") {
+                                            delete(listOf(transaction.id to transaction.crStatus))
+                                        })
                                         add(
-                                            select {
+                                            select("SELECT_TRANSACTION") {
                                                 viewModel.selectionState.value = listOf(
                                                     MyExpensesViewModel.SelectionInfo(transaction)
                                                 )
@@ -824,18 +837,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                         if (transaction.isSplit) {
                                             add(MenuEntry(
                                                 icon = Icons.Filled.CallSplit,
-                                                label = R.string.menu_ungroup_split_transaction
-                                            ) { ungroupSplit(transaction) })
-                                        }
-                                        transaction.pictureUri?.let { uri ->
-                                            add(MenuEntry(
-                                                icon = Icons.Filled.Attachment,
-                                                label = R.string.menu_view_picture
+                                                label = R.string.menu_ungroup_split_transaction,
+                                                command = "UNGROUP_SPLIT"
                                             ) {
-                                                imageViewIntentProvider.startViewIntent(
-                                                    this@BaseMyExpenses,
-                                                    uri
-                                                )
+                                                ungroupSplit(transaction)
                                             })
                                         }
                                     }
@@ -858,6 +863,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 onToggleCrStatus
                             )
                         }
+
                         RenderType.Legacy -> {
                             CompactTransactionRenderer(
                                 dateTimeFormatterLegacy(
@@ -1035,7 +1041,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     private fun displayDateCandidate(pair: Pair<LocalDate, LocalTime?>) =
         (pair.second?.let { pair.first.atTime(pair.second) } ?: pair.first).toString()
 
-    override fun processOcrResult(result: kotlin.Result<OcrResult>) {
+    override fun processOcrResult(result: Result<OcrResult>, scanUri: Uri) {
         result.onSuccess {
             if (it.needsDisambiguation()) {
                 SimpleFormDialog.build()
@@ -1044,6 +1050,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     .neg(android.R.string.cancel)
                     .extra(Bundle().apply {
                         putParcelable(KEY_OCR_RESULT, it)
+                        putParcelable(KEY_PICTURE_URI, scanUri)
                     })
                     .title(getString(R.string.scan_result_multiple_candidates_dialog_title))
                     .fields(
@@ -1055,6 +1062,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                     it.amountCandidates[0]
                                 )
                             )
+
                             else -> Spinner.plain(KEY_AMOUNT)
                                 .placeholder(R.string.amount)
                                 .items(*it.amountCandidates.toTypedArray())
@@ -1068,6 +1076,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                     displayDateCandidate(it.dateCandidates[0])
                                 )
                             )
+
                             else -> Spinner.plain(KEY_DATE)
                                 .placeholder(R.string.date)
                                 .items(
@@ -1084,6 +1093,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                     it.payeeCandidates[0].name
                                 )
                             )
+
                             else -> Spinner.plain(KEY_PAYEE_NAME)
                                 .placeholder(R.string.payee)
                                 .items(*it.payeeCandidates.map(Payee::name).toTypedArray())
@@ -1102,7 +1112,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         null
                     } else {
                         it.selectCandidates()
-                    }
+                    },
+                    scanUri
                 )
             }
         }.onFailure {
@@ -1123,7 +1134,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
             if (accountId >= 0) {
                 //if accountId is 0 ExpenseEdit will retrieve the first entry from the accounts table
                 putExtra(KEY_ACCOUNTID, accountId)
-            } else if (!Account.isHomeAggregate(accountId)) {
+            } else if (!isHomeAggregate(accountId)) {
                 //if we are called from an aggregate account, we also hand over the currency
                 putExtra(KEY_CURRENCY, currentAccount!!.currency)
                 putExtra(ExpenseEdit.KEY_AUTOFILL_MAY_SET_ACCOUNT, true)
@@ -1147,12 +1158,12 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         startActivityForResult(intent, EDIT_REQUEST)
     }
 
-    private fun startEditFromOcrResult(result: OcrResultFlat?) {
+    private fun startEditFromOcrResult(result: OcrResultFlat?, scanUri: Uri) {
         recordUsage(ContribFeature.OCR)
         startEdit(
             createRowIntent(Transactions.TYPE_TRANSACTION, false).apply {
                 putExtra(KEY_OCR_RESULT, result)
-                putExtra(KEY_PICTURE_URI, Uri.fromFile(scanFile))
+                putExtra(KEY_PICTURE_URI, scanUri)
             }
         )
     }
@@ -1166,8 +1177,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                     true
                 }
+
                 DIALOG_TAG_GROUPING ->
                     handleAccountsGrouping(extras.getLong(SELECTED_SINGLE_ID).toInt())
+
                 DIALOG_TAG_SORTING -> handleSortOption(extras.getLong(SELECTED_SINGLE_ID).toInt())
                 DIALOG_TAG_OCR_DISAMBIGUATE -> {
                     startEditFromOcrResult(
@@ -1175,10 +1188,12 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             extras.getInt(KEY_AMOUNT),
                             extras.getInt(KEY_DATE),
                             extras.getInt(KEY_PAYEE_NAME)
-                        )
+                        ),
+                        extras.getParcelable(KEY_PICTURE_URI)!!
                     )
                     true
                 }
+
                 DIALOG_TAG_NEW_BALANCE -> {
                     startEdit(
                         createRowIntent(Transactions.TYPE_TRANSACTION, false).apply {
@@ -1194,6 +1209,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     )
                     true
                 }
+
                 else -> false
             }
         } else false
@@ -1225,14 +1241,17 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     showContribDialog(ContribFeature.ACCOUNTS_UNLIMITED, null)
                 }
             }
+
             R.id.SAFE_MODE_COMMAND -> {
                 prefHandler.putBoolean(PrefKey.DB_SAFE_MODE, true)
                 viewModel.triggerAccountListRefresh()
             }
+
             R.id.CLEAR_FILTER_COMMAND -> {
                 currentFilter.clear()
                 invalidateOptionsMenu()
             }
+
             R.id.HISTORY_COMMAND -> {
                 if ((sumInfo as? SumInfoLoaded)?.hasItems == true) {
                     contribFeatureRequested(ContribFeature.HISTORY, null)
@@ -1240,6 +1259,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     showSnackBar(R.string.no_expenses)
                 }
             }
+
             R.id.DISTRIBUTION_COMMAND -> {
                 if ((sumInfo as? SumInfoLoaded)?.mappedCategories == true) {
                     contribFeatureRequested(ContribFeature.DISTRIBUTION, null)
@@ -1247,6 +1267,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     showSnackBar(R.string.dialog_command_disabled_distribution)
                 }
             }
+
             R.id.GROUPING_ACCOUNTS_COMMAND -> {
                 MenuDialog.build()
                     .menu(this, R.menu.accounts_grouping)
@@ -1254,6 +1275,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     .title(R.string.menu_grouping)
                     .show(this, DIALOG_TAG_GROUPING)
             }
+
             R.id.SHARE_PDF_COMMAND -> {
                 shareViewModel.share(
                     this, listOf(ensureContentUri(Uri.parse(tag as String?), this)),
@@ -1261,6 +1283,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     "application/pdf"
                 )
             }
+
             R.id.OCR_DOWNLOAD_COMMAND -> {
                 val intent = Intent(Intent.ACTION_VIEW).apply {
                     data = Uri.parse("market://details?id=org.totschnig.ocr.tesseract")
@@ -1275,6 +1298,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         Toast.makeText(this, "F-Droid not installed", Toast.LENGTH_LONG).show()
                     }
             }
+
             R.id.DELETE_ACCOUNT_COMMAND_DO -> {
                 val accountIds = tag as LongArray
                 val manageHiddenFragment =
@@ -1307,6 +1331,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                 }
             }
+
             R.id.PRINT_COMMAND -> {
                 if ((sumInfo as? SumInfoLoaded)?.hasItems == true) {
                     AppDirHelper.checkAppDir(this).onSuccess {
@@ -1318,6 +1343,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     showExportDisabledCommand()
                 }
             }
+
             R.id.BALANCE_COMMAND -> {
                 with(currentAccount!!) {
                     if (hasCleared) {
@@ -1343,14 +1369,17 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                 }
             }
+
             R.id.SYNC_COMMAND -> currentAccount?.takeIf { it.syncAccountName != null }?.let {
                 requestSync(accountName = it.syncAccountName!!, uuid = it.uuid)
             }
+
             R.id.EDIT_ACCOUNT_COMMAND -> currentAccount?.let { editAccount(it.id) }
             R.id.DELETE_ACCOUNT_COMMAND -> currentAccount?.let { confirmAccountDelete(it) }
             R.id.HIDE_ACCOUNT_COMMAND -> currentAccount?.let {
                 viewModel.setAccountVisibility(true, it.id)
             }
+
             R.id.TOGGLE_SEALED_COMMAND -> currentAccount?.let { toggleAccountSealed(it) }
             R.id.EXCLUDE_FROM_TOTALS_COMMAND -> currentAccount?.let { toggleExcludeFromTotals(it) }
             else -> return false
@@ -1419,7 +1448,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     Utils.configureSortDirectionMenu(it, sortDirection)
                 }
 
-                menu.findItem(R.id.BALANCE_COMMAND)?.setEnabledAndVisible(reconciliationAvailable && !isAggregate)
+                menu.findItem(R.id.BALANCE_COMMAND)
+                    ?.setEnabledAndVisible(reconciliationAvailable && !isAggregate)
 
                 menu.findItem(R.id.SHOW_STATUS_HANDLE_COMMAND)?.let {
                     it.setEnabledAndVisible(reconciliationAvailable)
@@ -1440,8 +1470,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             subMenu?.findItem(R.id.TOGGLE_SEALED_COMMAND)?.setTitle(
                                 if (sealed) R.string.menu_reopen else R.string.menu_close
                             )
-                            subMenu?.findItem(R.id.EDIT_ACCOUNT_COMMAND)?.setEnabledAndVisible(!sealed)
-                            subMenu?.findItem(R.id.EXCLUDE_FROM_TOTALS_COMMAND)?.setChecked(excludeFromTotals)
+                            subMenu?.findItem(R.id.EDIT_ACCOUNT_COMMAND)
+                                ?.setEnabledAndVisible(!sealed)
+                            subMenu?.findItem(R.id.EXCLUDE_FROM_TOTALS_COMMAND)
+                                ?.setChecked(excludeFromTotals)
                         }
                     }
                 }
@@ -1509,18 +1541,11 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
      * @return currently selected account
      */
     private fun setCurrentAccount() =
-        accountData.getOrNull(pagerState.currentPage)?.also { account ->
+        currentAccount?.also { account ->
             prefHandler.putLong(PrefKey.CURRENT_ACCOUNT, account.id)
             tintSystemUiAndFab(account.color(resources))
             setBalance(account)
-            with(floatingActionButton) {
-                show()
-                isEnabled = !account.sealed
-                alpha = if (account.sealed) 0.5f else 1f
-                setImageResource(
-                    if (account.sealed) R.drawable.ic_lock else R.drawable.ic_menu_add_fab
-                )
-            }
+            updateFab()
             invalidateOptionsMenu()
         }
 
@@ -1539,19 +1564,30 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
 
     fun updateFab() {
         val scanMode = isScanMode()
-        configureFloatingActionButton(
-            if (scanMode)
-                getString(R.string.contrib_feature_ocr_label)
-            else
-                TextUtils.concatResStrings(
-                    this,
+        val sealed = currentAccount?.sealed == true
+        with(floatingActionButton) {
+            show()
+            isEnabled = !sealed
+            alpha = if (sealed) 0.5f else 1f
+            setImageResource(
+                when {
+                    sealed -> R.drawable.ic_lock
+                    scanMode -> R.drawable.ic_scan
+                    else -> R.drawable.ic_menu_add_fab
+                }
+            )
+            contentDescription = when {
+                sealed -> getString(R.string.content_description_closed)
+                scanMode -> getString(R.string.contrib_feature_ocr_label)
+                else -> TextUtils.concatResStrings(
+                    this@BaseMyExpenses,
                     ". ",
                     R.string.menu_create_transaction,
                     R.string.menu_create_transfer,
                     R.string.menu_create_split
                 )
-        )
-        floatingActionButton.setImageResource(if (scanMode) R.drawable.ic_scan else R.drawable.ic_menu_add_fab)
+            }
+        }
     }
 
     fun isScanMode(): Boolean = prefHandler.getBoolean(PrefKey.OCR, false)
@@ -1579,6 +1615,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         putExtra(KEY_GROUPING, currentAccount.grouping.name)
                     })
                 }
+
                 ContribFeature.HISTORY -> {
                     recordUsage(feature)
                     startActivity(Intent(this, HistoryActivity::class.java).apply {
@@ -1586,6 +1623,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         putExtra(KEY_GROUPING, currentAccount.grouping)
                     })
                 }
+
                 ContribFeature.SPLIT_TRANSACTION -> {
                     if (tag != null) {
                         showConfirmationDialog(Bundle().apply {
@@ -1611,6 +1649,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         createRowDo(Transactions.TYPE_SPLIT, false)
                     }
                 }
+
                 ContribFeature.PRINT -> {
                     val args = Bundle().apply {
                         addFilter()
@@ -1637,6 +1676,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             .commit()
                     }
                 }
+
                 ContribFeature.BUDGET -> {
                     if (tag != null) {
                         val (budgetId, headerId) = tag as Pair<Long, Int>
@@ -1650,18 +1690,17 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         startActivity(i)
                     }
                 }
+
                 ContribFeature.OCR -> {
                     if (featureViewModel.isFeatureAvailable(this, Feature.OCR)) {
                         if ((tag as Boolean)) {
-                            /*scanFile = File("/sdcard/OCR_bg.jpg")
-                        ocrViewModel.startOcrFeature(scanFile!!, supportFragmentManager);*/
+                            /*ocrViewModel.startOcrFeature(Uri.fromFile(File("/sdcard/OCR_bg.jpg")), supportFragmentManager);*/
                             ocrViewModel.getScanFiles { pair ->
-                                scanFile = pair.second
                                 CropImage.activity()
                                     .setCameraOnly(true)
                                     .setAllowFlipping(false)
-                                    .setOutputUri(Uri.fromFile(scanFile))
-                                    .setCaptureImageOutputUri(ocrViewModel.getScanUri(pair.first))
+                                    .setOutputUri(pair.second)
+                                    .setCaptureImageOutputUri(pair.first)
                                     .setGuidelines(CropImageView.Guidelines.ON)
                                     .start(this)
                             }
@@ -1672,6 +1711,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         featureViewModel.requestFeature(this, Feature.OCR)
                     }
                 }
+
                 else -> {}
             }
         }
@@ -1923,13 +1963,16 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 finishActionMode()
                 viewModel.deleteTransactions(args.getLongArray(KEY_ROW_IDS)!!, checked)
             }
+
             R.id.BALANCE_COMMAND_DO -> {
                 balance(args.getLong(KEY_ROWID), checked)
             }
+
             R.id.REMAP_COMMAND -> {
                 remapHandler.remap(args, checked)
                 finishActionMode()
             }
+
             R.id.SPLIT_TRANSACTION_COMMAND -> {
                 finishActionMode()
                 val ids = args.getLongArray(KEY_ROW_IDS)!!
@@ -1947,6 +1990,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                 }
             }
+
             R.id.UNGROUP_SPLIT_COMMAND -> {
                 finishActionMode()
                 viewModel.revokeSplit(args.getLong(KEY_ROWID)).observe(this) {
@@ -1957,6 +2001,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                 }
             }
+
             R.id.LINK_TRANSFER_COMMAND -> {
                 finishActionMode()
                 viewModel.linkTransfer(args.getLongArray(KEY_ROW_IDS)!!)

@@ -17,8 +17,8 @@ plugins {
 }
 
 ext {
-    versionCode = 614
-    versionName = '3.5.4'
+    versionCode = 615
+    versionName = '3.5.5'
     compileSdkVersion = 33
     minSdkVersion = 21
     targetSdkVersion = 33
@@ -33,7 +33,7 @@ ext {
     roomVersion = "2.5.1"
     archLifecycleVersion = '2.6.1'
     androidxArchVersion = '2.2.0'
-    fragmentVersion = "1.5.6"
+    fragmentVersion = "1.5.7"
     coroutines = '1.6.4'
     mockitoVersion = '4.9.0'
     retrofitVersion = "2.10.0-SNAPSHOT"
@@ -49,8 +49,8 @@ ext {
     annotations = "1.6.0"
     commonsLang = "3.12.0"
     commonsText = "1.9"
-    ktor = "2.2.4"
-    bouncycastle = "1.71.1"
+    ktor = '2.3.0'
+    bouncycastle = '1.73'
     desugarVersion = '2.0.3'
     mlkitTextRecognition = "16.0.0-beta6"
     truthVersion = "1.1.3"

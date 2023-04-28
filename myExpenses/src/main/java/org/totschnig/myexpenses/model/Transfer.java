@@ -22,6 +22,7 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COMMENT;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CR_STATUS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PICTURE_URI;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT;
@@ -106,16 +107,6 @@ public class Transfer extends Transaction implements ITransfer {
     this.setTransferAmount(transferAmount);
   }
 
-  @Deprecated
-  public static Transfer getNewInstance(Account account, Long transferAccountId) {
-    return getNewInstance(account, transferAccountId, null);
-  }
-
-  @Deprecated
-  public static Transfer getNewInstance(Account account, Long transferAccountId, Long parentId) {
-    return getNewInstance(account.getId(), account.getCurrency(), transferAccountId, parentId);
-  }
-
   public static Transfer getNewInstance(long accountId, CurrencyUnit currencyUnit, Long transferAccountId) {
     return getNewInstance(accountId, currencyUnit, transferAccountId, null);
   }
@@ -140,7 +131,7 @@ public class Transfer extends Transaction implements ITransfer {
     initialValues.put(KEY_TRANSFER_ACCOUNT, getTransferAccountId());
     initialValues.put(KEY_CR_STATUS, getCrStatus().name());
     initialValues.put(KEY_ACCOUNTID, getAccountId());
-    savePicture(initialValues);
+    initialValues.put(KEY_PICTURE_URI, pictureUri != null ? pictureUri.toString() : null);
     if (getId() == 0) {
       //both parts of the transfer share uuid
       initialValues.put(KEY_UUID, requireUuid());

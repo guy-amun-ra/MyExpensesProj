@@ -6,7 +6,6 @@ import android.accounts.OperationCanceledException
 import android.app.Application
 import android.content.ContentValues
 import android.database.sqlite.SQLiteConstraintException
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Parcelable
@@ -15,9 +14,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.liveData
 import kotlinx.parcelize.Parcelize
 import org.totschnig.myexpenses.MyApplication
+import org.totschnig.myexpenses.db2.createAccount
 import org.totschnig.myexpenses.db2.findAccountByUuid
 import org.totschnig.myexpenses.db2.storeExchangeRate
-import org.totschnig.myexpenses.model.Account
+import org.totschnig.myexpenses.model2.Account
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.filter.WhereFilter
@@ -70,18 +70,17 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
         })
     }
 
-    protected fun doSave(account: Account): Uri? {
-        val result = account.save()
+    protected fun doSave(accountIn: Account) {
+        val account = repository.createAccount(accountIn)
         val homeCurrency = homeCurrencyProvider.homeCurrencyUnit
         val rawExchangeRate = calculateRawExchangeRate(
             account.exchangeRate,
-            account.currency,
+            currencyContext[account.currency],
             homeCurrency
         )
-        repository.storeExchangeRate(account.id, rawExchangeRate, account.currency.code, homeCurrency.code)
+        repository.storeExchangeRate(account.id, rawExchangeRate, account.currency, homeCurrency.code)
         licenceHandler.updateNewAccountEnabled()
         updateTransferShortcut()
-        return result
     }
 
     fun getReconfigurationData(syncAccount: String) = Bundle().apply {
@@ -200,7 +199,7 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
     ): Result<SyncAccountData> {
         //noinspection Recycle
         val localAccounts = if (shouldQueryLocalAccounts) contentResolver.query(
-            Account.CONTENT_URI,
+            TransactionProvider.ACCOUNTS_URI,
             arrayOf(KEY_ROWID, KEY_LABEL, KEY_UUID, "$KEY_SYNC_ACCOUNT_NAME IS NULL", KEY_SEALED),
             null, null, null
         )?.useAndMap {
@@ -242,7 +241,7 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
 
     protected fun configureLocalAccountForSync(accountName: String, vararg uuids: String) {
         contentResolver.update(
-            Account.CONTENT_URI,
+            TransactionProvider.ACCOUNTS_URI,
             ContentValues().apply {
                 put(KEY_SYNC_ACCOUNT_NAME, accountName)
             },
@@ -260,29 +259,22 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
                 getApplication<MyApplication>(),
                 accountName
             ).onSuccess { syncBackendProvider ->
-                runCatching {
-                    val numberOfRestoredAccounts =
+                emit(runCatching {
                         syncBackendProvider.remoteAccountList
                             .asSequence()
                             .mapNotNull { it.getOrNull() }
                             .filter { accountMetaData -> accountUuids.contains(accountMetaData.uuid()) }
                             .map { accountMetaData ->
                                 accountMetaData.toAccount(
-                                    getApplication<MyApplication>().appComponent.currencyContext(),
+                                    homeCurrencyProvider.homeCurrencyString,
                                     accountName
                                 )
                             }
-                            .sumOf {
-                                @Suppress("USELESS_CAST")
-                                (if (doSave(it) == null) 0 else 1) as Int
+                            .forEach {
+                                doSave(it)
                             }
-                    if (numberOfRestoredAccounts == 0) {
-                        emit(Result.failure(Throwable("No accounts were restored")))
-                    } else {
-                        GenericAccountService.activateSync(accountName, prefHandler)
-                        emit(ResultUnit)
-                    }
-                }
+                    GenericAccountService.activateSync(accountName, prefHandler)
+                })
             }.onFailure {
                 emit(Result.failure(it))
             }
@@ -298,9 +290,9 @@ open class SyncViewModel(application: Application) : ContentResolvingAndroidView
     fun removeBackend(accountName: String) =
         get(getApplication()).removeAccountExplicitly(getAccount(accountName))
 
-    fun save(account: Account): LiveData<Uri?> =
+    fun save(account: Account): LiveData<Result<Unit>> =
         liveData(context = coroutineContext()) {
-            emit(doSave(account))
+            emit(kotlin.runCatching { doSave(account) })
         }
 
     companion object {
