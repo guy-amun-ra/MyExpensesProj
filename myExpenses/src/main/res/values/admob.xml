@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="admob_unitid_interstitial">ca-app-pub-5381507717489755/3955522824</string>
-    <string name="admob_unitid_interstitial_smart_segmentation">ca-app-pub-5381507717489755/3952528542</string>
     <string name="admob_unitid_mainscreen">ca-app-pub-5381507717489755/9341188824</string>
     <string name="admob_unitid_custom_banner">ca-app-pub-5381507717489755/5845032020</string>
     <string name="admob_unitid_custom_interstitial">ca-app-pub-5381507717489755/6655636407</string>

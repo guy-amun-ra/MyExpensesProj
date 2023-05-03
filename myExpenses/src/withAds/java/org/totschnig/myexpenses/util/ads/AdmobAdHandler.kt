@@ -20,7 +20,7 @@ import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.preference.PrefKey
 import timber.log.Timber
 
-internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup, baseActivity: BaseActivity, private val bannerUnitId: Int, private val interstitialUnitId: Int, private val smartSegmentationInterstitialUnitId: Int) : BaseAdHandler(factory, adContainer, baseActivity) {
+internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup, baseActivity: BaseActivity, private val bannerUnitId: Int, private val interstitialUnitId: Int) : BaseAdHandler(factory, adContainer, baseActivity) {
     private var admobView: AdView? = null
     private var admobInterstitialAd: InterstitialAd? = null
     private var mAdMobBannerShown = false
@@ -99,8 +99,9 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
         mInterstitialShown = false
         interstitialCounter++
         //every 20th attempt (starting from 5) we try the non-smart unit
-        val adUnitId = activity.getString(if (isTest) R.string.admob_unitid_test_interstitial else
-            smartSegmentationInterstitialUnitId.takeIf { it != 0 && (interstitialCounter % 20 != 5)  } ?: interstitialUnitId)
+        val adUnitId = activity.getString(
+            if (isTest) R.string.admob_unitid_test_interstitial else interstitialUnitId
+        )
         trackInterstitialRequest(PROVIDER_ADMOB)
         InterstitialAd.load(activity, adUnitId, buildAdmobRequest(), object: InterstitialAdLoadCallback() {
             override fun onAdFailedToLoad(loadAdError: LoadAdError) {

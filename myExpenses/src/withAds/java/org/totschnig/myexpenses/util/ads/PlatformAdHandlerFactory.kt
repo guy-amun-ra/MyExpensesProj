@@ -10,7 +10,6 @@ import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.preference.PrefHandler
-import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import timber.log.Timber
 
@@ -44,9 +43,9 @@ class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userC
     private fun instantiate(handler: String, adContainer: ViewGroup, baseActivity: BaseActivity): AdHandler {
         return when (handler) {
             "Custom" -> AdmobAdHandler(this, adContainer, baseActivity,
-                    R.string.admob_unitid_custom_banner, R.string.admob_unitid_custom_interstitial, 0)
+                    R.string.admob_unitid_custom_banner, R.string.admob_unitid_custom_interstitial)
             "AdMob" -> AdmobAdHandler(this, adContainer, baseActivity,
-                    R.string.admob_unitid_mainscreen, R.string.admob_unitid_interstitial, R.string.admob_unitid_interstitial_smart_segmentation)
+                    R.string.admob_unitid_mainscreen, R.string.admob_unitid_interstitial)
             else -> NoOpAdHandler
         }
     }
