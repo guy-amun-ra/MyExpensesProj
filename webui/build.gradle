@@ -9,6 +9,7 @@ android {
     defaultConfig {
         missingDimensionStrategy 'textRecognition', 'intern'
         minSdkVersion project.minSdkVersion
+        consumerProguardFiles("consumer-rules.txt")
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -56,7 +57,9 @@ dependencies {
     androidTestImplementation "androidx.test.espresso:espresso-core:$espressoVersion"
     androidTestImplementation "androidx.annotation:annotation:$annotations"
 
-    implementation "io.ktor:ktor-server-core:$ktor"
+    implementation("io.ktor:ktor-server-core:$ktor") {
+        exclude group: "org.fusesource.jansi"
+    }
     implementation "io.ktor:ktor-server-netty:$ktor"
     implementation "io.ktor:ktor-server-cio:$ktor"
     implementation "io.ktor:ktor-serialization-gson:$ktor"

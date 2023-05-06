@@ -189,7 +189,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
                         if (showChart.value) categoryState.value.withSubColors {
                             getSubColors(it, isDark)
                         } else {
-                            categoryState.value
+                            categoryState.value.copy(children = categoryState.value.children.map { it.copy(color = null) })
                         }
                     }
                 }
@@ -367,7 +367,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
                                     ) { showTransactions(category) }
                                 )
                             }
-                            if (category.level == 1)
+                            if (category.level == 1 && category.color != null)
                                 add(
                                     MenuEntry(
                                         Icons.Filled.Palette,
@@ -430,7 +430,8 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
         categories: State<Category>
     ) {
         if (showChart.value)
-            Box(modifier = modifier) { AndroidView(modifier = Modifier.fillMaxSize(),
+            AndroidView(
+                modifier = modifier,
                 factory = { ctx ->
                     requireChart(ctx)
                     chart.apply {
@@ -473,7 +474,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
                         legend.isEnabled = false
                         setChartData(categories.value.children)
                     }
-                }) }
+                })
     }
 
     private fun PieChart.setCenterText(position: Int) {

@@ -6,14 +6,16 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.databinding.ActivityComposeBinding
-import org.totschnig.myexpenses.dialog.TransactionListDialogFragment
+import org.totschnig.myexpenses.dialog.TransactionListComposeDialogFragment
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.util.setEnabledAndVisible
 import org.totschnig.myexpenses.viewmodel.DistributionViewModelBase
+import org.totschnig.myexpenses.viewmodel.TransactionListViewModel
 import org.totschnig.myexpenses.viewmodel.data.Category
 
-abstract class DistributionBaseActivity<T: DistributionViewModelBase<*>> : ProtectedFragmentActivity() {
+abstract class DistributionBaseActivity<T : DistributionViewModelBase<*>> :
+    ProtectedFragmentActivity() {
     abstract val viewModel: T
     abstract val prefKey: PrefKey
     val expansionState
@@ -64,14 +66,17 @@ abstract class DistributionBaseActivity<T: DistributionViewModelBase<*>> : Prote
                 reset()
                 true
             }
+
             R.id.BACK_COMMAND -> {
                 viewModel.backward()
                 true
             }
+
             R.id.FORWARD_COMMAND -> {
                 viewModel.forward()
                 true
             }
+
             else -> false
         }
 
@@ -90,18 +95,20 @@ abstract class DistributionBaseActivity<T: DistributionViewModelBase<*>> : Prote
 
     fun showTransactions(category: Category) {
         viewModel.accountInfo.value?.let { accountInfo ->
-            TransactionListDialogFragment.newInstance(
-                accountInfo.accountId,
-                category.id,
-                viewModel.grouping,
-                viewModel.filterClause,
-                viewModel.whereFilter.value.getSelectionArgs(true),
-                if (category.level == 0) accountInfo.label(this) else category.label,
-                if (viewModel.aggregateTypes) 0 else (if (viewModel.incomeType) 1 else -1),
-                true,
-                category.icon?.let { resources.getIdentifier(it, "drawable", packageName) } //TODO check might be not functional since new category icon implementation
+            TransactionListComposeDialogFragment.newInstance(
+                TransactionListViewModel.LoadingInfo(
+                    accountId = accountInfo.accountId,
+                    currency = accountInfo.currency,
+                    catId = category.id,
+                    grouping = viewModel.grouping,
+                    groupingClause = viewModel.filterClause,
+                    groupingArgs = viewModel.whereFilter.value.getSelectionArgsList(true),
+                    label = if (category.level == 0) accountInfo.label(this) else category.label,
+                    type = if (viewModel.aggregateTypes) 0 else (if (viewModel.incomeType) 1 else -1),
+                    icon = category.icon
+                )
             )
-                .show(supportFragmentManager, TransactionListDialogFragment::class.java.name)
+                .show(supportFragmentManager, "List")
         }
     }
 }
