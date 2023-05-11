@@ -4,12 +4,11 @@ import android.app.Application
 import android.content.ContentUris
 import android.content.ContentValues
 import android.database.Cursor
-import android.net.Uri
+import android.graphics.Bitmap
 import android.os.Bundle
 import androidx.lifecycle.*
 import app.cash.copper.flow.mapToList
 import app.cash.copper.flow.observeQuery
-import com.theartofdev.edmodo.cropper.CropImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
@@ -18,15 +17,17 @@ import org.totschnig.myexpenses.adapter.SplitPartRVAdapter
 import org.totschnig.myexpenses.db2.getCurrencyUnitForAccount
 import org.totschnig.myexpenses.db2.getLastUsedOpenAccount
 import org.totschnig.myexpenses.db2.loadActiveTagsForAccount
-import org.totschnig.myexpenses.exception.ExternalStorageNotAvailableException
 import org.totschnig.myexpenses.exception.UnknownPictureSaveException
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefKey
+import org.totschnig.myexpenses.preference.enumValueOrDefault
 import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.BaseTransactionProvider.Companion.KEY_DEBT_LABEL
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider.QUERY_PARAMETER_ACCOUNTY_TYPE_LIST
+import org.totschnig.myexpenses.util.ImageOptimizer
 import org.totschnig.myexpenses.util.PictureDirHelper
+import org.totschnig.myexpenses.util.asExtension
 import org.totschnig.myexpenses.util.io.FileCopyUtils
 import org.totschnig.myexpenses.viewmodel.data.Account
 import org.totschnig.myexpenses.viewmodel.data.PaymentMethod
@@ -114,48 +115,67 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
         )
     }
 
-    fun save(transaction: ITransaction): LiveData<Result<Long>> = liveData(context = coroutineContext()) {
-        emit(kotlin.runCatching {
-            savePicture(transaction)
-            val result = transaction.save(true)?.let { ContentUris.parseId(it) } ?: throw Throwable("Error while saving transaction")
-            if (!transaction.saveTags(tagsLiveData.value)) throw Throwable("Error while saving tags")
-            result
-        })
-    }
+    fun save(transaction: ITransaction): LiveData<Result<Long>> =
+        liveData(context = coroutineContext()) {
+            emit(kotlin.runCatching {
+                savePicture(transaction)
+                val result = transaction.save(true)?.let { ContentUris.parseId(it) }
+                    ?: throw Throwable("Error while saving transaction")
+                if (!transaction.saveTags(tagsLiveData.value)) throw Throwable("Error while saving tags")
+                result
+            })
+        }
 
     private fun savePicture(transaction: ITransaction) {
         transaction.pictureUri?.let {
             val pictureUriBase: String = PictureDirHelper.getPictureUriBase(false, getApplication())
-                ?: throw ExternalStorageNotAvailableException()
             if (it.toString().startsWith(pictureUriBase)) {
                 Timber.d("got Uri in our home space, nothing todo")
             } else {
                 val pictureUriTemp = PictureDirHelper.getPictureUriBase(true, getApplication())
-                    ?: throw ExternalStorageNotAvailableException()
                 val isInTempFolder = it.toString().startsWith(pictureUriTemp)
-                val homeUri = PictureDirHelper.getOutputMediaUri(false, getApplication())
-                    ?: throw ExternalStorageNotAvailableException()
+                val format = prefHandler.enumValueOrDefault(
+                    PrefKey.OPTIMIZE_PICTURE_FORMAT,
+                    Bitmap.CompressFormat.WEBP
+                )
+                val homeUri = PictureDirHelper.getOutputMediaUri(
+                    false,
+                    getApplication(),
+                    extension = format.asExtension
+                )
                 try {
-                    if (isInTempFolder && homeUri.scheme == "file") {
-                        if (!File(it.path!!).renameTo(File(homeUri.path!!))) {
-                            //fallback
-                            copyPictureHelper(true, it, homeUri)
-                        }
+                    if (prefHandler.getBoolean(PrefKey.OPTIMIZE_PICTURE, true)) {
+                        val maxSize = prefHandler.getInt(PrefKey.OPTIMIZE_PICTURE_MAX_SIZE, 1000)
+                        val quality = prefHandler.getInt(PrefKey.OPTIMIZE_PICTURE_QUALITY, 80)
+                            .coerceAtLeast(0).coerceAtMost(100)
+                        ImageOptimizer.optimize(
+                            contentResolver,
+                            it,
+                            homeUri,
+                            format,
+                            maxSize,
+                            maxSize,
+                            quality
+                        )
                     } else {
-                        copyPictureHelper(isInTempFolder, it, homeUri)
+
+                        if (isInTempFolder && homeUri.scheme == "file") {
+                            if (!File(it.path!!).renameTo(File(homeUri.path!!))) {
+                                //fallback
+                                FileCopyUtils.copy(contentResolver, it, homeUri)
+                            }
+                        } else {
+                            FileCopyUtils.copy(contentResolver, it, homeUri)
+                        }
                     }
                 } catch (e: IOException) {
                     throw UnknownPictureSaveException(it, homeUri, e)
                 }
+                if (isInTempFolder) {
+                    contentResolver.delete(it, null, null)
+                }
                 transaction.pictureUri = homeUri
             }
-        }
-    }
-
-    private fun copyPictureHelper(delete: Boolean, pictureUri: Uri, homeUri: Uri) {
-        FileCopyUtils.copy(pictureUri, homeUri)
-        if (delete) {
-            contentResolver.delete(pictureUri, null, null)
         }
     }
 
@@ -294,13 +314,19 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
             InstantiationTask.TRANSACTION_FROM_TEMPLATE -> Transaction.getInstanceFromTemplateWithTags(
                 transactionId
             )
-            InstantiationTask.TRANSACTION -> Transaction.getInstanceFromDbWithTags(transactionId, homeCurrencyProvider.homeCurrencyUnit)
+
+            InstantiationTask.TRANSACTION -> Transaction.getInstanceFromDbWithTags(
+                transactionId,
+                homeCurrencyProvider.homeCurrencyUnit
+            )
+
             InstantiationTask.FROM_INTENT_EXTRAS -> Pair(
                 ProviderUtils.buildFromExtras(
                     repository,
                     extras!!
                 )!!, emptyList()
             )
+
             InstantiationTask.TEMPLATE_FROM_TRANSACTION -> with(
                 Transaction.getInstanceFromDb(
                     transactionId, homeCurrencyProvider.homeCurrencyUnit

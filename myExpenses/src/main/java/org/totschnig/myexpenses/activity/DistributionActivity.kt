@@ -29,7 +29,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.github.mikephil.charting.charts.PieChart
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.PieData
@@ -42,9 +44,9 @@ import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.color.SimpleColorDialog
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.compose.*
+import org.totschnig.myexpenses.injector
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
@@ -117,7 +119,6 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
         val newGrouping = Utils.getGroupingFromMenuItemId(item.itemId)
         if (newGrouping != null) {
             viewModel.persistGrouping(newGrouping)
-            invalidateOptionsMenu()
             reset()
             return true
         }
@@ -163,9 +164,7 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
         super.onCreate(savedInstanceState)
         val binding = setupView()
         showChart.value = prefHandler.getBoolean(PrefKey.DISTRIBUTION_SHOW_CHART, true)
-        with((applicationContext as MyApplication).appComponent) {
-            inject(viewModel)
-        }
+        injector.inject(viewModel)
 
         viewModel.initWithAccount(
             intent.getLongExtra(DatabaseConstants.KEY_ACCOUNTID, 0),
@@ -173,8 +172,17 @@ class DistributionActivity : DistributionBaseActivity<DistributionViewModel>(),
         )
 
         lifecycleScope.launch {
-            viewModel.accountInfo.filterNotNull().collect {
-                supportActionBar?.title = it.label(this@DistributionActivity)
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.accountInfo.filterNotNull().collect {
+                    supportActionBar?.title = it.label(this@DistributionActivity)
+                }
+            }
+        }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.groupingInfoFlow.collect {
+                    invalidateOptionsMenu()
+                }
             }
         }
 

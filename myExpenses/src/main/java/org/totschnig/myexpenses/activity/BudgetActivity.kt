@@ -7,11 +7,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Snackbar
 import androidx.compose.material.Text
@@ -23,7 +19,9 @@ import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.chip.ChipGroup
 import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
@@ -31,12 +29,12 @@ import eltos.simpledialogfragment.form.AmountInputHostDialog
 import eltos.simpledialogfragment.form.Check
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.compose.AppTheme
 import org.totschnig.myexpenses.compose.Budget
 import org.totschnig.myexpenses.compose.ExpansionMode
 import org.totschnig.myexpenses.compose.rememberMutableStateListOf
+import org.totschnig.myexpenses.injector
 import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.model.Money
@@ -66,9 +64,7 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val binding = setupView()
-        with((applicationContext as MyApplication).appComponent) {
-            inject(viewModel)
-        }
+        injector.inject(viewModel)
         sortDelegate = SortDelegate(
             defaultSortOrder = Sort.ALLOCATED,
             prefKey = PrefKey.SORT_ORDER_BUDGET_CATEGORIES,
@@ -83,8 +79,10 @@ class BudgetActivity : DistributionBaseActivity<BudgetViewModel2>(), OnDialogRes
         viewModel.initWithBudget(budgetId, groupingYear, groupingSecond)
 
         lifecycleScope.launch {
-            viewModel.accountInfo.filterNotNull().collect {
-                supportActionBar?.title = it.title
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.accountInfo.filterNotNull().collect {
+                    supportActionBar?.title = it.title
+                }
             }
         }
         binding.composeView.setContent {

@@ -8,6 +8,7 @@ import org.totschnig.myexpenses.BuildConfig;
 import org.totschnig.myexpenses.db2.Repository;
 import org.totschnig.myexpenses.preference.PrefHandler;
 import org.totschnig.myexpenses.preference.PrefKey;
+import org.totschnig.myexpenses.util.CurrencyFormatter;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 
 import androidx.annotation.NonNull;
@@ -48,9 +49,10 @@ public abstract class ContribStatusLicenceHandler extends LicenceHandler {
           PreferenceObfuscator preferenceObfuscator,
           CrashHandler crashHandler,
           PrefHandler prefHandler,
-          Repository repository
+          Repository repository,
+          CurrencyFormatter currencyFormatter
   ) {
-    super(context, preferenceObfuscator, crashHandler, prefHandler, repository);
+    super(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter);
   }
 
   abstract int getLegacyStatus();

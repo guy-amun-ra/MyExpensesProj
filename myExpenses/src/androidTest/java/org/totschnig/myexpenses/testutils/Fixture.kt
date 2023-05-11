@@ -2,6 +2,7 @@ package org.totschnig.myexpenses.testutils
 
 import android.annotation.SuppressLint
 import android.app.Instrumentation
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -13,6 +14,7 @@ import org.totschnig.myexpenses.contract.TransactionsContract.Transactions
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model2.Account
+import org.totschnig.myexpenses.myApplication
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.viewmodel.data.Budget
@@ -37,11 +39,12 @@ class Fixture(inst: Instrumentation) {
     lateinit var account3: Account
         private set
     private lateinit var account4: Account
+    var budgetId: Long = 0L
     var planId: Long = 0L
 
     init {
         testContext = inst.context
-        appContext = inst.targetContext.applicationContext as MyApplication
+        appContext = inst.targetContext.myApplication
     }
 
     val syncAccount1 by lazy {
@@ -107,7 +110,7 @@ class Fixture(inst: Instrumentation) {
         val johnDoe = appContext.getString(R.string.testData_templatePayee)
 
         //set up categories
-        setUpCategories(appContext)
+        setUpCategories(appContext.contentResolver)
         //set up transactions
         var offset = System.currentTimeMillis() - 1000
         //are used twice
@@ -308,7 +311,7 @@ class Fixture(inst: Instrumentation) {
             account1.label,
             true
         )
-        val budgetId = ContentUris.parseId(
+        budgetId = ContentUris.parseId(
             appContext.contentResolver.insert(
                 TransactionProvider.BUDGETS_URI,
                 budget.toContentValues(200000L)
@@ -432,8 +435,8 @@ class Fixture(inst: Instrumentation) {
     }
 
     companion object {
-        private fun setUpCategories(appContext: Context) {
-            val integerIntegerPair = appContext.contentResolver
+        fun setUpCategories(contentResolver: ContentResolver) {
+            val integerIntegerPair = contentResolver
                 .call(
                     TransactionProvider.DUAL_URI,
                     TransactionProvider.METHOD_SETUP_CATEGORIES,

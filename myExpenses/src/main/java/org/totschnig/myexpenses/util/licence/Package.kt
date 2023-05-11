@@ -4,11 +4,11 @@ import android.content.Context
 import android.os.Parcelable
 import androidx.annotation.Keep
 import kotlinx.parcelize.Parcelize
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Money
+import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.formatMoney
 import java.util.*
 
@@ -21,19 +21,18 @@ sealed class Package(val defaultPrice: Long) : Parcelable {
 
     fun getFormattedPrice(
         context: Context,
-        currencyUnit: CurrencyUnit?,
+        currencyFormatter: CurrencyFormatter,
+        currencyUnit: CurrencyUnit,
         withExtra: Boolean
     ): String {
-        val formatted = getFormattedPriceRaw(currencyUnit, context)
+        val formatted = getFormattedPriceRaw(currencyUnit, currencyFormatter)
         return getFormattedPrice(context, formatted, withExtra)
     }
 
     open fun getFormattedPrice(context: Context, formatted: String, withExtra: Boolean) = formatted
 
-    fun getFormattedPriceRaw(currencyUnit: CurrencyUnit?, context: Context): String {
-        return (context.applicationContext as MyApplication).appComponent.currencyFormatter()
-            .formatMoney(Money(currencyUnit!!, defaultPrice))
-    }
+    fun getFormattedPriceRaw(currencyUnit: CurrencyUnit, currencyFormatter: CurrencyFormatter) =
+        currencyFormatter.formatMoney(Money(currencyUnit, defaultPrice))
 
     @Parcelize
     @Keep
@@ -112,8 +111,8 @@ sealed class ProfessionalPackage(defaultPrice: Long, val duration: Int) : Packag
 @Keep
 sealed class AddOnPackage(
     val feature: ContribFeature,
-    val isPro: Boolean = true
-) : Package(if (isPro) 430 else 270) {
+    private val isContribFeature: Boolean = feature.licenceStatus == LicenceStatus.CONTRIB
+) : Package(if (isContribFeature) 270 else 430) {
 
     companion object {
         //We cannot use an initializer here, because the objects we want to list might not be constructed
@@ -133,9 +132,9 @@ sealed class AddOnPackage(
 
     override fun payPalButtonId(isSandBox: Boolean) =
         when {
-            isSandBox -> if (isPro) "9VF4Z9KSLHXZN" else "UAWN7XUQNZ5PS"
-            isPro -> "FNEEWJWU5YJ44"
-            else -> "48RQY4SKUHTAQ"
+            isSandBox -> if (isContribFeature) "UAWN7XUQNZ5PS" else "9VF4Z9KSLHXZN"
+            isContribFeature -> "48RQY4SKUHTAQ"
+            else -> "FNEEWJWU5YJ44"
         }
 
     @Parcelize
@@ -164,27 +163,27 @@ sealed class AddOnPackage(
 
     @Parcelize
     @Keep
-    object AccountsUnlimited : AddOnPackage(ContribFeature.ACCOUNTS_UNLIMITED, false)
+    object AccountsUnlimited : AddOnPackage(ContribFeature.ACCOUNTS_UNLIMITED)
 
     @Parcelize
     @Keep
-    object PlansUnlimited : AddOnPackage(ContribFeature.PLANS_UNLIMITED, false)
+    object PlansUnlimited : AddOnPackage(ContribFeature.PLANS_UNLIMITED)
 
     @Parcelize
     @Keep
-    object SplitTransaction : AddOnPackage(ContribFeature.SPLIT_TRANSACTION, false)
+    object SplitTransaction : AddOnPackage(ContribFeature.SPLIT_TRANSACTION)
 
     @Parcelize
     @Keep
-    object Distribution : AddOnPackage(ContribFeature.DISTRIBUTION, false)
+    object Distribution : AddOnPackage(ContribFeature.DISTRIBUTION)
 
     @Parcelize
     @Keep
-    object Print : AddOnPackage(ContribFeature.PRINT, false)
+    object Print : AddOnPackage(ContribFeature.PRINT)
 
     @Parcelize
     @Keep
-    object AdFree : AddOnPackage(ContribFeature.AD_FREE, false)
+    object AdFree : AddOnPackage(ContribFeature.AD_FREE)
 
     @Parcelize
     @Keep

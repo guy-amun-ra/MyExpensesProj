@@ -13,10 +13,11 @@ import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.apache.commons.lang3.StringUtils
 import org.totschnig.myexpenses.BuildConfig
-import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.injector
 import org.totschnig.myexpenses.model.Model
 import org.totschnig.myexpenses.model2.Account
+import org.totschnig.myexpenses.myApplication
 import org.totschnig.myexpenses.sync.SyncBackendProvider.EncryptionException.Companion.encrypted
 import org.totschnig.myexpenses.sync.SyncBackendProvider.EncryptionException.Companion.notEncrypted
 import org.totschnig.myexpenses.sync.SyncBackendProvider.EncryptionException.Companion.wrongPassphrase
@@ -27,6 +28,7 @@ import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crypt.EncryptionHelper
 import org.totschnig.myexpenses.util.io.FileCopyUtils
 import org.totschnig.myexpenses.util.io.MIME_TYPE_OCTET_STREAM
+import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider
 import java.io.*
 import java.security.GeneralSecurityException
 import java.util.*
@@ -223,9 +225,8 @@ abstract class AbstractSyncBackendProvider<Res>(protected val context: Context) 
         transactionChange.pictureUri()?.let {
             val homeUri = PictureDirHelper.getOutputMediaUri(
                 false,
-                context.applicationContext as MyApplication
+                context.myApplication
             )
-                ?: throw IOException("Unable to write picture")
             val input = getInputStreamForPicture(it)
             val output = context.contentResolver
                 .openOutputStream(homeUri) ?: throw IOException("Unable to write picture")
@@ -334,7 +335,7 @@ abstract class AbstractSyncBackendProvider<Res>(protected val context: Context) 
     protected abstract fun saveUriToAccountDir(fileName: String, uri: Uri)
 
     protected fun buildMetadata(account: Account?): String {
-        return gson.toJson(AccountMetaData.from(account))
+        return gson.toJson(AccountMetaData.from(account, context.injector.homeCurrencyProvider().homeCurrencyString))
     }
 
     protected fun getLastFileNamePart(fileName: String): String {

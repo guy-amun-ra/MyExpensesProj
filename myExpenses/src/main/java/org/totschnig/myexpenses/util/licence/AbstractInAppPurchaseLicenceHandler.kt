@@ -11,6 +11,7 @@ import org.totschnig.myexpenses.contrib.Config
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
+import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 
@@ -19,8 +20,9 @@ abstract class AbstractInAppPurchaseLicenceHandler(
     preferenceObfuscator: PreferenceObfuscator,
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
-    repository: Repository
-) : ContribStatusLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository) {
+    repository: Repository,
+    currencyFormatter: CurrencyFormatter
+) : ContribStatusLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter) {
     val pricesPrefs: SharedPreferences = context.getSharedPreferences(PRICES_PREFS_FILE, Context.MODE_PRIVATE)
 
     override fun getLegacyStatus() = STATUS_ENABLED_LEGACY_SECOND

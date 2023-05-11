@@ -39,7 +39,6 @@ import androidx.loader.app.LoaderManager
 import com.evernote.android.state.State
 import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
-import com.theartofdev.edmodo.cropper.CropImageView
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
@@ -59,12 +58,14 @@ import org.totschnig.myexpenses.exception.UnknownPictureSaveException
 import org.totschnig.myexpenses.feature.OcrResultFlat
 import org.totschnig.myexpenses.fragment.PlanMonthFragment
 import org.totschnig.myexpenses.fragment.TemplatesList
+import org.totschnig.myexpenses.injector
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.Plan.Recurrence
 import org.totschnig.myexpenses.model.Template
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.disableAutoFill
 import org.totschnig.myexpenses.preference.enableAutoFill
+import org.totschnig.myexpenses.preference.enumValueOrDefault
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.ui.*
 import org.totschnig.myexpenses.util.*
@@ -206,7 +207,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         get() = intent.getLongExtra(KEY_INSTANCEID, 0L)
 
     override fun injectDependencies() {
-        (applicationContext as MyApplication).appComponent.inject(this)
+        injector.inject(this)
     }
 
     override fun onEnterAnimationComplete() {
@@ -228,7 +229,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         val viewModelProvider = ViewModelProvider(this)
         viewModel = viewModelProvider[TransactionEditViewModel::class.java]
         currencyViewModel = viewModelProvider[CurrencyViewModel::class.java]
-        with((applicationContext as MyApplication).appComponent) {
+        with(injector) {
             inject(viewModel)
             inject(currencyViewModel)
         }
@@ -242,7 +243,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 rootBinding,
                 dateEditBinding,
                 methodRowBinding,
-                (applicationContext as MyApplication).appComponent
+                injector
             )
             setupObservers(true)
             delegate.bind(
@@ -330,8 +331,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     ).observe(this) {
                         if (it != null) {
                             mRowId = it.id
-                            it.defaultAction = getEnumFromPreferencesWithDefault(
-                                prefHandler,
+                            it.defaultAction = prefHandler.enumValueOrDefault(
                                 PrefKey.TEMPLATE_CLICK_DEFAULT,
                                 Template.Action.SAVE
                             )
@@ -687,7 +687,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             rootBinding,
             dateEditBinding,
             methodRowBinding,
-            (applicationContext as MyApplication).appComponent
+            injector
         )
         setupObservers(false)
         if (intent.getBooleanExtra(KEY_CREATE_TEMPLATE, false)) {
@@ -1331,19 +1331,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
     }
 
     private fun startMediaChooserDo() {
-        CropImage.activity()
-            .setAllowFlipping(false)
-            .setCaptureImageOutputUri(PictureDirHelper.getOutputMediaUri(
-                true,
-                applicationContext as MyApplication
-            ))
-            .setOutputUri(PictureDirHelper.getOutputMediaUri(
-                true,
-                applicationContext as MyApplication,
-                "cropped"
-            ))
-            .setGuidelines(CropImageView.Guidelines.ON)
-            .start(this)
+        startMediaChooserDo(PictureDirHelper.defaultFileName, false)
     }
 
     override fun onPermissionsGranted(requestCode: Int, perms: List<String>) {
