@@ -7,6 +7,7 @@ import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contrib.Config
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
+import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 class StoreLicenceHandler(
@@ -14,9 +15,10 @@ class StoreLicenceHandler(
     preferenceObfuscator: PreferenceObfuscator,
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
-    repository: Repository
+    repository: Repository,
+    currencyFormatter: CurrencyFormatter
 ) :
-        PlayStoreLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository) {
+        PlayStoreLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter) {
 
     override val proPackages: Array<ProfessionalPackage>
         get() = arrayOf(ProfessionalPackage.Professional_1, ProfessionalPackage.Professional_12)

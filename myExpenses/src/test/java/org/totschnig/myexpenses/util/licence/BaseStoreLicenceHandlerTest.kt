@@ -12,6 +12,7 @@ import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.prefHandler
+import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 class BaseStoreLicenceHandlerTest {
@@ -42,7 +43,8 @@ class BaseStoreLicenceHandlerTest {
             obfuscator,
             Mockito.mock(CrashHandler::class.java),
             prefHandler,
-            Mockito.mock(Repository::class.java)
+            Mockito.mock(Repository::class.java),
+            Mockito.mock(CurrencyFormatter::class.java)
         )
     }
 

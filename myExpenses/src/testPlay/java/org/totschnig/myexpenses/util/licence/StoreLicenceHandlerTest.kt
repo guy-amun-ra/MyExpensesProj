@@ -10,11 +10,13 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.ArgumentMatchers
+import org.mockito.Mockito
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
+import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 @RunWith(JUnitParamsRunner::class)
@@ -37,7 +39,8 @@ class StoreLicenceHandlerTest {
             mock(PreferenceObfuscator::class.java),
             mock(CrashHandler::class.java),
             mock(PrefHandler::class.java),
-            mock(Repository::class.java)
+            mock(Repository::class.java),
+            mock(CurrencyFormatter::class.java)
         )
     }
 

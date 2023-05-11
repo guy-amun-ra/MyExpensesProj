@@ -39,7 +39,7 @@ public class LicenceModule {
       case HUAWEI:
       case PLAY:
       case AMAZON:
-        return new StoreLicenceHandler(application, preferenceObfuscator, crashHandler, prefHandler, repository);
+        return new StoreLicenceHandler(application, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter);
     }
     return new LicenceHandler(application, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter);
 
