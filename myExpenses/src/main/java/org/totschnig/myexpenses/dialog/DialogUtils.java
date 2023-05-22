@@ -37,6 +37,7 @@ import android.widget.RadioGroup;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -235,12 +236,15 @@ public class DialogUtils {
     }
   }
 
-  public static RadioGroup.OnCheckedChangeListener buildCalendarRestoreStrategyChangedListener(
-      final Activity context, final CalendarRestoreStrategyChangedListener listener) {
-    return (group, checkedId) -> {
+  public static MaterialButtonToggleGroup.OnButtonCheckedListener buildCalendarRestoreStrategyChangedListener(
+      final BaseActivity context, final CalendarRestoreStrategyChangedListener listener) {
+    return (group, checkedId, isChecked) -> {
       for (int i = 0; i < group.getChildCount(); i++) {
-        View child = group.getChildAt(i);
-        child.setSelected(child.getId() == checkedId);
+        TextView child = (TextView) group.getChildAt(i);
+        boolean selected = child.getId() == checkedId && isChecked;
+        if (selected) {
+          context.showSnackBar(child.getText());
+        }
       }
       if ((checkedId == R.id.restore_calendar_handling_backup) ||
               (checkedId == R.id.restore_calendar_handling_create_new) ||

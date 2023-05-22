@@ -11,16 +11,19 @@ import android.widget.Toast;
 
 import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.activity.BackupRestoreActivity;
+import org.totschnig.myexpenses.activity.BaseActivity;
 import org.totschnig.myexpenses.util.ImportFileResultHandler;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 
+import com.google.android.material.button.MaterialButtonToggleGroup;
+
 public class BackupSourcesDialogFragment extends ImportSourceDialogFragment
     implements DialogUtils.CalendarRestoreStrategyChangedListener {
-  RadioGroup restorePlanStrategy;
-  RadioGroup.OnCheckedChangeListener mCalendarRestoreButtonCheckedChangeListener;
+  MaterialButtonToggleGroup restorePlanStrategy;
+  MaterialButtonToggleGroup.OnButtonCheckedListener mCalendarRestoreButtonCheckedChangeListener;
 
   CheckBox encrypt;
 
@@ -53,8 +56,8 @@ public class BackupSourcesDialogFragment extends ImportSourceDialogFragment
     view.findViewById(R.id.btn_browse).setVisibility(selectorVisibility);
     restorePlanStrategy = NewDialogUtilsKt.configureCalendarRestoreStrategy(view, prefHandler);
     mCalendarRestoreButtonCheckedChangeListener =
-        DialogUtils.buildCalendarRestoreStrategyChangedListener(getActivity(), this);
-    restorePlanStrategy.setOnCheckedChangeListener(mCalendarRestoreButtonCheckedChangeListener);
+        DialogUtils.buildCalendarRestoreStrategyChangedListener((BaseActivity) getActivity(), this);
+    restorePlanStrategy.addOnButtonCheckedListener(mCalendarRestoreButtonCheckedChangeListener);
     encrypt = view.findViewById(R.id.encrypt_database);
     if (prefHandler.getEncryptDatabase()) {
       encrypt.setVisibility(View.VISIBLE);
@@ -117,7 +120,7 @@ public class BackupSourcesDialogFragment extends ImportSourceDialogFragment
       ((BackupRestoreActivity) getActivity()).onSourceSelected(
           mUri,
           restorePlanStrategy == null ? R.id.restore_calendar_handling_ignore :
-              restorePlanStrategy.getCheckedRadioButtonId(),
+              restorePlanStrategy.getCheckedButtonId(),
               prefHandler.getEncryptDatabase() && encrypt.isChecked());
     } else {
       super.onClick(dialog, id);
@@ -127,7 +130,7 @@ public class BackupSourcesDialogFragment extends ImportSourceDialogFragment
   @Override
   protected boolean isReady() {
     if (super.isReady()) {
-      return restorePlanStrategy == null || restorePlanStrategy.getCheckedRadioButtonId() != -1;
+      return restorePlanStrategy == null || restorePlanStrategy.getCheckedButtonId() != -1;
     } else {
       return false;
     }
@@ -140,9 +143,9 @@ public class BackupSourcesDialogFragment extends ImportSourceDialogFragment
 
   @Override
   public void onCalendarPermissionDenied() {
-    restorePlanStrategy.setOnCheckedChangeListener(null);
-    restorePlanStrategy.clearCheck();
-    restorePlanStrategy.setOnCheckedChangeListener(mCalendarRestoreButtonCheckedChangeListener);
+    restorePlanStrategy.removeOnButtonCheckedListener(mCalendarRestoreButtonCheckedChangeListener);
+    restorePlanStrategy.clearChecked();
+    restorePlanStrategy.addOnButtonCheckedListener(mCalendarRestoreButtonCheckedChangeListener);
     setButtonState();
   }
 }

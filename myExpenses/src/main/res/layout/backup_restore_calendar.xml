@@ -1,51 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TableRow
-    android:id="@+id/RestoreCalendarHandlingRow"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<TableRow xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/RestoreCalendarHandlingRow"
     android:gravity="center_vertical"
     tools:showIn="@layout/backup_restore_dialog">
 
     <TextView
         style="@style/FormLabel"
         android:labelFor="@id/restore_calendar_handling"
-        android:text="@string/restore_calendar_handling"/>
+        android:text="@string/restore_calendar_handling" />
 
-    <RadioGroup
-        style="@style/FormField"
+    <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/restore_calendar_handling"
+        style="@style/FormField"
+        app:selectionRequired="true"
+        app:singleSelection="true"
         android:orientation="vertical">
 
-        <RadioButton
+        <Button
             android:id="@+id/restore_calendar_handling_backup"
-            android:text="@string/restore_calendar_handling_backup"
-            android:singleLine="true"
+            style="@style/Widget.Material3.Button.OutlinedButton.ToggleGroupVertical"
             android:ellipsize="marquee"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"/>
+            android:text="@string/restore_calendar_handling_backup" />
 
-        <RadioButton
+        <Button
             android:id="@+id/restore_calendar_handling_configured"
-            android:text="@string/restore_calendar_handling_configured"
-            android:singleLine="true"
+            style="@style/Widget.Material3.Button.OutlinedButton.ToggleGroupVertical"
             android:ellipsize="marquee"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"/>
+            android:text="@string/restore_calendar_handling_configured" />
 
-        <RadioButton
+        <Button
             android:id="@+id/restore_calendar_handling_create_new"
-            android:text="@string/pref_planning_calendar_create_local"
-            android:singleLine="true"
+            style="@style/Widget.Material3.Button.OutlinedButton.ToggleGroupVertical"
             android:ellipsize="marquee"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"/>
+            android:text="@string/pref_planning_calendar_create_local" />
 
-        <RadioButton
+        <Button
             android:id="@+id/restore_calendar_handling_ignore"
-            android:text="@string/restore_calendar_handling_ignore"
-            android:singleLine="true"
+            style="@style/Widget.Material3.Button.OutlinedButton.ToggleGroupVertical"
             android:ellipsize="marquee"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"/>
-    </RadioGroup>
+            android:text="@string/restore_calendar_handling_ignore" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
 </TableRow>

@@ -15,9 +15,11 @@ import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.RadioGroup
 import androidx.appcompat.app.AlertDialog
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.activity.OnboardingActivity
 import org.totschnig.myexpenses.databinding.RestoreFromCloudBinding
 import org.totschnig.myexpenses.dialog.DialogUtils.CalendarRestoreStrategyChangedListener
@@ -25,8 +27,8 @@ import org.totschnig.myexpenses.sync.json.AccountMetaData
 
 class RestoreFromCloudDialogFragment : DialogViewBinding<RestoreFromCloudBinding>(), DialogInterface.OnClickListener,
     OnItemClickListener, CalendarRestoreStrategyChangedListener {
-    private lateinit var restorePlanStrategy: RadioGroup
-    private lateinit var calendarRestoreButtonCheckedChangeListener: RadioGroup.OnCheckedChangeListener
+    private lateinit var restorePlanStrategy: MaterialButtonToggleGroup
+    private lateinit var calendarRestoreButtonCheckedChangeListener: MaterialButtonToggleGroup.OnButtonCheckedListener
     private var backupAdapter: ArrayAdapter<String>? = null
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
@@ -53,9 +55,9 @@ class RestoreFromCloudDialogFragment : DialogViewBinding<RestoreFromCloudBinding
             restorePlanStrategy = configureCalendarRestoreStrategy(binding.backupListContainer, prefHandler)
             calendarRestoreButtonCheckedChangeListener =
                 DialogUtils.buildCalendarRestoreStrategyChangedListener(
-                    activity, this
+                    activity as BaseActivity, this
                 )
-            restorePlanStrategy.setOnCheckedChangeListener(
+            restorePlanStrategy.addOnButtonCheckedListener(
                 calendarRestoreButtonCheckedChangeListener
             )
             binding.tabs.addTab(
@@ -130,7 +132,7 @@ class RestoreFromCloudDialogFragment : DialogViewBinding<RestoreFromCloudBinding
             val activeContent = activeContent
             val activeList = findListView(activeContent)
             if (activeContent.id == R.id.backup_list_container) {
-                if (restorePlanStrategy.checkedRadioButtonId == -1) {
+                if (restorePlanStrategy.checkedButtonId == -1) {
                     return false
                 }
                 if (binding.passwordLayout.passwordLayout.visibility == View.VISIBLE && TextUtils.isEmpty(
@@ -157,7 +159,7 @@ class RestoreFromCloudDialogFragment : DialogViewBinding<RestoreFromCloudBinding
                     if (binding.passwordLayout.passwordLayout.visibility == View.VISIBLE) binding.passwordLayout.passwordEdit.text.toString() else null
                 activity.setupFromBackup(
                     backups[findListView(contentForTab)!!.checkedItemPosition],
-                    restorePlanStrategy.checkedRadioButtonId, password
+                    restorePlanStrategy.checkedButtonId, password
                 )
             } else if (id == R.id.sync_account_list_container) {
                 activity.setupFromSyncAccounts(syncAccounts.filterIndexed { index, _ ->
@@ -188,9 +190,9 @@ class RestoreFromCloudDialogFragment : DialogViewBinding<RestoreFromCloudBinding
     }
 
     override fun onCalendarPermissionDenied() {
-        restorePlanStrategy.setOnCheckedChangeListener(null)
-        restorePlanStrategy.clearCheck()
-        restorePlanStrategy.setOnCheckedChangeListener(calendarRestoreButtonCheckedChangeListener)
+        restorePlanStrategy.removeOnButtonCheckedListener(calendarRestoreButtonCheckedChangeListener)
+        restorePlanStrategy.clearChecked()
+        restorePlanStrategy.addOnButtonCheckedListener(calendarRestoreButtonCheckedChangeListener)
         configureSubmit()
     }
 
