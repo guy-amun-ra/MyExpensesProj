@@ -34,10 +34,10 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
     MobileAds.setRequestConfiguration(configuration);*/
     }
 
-    override val shouldHideBanner: Boolean
-        get() = super.shouldHideBanner ||
-                (Build.VERSION.SDK_INT in Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2 &&
-                        Build.MODEL == "Redmi Note 9")
+    override val shouldHideAd: Boolean
+        get() = super.shouldHideAd ||
+                ((Build.VERSION.SDK_INT in (Build.VERSION_CODES.S..Build.VERSION_CODES.S_V2)) &&
+                        (Build.MODEL == "Redmi Note 9"))
 
 
     override fun startBannerInternal() {
@@ -128,7 +128,7 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
     override fun onResume() {
         if (mAdMobBannerShown) {
             //activity might have been resumed after user has bought contrib key
-            if (shouldHideBanner) {
+            if (shouldHideAd) {
                 admobView?.destroy()
                 hide()
                 mAdMobBannerShown = false
