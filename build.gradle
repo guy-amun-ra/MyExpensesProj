@@ -14,11 +14,12 @@ plugins {
     id 'com.google.gms.google-services' version '4.3.15' apply false
     id 'com.google.firebase.crashlytics' version '2.9.2' apply false
     id 'com.android.dynamic-feature' version "$agp_version" apply false
+    id("com.google.devtools.ksp") version "1.8.21-1.0.11" apply false
 }
 
 ext {
-    versionCode = 618
-    versionName = '3.5.6'
+    versionCode = 619
+    versionName = '3.5.7'
     compileSdkVersion = 33
     minSdkVersion = 21
     targetSdkVersion = 33
@@ -61,3 +62,12 @@ ext {
     googleHttp = "1.43.1"
 }
 
+allprojects {
+    configurations.configureEach {
+        resolutionStrategy {
+            dependencySubstitution {
+                substitute module('com.google.android.material:material') using module('com.github.mtotschnig:material-components-android:release-1.9-patched-SNAPSHOT')
+            }
+        }
+    }
+}

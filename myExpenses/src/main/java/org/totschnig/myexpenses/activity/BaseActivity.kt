@@ -18,9 +18,7 @@ import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.viewModels
-import androidx.annotation.CallSuper
-import androidx.annotation.IdRes
-import androidx.annotation.RequiresApi
+import androidx.annotation.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -36,6 +34,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.evernote.android.state.State
+import com.google.android.material.color.HarmonizedColors
+import com.google.android.material.color.HarmonizedColorsOptions
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
@@ -115,13 +115,17 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     private val _floatingActionButton: FloatingActionButton?
         get() = findViewById(R.id.CREATE_COMMAND) as? FloatingActionButton
 
-    @JvmOverloads
-    protected fun configureFloatingActionButton(fabDescription: Int, icon: Int = 0) {
-        configureFloatingActionButton(getString(fabDescription))
-        if (icon != 0) {
-            floatingActionButton.setImageResource(icon)
+    fun configureFloatingActionButton() {
+        _floatingActionButton?.apply {
+            fabDescription?.let { contentDescription = getString(it) }
+            fabIcon?.let { setImageResource(it) }
         }
     }
+
+    @StringRes
+    open val fabDescription: Int? = null
+    @DrawableRes
+    open val fabIcon: Int? = null
 
     @JvmOverloads
     protected open fun setupToolbar(withHome: Boolean = true, homeAsUpIndicator: Int? = null) {
@@ -182,10 +186,6 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
             EXTRA_START_FROM_WIDGET_DATA_ENTRY,
             getIntent().getBooleanExtra(EXTRA_START_FROM_WIDGET_DATA_ENTRY, false)
         )
-    }
-
-    protected fun configureFloatingActionButton(fabDescription: String?) {
-        floatingActionButton.contentDescription = fabDescription
     }
 
     private val downloadReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -319,6 +319,24 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
             inject(featureViewModel)
             inject(shareViewModel)
         }
+        HarmonizedColors.applyToContextIfAvailable(
+            this,
+            HarmonizedColorsOptions.Builder()
+                .setColorResourceIds(
+                    intArrayOf(
+                        R.color.colorExpenseLight,
+                        R.color.colorIncomeLight,
+                        R.color.colorExpenseDark,
+                        R.color.colorIncomeDark,
+                        R.color.UNRECONCILED,
+                        R.color.CLEARED,
+                        R.color.RECONCILED,
+                        R.color.VOID
+                    )
+                )
+                .build()
+        )
+
         featureViewModel.getFeatureState().observe(this, EventObserver { featureState ->
             when (featureState) {
                 is FeatureViewModel.FeatureState.FeatureLoading -> showSnackBar(
@@ -387,6 +405,20 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                 }
             }
         }
+    }
+
+    override fun onPostCreate(savedInstanceState: Bundle?) {
+        super.onPostCreate(savedInstanceState)
+        configureFloatingActionButton()
+        _floatingActionButton?.let {
+            it.setOnClickListener {
+                onFabClicked()
+            }
+        }
+    }
+
+    open fun onFabClicked() {
+
     }
 
     fun setLanguage(language: String) {
@@ -599,6 +631,7 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                 )
                 true
             }
+
             R.id.FEEDBACK_COMMAND -> {
                 val licenceStatus = licenceHandler.licenceStatus
                 val licenceInfo = buildString {
@@ -612,7 +645,8 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                     "LICENCE: $it\n"
                 }
                 val firstInstallVersion = prefHandler.getInt(PrefKey.FIRST_INSTALL_VERSION, 0)
-                val firstInstallSchema = prefHandler.getInt(PrefKey.FIRST_INSTALL_DB_SCHEMA_VERSION, -1)
+                val firstInstallSchema =
+                    prefHandler.getInt(PrefKey.FIRST_INSTALL_DB_SCHEMA_VERSION, -1)
 
                 sendEmail(
                     recipient = getString(R.string.support_email),
@@ -631,22 +665,27 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                 )
                 true
             }
+
             R.id.CONTRIB_INFO_COMMAND -> {
                 showContribDialog(null, null)
                 true
             }
+
             R.id.WEB_COMMAND -> {
                 startActionView(getString(R.string.website))
                 true
             }
+
             R.id.HELP_COMMAND -> {
                 doHelp(tag as String?)
                 true
             }
+
             android.R.id.home -> {
                 doHome()
                 true
             }
+
             else -> false
         }
     }

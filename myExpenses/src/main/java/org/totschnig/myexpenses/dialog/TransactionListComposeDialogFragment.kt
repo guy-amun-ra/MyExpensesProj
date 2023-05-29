@@ -6,7 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.LocalTextStyle
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
@@ -23,6 +23,7 @@ import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.asDateTimeFormatter
 import org.totschnig.myexpenses.util.convAmount
+import org.totschnig.myexpenses.viewmodel.KEY_LOADING_INFO
 import org.totschnig.myexpenses.viewmodel.TransactionListViewModel
 import org.totschnig.myexpenses.viewmodel.data.IIconInfo
 import java.text.SimpleDateFormat
@@ -92,7 +93,6 @@ class TransactionListComposeDialogFragment: ComposeBaseDialogFragment() {
     }
 
     companion object {
-        private const val KEY_LOADING_INFO = "loadingInfo"
         private const val TABS = "\u0009\u0009\u0009\u0009"
 
         @JvmStatic

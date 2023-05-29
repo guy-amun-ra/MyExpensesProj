@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center_vertical"
         android:layout_weight="1"
-        android:contentDescription="@string/date" />
+        android:hint="@string/date" />
 
     <ImageView
         android:id="@+id/DateLink"
@@ -22,7 +22,6 @@
         android:contentDescription="@string/content_description_dates_are_not_linked"
         android:focusable="true"
         android:minWidth="@dimen/dateLink_minWidth"
-        android:onClick="toggleDateLink"
         android:paddingStart="@dimen/dateLink_padding"
         android:paddingEnd="@dimen/dateLink_padding"
         android:visibility="gone"
@@ -45,5 +44,5 @@
         android:layout_gravity="center_vertical"
         android:layout_marginStart="4dp"
         android:layout_weight="1"
-        android:contentDescription="@string/time" />
+        android:hint="@string/time" />
 </merge>

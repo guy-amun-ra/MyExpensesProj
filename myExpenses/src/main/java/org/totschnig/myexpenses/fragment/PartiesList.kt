@@ -271,7 +271,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     }
 
     private fun updateFabEnabled() {
-        manageParties.setFabEnabled(
+        (activity as? ManageParties)?.setFabEnabled(
             adapter.checkedCount >=
                     if (mergeMode) 2 else if (action == Action.SELECT_FILTER) 1 else 0
         )
@@ -282,15 +282,13 @@ class PartiesList : Fragment(), OnDialogResultListener {
         viewModel.deleteParty(partyId)
             .observe(viewLifecycleOwner) { result ->
                 result.onSuccess { count ->
-                    manageParties.let {
-                        it.showSnackBar(
-                            it.resources.getQuantityString(
-                                R.plurals.delete_success,
-                                count,
-                                count
-                            )
+                    manageParties.showSnackBar(
+                        resources.getQuantityString(
+                            R.plurals.delete_success,
+                            count,
+                            count
                         )
-                    }
+                    )
                 }.onFailure {
                     manageParties.showDeleteFailureFeedback(it.message)
                 }
@@ -371,7 +369,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     private fun updateUiMergeMode() {
         with(manageParties) {
             mergeMenuItem?.isChecked = mergeMode
-            configureFabMergeMode(mergeMode)
+            configureFloatingActionButton()
             setFabEnabled(!mergeMode)
         }
     }

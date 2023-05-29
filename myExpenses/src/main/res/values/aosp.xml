@@ -33,6 +33,7 @@
     <!-- packages/apps/Contacts/res/values/strings.xml -->
     <string name="toast_text_copied">Text copied</string>
     <string name="copy_text">Copy to clipboard</string>
+    <string name="menu_export">Export</string>
     <!--  packages/apps/DeskClock/res/values/strings.xml name="timer_stop" -->
     <string name="stop">Stop</string>
     <!-- name="clock_style" -->
@@ -67,5 +68,9 @@
     <string name="write_fail_reason_cannot_write">Error writing content</string>
     <!-- modules/Bluetooth/android/app/res/ -->
     <string name="not_exist_file_desc">The file doesn\'t exist</string>
+    <!-- packages/apps/TV dvr_date_*  -->
+    <string name="today">Today</string>
+    <string name="tomorrow">Tomorrow</string>
+    <string name="yesterday">Yesterday</string>
 </resources>
 

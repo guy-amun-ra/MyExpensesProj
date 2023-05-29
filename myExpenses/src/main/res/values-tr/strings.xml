@@ -124,10 +124,8 @@
     <string name="grouping_month">Ay</string>
     <string name="grouping_none">Grupsuz</string>
     <string name="grouping_this_week">Bu hafta</string>
-    <string name="grouping_today">Bugün</string>
     <string name="grouping_week">Hafta</string>
     <string name="grouping_year">Sene</string>
-    <string name="grouping_yesterday">Dün</string>
     <string name="help_button_rate">Not ver veya değerlendir</string>
     <string name="help_heading_credits">Hazırlayanlar</string>
     <string name="help_heading_license">Lisans</string>
@@ -1031,4 +1029,5 @@
     <string name="image_optimize_quality_summary">Niteliğin 0 olması, en küçük boyut için sıkıştırma anlamına gelir. 100 en yüksek görsel kalite için sıkıştırma anlamına gelir.</string>
     <string name="maximum_size">Azami boyut</string>
     <string name="image_optimize_quality">Nitelik</string>
+    <string name="optimize_image_file_size">Resim dosyası boyutunu iyileştir</string>
 </resources>
