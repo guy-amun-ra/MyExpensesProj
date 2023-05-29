@@ -249,7 +249,7 @@ dependencies {
     implementation "org.apache.commons:commons-lang3:$commonsLang"
     //needed for Play and Huawei - TODO refactor
     implementation("com.android.billingclient:billing-ktx:$billingVersion")
-    playImplementation 'com.google.android.play:feature-delivery-ktx:2.0.1'
+    playImplementation 'com.google.android.play:feature-delivery-ktx:2.1.0'
     playImplementation 'com.google.android.play:review-ktx:2.0.1'
     amazonImplementation 'com.amazon.device:amazon-appstore-sdk:3.0.3'
 
@@ -267,7 +267,7 @@ dependencies {
 
     api "com.jakewharton.timber:timber:$timberVersion"
 
-    withAdsImplementation 'com.google.android.gms:play-services-ads:22.0.0'
+    withAdsImplementation 'com.google.android.gms:play-services-ads:22.1.0'
     //noinspection GradleDynamicVersion
     //withAdsImplementation 'com.amazon.android:mobile-ads:5.+'
 
