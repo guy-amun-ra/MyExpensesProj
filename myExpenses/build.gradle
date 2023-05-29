@@ -91,7 +91,7 @@ android {
         type.resValue "string", 'sync_account_type', defaultConfig.applicationId + type.applicationIdSuffix + ".sync"
     }
 
-    flavorDimensions [ "distribution", "ads", "textRecognition" ]
+    flavorDimensions "distribution", "ads", "textRecognition"
 
     productFlavors {
         play {
