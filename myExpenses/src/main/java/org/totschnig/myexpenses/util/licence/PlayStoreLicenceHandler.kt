@@ -28,12 +28,18 @@ open class PlayStoreLicenceHandler(
     private fun storeSkuDetails(inventory: List<ProductDetails>) {
         val editor = pricesPrefs.edit()
         for (productDetails in inventory) {
-            val price = if (productDetails.productType == ProductType.INAPP) {
-                productDetails.oneTimePurchaseOfferDetails!!.formattedPrice
+            val price: String? = if (productDetails.productType == ProductType.INAPP) {
+                productDetails.oneTimePurchaseOfferDetails?.formattedPrice
             } else { //SUBS
-                productDetails.subscriptionOfferDetails!![0].pricingPhases.pricingPhaseList[0].formattedPrice
+                productDetails.subscriptionOfferDetails?.get(0)?.pricingPhases?.pricingPhaseList?.get(0)?.formattedPrice
             }
-            editor.putString(prefKeyForSkuPrice(productDetails.productId), price)
+            if (price != null) {
+                editor.putString(prefKeyForSkuPrice(productDetails.productId), price)
+            } else {
+                CrashHandler.report(
+                    Exception("Unable to query price for ${productDetails.productId}")
+                )
+            }
         }
         editor.apply()
     }
