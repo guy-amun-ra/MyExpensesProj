@@ -14,7 +14,6 @@
  */
 package org.totschnig.myexpenses.activity
 
-import android.annotation.SuppressLint
 import android.app.NotificationManager
 import android.content.ContentUris
 import android.content.Context
@@ -342,14 +341,11 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     }
                 }
                 parentId = intent.getLongExtra(KEY_PARENTID, 0)
-                var accountId = intent.getLongExtra(KEY_ACCOUNTID, 0)
                 val currencyUnit = intent.getStringExtra(KEY_CURRENCY)
                     ?.let { currencyContext.get(it) }
                 if (isNewTemplate) {
                     viewModel.newTemplate(
                         operationType,
-                        accountId,
-                        currencyUnit,
                         if (parentId != 0L) parentId else null
                     ).observe(this) {
                         if (it != null) {
@@ -363,6 +359,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     }
                     isTemplate = true
                 } else {
+                    var accountId = intent.getLongExtra(KEY_ACCOUNTID, 0)
                     when (operationType) {
                         Transactions.TYPE_TRANSACTION -> {
                             if (accountId == 0L) {
@@ -1160,10 +1157,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
     }
 
     val amount: Money?
-        get() {
-            val a = currentAccount ?: return null
-            val amount = validateAmountInput(false)
-            return if (amount == null) Money(a.currency, 0L) else Money(a.currency, amount)
+        get() = currentAccount?.let {
+            Money(it.currency, validateAmountInput(showToUser = false, ifPresent = false)!!)
         }
 
     private fun unsetPicture() {
