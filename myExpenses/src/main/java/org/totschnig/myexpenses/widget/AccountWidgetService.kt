@@ -9,6 +9,7 @@ import android.net.Uri
 import android.view.View
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import androidx.core.content.ContextCompat
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.fragment.AccountWidgetConfigurationFragment
 import org.totschnig.myexpenses.injector
@@ -74,14 +75,14 @@ class AccountRemoteViewsFactory(
             contentDescriptionResId: Int,
             account: Account,
             availableWidth: Int,
-            minimumWidth: Int,
+            position: Int,
             clickInfo: Pair<Int, Intent>?
         ) {
-            if (account.isSealed || availableWidth < minimumWidth) {
+            if (account.isSealed || availableWidth < 48 * position) {
                 setViewVisibility(buttonId, View.GONE)
             } else {
                 setViewVisibility(buttonId, View.VISIBLE)
-                setImageViewVectorDrawable(context, buttonId, drawableResId)
+                setImageViewResource(buttonId, drawableResId)
                 setContentDescription(buttonId, context.getString(contentDescriptionResId))
                 val block: Intent.() -> Unit = {
                     putExtra(KEY_ROWID, account.id)
@@ -118,16 +119,19 @@ class AccountRemoteViewsFactory(
         ) {
             with(remoteViews) {
                 val account = Account.fromCursor(cursor)
-                setBackgroundColorSave(R.id.divider3, account.color)
-                val currentBalance = Money(
-                    currencyContext[account.currency],
-                    cursor.getLong(cursor.getColumnIndexOrThrow(sumColumn))
+                setBackgroundColorSave(
+                    R.id.divider3,
+                    if (account.isAggregate) ContextCompat.getColor(context, R.color.colorAggregate)
+                    else account.color
                 )
+                val sum = cursor.getLong(cursor.getColumnIndexOrThrow(sumColumn))
+                val currentBalance = Money(currencyContext[account.currency], sum)
                 setTextViewText(R.id.line1, account.getLabelForScreenTitle(context))
                 setTextViewText(
                     R.id.note,
                     context.injector.currencyFormatter().formatMoney(currentBalance)
                 )
+                setAmountColor(context, R.id.note, sum)
                 val block: Intent.() -> Unit = {
                     putExtra(KEY_ROWID, account.id)
                 }
@@ -152,7 +156,7 @@ class AccountRemoteViewsFactory(
                     R.string.menu_create_transaction,
                     account,
                     availableWidth,
-                    175,
+                    1,
                     clickInfo
                 )
                 configureButton(
@@ -163,7 +167,7 @@ class AccountRemoteViewsFactory(
                     R.string.menu_create_transfer,
                     account,
                     availableWidth,
-                    223,
+                    2,
                     clickInfo
                 )
                 configureButton(
@@ -174,7 +178,7 @@ class AccountRemoteViewsFactory(
                     R.string.menu_create_split,
                     account,
                     availableWidth,
-                    271,
+                    3,
                     clickInfo
                 )
             }

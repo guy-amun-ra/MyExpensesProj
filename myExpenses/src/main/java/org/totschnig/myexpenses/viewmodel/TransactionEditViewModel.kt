@@ -5,7 +5,10 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.Cursor
 import android.graphics.Bitmap
+import android.os.Build
 import android.os.Bundle
+import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.content.pm.ShortcutManagerCompat.FLAG_MATCH_PINNED
 import androidx.lifecycle.*
 import app.cash.copper.flow.mapToList
 import app.cash.copper.flow.observeQuery
@@ -13,6 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.adapter.SplitPartRVAdapter
 import org.totschnig.myexpenses.db2.getCurrencyUnitForAccount
 import org.totschnig.myexpenses.db2.getLastUsedOpenAccount
@@ -27,6 +31,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider.QUERY_PARAMETER_ACCOUNTY_TYPE_LIST
 import org.totschnig.myexpenses.util.ImageOptimizer
 import org.totschnig.myexpenses.util.PictureDirHelper
+import org.totschnig.myexpenses.util.ShortcutHelper
 import org.totschnig.myexpenses.util.asExtension
 import org.totschnig.myexpenses.util.io.FileCopyUtils
 import org.totschnig.myexpenses.viewmodel.data.Account
@@ -118,10 +123,31 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
     fun save(transaction: ITransaction): LiveData<Result<Long>> =
         liveData(context = coroutineContext()) {
             emit(kotlin.runCatching {
+                val existingTemplateMaybeUpdateShortcut =
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && transaction is Template && transaction.id != 0L
                 savePicture(transaction)
                 val result = transaction.save(true)?.let { ContentUris.parseId(it) }
                     ?: throw Throwable("Error while saving transaction")
+                if (existingTemplateMaybeUpdateShortcut) {
+                    if (
+                        ShortcutManagerCompat.getShortcuts(getApplication(), FLAG_MATCH_PINNED)
+                            .any {
+                                it.id == ShortcutHelper.idTemplate(transaction.id)
+                            }
+                    ) {
+                        ShortcutManagerCompat.updateShortcuts(
+                            getApplication(),
+                            listOf(
+                                ShortcutHelper.buildTemplateShortcut(
+                                    getApplication(),
+                                    TemplateInfo.fromTemplate(transaction as Template)
+                                )
+                            )
+                        )
+                    }
+                }
                 if (!transaction.saveTags(tagsLiveData.value)) throw Throwable("Error while saving tags")
+
                 result
             })
         }
@@ -200,51 +226,43 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
         }
     }
 
-    fun newTemplate(
+    suspend fun newTemplate(
         operationType: Int,
         parentId: Long?
-    ): LiveData<Template?> =
-        liveData(context = coroutineContext()) {
-            val account = repository.getLastUsedOpenAccount()?.let {
-                emit(
-                    Template.getTypedNewInstance(operationType, it.first, it.second, true, parentId)
-                )
-            }
+    ): Template? = withContext(coroutineContext()) {
+        repository.getLastUsedOpenAccount()?.let {
+            Template.getTypedNewInstance(operationType, it.first, it.second, true, parentId)
+        }
+    }
+
+    private suspend fun ensureLoadData(accountId: Long, currencyUnit: CurrencyUnit?) =
+        if (accountId > 0 && currencyUnit != null)
+            accountId to currencyUnit
+        else withContext(coroutineContext()) {
+            if (accountId > 0) accountId to repository.getCurrencyUnitForAccount(accountId)
+            else repository.getLastUsedOpenAccount()
         }
 
-    fun newTransaction(
+    suspend fun newTransaction(
         accountId: Long,
         currencyUnit: CurrencyUnit?,
         parentId: Long?
-    ): LiveData<Transaction?> =
-        liveData(context = coroutineContext()) {
-            emit(
-                (currencyUnit ?: repository.getCurrencyUnitForAccount(accountId))?.let {
-                    Transaction.getNewInstance(accountId, it, parentId)
-                }
-            )
-        }
+    ): Transaction? = ensureLoadData(accountId, currencyUnit)?.let {
+        Transaction.getNewInstance(it.first, it.second, parentId)
+    }
 
-    fun newTransfer(
+    suspend fun newTransfer(
         accountId: Long,
         currencyUnit: CurrencyUnit?,
         transferAccountId: Long?,
         parentId: Long?
-    ): LiveData<Transfer?> = liveData(context = coroutineContext()) {
-        emit(
-            (currencyUnit ?: repository.getCurrencyUnitForAccount(accountId))?.let {
-                Transfer.getNewInstance(accountId, it, transferAccountId, parentId)
-            }
-        )
+    ): Transfer? = ensureLoadData(accountId, currencyUnit)?.let {
+        Transfer.getNewInstance(it.first, it.second, transferAccountId, parentId)
     }
 
-    fun newSplit(accountId: Long, currencyUnit: CurrencyUnit?): LiveData<SplitTransaction?> =
-        liveData(context = coroutineContext()) {
-            emit(
-                (currencyUnit ?: repository.getCurrencyUnitForAccount(accountId))?.let {
-                    SplitTransaction.getNewInstance(accountId, it, true)
-                }
-            )
+    suspend fun newSplit(accountId: Long, currencyUnit: CurrencyUnit?): SplitTransaction? =
+        ensureLoadData(accountId, currencyUnit)?.let {
+            SplitTransaction.getNewInstance(it.first, it.second, true)
         }
 
     fun loadSplitParts(parentId: Long, parentIsTemplate: Boolean) {

@@ -80,12 +80,12 @@
         android:name=".MyApplication"
         android:allowBackup="true"
         android:backupAgent=".MyBackupAgent"
-        android:fullBackupOnly="true"
         android:fullBackupContent="@xml/mybackupscheme"
-        android:localeConfig="@xml/locales_config"
+        android:fullBackupOnly="true"
         android:icon="@mipmap/ic_myexpenses"
         android:label="${appName}"
         android:largeHeap="true"
+        android:localeConfig="@xml/locales_config"
         android:supportsRtl="true"
         android:theme="@style/MyTheme"
         tools:replace="android:label">
@@ -100,8 +100,8 @@
             tools:replace="android:theme" />
         <activity
             android:name=".activity.SplashActivity"
-            android:theme="@style/Starting"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Starting">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -131,9 +131,11 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="org.totschnig.myexpenses"
+
+                <data
                     android:host="www.myexpenses.mobi"
-                    android:path="/callback2.html" />
+                    android:path="/callback2.html"
+                    android:scheme="org.totschnig.myexpenses" />
             </intent-filter>
             <intent-filter
                 android:autoVerify="true"
@@ -142,8 +144,11 @@
 
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="https" />
-                <data android:host="www.myexpenses.mobi" android:path="/callback2.html" />
+                <data
+                    android:host="www.myexpenses.mobi"
+                    android:path="/callback2.html" />
             </intent-filter>
         </activity>
         <activity
@@ -234,7 +239,8 @@
                 android:name="android.app.searchable"
                 android:resource="@xml/searchable" />
         </activity>
-        <activity android:name=".activity.ManageBudgets"
+        <activity
+            android:name=".activity.ManageBudgets"
             android:theme="@style/EditDialog" />
         <activity
             android:name=".activity.ManageStaleImages"
@@ -242,9 +248,9 @@
             android:theme="@style/EditDialog" />
         <activity
             android:name=".activity.ManageTemplates"
+            android:exported="true"
             android:parentActivityName=".activity.MyExpenses"
             android:theme="@style/EditDialog"
-            android:exported="true"
             tools:ignore="UnusedAttribute">
             <intent-filter>
                 <action android:name="android.provider.calendar.action.HANDLE_CUSTOM_EVENT" />
@@ -270,8 +276,8 @@
             android:theme="@style/Calculator" />
         <activity
             android:name=".activity.ContribInfoDialogActivity"
-            android:theme="@style/Translucent"
-            android:exported="true">
+            android:exported="true"
+            android:theme="@style/Translucent">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
@@ -285,12 +291,22 @@
             android:exported="false"
             android:theme="@style/EditDialog" />
         <activity
-            android:exported="true"
             android:name=".activity.AccountWidgetConfigure"
+            android:exported="true"
             android:label="@string/account_widget_configuration"
             android:theme="@style/Configuration">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".activity.TemplateShortcutSelect"
+            android:icon="@drawable/ic_menu_template_shortcut"
+            android:exported="true"
+            android:label="@string/template_shortcut"
+            android:theme="@style/Configuration">
+            <intent-filter>
+                <action android:name="android.intent.action.CREATE_SHORTCUT" />
             </intent-filter>
         </activity>
         <activity android:name=".activity.RoadmapVoteActivity">
@@ -299,7 +315,9 @@
                 android:resource="@xml/searchable" />
         </activity>
         <activity android:name=".activity.HistoryActivity" />
-        <activity android:name=".activity.SafSetup" android:theme="@style/Translucent" />
+        <activity
+            android:name=".activity.SafSetup"
+            android:theme="@style/Translucent" />
 
         <service
             android:name=".service.MyService"
@@ -332,13 +350,17 @@
         <service android:name=".service.PlanNotificationClickHandler" />
         <service android:name=".service.SyncNotificationDismissHandler" />
 
-        <activity android:name=".activity.SimpleToastActivity" android:exported="true">
+        <activity
+            android:name=".activity.SimpleToastActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
             </intent-filter>
         </activity>
         <activity android:name=".activity.SimpleImageActivity" />
-        <activity android:name=".activity.BudgetActivity" android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name=".activity.BudgetActivity"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name=".activity.ManageTags"
             android:theme="@style/EditDialog" />
@@ -348,6 +370,10 @@
         <activity
             android:name=".activity.DebtEdit"
             android:theme="@style/EditDialog" />
+
+        <activity android:name="org.totschnig.myexpenses.activity.TemplateSaver"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay" />
 
         <service
             android:name=".sync.GenericAccountService"
@@ -377,23 +403,27 @@
             android:name=".service.BackupPurgeReceiver"
             android:exported="true" />
 
-        <receiver android:name=".service.LegacyAccountChangedReceiver"
-            android:exported="true" android:enabled="@bool/isBelow26">
+        <receiver
+            android:name=".service.LegacyAccountChangedReceiver"
+            android:enabled="@bool/isBelow26"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.accounts.LOGIN_ACCOUNTS_CHANGED" />
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".service.AccountRemovedReceiver"
-            android:exported="true" android:enabled="@bool/is26">
+        <receiver
+            android:name=".service.AccountRemovedReceiver"
+            android:enabled="@bool/is26"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.accounts.action.ACCOUNT_REMOVED" />
             </intent-filter>
         </receiver>
 
         <receiver
-            android:exported="true"
             android:name=".widget.AccountWidget"
+            android:exported="true"
             android:label="@string/widget_title_accounts">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -404,8 +434,8 @@
                 android:resource="@xml/account_widget_info" />
         </receiver>
         <receiver
-            android:exported="true"
             android:name=".widget.TemplateWidget"
+            android:exported="true"
             android:label="@string/widget_title_templates">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
@@ -413,7 +443,7 @@
 
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/widget_info_generic" />
+                android:resource="@xml/template_widget_info" />
         </receiver>
 
         <service

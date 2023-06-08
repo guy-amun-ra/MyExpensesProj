@@ -45,6 +45,8 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ManageCategories.Companion.KEY_PROTECTION_INFO
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions
+import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_SPLIT
+import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSACTION
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSFER
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
@@ -204,7 +206,10 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         get() = intent.getBooleanExtra(KEY_CLONE, false)
 
     private val withAutoFill: Boolean
-        get() = mNewInstance && !isClone && planInstanceId == 0L
+        get() = newInstance && !isClone && !hasCreateFromTemplateAction
+
+    private val hasCreateFromTemplateAction
+        get() = intent.action == ACTION_CREATE_FROM_TEMPLATE || planInstanceId > 0L
 
     private val planInstanceId: Long
         get() = intent.getLongExtra(KEY_INSTANCEID, 0L)
@@ -273,7 +278,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             )
             setHelpVariant(delegate.helpVariant)
             setTitle()
-            refreshPlanData()
+            if (isTemplate) {
+                refreshPlanData(false)
+            }
             floatingActionButton.show()
         } else {
             areDatesLinked = prefHandler.getBoolean(PrefKey.DATES_ARE_LINKED, false)
@@ -284,7 +291,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             if (mRowId == 0L) {
                 mRowId = intent.getLongExtra(KEY_TEMPLATEID, 0L)
                 if (mRowId != 0L) {
-                    task = if (planInstanceId != 0L) {
+                    task = if (hasCreateFromTemplateAction) {
                         TRANSACTION_FROM_TEMPLATE
                     } else {
                         isTemplate = true
@@ -299,7 +306,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     TRANSACTION
                 }
             }
-            mNewInstance =
+            newInstance =
                 mRowId == 0L || task == TRANSACTION_FROM_TEMPLATE || task == TEMPLATE_FROM_TRANSACTION
             withTypeSpinner = mRowId == 0L
             //were we called from a notification
@@ -319,12 +326,12 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 }
             } else {
                 operationType =
-                    intent.getIntExtra(Transactions.OPERATION_TYPE, Transactions.TYPE_TRANSACTION)
+                    intent.getIntExtra(Transactions.OPERATION_TYPE, TYPE_TRANSACTION)
                 if (!isValidType(operationType)) {
-                    operationType = Transactions.TYPE_TRANSACTION
+                    operationType = TYPE_TRANSACTION
                 }
                 val isNewTemplate = intent.getBooleanExtra(KEY_NEW_TEMPLATE, false)
-                if (operationType == Transactions.TYPE_SPLIT) {
+                if (operationType == TYPE_SPLIT) {
                     val allowed: Boolean
                     val contribFeature: ContribFeature
                     if (isNewTemplate) {
@@ -342,76 +349,78 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 parentId = intent.getLongExtra(KEY_PARENTID, 0)
                 val currencyUnit = intent.getStringExtra(KEY_CURRENCY)
                     ?.let { currencyContext.get(it) }
-                if (isNewTemplate) {
-                    viewModel.newTemplate(
-                        operationType,
-                        if (parentId != 0L) parentId else null
-                    ).observe(this) {
-                        if (it != null) {
-                            mRowId = it.id
-                            it.defaultAction = prefHandler.enumValueOrDefault(
-                                PrefKey.TEMPLATE_CLICK_DEFAULT,
-                                Template.Action.SAVE
-                            )
-                        }
-                        populateWithNewInstance(it)
-                    }
-                    isTemplate = true
-                } else {
-                    var accountId = intent.getLongExtra(KEY_ACCOUNTID, 0)
-                    when (operationType) {
-                        Transactions.TYPE_TRANSACTION -> {
-                            if (accountId == 0L) {
-                                accountId = prefHandler.getLong(
-                                    PrefKey.TRANSACTION_LAST_ACCOUNT_FROM_WIDGET,
-                                    0L
-                                )
-                            }
-                            viewModel.newTransaction(
-                                accountId,
-                                currencyUnit,
+
+                lifecycleScope.launch {
+                    populateWithNewInstance(
+                        if (isNewTemplate) {
+                            isTemplate = true
+                            viewModel.newTemplate(
+                                operationType,
                                 if (parentId != 0L) parentId else null
-                            ).observe(this) {
-                                populateWithNewInstance(it)
-                            }
-                        }
-                        TYPE_TRANSFER -> {
-                            var transferAccountId = 0L
-                            if (accountId == 0L) {
-                                accountId = prefHandler.getLong(
-                                    PrefKey.TRANSFER_LAST_ACCOUNT_FROM_WIDGET,
-                                    0L
-                                )
-                                transferAccountId = prefHandler.getLong(
-                                    PrefKey.TRANSFER_LAST_TRANSFER_ACCOUNT_FROM_WIDGET,
-                                    0L
+                            )?.also {
+                                mRowId = it.id
+                                it.defaultAction = prefHandler.enumValueOrDefault(
+                                    PrefKey.TEMPLATE_CLICK_DEFAULT,
+                                    Template.Action.SAVE
                                 )
                             }
-                            viewModel.newTransfer(
-                                accountId,
-                                currencyUnit,
-                                if (transferAccountId != 0L) transferAccountId else null,
-                                if (parentId != 0L) parentId else null
-                            ).observe(this) {
-                                populateWithNewInstance(it)
-                            }
-                        }
-                        Transactions.TYPE_SPLIT -> {
-                            if (accountId == 0L) {
-                                accountId =
-                                    prefHandler.getLong(PrefKey.SPLIT_LAST_ACCOUNT_FROM_WIDGET, 0L)
-                            }
-                            viewModel.newSplit(accountId, currencyUnit).observe(this) {
-                                if (it != null) {
-                                    mRowId = it.id
+                        } else {
+                            var accountId = intent.getLongExtra(KEY_ACCOUNTID, 0)
+                            when (operationType) {
+                                TYPE_TRANSACTION -> {
+                                    if (accountId == 0L) {
+                                        accountId = prefHandler.getLong(
+                                            PrefKey.TRANSACTION_LAST_ACCOUNT_FROM_WIDGET,
+                                            0L
+                                        )
+                                    }
+                                    viewModel.newTransaction(
+                                        accountId,
+                                        currencyUnit,
+                                        if (parentId != 0L) parentId else null
+                                    )
                                 }
-                                populateWithNewInstance(it)
+
+                                TYPE_TRANSFER -> {
+                                    var transferAccountId = 0L
+                                    if (accountId == 0L) {
+                                        accountId = prefHandler.getLong(
+                                            PrefKey.TRANSFER_LAST_ACCOUNT_FROM_WIDGET,
+                                            0L
+                                        )
+                                        transferAccountId = prefHandler.getLong(
+                                            PrefKey.TRANSFER_LAST_TRANSFER_ACCOUNT_FROM_WIDGET,
+                                            0L
+                                        )
+                                    }
+                                    viewModel.newTransfer(
+                                        accountId,
+                                        currencyUnit,
+                                        if (transferAccountId != 0L) transferAccountId else null,
+                                        if (parentId != 0L) parentId else null
+                                    )
+                                }
+
+                                TYPE_SPLIT -> {
+                                    if (accountId == 0L) {
+                                        accountId =
+                                            prefHandler.getLong(
+                                                PrefKey.SPLIT_LAST_ACCOUNT_FROM_WIDGET,
+                                                0L
+                                            )
+                                    }
+                                    viewModel.newSplit(accountId, currencyUnit)?.also {
+                                        mRowId = it.id
+                                    }
+                                }
+
+                                else -> throw IllegalStateException()
                             }
                         }
-                    }
+                    )
                 }
             }
-            if (mNewInstance) {
+            if (newInstance) {
                 if (operationType != TYPE_TRANSFER) {
                     discoveryHelper.discover(
                         this, amountInput.typeButton(), 1,
@@ -483,6 +492,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 }, EDIT_REQUEST)
                 true
             }
+
             R.id.DELETE_COMMAND -> {
                 if (isTemplate) {
                     viewModel.deleteTemplates(longArrayOf(info.id), false)
@@ -494,6 +504,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 }
                 true
             }
+
             else -> super.onContextItemSelected(item)
         }
     }
@@ -584,7 +595,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 viewModel.accounts.collect {
                     setAccounts(it)
                     collectSplitParts()
-                    if (operationType == Transactions.TYPE_SPLIT) {
+                    if (operationType == TYPE_SPLIT) {
                         viewModel.loadSplitParts(delegate.rowId, isTemplate)
                     }
                 }
@@ -617,8 +628,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         super.onDestroy()
         pObserver?.let {
             try {
-                val cr = contentResolver
-                cr.unregisterContentObserver(it)
+                contentResolver.unregisterContentObserver(it)
             } catch (ise: IllegalStateException) { // Do Nothing.  Observer has already been unregistered.
             }
         }
@@ -682,7 +692,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             transaction.crStatus = CrStatus.UNRECONCILED
             transaction.status = STATUS_NONE
             transaction.uuid = Model.generateUuid()
-            mNewInstance = true
+            newInstance = true
         }
         //processing data from user switching operation type
         val cached = intent.getParcelableExtra(KEY_CACHED_DATA) as? CachedTransaction
@@ -744,7 +754,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         setTitle()
         shouldShowCreateTemplate = transaction.originTemplateId == null
         if (!isTemplate) {
-            createNew = mNewInstance && prefHandler.getBoolean(saveAndNewPrefKey, false)
+            createNew = newInstance && prefHandler.getBoolean(saveAndNewPrefKey, false)
             updateFab()
         }
         invalidateOptionsMenu()
@@ -763,7 +773,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         if (withTypeSpinner) {
             supportActionBar!!.setDisplayShowTitleEnabled(false)
         } else {
-            title = delegate.title(mNewInstance)
+            title = delegate.title(newInstance)
         }
     }
 
@@ -977,6 +987,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     invalidateOptionsMenu()
                 }
             }
+
             R.id.SAVE_AND_NEW_COMMAND -> {
                 createNew = !createNew
                 prefHandler.putBoolean(saveAndNewPrefKey, createNew)
@@ -984,12 +995,14 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 invalidateOptionsMenu()
                 return true
             }
+
             R.id.INVERT_TRANSFER_COMMAND -> {
                 if (::delegate.isInitialized) {
                     (delegate as? TransferDelegate)?.invert()
                     return true
                 }
             }
+
             R.id.ORIGINAL_AMOUNT_COMMAND -> {
                 if (::delegate.isInitialized) {
                     delegate.toggleOriginalAmount()
@@ -997,6 +1010,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     return true
                 }
             }
+
             R.id.EQUIVALENT_AMOUNT_COMMAND -> {
                 if (::delegate.isInitialized) {
                     delegate.toggleEquivalentAmount()
@@ -1016,7 +1030,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         }
         startActivityForResult(Intent(this, ExpenseEdit::class.java).apply {
             forwardDataEntryFromWidget(this)
-            putExtra(Transactions.OPERATION_TYPE, Transactions.TYPE_TRANSACTION)
+            putExtra(Transactions.OPERATION_TYPE, TYPE_TRANSACTION)
             putExtra(KEY_ACCOUNTID, account.id)
             putExtra(KEY_PARENTID, delegate.rowId)
             putExtra(KEY_PARENT_HAS_DEBT, (delegate as? MainDelegate)?.debtId != null)
@@ -1054,10 +1068,11 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 }
                 if (intent.getBooleanExtra(EXTRA_START_FROM_WIDGET, false)) {
                     when (operationType) {
-                        Transactions.TYPE_TRANSACTION -> prefHandler.putLong(
+                        TYPE_TRANSACTION -> prefHandler.putLong(
                             PrefKey.TRANSACTION_LAST_ACCOUNT_FROM_WIDGET,
                             accountId
                         )
+
                         TYPE_TRANSFER -> {
                             prefHandler.putLong(
                                 PrefKey.TRANSFER_LAST_ACCOUNT_FROM_WIDGET,
@@ -1070,7 +1085,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                                 )
                             }
                         }
-                        Transactions.TYPE_SPLIT -> prefHandler.putLong(
+
+                        TYPE_SPLIT -> prefHandler.putLong(
                             PrefKey.SPLIT_LAST_ACCOUNT_FROM_WIDGET,
                             accountId
                         )
@@ -1092,6 +1108,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 )
                 setDirty()
             }
+
             CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE -> {
                 val result = CropImage.getActivityResult(intent)
                 if (resultCode == RESULT_OK) {
@@ -1101,6 +1118,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     processImageCaptureError(resultCode, result)
                 }
             }
+
             PLAN_REQUEST -> finish()
             EDIT_REQUEST -> if (resultCode == RESULT_OK) {
                 setDirty()
@@ -1119,7 +1137,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
     }
 
     private fun cleanup(onComplete: () -> Unit) {
-        if (operationType == Transactions.TYPE_SPLIT && ::delegate.isInitialized) {
+        if (operationType == TYPE_SPLIT && ::delegate.isInitialized) {
             delegate.rowId.let {
                 viewModel.cleanupSplit(it, isTemplate).observe(this) {
                     onComplete()
@@ -1139,14 +1157,14 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
 
     private inner class PlanObserver : ContentObserver(Handler()) {
         override fun onChange(selfChange: Boolean) {
-            refreshPlanData()
+            refreshPlanData(true)
         }
     }
 
-    private fun refreshPlanData() {
+    private fun refreshPlanData(fromObserver: Boolean) {
         delegate.planId?.let { planId ->
             viewModel.plan(planId).observe(this) { plan ->
-                plan?.let { delegate.configurePlan(it) }
+                plan?.let { delegate.configurePlan(it, fromObserver) }
             }
         }
     }
@@ -1172,7 +1190,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
     }
 
     fun isValidType(type: Int): Boolean {
-        return type == Transactions.TYPE_SPLIT || type == Transactions.TYPE_TRANSACTION || type == TYPE_TRANSFER
+        return type == TYPE_SPLIT || type == TYPE_TRANSACTION || type == TYPE_TRANSFER
     }
 
     fun loadMethods(account: Account?) {
@@ -1207,12 +1225,12 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
 
     private fun onSaved(result: Result<Long>, transaction: ITransaction) {
         result.onSuccess {
-            if (operationType == Transactions.TYPE_SPLIT) {
+            if (operationType == TYPE_SPLIT) {
                 recordUsage(ContribFeature.SPLIT_TRANSACTION)
             }
             if (createNew) {
                 delegate.prepareForNew()
-                mNewInstance = true
+                newInstance = true
                 clearDirty()
                 showSnackBar(
                     getString(R.string.save_transaction_and_new_success),
@@ -1245,13 +1263,16 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                         CrashHandler.report(it, customData)
                         "Error while saving picture"
                     }
+
                     is Plan.CalendarIntegrationNotAvailableException -> {
                         delegate.recurrenceSpinner.setSelection(0)
                         "Recurring transactions are not available, because calendar integration is not functional on this device."
                     }
+
                     else -> {
+                        CrashHandler.report(it)
                         (delegate as? CategoryDelegate)?.resetCategory()
-                        "Error while saving transaction"
+                        "Error while saving transaction: ${it.safeMessage}"
                     }
                 }
             )
@@ -1274,7 +1295,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
 
     override fun contribFeatureCalled(feature: ContribFeature, tag: Serializable?) {
         if (feature === ContribFeature.SPLIT_TRANSACTION) {
-            restartWithType(Transactions.TYPE_SPLIT)
+            restartWithType(TYPE_SPLIT)
         }
     }
 
@@ -1291,6 +1312,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 startAutoFill(args.getLong(KEY_ROWID), true)
                 enableAutoFill(prefHandler)
             }
+
             R.id.LOAD_TEMPLATE_DO -> {
                 loadTemplate(args.getLong(KEY_ROWID))
             }
@@ -1339,6 +1361,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     it
                 )
             }
+
             R.id.CHANGE_COMMAND -> startMediaChooserDo()
         }
     }
@@ -1492,6 +1515,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
          * holds pair of rate and currency
          */
         const val KEY_PARENT_ORIGINAL_AMOUNT_EXCHANGE_RATE = "parentOriginalAmountExchangeRate"
+
+        const val ACTION_CREATE_FROM_TEMPLATE = "CREATE_FROM_TEMPLATE"
     }
 
     fun loadActiveTags(id: Long) {

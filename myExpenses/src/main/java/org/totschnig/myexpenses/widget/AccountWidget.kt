@@ -77,12 +77,15 @@ class AccountWidget :
         }.mapCatching {
             it?.use { cursor ->
                 if (cursor.moveToFirst()) {
-                    RemoteViews(context.packageName, R.layout.widget_row).also { widget ->
+                    RemoteViews(context.packageName, AbstractRemoteViewsFactory.rowLayout).also { widget ->
                         AccountRemoteViewsFactory.populate(
-                            context, currencyContext, widget, cursor,
-                            AccountRemoteViewsFactory.sumColumn(context, appWidgetId),
-                            availableWidth(context, appWidgetManager, appWidgetId),
-                            Pair(appWidgetId, clickBaseIntent(context))
+                            context = context,
+                            currencyContext = currencyContext,
+                            remoteViews = widget,
+                            cursor = cursor,
+                            sumColumn = AccountRemoteViewsFactory.sumColumn(context, appWidgetId),
+                            availableWidth = availableWidth(context, appWidgetManager, appWidgetId),
+                            clickInfo = Pair(appWidgetId, clickBaseIntent(context))
                         )
                     }
                 } else {
@@ -112,14 +115,12 @@ class AccountWidget :
 
     override fun handleWidgetClick(context: Context, intent: Intent) {
         val accountId = intent.getLongExtra(DatabaseConstants.KEY_ROWID, 0)
-        when (val clickAction = intent.getStringExtra(KEY_CLICK_ACTION)) {
-            null -> {
-                context.startActivity(Intent(context, MyExpenses::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra(DatabaseConstants.KEY_ROWID, accountId)
-                })
-            }
-            else -> context.startActivity(Intent(context, ExpenseEdit::class.java).apply {
+        context.startActivity(when (val clickAction = intent.getStringExtra(KEY_CLICK_ACTION)) {
+            null -> Intent(context, MyExpenses::class.java).apply {
+                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                 putExtra(DatabaseConstants.KEY_ROWID, accountId)
+             }
+            else -> Intent(context, ExpenseEdit::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                 if (accountId < 0) {
                     putExtra(
@@ -139,8 +140,8 @@ class AccountWidget :
                         else -> throw IllegalArgumentException()
                     }
                 )
-            })
-        }
+            }
+        })
     }
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {

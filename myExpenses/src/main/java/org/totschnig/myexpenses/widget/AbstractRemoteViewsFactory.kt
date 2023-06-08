@@ -2,15 +2,19 @@ package org.totschnig.myexpenses.widget
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.database.Cursor
 import android.database.sqlite.SQLiteException
 import android.os.Binder
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.view.ContextThemeWrapper
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.util.UiUtils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import kotlin.math.sign
 
 abstract class AbstractRemoteViewsFactory(
     private val context: Context,
@@ -18,7 +22,7 @@ abstract class AbstractRemoteViewsFactory(
 ) : RemoteViewsService.RemoteViewsFactory {
 
     protected var cursor: Cursor? = null
-    protected val width: Int = intent.getIntExtra(KEY_WIDTH, 0).takeIf { it > 0 } ?: Int.MAX_VALUE
+    protected val width: Int = intent.getIntExtra(KEY_WIDTH, Int.MAX_VALUE)
 
     override fun onCreate() {}
 
@@ -55,25 +59,40 @@ abstract class AbstractRemoteViewsFactory(
     abstract fun buildCursor(): Cursor?
 
     override fun getViewAt(position: Int) =
-        RemoteViews(context.packageName, R.layout.widget_row).apply {
+        RemoteViews(context.packageName, rowLayout).apply {
             cursor?.takeIf { !it.isClosed && it.moveToPosition(position) }?.let {
                 populate(it)
             }
         }
 
     abstract fun RemoteViews.populate(cursor: Cursor)
+
+    companion object {
+
+
+        val rowLayout: Int
+            get() = when(AppCompatDelegate.getDefaultNightMode()) {
+                AppCompatDelegate.MODE_NIGHT_NO -> R.layout.widget_row_light
+                AppCompatDelegate.MODE_NIGHT_YES -> R.layout.widget_row_dark
+                else -> R.layout.widget_row
+            }
+    }
 }
 
-//http://stackoverflow.com/a/35633411/1199911
-fun RemoteViews.setImageViewVectorDrawable(context: Context, viewId: Int, resId: Int) {
-    setImageViewBitmap(
-        viewId, UiUtils.getTintedBitmapForTheme(
-            context, resId,
-            R.style.DarkBackground
-        )
-    )
+fun RemoteViews.setBackgroundColorSave(viewId: Int, color: Int) {
+    setInt(viewId, "setBackgroundColor", color)
 }
 
-fun RemoteViews.setBackgroundColorSave(res: Int, color: Int) {
-    setInt(res, "setBackgroundColor", color)
+fun themedContext(context: Context) = ContextThemeWrapper(context, when (AppCompatDelegate.getDefaultNightMode()) {
+    AppCompatDelegate.MODE_NIGHT_NO -> R.style.WidgetLight
+    AppCompatDelegate.MODE_NIGHT_YES -> R.style.WidgetDark
+    else -> R.style.WidgetDayNight
+})
+
+fun RemoteViews.setAmountColor(context: Context, viewId: Int, amount: Long) {
+    setTextColor(viewId,  UiUtils.getColor(themedContext(context), when (amount.sign) {
+        1 -> R.attr.colorIncome
+        -1 -> R.attr.colorExpense
+        else -> android.R.attr.textColorPrimary
+    }))
 }

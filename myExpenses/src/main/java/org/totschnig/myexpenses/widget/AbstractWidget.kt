@@ -6,20 +6,23 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
-import android.view.Surface.ROTATION_0
-import android.view.Surface.ROTATION_180
-import android.view.WindowManager
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.preference.PreferenceFragmentCompat
 import org.totschnig.myexpenses.R
+import org.totschnig.myexpenses.activity.MyPreferenceActivity
 import org.totschnig.myexpenses.injector
 import org.totschnig.myexpenses.model.CurrencyContext
 import org.totschnig.myexpenses.myApplication
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
+import timber.log.Timber
 import javax.inject.Inject
+
 
 const val WIDGET_CLICK = "org.totschnig.myexpenses.WIDGET_CLICK"
 const val KEY_CLICK_ACTION = "clickAction"
@@ -28,6 +31,7 @@ const val WIDGET_CONTEXT_CHANGED = "org.totschnig.myexpenses.CONTEXT_CHANGED"
 const val EXTRA_START_FROM_WIDGET = "startFromWidget"
 const val EXTRA_START_FROM_WIDGET_DATA_ENTRY = "startFromWidgetDataEntry"
 const val KEY_WIDTH = "width"
+const val WIDGET_ROW_RESERVED_SPACE_FOR_INFO = 110
 
 fun onConfigurationChanged(context: Context) {
     updateWidgets(context, AccountWidget::class.java, WIDGET_CONTEXT_CHANGED)
@@ -64,12 +68,15 @@ abstract class AbstractWidget(
             WIDGET_LIST_DATA_CHANGED -> {
                 appWidgetIds?.let { instance.notifyAppWidgetViewDataChanged(it, R.id.list) }
             }
+
             WIDGET_CONTEXT_CHANGED -> {
                 appWidgetIds?.let { onUpdate(context, instance, it) }
             }
+
             WIDGET_CLICK -> {
                 handleWidgetClick(context, intent)
             }
+
             else -> {
                 super.onReceive(context, intent)
             }
@@ -78,53 +85,75 @@ abstract class AbstractWidget(
 
     abstract fun handleWidgetClick(context: Context, intent: Intent)
 
-    @Suppress("DEPRECATION")
     fun availableWidth(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ): Int =
-        appWidgetManager.getAppWidgetOptions(appWidgetId).getInt(
-            when ((context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.rotation) {
-                ROTATION_0, ROTATION_180 -> /*ORIENTATION_PORTRAIT*/ AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH
-                else -> /*ORIENTATION_LANDSCAPE*/ AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH
-            }
-        )
+    ) = appWidgetManager.getAppWidgetOptions(appWidgetId).getInt(
+        when (context.resources.configuration.orientation) {
+            Configuration.ORIENTATION_LANDSCAPE -> AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH
+            else -> AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH
+        }, Int.MAX_VALUE
+    ) - (WIDGET_ROW_RESERVED_SPACE_FOR_INFO * context.resources.configuration.fontScale).toInt()
 
     fun clickBaseIntent(context: Context) = Intent(WIDGET_CLICK, null, context, javaClass)
 
     open fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-        val widget = RemoteViews(context.packageName, R.layout.widget_list)
-        widget.setEmptyView(R.id.list, R.id.emptyView)
-        //noinspection InlinedApi
-        val clickPI = PendingIntent.getBroadcast(
-            context,
-            appWidgetId,
-            clickBaseIntent(context),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-        widget.setOnClickPendingIntent(R.id.emptyView, clickPI)
-        if (isProtected(context)) {
-            widget.setTextViewText(
-                R.id.emptyView, context.getString(R.string.warning_password_protected) + " " +
-                        context.getString(R.string.warning_widget_disabled)
-            )
+
+        appWidgetManager.updateAppWidget(appWidgetId, if (isProtected(context)) {
+            RemoteViews(context.packageName, R.layout.widget_locked).apply {
+                setOnClickPendingIntent(
+                    R.id.text,
+                    PendingIntent.getActivity(
+                        context,
+                        appWidgetId,
+                        Intent(context, MyPreferenceActivity::class.java).putExtra(
+                            PreferenceFragmentCompat.ARG_PREFERENCE_ROOT,
+                            context.getString(R.string.pref_screen_protection_key)
+                        ),
+                        PendingIntent.FLAG_IMMUTABLE
+                    )
+                )
+                setTextViewText(
+                    R.id.text, context.getString(R.string.warning_password_protected) + " " +
+                            context.getString(R.string.warning_widget_disabled)
+                )
+            }
         } else {
-            val svcIntent = Intent(context, clazz)
-            svcIntent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-            //TODO Check
-            svcIntent.putExtra(KEY_WIDTH, availableWidth(context, appWidgetManager, appWidgetId))
-            // When intents are compared, the extras are ignored, so we need to embed the extras
-            // into the data so that the extras will not be ignored.
-            svcIntent.data = Uri.parse(svcIntent.toUri(Intent.URI_INTENT_SCHEME))
-            widget.setRemoteAdapter(R.id.list, svcIntent)
-            widget.setTextViewText(
-                R.id.emptyView,
-                context.getString(emptyTextResourceId)
+            val clickPI = PendingIntent.getBroadcast(
+                context,
+                appWidgetId,
+                clickBaseIntent(context),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
             )
-            widget.setPendingIntentTemplate(R.id.list, clickPI)
-        }
-        appWidgetManager.updateAppWidget(appWidgetId, widget)
+
+            RemoteViews(
+                context.packageName,
+                when (AppCompatDelegate.getDefaultNightMode()) {
+                    AppCompatDelegate.MODE_NIGHT_NO -> R.layout.widget_list_light
+                    AppCompatDelegate.MODE_NIGHT_YES -> R.layout.widget_list_dark
+                    else -> R.layout.widget_list
+                }
+            ).apply {
+                setEmptyView(R.id.list, R.id.emptyView)
+                setOnClickPendingIntent(R.id.emptyView, clickPI)
+
+                setRemoteAdapter(R.id.list, Intent(context, clazz).apply {
+                    putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+                    val availableWidth = availableWidth(context, appWidgetManager, appWidgetId)
+                    Timber.i("availableWidth: %d", availableWidth)
+                    putExtra(KEY_WIDTH, availableWidth)
+                    // When intents are compared, the extras are ignored, so we need to embed the extras
+                    // into the data so that the extras will not be ignored.
+                    data = Uri.parse(toUri(Intent.URI_INTENT_SCHEME))
+                })
+                setTextViewText(
+                    R.id.emptyView,
+                    context.getString(emptyTextResourceId)
+                )
+                setPendingIntentTemplate(R.id.list, clickPI)
+            }
+        })
     }
 
     override fun onAppWidgetOptionsChanged(
