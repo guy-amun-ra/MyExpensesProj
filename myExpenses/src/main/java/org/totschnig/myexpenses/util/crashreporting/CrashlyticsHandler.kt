@@ -44,7 +44,9 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
         }
 
     override fun putCustomData(key: String, value: String) {
-        instance?.setCustomKey(key, value)
+        try {
+            instance?.setCustomKey(key, value)
+        } catch (_: Exception) {}
     }
 
     private class CrashReportingTree : Timber.Tree() {
