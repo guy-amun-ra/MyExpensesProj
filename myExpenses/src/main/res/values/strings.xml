@@ -592,7 +592,6 @@
     <string name="pref_backup_cloud_title">Store on synchronization backend</string>
     <string name="pref_backup_cloud_summary">In addition to local storage on the device, the backup file can be copied to a remote backend.</string>
     <string name="auto_backup_cloud_success">Backup file %1$s has been successfully stored on backend %2$s.</string>
-    <string name="home_screen_shortcuts_nougate_info">Shortcuts can be added by long-tapping the app icon on the Home Screen.</string>
     <string name="currency_symbol">Currency symbol</string>
     <string name="number_of_fraction_digits">Number of fraction digits</string>
     <string name="warning_auto_backup_deactivated">Auto-backup has been deactivated. You can turn it on again from the settings after solving the problem (e.g. selecting a different folder for backups).</string>
@@ -738,6 +737,8 @@
     <string name="content_description_clear_method">Clear method</string>
     <!-- Description for button that allows to clear the selected category -->
     <string name="content_description_clear_category">Clear category</string>
+    <!-- Description for button that allows to remove icon from a payment method -->
+    <string name="content_description_remove_icon">Remove icon</string>
     <string name="currency_code">Code</string>
     <string name="dialog_title_new_currency">New currency</string>
     <string name="currency_code_already_definded">Currency code is already defined.</string>
@@ -838,7 +839,6 @@
     <string name="pref_clone_with_current_date_summary_off">Cloned transactions keep original date</string>
     <string name="pref_protection_screenshot_information">By activating device protection, screenshot capture is disabled.</string>
     <string name="tags_create_or_select">Create or select tags</string>
-    <string name="content_description_tags_confirm">Confirm</string>
     <string name="tags">Tags</string>
     <string name="pref_manage_tags_summary">Add, edit, delete tags.</string>
     <string name="dialog_title_warning_delete_tag">Delete tag?</string>
@@ -1071,4 +1071,5 @@
     <string name="select_template">Select template</string>
     <string name="add_shortcut">Add Shortcut</string>
     <string name="whats_new_358">Widget follows theme configuration (light/dark).</string>
+    <string name="whats_new_359">Icons for payment methods can be customized.</string>
 </resources>

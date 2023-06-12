@@ -591,7 +591,6 @@
     <string name="pref_backup_cloud_title">Guardar con el servicio de sincronización</string>
     <string name="pref_backup_cloud_summary">Además del almacenamiento local del dispositivo, la copia de seguridad puede copiarse a un servicio remoto.</string>
     <string name="auto_backup_cloud_success">El respaldo del archivo %1$s ha sido guardado correctamente en %2$s.</string>
-    <string name="home_screen_shortcuts_nougate_info">Se pueden añadir accesos directos con una pulsación larga en el icono de la aplicación desde la Pantalla Inicio.</string>
     <string name="currency_symbol">Símbolo de moneda</string>
     <string name="number_of_fraction_digits">Número de dígitos de fracción</string>
     <string name="warning_auto_backup_deactivated">La copia de seguridad automática ha sido desactivada. Puede volver a activarla desde configuración, una vez el problema haya sido resuelto (por ejemplo, seleccionando una carpeta diferente para las copias de seguridad).</string>
@@ -837,7 +836,6 @@
     <string name="pref_clone_with_current_date_summary_off">Las transacciones clonadas mantendrán la fecha original</string>
     <string name="pref_protection_screenshot_information">La opción de captura de pantalla quedará deshabilitada al activar la protección del dispositivo.</string>
     <string name="tags_create_or_select">Crear o seleccionar etiquetas</string>
-    <string name="content_description_tags_confirm">Confirmar</string>
     <string name="tags">Etiquetas</string>
     <string name="pref_manage_tags_summary">Añadir, editar o eliminar etiquetas.</string>
     <string name="dialog_title_warning_delete_tag">¿Eliminar etiqueta?</string>
@@ -1044,4 +1042,7 @@
     <string name="image_optimize_quality">Calidad</string>
     <string name="image_optimize_quality_summary">Calidad 0 significa compresión al tamaño mínimo. 100 es la máxima compresión de calidad visible.</string>
     <string name="add_shortcut">Añadir ataj</string>
+    <string name="template_shortcut">Acceso directo a la plantilla</string>
+    <string name="whats_new_358">El widget sigue la configuración del tema (claro/oscuro).</string>
+    <string name="select_template">Seleccionar una plantilla</string>
 </resources>

@@ -584,7 +584,6 @@
     <string name="pref_backup_cloud_title">Armazenar no destino de sincronização</string>
     <string name="pref_backup_cloud_summary">Além do armazenamento local no aparelho, o ficheiro de backup também pode ser copiado para um destino remoto.</string>
     <string name="auto_backup_cloud_success">O ficheiro de backup %1$s foi armazenado com sucesso no destino %2$s.</string>
-    <string name="home_screen_shortcuts_nougate_info">Atalhos podem ser adicionados ao se pressionar longamente o ícone da app no ecrã inicial.</string>
     <string name="currency_symbol">Símbolo da moeda</string>
     <string name="number_of_fraction_digits">Número de casas decimais</string>
     <string name="warning_auto_backup_deactivated">O backup automático foi desativada. Você pode reativá-lo nas configurações após resolver o problema (ex.: selecionar uma pasta diferente para o backup).</string>
@@ -829,7 +828,6 @@
     <string name="pref_clone_with_current_date_summary_off">As transações clonadas mantêm a data original</string>
     <string name="pref_protection_screenshot_information">Ao ativar a proteção do aparelho, a captura do ecrã é desativada.</string>
     <string name="tags_create_or_select">Criar ou selecionar etiquetas</string>
-    <string name="content_description_tags_confirm">Confirmar</string>
     <string name="tags">Etiquetas</string>
     <string name="pref_manage_tags_summary">Adicione, edite, apague etiquetas.</string>
     <string name="dialog_title_warning_delete_tag">Apagar a etiqueta\?</string>

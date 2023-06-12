@@ -584,7 +584,6 @@
     <string name="pref_backup_cloud_title">Tárolás a szinkronizálási háttérrendszeren</string>
     <string name="pref_backup_cloud_summary">A készüléken történő helyi tárolás mellett a biztonsági fájlt átmásolhatja egy távoli háttérrendszerre.</string>
     <string name="auto_backup_cloud_success">%1$s biztonsági mentés sikeresen tárolva a(z) %2$s háttérrendszeren.</string>
-    <string name="home_screen_shortcuts_nougate_info">A kezdőképernyőn az alkalmazás ikonjának hosszas lenyomásával hozhatók létre parancsikonok.</string>
     <string name="currency_symbol">Pénznem jele</string>
     <string name="number_of_fraction_digits">Törtrészjegyek száma</string>
     <string name="warning_auto_backup_deactivated">Az automatikus biztonsági mentés inaktív lett. A probléma megoldása után (pl. más mappát választ a mentésekhez) a beállításokban újra bekapcsolhatja.</string>
@@ -831,7 +830,6 @@
     <string name="pref_clone_with_current_date_summary_off">A klónozott tranzakciók megtartják az eredeti dátumot.</string>
     <string name="pref_protection_screenshot_information">Az eszközvédelem aktiválásával a képernyőkép rögzítése le van tiltva.</string>
     <string name="tags_create_or_select">Címkék létrehozása vagy kiválasztása</string>
-    <string name="content_description_tags_confirm">Megerősítés</string>
     <string name="tags">Címkék</string>
     <string name="pref_manage_tags_summary">Adjon hozzá, módosítson, töröljön címkéket.</string>
     <string name="dialog_title_warning_delete_tag">Törli a címkét?</string>

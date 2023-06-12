@@ -584,7 +584,6 @@
     <string name="pref_backup_cloud_title">ஒத்திசைவு பின்தளத்தில் சேமிக்கவும்</string>
     <string name="pref_backup_cloud_summary">காப்புப்பிரதி கோப்பை, கருவியில் உள்ள உள்சேமிப்புக்கு கூடுதலாக ஒரு தொலை பின்தளத்திற்கு நகலெடுத்துக் கொள்ளலாம்.</string>
     <string name="auto_backup_cloud_success">காப்புப்பிரதி கோப்பு %1$s, %2$s எனும் பின்தளத்தில் வெற்றிகரமாக சேமிக்கப்பட்டது.</string>
-    <string name="home_screen_shortcuts_nougate_info">முகப்பு திரையில் செயலியின் சின்னத்தை நீண்ட நேரம் தட்டுவதன் மூலம் குறுக்குவழிகளைச் சேர்க்கலாம்.</string>
     <string name="currency_symbol">நாணய சின்னம்</string>
     <string name="number_of_fraction_digits">பின்ன இலக்கங்களின் எண்ணிக்கை</string>
     <string name="warning_auto_backup_deactivated">தன்னியக்க காப்புப்பிரதி எடுத்தல் செயலிழக்கப்பட்டது. சிக்கலைத் தீர்த்த பிறகு (எ.கா. காப்புப்பிரதிகளுக்காக வேறு கோப்புறையைத் தேர்ந்தெடுத்தல்) நீங்கள் அதை மீண்டும் அமைப்புகளிலிருந்து செயல்படச் செய்ய முடியும்.</string>
@@ -829,7 +828,6 @@
     <string name="pref_clone_with_current_date_summary_off">நகல் எடுக்கப்படும் பரிவர்த்தனைகள் அசல் தேதியை தக்கவைத்துக் கொள்ளும்</string>
     <string name="pref_protection_screenshot_information">கருவியின் பாதுகாப்பைச் செயல்படுத்துவதன் மூலம், திரைப்பிடிப்பு முடக்கப்பட்டது.</string>
     <string name="tags_create_or_select">குறிச்சொற்களை உருவாக்கவும் அல்லது தேர்ந்தெடுக்கவும்</string>
-    <string name="content_description_tags_confirm">உறுதிப்படுத்த்து</string>
     <string name="tags">குறிச்சொற்கள்</string>
     <string name="pref_manage_tags_summary">குறிச்சொற்களைச் சேர்க்கவும், திருத்தவும், நீக்கவும்.</string>
     <string name="dialog_title_warning_delete_tag">குறிச்சொல்லை நீக்கவா?</string>

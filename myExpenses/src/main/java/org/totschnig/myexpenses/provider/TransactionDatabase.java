@@ -17,6 +17,9 @@ package org.totschnig.myexpenses.provider;
 
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_IGNORE;
 import static android.database.sqlite.SQLiteDatabase.CONFLICT_NONE;
+import static org.totschnig.myexpenses.model2.PaymentMethodKt.PAYMENT_METHOD_EXPENSE;
+import static org.totschnig.myexpenses.model2.PaymentMethodKt.PAYMENT_METHOD_INCOME;
+import static org.totschnig.myexpenses.model2.PaymentMethodKt.PAYMENT_METHOD_NEUTRAL;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ACCOUNT_REMAP_TRANSFER_TRIGGER_CREATE;
 import static org.totschnig.myexpenses.provider.DataBaseAccount.HOME_AGGREGATE_ID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
@@ -49,7 +52,6 @@ import org.totschnig.myexpenses.model.CurrencyContext;
 import org.totschnig.myexpenses.model.CurrencyEnum;
 import org.totschnig.myexpenses.model.Grouping;
 import org.totschnig.myexpenses.model.Model;
-import org.totschnig.myexpenses.model.PaymentMethod;
 import org.totschnig.myexpenses.model.Plan;
 import org.totschnig.myexpenses.model.PreDefinedPaymentMethod;
 import org.totschnig.myexpenses.model.Template;
@@ -129,7 +131,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     }
     stringBuilder.append(" SELECT ").append(tableName).append(".*, ").append(TABLE_PAYEES)
         .append(".").append(KEY_PAYEE_NAME).append(", ")
-        .append(TABLE_METHODS).append(".").append(KEY_LABEL).append(" AS ").append(KEY_METHOD_LABEL);
+        .append(TABLE_METHODS).append(".").append(KEY_LABEL).append(" AS ").append(KEY_METHOD_LABEL).append(", ")
+        .append(TABLE_METHODS).append(".").append(KEY_ICON).append(" AS ").append(KEY_METHOD_ICON);
 
     if (!tableName.equals(TABLE_CHANGES)) {
       stringBuilder.append(", ")
@@ -227,7 +230,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_USAGES + " integer default 0, "
           + KEY_LAST_USED + " datetime, "
           + KEY_COLOR + " integer, "
-          + KEY_ICON + " string, "
+          + KEY_ICON + " string, " //TODO migrate to text
           + KEY_UUID + " text, "
           + "UNIQUE (" + KEY_LABEL + "," + KEY_PARENTID + "));";
 
@@ -241,9 +244,10 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_IS_NUMBERED + " boolean default 0, "
           + KEY_TYPE + " integer " +
           "check (" + KEY_TYPE + " in ("
-          + PaymentMethod.EXPENSE + ","
-          + PaymentMethod.NEUTRAL + ","
-          + PaymentMethod.INCOME + ")) default 0);";
+          + PAYMENT_METHOD_EXPENSE + ","
+          + PAYMENT_METHOD_NEUTRAL + ","
+          + PAYMENT_METHOD_INCOME + ")) default 0, "
+          + KEY_ICON + " text);";
 
   private static final String ACCOUNTTYE_METHOD_CREATE =
       "CREATE TABLE " + TABLE_ACCOUNTTYES_METHODS + " ("
@@ -835,6 +839,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       initialValues.put(KEY_LABEL, pm.name());
       initialValues.put(KEY_TYPE, pm.getPaymentType());
       initialValues.put(KEY_IS_NUMBERED, pm.isNumbered());
+      initialValues.put(KEY_ICON, pm.getIcon());
       _id = db.insert(TABLE_METHODS, CONFLICT_NONE, initialValues);
       initialValues = new ContentValues();
       initialValues.put(KEY_METHODID, _id);
@@ -2227,6 +2232,10 @@ public class TransactionDatabase extends BaseTransactionDatabase {
         db.execSQL("ALTER TABLE debts add column equivalent_amount integer");
       }
       if (oldVersion < 141) {
+        createOrRefreshViews(db);
+      }
+      if (oldVersion < 142) {
+        db.execSQL("ALTER TABLE paymentmethods add column icon text");
         createOrRefreshViews(db);
       }
 
