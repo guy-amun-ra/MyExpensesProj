@@ -15,11 +15,11 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.model.Template
 import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.provider.DatabaseConstants
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_INSTANCEID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSACTIONID
+import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.TransactionProvider.PLAN_INSTANCE_STATUS_URI
 import org.totschnig.myexpenses.util.ShortcutHelper
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.viewmodel.data.PlanInstanceState
 
 @Parcelize
@@ -85,35 +85,64 @@ class TemplatesListViewModel(application: Application) :
             }.sumBy { if (it == true) 1 else 0 })
         }
 
-    fun reset(instances: Array<out PlanInstanceInfo>) {
+    fun reset(instance: PlanInstanceInfo) {
         viewModelScope.launch(coroutineContext()) {
-            instances.forEach { instance ->
-                instance.transactionId?.let {
-                    repository.deleteTransaction(it)
-                }
-                contentResolver.delete(
-                    TransactionProvider.PLAN_INSTANCE_SINGLE_URI(
-                        instance.templateId,
-                        instance.instanceId!!
-                    ), null, null
-                )
+            instance.transactionId?.let {
+                repository.deleteTransaction(it)
             }
+            contentResolver.delete(
+                TransactionProvider.PLAN_INSTANCE_SINGLE_URI(
+                    instance.templateId,
+                    instance.instanceId!!
+                ), null, null
+            )
         }
     }
 
-    fun cancel(instances: Array<out PlanInstanceInfo>) {
+    fun cancel(instance: PlanInstanceInfo) {
         viewModelScope.launch(coroutineContext()) {
-            instances.forEach { instance ->
-                instance.transactionId?.let {
-                    repository.deleteTransaction(it)
+            instance.transactionId?.let {
+                repository.deleteTransaction(it)
+            }
+            contentResolver.insert(
+                PLAN_INSTANCE_STATUS_URI,
+                ContentValues(3).apply {
+                    putNull(KEY_TRANSACTIONID)
+                    put(KEY_TEMPLATEID, instance.templateId)
+                    put(KEY_INSTANCEID, instance.instanceId!!)
+                })
+        }
+    }
+
+    override fun deleteTransactions(ids: LongArray, markAsVoid: Boolean) {
+        super.deleteTransactions(ids, markAsVoid)
+        contentResolver.notifyChange(PLAN_INSTANCE_STATUS_URI, null, false)
+    }
+
+    fun relink(instance: PlanInstanceInfo, adjustDate: Boolean) {
+        val whereArguments = arrayOf(instance.transactionId.toString())
+        viewModelScope.launch(coroutineContext()) {
+            val update = contentResolver.update(
+                PLAN_INSTANCE_STATUS_URI,
+                ContentValues(1).apply {
+                    put(KEY_INSTANCEID, instance.instanceId)
+                },
+                "$KEY_TRANSACTIONID = ?", whereArguments
+            )
+            if (update == 1) {
+                if (adjustDate) {
+                    contentResolver.update(
+                        TransactionProvider.TRANSACTIONS_URI,
+                        ContentValues(1).apply {
+                            put(KEY_DATE, instance.date!! / 1000)
+                        },
+                        "$KEY_ROWID = ?", whereArguments
+                    )
                 }
-                contentResolver.insert(
-                    TransactionProvider.PLAN_INSTANCE_STATUS_URI,
-                    ContentValues(3).apply {
-                        putNull(KEY_TRANSACTIONID)
-                        put(KEY_TEMPLATEID, instance.templateId)
-                        put(KEY_INSTANCEID, instance.instanceId!!)
-                    })
+            } else {
+                CrashHandler.report(
+                    Exception("Expected 1 row to be affected by relink operation, actual $update")
+                )
             }
         }
     }

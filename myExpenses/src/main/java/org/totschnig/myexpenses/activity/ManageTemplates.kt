@@ -27,6 +27,7 @@ import org.totschnig.myexpenses.fragment.TemplatesList
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import org.totschnig.myexpenses.viewmodel.PlanInstanceInfo
 import java.io.Serializable
 
 class ManageTemplates : ProtectedFragmentActivity(), ConfirmationDialogListener, ContribIFace {
@@ -77,7 +78,7 @@ class ManageTemplates : ProtectedFragmentActivity(), ConfirmationDialogListener,
         } else when (command) {
             R.id.DELETE_COMMAND_DO -> {
                 finishActionMode()
-                mListFragment.dispatchDeleteDo((tag as LongArray?)!!)
+                mListFragment.dispatchDeleteDo((tag as LongArray))
                 true
             }
 
@@ -87,6 +88,18 @@ class ManageTemplates : ProtectedFragmentActivity(), ConfirmationDialogListener,
             }
             else -> false
         }
+
+    fun dispatchEditInstance(transactionId: Long) {
+        mListFragment.dispatchEditInstance(transactionId)
+    }
+
+    fun dispatchDeleteInstance(transactionId: Long) {
+        mListFragment.dispatchDeleteInstance(transactionId)
+    }
+
+    fun dispatchRelinkInstance(planInstanceInfo: PlanInstanceInfo, adjustDate: Boolean) {
+        mListFragment.dispatchRelinkInstance(planInstanceInfo, adjustDate)
+    }
 
     override fun doHome() {
         if (isTaskRoot) {
