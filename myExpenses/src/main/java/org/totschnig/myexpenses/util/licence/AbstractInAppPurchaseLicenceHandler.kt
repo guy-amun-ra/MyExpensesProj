@@ -25,7 +25,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(
 ) : ContribStatusLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter) {
     val pricesPrefs: SharedPreferences = context.getSharedPreferences(PRICES_PREFS_FILE, Context.MODE_PRIVATE)
 
-    override fun getLegacyStatus() = STATUS_ENABLED_LEGACY_SECOND
+    override val legacyStatus: Int = STATUS_ENABLED_LEGACY_SECOND
 
     override fun init() {
         super.init()
@@ -111,7 +111,6 @@ abstract class AbstractInAppPurchaseLicenceHandler(
     }
 
     fun getSkuForPackage(aPackage: Package): String {
-        val hasExtended = licenceStatus != null && licenceStatus == LicenceStatus.EXTENDED
         return when (aPackage) {
             Package.Contrib -> Config.SKU_PREMIUM
             Package.Upgrade -> Config.SKU_PREMIUM2EXTENDED
