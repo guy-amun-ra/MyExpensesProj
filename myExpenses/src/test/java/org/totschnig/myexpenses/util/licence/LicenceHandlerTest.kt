@@ -1,10 +1,11 @@
+@file:Suppress("JUnitMalformedDeclaration")
+
 package org.totschnig.myexpenses.util.licence
 
 import com.google.android.vending.licensing.PreferenceObfuscator
-import junit.framework.Assert
+import com.google.common.truth.Truth
 import junitparams.JUnitParamsRunner
 import junitparams.Parameters
-import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -14,11 +15,11 @@ import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import java.util.Objects
 
 @RunWith(JUnitParamsRunner::class)
 class LicenceHandlerTest {
-    private var licenceHandler: LicenceHandler? = null
+    private lateinit var licenceHandler: LicenceHandler
+
     @Before
     fun setUp() {
         licenceHandler = LicenceHandler(
@@ -29,11 +30,6 @@ class LicenceHandlerTest {
             Mockito.mock(Repository::class.java),
             Mockito.mock(CurrencyFormatter::class.java)
         )
-    }
-
-    @After
-    fun tearDown() {
-        licenceHandler!!.licenceStatus = null
     }
 
     @Test
@@ -51,22 +47,17 @@ class LicenceHandlerTest {
         "PROFESSIONAL, EXTENDED, true",
         "PROFESSIONAL, PROFESSIONAL, true"
     )
-    fun isEnabledFor(hasStatus: String, requestedStatus: String?, expected: Boolean) {
-        licenceHandler!!.licenceStatus = parse(hasStatus)
-        Assert.assertEquals(
-            expected, licenceHandler!!.isEnabledFor(
-                LicenceStatus.valueOf(
-                    requestedStatus!!
-                )
-            )
-        )
+    fun isEnabledFor(hasStatus: String, requestedStatus: String, expected: Boolean) {
+        licenceHandler.licenceStatus = parse(hasStatus)
+        Truth.assertThat(licenceHandler.isEnabledFor(LicenceStatus.valueOf(requestedStatus)))
+            .isEqualTo(expected)
     }
 
     @Test
     @Parameters("null, true", "CONTRIB, true", "EXTENDED, true", "PROFESSIONAL, false")
     fun isUpgradeable(hasStatus: String, expected: Boolean) {
-        licenceHandler!!.licenceStatus = parse(hasStatus)
-        Assert.assertEquals(expected, licenceHandler!!.isUpgradeable)
+        licenceHandler.licenceStatus = parse(hasStatus)
+        Truth.assertThat(licenceHandler.isUpgradeable).isEqualTo(expected)
     }
 
     @Test
@@ -85,17 +76,10 @@ class LicenceHandlerTest {
         "PROFESSIONAL, PROFESSIONAL, true"
     )
     fun greaterOrEqual(self: String, other: String, expected: Boolean) {
-        Assert.assertEquals(
-            expected,
-            Objects.requireNonNull(parse(self)).greaterOrEqual(parse(other))
-        )
+        Truth.assertThat(parse(self)!!.greaterOrEqual(parse(other))).isEqualTo(expected)
     }
 
-    private fun parse(licenceStatus: String): LicenceStatus? {
-        return try {
-            LicenceStatus.valueOf(licenceStatus)
-        } catch (e: IllegalArgumentException) {
-            null
-        }
-    }
+    private fun parse(licenceStatus: String?) = licenceStatus
+        .takeIf { it != "null" }
+        ?.let { LicenceStatus.valueOf(it) }
 }
