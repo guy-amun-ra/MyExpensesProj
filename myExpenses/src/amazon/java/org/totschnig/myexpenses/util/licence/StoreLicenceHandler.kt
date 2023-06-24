@@ -11,6 +11,7 @@ import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.contrib.Config.amazonSkus
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
+import org.totschnig.myexpenses.util.CurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 class StoreLicenceHandler(
@@ -18,9 +19,17 @@ class StoreLicenceHandler(
     preferenceObfuscator: PreferenceObfuscator,
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
-    repository: Repository
+    repository: Repository,
+    currencyFormatter: CurrencyFormatter
 ) :
-        AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository) {
+    AbstractInAppPurchaseLicenceHandler(
+        context,
+        preferenceObfuscator,
+        crashHandler,
+        prefHandler,
+        repository,
+        currencyFormatter
+    ) {
 
     override fun initBillingManager(activity: IapActivity, query: Boolean): BillingManager {
         val billingUpdatesListener = object : AmazonBillingUpdatesListener {
@@ -34,7 +43,10 @@ class StoreLicenceHandler(
                 return licenceStatus != null
             }
 
-            override fun onPurchasesUpdated(purchases: MutableList<Receipt>, initialFullRequest: Boolean) {
+            override fun onPurchasesUpdated(
+                purchases: MutableList<Receipt>,
+                initialFullRequest: Boolean
+            ) {
                 val oldStatus = licenceStatus
                 registerInventory(purchases, initialFullRequest)
                 if (oldStatus != licenceStatus) {
@@ -73,8 +85,8 @@ class StoreLicenceHandler(
     }
 
     private fun findHighestValidPurchase(purchases: List<Receipt>) =
-            purchases.filter { !it.isCanceled && extractLicenceStatusFromSku(it.sku) != null }
-                    .maxByOrNull { extractLicenceStatusFromSku(it.sku)?.ordinal ?: 0 }
+        purchases.filter { !it.isCanceled && extractLicenceStatusFromSku(it.sku) != null }
+            .maxByOrNull { extractLicenceStatusFromSku(it.sku)?.ordinal ?: 0 }
 
     private fun storeSkuDetails(productData: MutableMap<String, Product>) {
         val editor = pricesPrefs.edit()
@@ -90,7 +102,11 @@ class StoreLicenceHandler(
         editor.apply()
     }
 
-    override suspend fun launchPurchase(aPackage: Package, shouldReplaceExisting: Boolean, billingManager: BillingManager) {
+    override suspend fun launchPurchase(
+        aPackage: Package,
+        shouldReplaceExisting: Boolean,
+        billingManager: BillingManager
+    ) {
         (billingManager as? BillingManagerAmazon)?.initiatePurchaseFlow(getSkuForPackage(aPackage))
     }
 
@@ -103,7 +119,8 @@ class StoreLicenceHandler(
             ProfessionalPackage.Professional_12
         )
 
-    override fun getDisplayPriceForPackage(aPackage: Package) = pricesPrefs.getString(getSkuForPackage(aPackage), null)
+    override fun getDisplayPriceForPackage(aPackage: Package) =
+        pricesPrefs.getString(getSkuForPackage(aPackage), null)
 
     override val proPackagesForExtendOrSwitch: Array<ProfessionalPackage>?
         get() = null
