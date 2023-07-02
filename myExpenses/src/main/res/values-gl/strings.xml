@@ -62,7 +62,6 @@
     <string name="expense">Gasto</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">Datos exportados satisfactoriamente ao ficheiro \"%1$s!</string>
-    <string name="external_storage_unavailable">O almacenamento externo da tarxeta SD non está dispoñible</string>
     <string name="feedback">Comentarios (feedback)</string>
     <string name="ftp_uri_malformed">URI %1$s non válido</string>
     <string name="grisbi_import_categories_loading">A cargar categorías desde %1$s</string>
@@ -237,7 +236,6 @@
     <string name="preferences_month_start_date_title">O mes comeza o</string>
     <string name="date_format_hour">Hora</string>
     <string name="date_format_minute">Minuto</string>
-    <string name="menu_sort">Ordenar por</string>
     <string name="pref_sort_order_custom">Personalizar</string>
     <string name="content_description_calculator">Calculadora</string>
     <!-- describes the state of a plan instance that has not yet been applied, i.e. no transaction has been entered into the database for it. Used as content description for icon in list. -->

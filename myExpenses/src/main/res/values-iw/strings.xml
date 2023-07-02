@@ -114,7 +114,6 @@
     <string name="export_sdcard_failure">יצוא קובץ \"%1$s\" נכשל %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">הנתונים יוצאו בהצלחה לקובץ \"%1$s\"</string>
-    <string name="external_storage_unavailable">אחסון חיצוני (sdcard) אינו זמין</string>
     <string name="feedback">משוב</string>
     <string name="ftp_uri_malformed">כתובת אתר לא נכונה %1$s</string>
     <string name="grisbi_import_categories_loading">טוען קטגוריות מ- %1$s</string>
@@ -528,7 +527,6 @@
     <string name="exchange_rate">שער חליפין</string>
     <string name="date_format_hour">שעה</string>
     <string name="date_format_minute">דקה</string>
-    <string name="menu_sort">מיין לפי</string>
     <string name="pref_sort_order_last_used">נעשה בו שימוש לאחרונה</string>
     <string name="pref_sort_order_custom">מותאם אישית</string>
     <string name="content_description_calculator">מחשבון</string>

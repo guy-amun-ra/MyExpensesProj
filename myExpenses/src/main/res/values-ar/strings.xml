@@ -116,7 +116,6 @@
     <string name="export_sdcard_failure">فشلت عملية تصدير المصروفات للذاكرة %1$s:  %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">تم تصدير المصروفات إلى ملف %1$s</string>
-    <string name="external_storage_unavailable">لا يوجد ذاكرة خارجية (sdcard)</string>
     <string name="feedback">التقييم</string>
     <string name="ftp_uri_malformed">خطأ في العنوان %1$s</string>
     <string name="grisbi_import_categories_loading">جاري تحميل التصنيفات من %1$s</string>
@@ -541,7 +540,6 @@
     <string name="exchange_rate">معدل الصرف</string>
     <string name="date_format_hour">ساعة</string>
     <string name="date_format_minute">دقيقة</string>
-    <string name="menu_sort">رتب بواسطة</string>
     <string name="pref_sort_order_last_used">آخر استخدام</string>
     <string name="pref_sort_order_custom">تخصيص</string>
     <string name="content_description_calculator">الحاسبة</string>

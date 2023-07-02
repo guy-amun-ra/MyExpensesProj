@@ -113,7 +113,6 @@
     <string name="export_sdcard_failure">L\'exportation vers « %1$s » a échoué : %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">Les données ont été exportées avec succès vers le fichier « %1$s »</string>
-    <string name="external_storage_unavailable">Le stockage externe (carte SD) n\'est pas disponible</string>
     <string name="feedback">Réactions</string>
     <string name="ftp_uri_malformed">Mauvaise syntaxe de l\'URI %1$s</string>
     <string name="grisbi_import_categories_loading">Import des catégories à partir de %1$s</string>
@@ -521,7 +520,6 @@
     <string name="exchange_rate">Taux de change</string>
     <string name="date_format_hour">Heure</string>
     <string name="date_format_minute">Minute</string>
-    <string name="menu_sort">Trier par</string>
     <string name="pref_sort_order_last_used">Dernier utilisé</string>
     <string name="pref_sort_order_custom">Personnalisé</string>
     <string name="content_description_calculator">Calculatrice</string>
@@ -1050,4 +1048,6 @@
     <string name="orphaned_transaction_align_date">La date stockée avec l\'opération peut également être alignée sur la date de l\'instance.</string>
     <string name="button_relink_keep_date">Relier, mais conserver la date</string>
     <string name="button_relink_update_date">Relier et mettre à jour la date</string>
+    <string name="whats_new_361_1">La liste des opérations peut être triée par montant.</string>
+    <string name="whats_new_361_2">Les fichiers dans le dossier d\'application (sauvegardes et exportations) peuvent être partagés ou supprimés.</string>
 </resources>

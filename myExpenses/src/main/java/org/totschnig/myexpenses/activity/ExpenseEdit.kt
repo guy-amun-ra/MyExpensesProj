@@ -718,7 +718,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             transaction.pictureUri = cached.pictureUri
             setDirty()
         } else {
-            intent.getLongExtra(KEY_DATE, 0).takeIf { it != 0L }?.let { it / 1000 }?.let {
+            intent.getLongExtra(KEY_DATE, 0).takeIf { it != 0L }?.let {
                 transaction.date = it
                 transaction.valueDate = it
             }
@@ -1255,7 +1255,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         }.onFailure {
             showSnackBar(
                 when (it) {
-                    is ExternalStorageNotAvailableException -> getString(R.string.external_storage_unavailable)
+                    is ExternalStorageNotAvailableException -> "External storage (sdcard) not available"
                     is UnknownPictureSaveException -> {
                         val customData = buildMap {
                             put("pictureUri", it.pictureUri.toString())

@@ -110,7 +110,6 @@
     <string name="export_sdcard_failure">ファイル \"%1$s\" へのエクスポートに失敗しました: %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">ファイル \"%1$s\" にデータを正常にエクスポートしました</string>
-    <string name="external_storage_unavailable">外部ストレージ (SDカード) が利用可能ではありません</string>
     <string name="feedback">フィードバック</string>
     <string name="ftp_uri_malformed">不正な形式の URI %1$s</string>
     <string name="grisbi_import_categories_loading">%1$s から分類をロード中</string>
@@ -504,7 +503,6 @@
     <string name="exchange_rate">為替レート</string>
     <string name="date_format_hour">時間</string>
     <string name="date_format_minute">分</string>
-    <string name="menu_sort">ソート順</string>
     <string name="pref_sort_order_last_used">最後に使用した</string>
     <string name="pref_sort_order_custom">カスタム</string>
     <string name="content_description_calculator">電卓</string>

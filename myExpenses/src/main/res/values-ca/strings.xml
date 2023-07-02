@@ -84,7 +84,6 @@
     <string name="export_sdcard_failure">Hi ha hagut un error en exportar les despeses a \"%1$s\": %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">Les despses s\'han exportat al fitxer \"%1$s\"</string>
-    <string name="external_storage_unavailable">La memòria externa (tarja SD) no està disponible</string>
     <string name="feedback">Comentaris</string>
     <string name="ftp_uri_malformed">URI %1$s no és vàlid</string>
     <string name="grisbi_import_categories_loading">Les categories es carreguen des de %1$s</string>
@@ -441,7 +440,6 @@
     <string name="csv_import_records_failed" tools:ignore="PluralsCandidate">%d registres no es poden importar.</string>
     <string name="pref_grouping_periods">Períodes d\'agrupació</string>
     <string name="date_format_minute">Minut</string>
-    <string name="menu_sort">Ordena per</string>
     <string name="plan_instance_state_open">obert</string>
     <string name="content_description_calculator_delete_button">Elimina últim digit</string>
     <string name="content_description_calculator_clear_button">Restableix tot</string>

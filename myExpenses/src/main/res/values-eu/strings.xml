@@ -112,7 +112,6 @@
     <string name="export_sdcard_failure">Fitxategia \"%1$s\"ra esportatzeak huts egin du: %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">Datuan ongi esportatu dira \"%1$s\" fitxategira</string>
-    <string name="external_storage_unavailable">Kanpo biltegiratzea (SD txartela) ez dago erabilgarri.</string>
     <string name="feedback">Iruzkina</string>
     <string name="ftp_uri_malformed">Gaizki osatutako URIa %1$s</string>
     <string name="grisbi_import_categories_loading">Kategoriak kargatzen hemendik: %1$s</string>
@@ -509,7 +508,6 @@
     <string name="exchange_rate">Kanbio-tasa</string>
     <string name="date_format_hour">Ordu</string>
     <string name="date_format_minute">Minutu</string>
-    <string name="menu_sort">Ordenatu honela</string>
     <string name="pref_sort_order_last_used">Ezken erabilera</string>
     <string name="pref_sort_order_custom">Pertsonalizatua</string>
     <string name="content_description_calculator">Kalkulagailua</string>

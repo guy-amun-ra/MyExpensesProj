@@ -112,7 +112,6 @@
     <string name="export_sdcard_failure">Não foi possível exportar para o ficheiro \"%1$s\": %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">Dados exportados com sucesso para o ficheiro \"%1$s\"</string>
-    <string name="external_storage_unavailable">O armazenamento externo (sdcard) não está disponível</string>
     <string name="feedback">Retorno</string>
     <string name="ftp_uri_malformed">URI inválida %1$s</string>
     <string name="grisbi_import_categories_loading">Carregando categorias de %1$s</string>
@@ -514,7 +513,6 @@
     <string name="exchange_rate">Taxa de câmbio</string>
     <string name="date_format_hour">Hora</string>
     <string name="date_format_minute">Minuto</string>
-    <string name="menu_sort">Ordenar por</string>
     <string name="pref_sort_order_last_used">Usado pela última vez</string>
     <string name="pref_sort_order_custom">Personalizado</string>
     <string name="content_description_calculator">Calculadora</string>

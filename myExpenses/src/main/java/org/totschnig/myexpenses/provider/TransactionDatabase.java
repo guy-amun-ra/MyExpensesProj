@@ -195,6 +195,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_SYNC_SEQUENCE_LOCAL + " integer default 0,"
           + KEY_EXCLUDE_FROM_TOTALS + " boolean default 0, "
           + KEY_UUID + " text, "
+          + KEY_SORT_BY + " text default 'date', "
           + KEY_SORT_DIRECTION + " text not null check (" + KEY_SORT_DIRECTION + " in ('ASC','DESC')) default 'DESC',"
           + KEY_CRITERION + " integer,"
           + KEY_HIDDEN + " boolean default 0,"
@@ -321,6 +322,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + " (" + KEY_ROWID + " integer primary key autoincrement, " +
           KEY_CODE + " text UNIQUE not null," +
           KEY_GROUPING + " text not null check (" + KEY_GROUPING + " in (" + Grouping.JOIN + ")) default '" + Grouping.NONE.name() + "'," +
+          KEY_SORT_BY + " text default 'date', " +
           KEY_SORT_DIRECTION + " text not null check (" + KEY_SORT_DIRECTION + " in ('ASC','DESC')) default 'DESC'," +
           KEY_LABEL + " text);";
 
@@ -2205,16 +2207,16 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       if (oldVersion < 131) {
         upgradeTo131(db);
       }
-      if (oldVersion < 132) {
+/*      if (oldVersion < 132) {
         createOrRefreshViews(db);
-      }
+      }*/
       if (oldVersion < 133) {
         upgradeTo133(db);
       }
-      if(oldVersion < 134) {
+/*      if (oldVersion < 134) {
         createOrRefreshViews(db);
-      }
-      if(oldVersion < 135) {
+      }*/
+      if (oldVersion < 135) {
         db.execSQL("ALTER TABLE categories add column uuid text");
         db.execSQL("CREATE UNIQUE INDEX categories_uuid ON categories(uuid)");
         MoreDbUtilsKt.insertUuidsForDefaultCategories(db, MyApplication.getInstance().getResources());
@@ -2237,6 +2239,10 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       if (oldVersion < 142) {
         db.execSQL("ALTER TABLE paymentmethods add column icon text");
         createOrRefreshViews(db);
+      }
+      if (oldVersion < 143) {
+        db.execSQL("ALTER TABLE accounts add column sort_by text default 'date'");
+        db.execSQL("ALTER TABLE currency add column sort_by text default 'date'");
       }
 
       TransactionProvider.resumeChangeTrigger(db);

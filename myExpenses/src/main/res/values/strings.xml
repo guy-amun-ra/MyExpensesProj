@@ -116,7 +116,6 @@
     <string name="export_sdcard_failure">Export to file \"%1$s\" failed: %2$s</string>
     <!-- 1$s is replaced with path to file -->
     <string name="export_sdcard_success">Data successfully exported to file \"%1$s\"</string>
-    <string name="external_storage_unavailable">External storage (sdcard) not available</string>
     <string name="feedback">Feedback</string>
     <string name="ftp_uri_malformed">Malformed URI %1$s</string>
     <string name="grisbi_import_categories_loading">Loading categories from %1$s</string>
@@ -523,7 +522,6 @@
     <string name="exchange_rate">Exchange rate</string>
     <string name="date_format_hour">Hour</string>
     <string name="date_format_minute">Minute</string>
-    <string name="menu_sort">Sort by</string>
     <string name="pref_sort_order_last_used">Last used</string>
     <string name="pref_sort_order_custom">Custom</string>
     <string name="content_description_calculator">Calculator</string>
@@ -1076,4 +1074,6 @@
     <string name="orphaned_transaction_align_date">Optionally the date stored with the transaction can also be aligned with the instance date.</string>
     <string name="button_relink_keep_date">Relink, but keep date</string>
     <string name="button_relink_update_date">Relink and update date</string>
+    <string name="whats_new_361_1">Transaction list can be sorted by amount.</string>
+    <string name="whats_new_361_2">Files in application folder (backups and exports) can be shared or deleted.</string>
 </resources>
