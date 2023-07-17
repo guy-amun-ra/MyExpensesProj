@@ -265,7 +265,6 @@
     <string name="pref_auto_fill_summary">Fill in data from last transaction for same payee/payer</string>
     <string name="pref_backup_summary">Create a backup of database and preferences.</string>
     <string name="pref_sort_order_usages">Count of usages</string>
-    <string name="pref_category_title_advanced">Advanced</string>
     <string name="pref_category_title_export">Export</string>
     <string name="pref_category_title_import">Import</string>
     <string name="pref_category_title_manage">Manage</string>
@@ -1038,6 +1037,7 @@
     <string name="notifications_permission_required_planner"><i>{app_name}</i> needs permission to send you notifications, when future transactions are posted.</string>
     <string name="notifications_permission_required_webui">By granting the permission to send notifications, you can control the status of the web server.</string>
     <string name="notifications_permission_required_sync">By granting the permission to send notifications, you can monitor the progress of the synchronization operations.</string>
+    <string name="notifications_permission_required_auto_backup">By granting the permission to send notifications, you will be informed about auto-backups.</string>
     <string name="notifications_channel_required">Please enable channel %s.</string>
     <!--%s is replaced with the amount. -->
     <string name="debt_installment_pay">I pay an installment of %s.</string>

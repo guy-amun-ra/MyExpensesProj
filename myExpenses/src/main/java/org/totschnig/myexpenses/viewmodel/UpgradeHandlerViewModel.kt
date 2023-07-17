@@ -23,7 +23,7 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.compose.FutureCriterion
 import org.totschnig.myexpenses.db2.preDefinedName
-import org.totschnig.myexpenses.fragment.BaseSettingsFragment.Companion.compactItemRendererTitle
+import org.totschnig.myexpenses.fragment.preferences.PreferenceUiFragment.Companion.compactItemRendererTitle
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.enableAutoFill
@@ -400,6 +400,7 @@ class UpgradeHandlerViewModel(application: Application) :
                                 contentResolver.update(
                                     SORT_URI.buildUpon()
                                         .appendEncodedPath(currencyIdAsString)
+                                        .appendPath("date")
                                         .appendPath(value).build(),
                                     null, null, null
                                 )
