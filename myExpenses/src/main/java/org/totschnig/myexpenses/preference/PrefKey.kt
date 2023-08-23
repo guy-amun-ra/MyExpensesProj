@@ -45,7 +45,7 @@ enum class PrefKey(internal val resId: Int, internal val _key: String?) {
     APP_DIR(R.string.pref_app_dir_key),
     CATEGORY_PRIVACY(R.string.pref_category_privacy_key),
     CATEGORY_BACKUP_EXPORT(R.string.pref_category_export_backup_key),
-    CATEGORY_PROTECTION(R.string.pref_category_protection_key),
+    CATEGORY_SECURITY(R.string.pref_category_security_key),
     ACCOUNT_GROUPING(R.string.pref_account_grouping_key),
     PLANNER_CALENDAR_PATH("planner_calendar_path"),
     CURRENT_VERSION("currentversion"),
@@ -161,7 +161,6 @@ enum class PrefKey(internal val resId: Int, internal val _key: String?) {
     CSV_EXPORT_SPLIT_DATE_TIME(R.string.pref_csv_export_split_date_time_key),
     WEBUI_HTTPS(R.string.pref_web_ui_https_key),
     RUNNING_BALANCE(R.string.pref_running_balance_key),
-    UI_TRANSACTION_LIST(R.string.pref_ui_transaction_list_key),
     UI_ITEM_RENDERER_LEGACY(R.string.pref_ui_item_renderer_legacy_key),
     UI_ITEM_RENDERER_CATEGORY_ICON(R.string.pref_ui_item_renderer_category_icon_key),
     ENCRYPT_DATABASE("encrypt_database"),
@@ -175,6 +174,7 @@ enum class PrefKey(internal val resId: Int, internal val _key: String?) {
     OPTIMIZE_PICTURE_QUALITY(R.string.pref_optimize_picture_quality_key),
     MANAGE_APP_DIR_FILES(R.string.pref_export_manage_files_key),
     ACCOUNT_PANEL_VISIBLE("account_panel_visible"),
+    BANKING_FINTS(R.string.pref_banking_fints_key)
     ;
 
     @Deprecated("")

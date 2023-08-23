@@ -26,7 +26,7 @@ def getPropertyIfDefined(property, defaultValue) {
 }
 
 android {
-    compileSdkVersion project.compileSdkVersion
+    compileSdk project.compileSdkVersion
     useLibrary 'android.test.runner'
     useLibrary 'android.test.mock'
     useLibrary 'android.test.base'
@@ -178,7 +178,7 @@ android {
     //It does not seem possible to define dynamicFeatures dependent on variant
     //If you want to build intern variant, you need to include mlkit (+ at least one of ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore') and/or tesseract module
     //drive for Sync with Google Drive
-    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore', ':drive', ':dropbox', ':webdav', ':sqlcrypt']
+    dynamicFeatures = [':ocr', ':mlkit', ':tesseract', ':webui', ':mlkit_latn', ':mlkit_han', ':mlkit_deva', ':mlkit_jpan', ':mlkit_kore', ':drive', ':dropbox', ':webdav', ':sqlcrypt', ':fints']
 
     composeOptions {
         kotlinCompilerExtensionVersion compose_compiler_version
@@ -207,7 +207,7 @@ dependencies {
     coreLibraryDesugaring "com.android.tools:desugar_jdk_libs:$desugarVersion"
     implementation project(':transactionscontract')
     implementation 'com.squareup.phrase:phrase:1.2.0'
-    def composeBom = platform('androidx.compose:compose-bom:2023.05.01')
+    def composeBom = platform("$composeBom")
     implementation composeBom
     implementation "androidx.compose.ui:ui"
     implementation("androidx.compose.material3:material3")
@@ -216,7 +216,7 @@ dependencies {
     implementation "androidx.compose.runtime:runtime-livedata"
     debugImplementation "androidx.compose.ui:ui-tooling"
     implementation "androidx.compose.material:material-icons-extended"
-    implementation "androidx.paging:paging-compose:3.2.0-rc01"
+    implementation "androidx.paging:paging-compose:3.2.0"
     implementation "com.google.accompanist:accompanist-drawablepainter:$accompanist"
     implementation "com.google.accompanist:accompanist-themeadapter-material3:$accompanist"
     implementation('app.futured.donut:donut-compose:2.2.3')
@@ -346,6 +346,8 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     implementation 'androidx.work:work-runtime-ktx:2.8.1'
+
+    implementation 'de.cketti.mailto:email-intent-builder:2.0.0'
 
     androidTestImplementation composeBom
     androidTestImplementation 'tools.fastlane:screengrab:2.1.1'

@@ -114,14 +114,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         get() = viewModel.accountData.value?.getOrNull() ?: emptyList()
 
     var selectedAccountId: Long
-        get() = viewModel.accountData.value?.getOrNull()?.getOrNull(pagerState.currentPage)?.id ?: 0
-        set(value) {
-            deferredAccountId = if (value != 0L) {
-                value
-            } else {
-                viewModel.accountData.value?.getOrNull()?.firstOrNull()?.id
-            }
-        }
+        get() = viewModel.selectedAccountId
+        set(value) { viewModel.selectedAccountId = value }
 
     private val accountForNewTransaction: FullAccount?
         get() = currentAccount?.let { current ->
@@ -130,15 +124,14 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 ?.maxBy { it.lastUsed }
         }
 
-    lateinit var pagerState: PagerState
-
-    private var deferredAccountId: Long? = null
-
     val currentFilter: FilterPersistence
         get() = viewModel.filterPersistence.getValue(selectedAccountId)
 
     val currentAccount: FullAccount?
-        get() = accountData.getOrNull(pagerState.currentPage)
+        get() = accountData.find { it.id == selectedAccountId }
+
+    val currentPage: Int
+        get() = accountData.indexOfFirst { it.id == selectedAccountId }
 
     @Inject
     lateinit var discoveryHelper: IDiscoveryHelper
@@ -159,6 +152,9 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     lateinit var viewModel: MyExpensesViewModel
     private val upgradeHandlerViewModel: UpgradeHandlerViewModel by viewModels()
     private val exportViewModel: ExportViewModel by viewModels()
+
+    private val bankingFeature: BankingFeature
+        get() = requireApplication().appComponent.bankingFeature() ?: object : BankingFeature {}
 
     lateinit var binding: ActivityMainBinding
 
@@ -395,7 +391,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         initLocaleContext()
         maybeRepairRequerySchema()
         readAccountGroupingFromPref()
-        pagerState = PagerState(initialPage = savedInstanceState?.getInt(KEY_CURRENT_PAGE) ?: 0)
         accountSort = readAccountSortFromPref()
         viewModel = ViewModelProvider(this)[modelClass]
         with(injector) {
@@ -522,9 +517,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             grouping = accountGrouping.value,
                             selectedAccount = selectedAccountId,
                             onSelected = {
-                                lifecycleScope.launch {
-                                    pagerState.scrollToPage(it)
-                                }
+                                selectedAccountId = it
                                 closeDrawer()
                             },
                             onEdit = {
@@ -545,7 +538,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 toggleExcludeFromTotals(it)
                             },
                             expansionHandlerGroups = viewModel.expansionHandler("collapsedHeadersDrawer_${accountGrouping.value}"),
-                            expansionHandlerAccounts = viewModel.expansionHandler("collapsedAccounts")
+                            expansionHandlerAccounts = viewModel.expansionHandler("collapsedAccounts"),
+                            bankIcon = bankingFeature.bankIconRenderer
                         )
                     }?.onFailure {
                         val (message, forceQuit) = when (it) {
@@ -636,11 +630,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putInt(KEY_CURRENT_PAGE, pagerState.currentPage)
-    }
-
     private fun editAccount(accountId: Long) {
         startActivityForResult(Intent(this, AccountEdit::class.java).apply {
             putExtra(KEY_ROWID, accountId)
@@ -648,21 +637,11 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
 
     }
 
-    private suspend fun deferredLoad() {
-        deferredAccountId?.let {
-            viewModel.accountData.value!!.getOrThrow().indexOfFirst { it.id == deferredAccountId }
-                .takeIf { it != -1 }.let {
-                    pagerState.scrollToPage(it ?: 0)
-                }
-            deferredAccountId = null
-        }
-    }
-
     @OptIn(ExperimentalFoundationApi::class)
     @Composable
     private fun MainContent() {
 
-        LaunchedEffect(pagerState.currentPage) {
+        LaunchedEffect(currentAccount) {
             setCurrentAccount()?.let { account ->
                 finishActionMode()
                 sumInfo = SumInfoUnknown
@@ -685,14 +664,22 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 }
                             }
                         }
-                        deferredLoad()
                         setCurrentAccount()
                     } else {
                         setTitle(R.string.app_name)
                         toolbar.subtitle = null
                     }
                 }
+                val pagerState = remember { PagerState(initialPage = accountData.indexOfFirst { it.id == selectedAccountId }) }
                 if (accountData.isNotEmpty()) {
+                    LaunchedEffect(viewModel.selectedAccountId) {
+                        if (pagerState.currentPage != currentPage) {
+                            pagerState.scrollToPage(currentPage)
+                        }
+                    }
+                    LaunchedEffect(pagerState.currentPage) {
+                        viewModel.selectedAccountId = accountData[pagerState.currentPage].id
+                    }
                     HorizontalPager(
                         modifier = Modifier
                             .background(MaterialTheme.colorScheme.onSurface)
@@ -701,8 +688,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 collectionInfo = CollectionInfo(1, accountData.size)
                             },
                         verticalAlignment = Alignment.Top,
-                        pageCount = accountData.count(),
                         state = pagerState,
+                        pageCount = accountData.count(),
                         pageSpacing = 10.dp,
                         key = { accountData[it].id }
                     ) {
@@ -1394,6 +1381,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 requestSync(accountName = it.syncAccountName!!, uuid = it.uuid)
             }
 
+            R.id.FINTS_SYNC_COMMAND -> currentAccount?.takeIf { it.bankId != null }?.let {
+                bankingFeature.startSyncFragment(it.bankId!!, it.id, supportFragmentManager)
+            }
+
             R.id.EDIT_ACCOUNT_COMMAND -> currentAccount?.let { editAccount(it.id) }
             R.id.DELETE_ACCOUNT_COMMAND -> currentAccount?.let { confirmAccountDelete(it) }
             R.id.HIDE_ACCOUNT_COMMAND -> currentAccount?.let {
@@ -1478,30 +1469,32 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 menu.findItem(R.id.BALANCE_COMMAND)
                     ?.setEnabledAndVisible(reconciliationAvailable && !isAggregate)
 
-                menu.findItem(R.id.SHOW_STATUS_HANDLE_COMMAND)?.let {
-                    it.setEnabledAndVisible(reconciliationAvailable)
+                menu.findItem(R.id.SHOW_STATUS_HANDLE_COMMAND)?.apply {
+                    setEnabledAndVisible(reconciliationAvailable)
                     if (reconciliationAvailable) {
                         lifecycleScope.launch {
-                            it.isChecked = viewModel.showStatusHandle().first()
+                            isChecked = viewModel.showStatusHandle().first()
                         }
                     }
                 }
 
                 menu.findItem(R.id.SYNC_COMMAND)?.setEnabledAndVisible(syncAccountName != null)
+                menu.findItem(R.id.FINTS_SYNC_COMMAND)?.apply {
+                    setEnabledAndVisible(bankId != null)
+                    title = bankingFeature.syncMenuTitle(this@BaseMyExpenses)
+                }
 
-                menu.findItem(R.id.MANAGE_ACCOUNTS_COMMAND)?.let { item ->
-                    item.setEnabledAndVisible(!isAggregate)
+                menu.findItem(R.id.MANAGE_ACCOUNTS_COMMAND)?.apply {
+                    setEnabledAndVisible(!isAggregate)
                     if (!isAggregate) {
-                        with(item) {
-                            title = label
-                            subMenu?.findItem(R.id.TOGGLE_SEALED_COMMAND)?.setTitle(
-                                if (sealed) R.string.menu_reopen else R.string.menu_close
-                            )
-                            subMenu?.findItem(R.id.EDIT_ACCOUNT_COMMAND)
-                                ?.setEnabledAndVisible(!sealed)
-                            subMenu?.findItem(R.id.EXCLUDE_FROM_TOTALS_COMMAND)
-                                ?.setChecked(excludeFromTotals)
-                        }
+                        title = label
+                        subMenu?.findItem(R.id.TOGGLE_SEALED_COMMAND)?.setTitle(
+                            if (sealed) R.string.menu_reopen else R.string.menu_close
+                        )
+                        subMenu?.findItem(R.id.EDIT_ACCOUNT_COMMAND)
+                            ?.setEnabledAndVisible(!sealed)
+                        subMenu?.findItem(R.id.EXCLUDE_FROM_TOTALS_COMMAND)?.isChecked =
+                            excludeFromTotals
                     }
                 }
             }
@@ -2055,6 +2048,5 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         const val MANAGE_HIDDEN_FRAGMENT_TAG = "MANAGE_HIDDEN"
         const val DIALOG_TAG_GROUPING = "GROUPING"
         const val DIALOG_TAG_SORTING = "SORTING"
-        const val KEY_CURRENT_PAGE = "CURRENT_PAGE"
     }
 }
