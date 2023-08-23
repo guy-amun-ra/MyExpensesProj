@@ -9,11 +9,24 @@ android {
     compileSdk project.compileSdkVersion
 
     defaultConfig {
-        missingDimensionStrategy 'textRecognition', 'extern'
+        missingDimensionStrategy 'textRecognition', 'intern'
         minSdk project.minSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles("consumer-rules.txt")
         resourceConfigurations = ['en', 'de']
+    }
+    flavorDimensions 'distribution'
+
+    productFlavors {
+        play {
+            dimension "distribution"
+        }
+        amazon {
+            dimension "distribution"
+        }
+        huawei {
+            dimension "distribution"
+        }
     }
     compileOptions {
         coreLibraryDesugaringEnabled true
