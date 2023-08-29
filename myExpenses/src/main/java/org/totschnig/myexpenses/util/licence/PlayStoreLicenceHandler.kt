@@ -121,7 +121,7 @@ open class PlayStoreLicenceHandler(
         }
         findHighestValidPurchase(inventory)?.also {
             if (it.purchaseState == Purchase.PurchaseState.PURCHASED) {
-                handlePurchaseForLicence(it.products[0], it.orderId!!, it.purchaseToken)
+                handlePurchaseForLicence(it.products[0], it.orderId, it.purchaseToken)
             } else {
                 //TODO handle pending
                 CrashHandler.report(

@@ -67,7 +67,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(
         updateContribStatus(STATUS_DISABLED)
     }
 
-    fun handlePurchaseForLicence(sku: String, orderId: String, purchaseToken: String? = null) {
+    fun handlePurchaseForLicence(sku: String, orderId: String?, purchaseToken: String? = null) {
         log().i("handling $sku")
         licenseStatusPrefs.putString(KEY_ORDER_ID, orderId)
         extractLicenceStatusFromSku(sku).also {
