@@ -202,6 +202,14 @@ JOIN Tree ON Tree.$KEY_ROWID = subtree.$KEY_PARENTID
 """.trimIndent()
 }
 
+fun getPayeeWithDuplicatesCTE(selection: String?, collate: String) = """
+    WITH cte AS (SELECT ${BaseTransactionProvider.payeeProjection(TABLE_PAYEES).joinToString(",")}, 1 AS $KEY_LEVEL FROM $TABLE_PAYEES 
+    WHERE $KEY_PARENTID IS NULL ${selection?.let { " AND $it" } ?: ""}
+    UNION ALL
+    SELECT ${BaseTransactionProvider.payeeProjection("dups").joinToString(",")}, $KEY_LEVEL+1 from $TABLE_PAYEES dups
+    JOIN cte ON cte.$KEY_ROWID = dups.$KEY_PARENTID ORDER BY $KEY_LEVEL DESC, $KEY_PAYEE_NAME COLLATE $collate) SELECT * FROM cte
+""".trimIndent()
+
 fun categoryTreeCTE(
     rootExpression: String? = null,
     sortOrder: String? = null,

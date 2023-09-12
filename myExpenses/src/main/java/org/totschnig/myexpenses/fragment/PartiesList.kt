@@ -37,10 +37,8 @@ import com.evernote.android.state.StateSaver
 import eltos.simpledialogfragment.SimpleDialog
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener.BUTTON_POSITIVE
-import eltos.simpledialogfragment.form.Hint
 import eltos.simpledialogfragment.form.Input
 import eltos.simpledialogfragment.form.SimpleFormDialog
-import eltos.simpledialogfragment.form.Spinner
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.*
 import org.totschnig.myexpenses.activity.Action
@@ -51,16 +49,20 @@ import org.totschnig.myexpenses.activity.asAction
 import org.totschnig.myexpenses.databinding.PartiesListBinding
 import org.totschnig.myexpenses.databinding.PayeeRowBinding
 import org.totschnig.myexpenses.dialog.DebtDetailsDialogFragment
+import org.totschnig.myexpenses.dialog.MergePartiesDialogFragment
+import org.totschnig.myexpenses.dialog.MergePartiesDialogFragment.Companion.KEY_POSITION
+import org.totschnig.myexpenses.dialog.MergePartiesDialogFragment.Companion.KEY_STRATEGY
 import org.totschnig.myexpenses.model.CurrencyContext
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.filter.NULL_ITEM_ID
-import org.totschnig.myexpenses.util.CurrencyFormatter
+import org.totschnig.myexpenses.util.ICurrencyFormatter
 import org.totschnig.myexpenses.util.TextUtils.withAmountColor
 import org.totschnig.myexpenses.util.configureSearch
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.formatMoney
 import org.totschnig.myexpenses.util.prepareSearch
+import org.totschnig.myexpenses.viewmodel.MergeStrategy
 import org.totschnig.myexpenses.viewmodel.PartyListViewModel
 import org.totschnig.myexpenses.viewmodel.data.Party
 import javax.inject.Inject
@@ -69,7 +71,7 @@ import kotlin.math.sign
 class PartiesList : Fragment(), OnDialogResultListener {
 
     @Inject
-    lateinit var currencyFormatter: CurrencyFormatter
+    lateinit var currencyFormatter: ICurrencyFormatter
 
     @Inject
     lateinit var currencyContext: CurrencyContext
@@ -84,8 +86,11 @@ class PartiesList : Fragment(), OnDialogResultListener {
 
         fun bind(party: Party, isChecked: Boolean) {
             binding.Payee.text = party.name
+            binding.Payee.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                if (party.isDuplicate) R.drawable.ic_group else 0, 0, 0, 0
+            )
             with(binding.checkBox) {
-                isVisible = hasSelectMultiple()
+                visibility = if (hasSelectMultiple()) View.VISIBLE else View.INVISIBLE
                 this.isChecked = isChecked
                 setOnCheckedChangeListener { _, isChecked ->
                     itemCallback.onCheckedChanged(
@@ -106,7 +111,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
             binding.root.setOnClickListener { itemCallback.onItemClick(binding, party) }
         }
 
-        fun Party.hasOpenDebts() =
+        private fun Party.hasOpenDebts() =
             viewModel.getDebts(id)?.any { !it.isSealed && it.currentBalance != 0L } == true
     }
 
@@ -162,6 +167,18 @@ class PartiesList : Fragment(), OnDialogResultListener {
                     .setIcon(R.drawable.ic_menu_edit)
                 menu.add(Menu.NONE, DELETE_COMMAND, Menu.NONE, R.string.menu_delete)
                     .setIcon(R.drawable.ic_menu_delete)
+                if (party.duplicates.isNotEmpty()) {
+                    with(menu.add(Menu.NONE, SHOW_DUPLICATES_COMMAND, Menu.NONE,
+                        getString(R.string.show_duplicates))) {
+                        isCheckable = true
+                        isChecked = viewModel.expandedItem == party.id
+                    }
+                }
+                if (party.isDuplicate) {
+                    menu.add(Menu.NONE, REMOVE_FROM_GROUP_COMMAND, Menu.NONE,
+                        getString(R.string.remove_from_group))
+                        .setIcon(R.drawable.ic_group_remove)
+                }
                 if (action == Action.MANAGE) {
                     val debts = viewModel.getDebts(party.id)
                     val subMenu = if ((debts?.size ?: 0) > 0)
@@ -232,6 +249,13 @@ class PartiesList : Fragment(), OnDialogResultListener {
                                 putExtra(KEY_PAYEEID, party.id)
                                 putExtra(KEY_PAYEE_NAME, party.name)
                             })
+                        }
+                        SHOW_DUPLICATES_COMMAND -> {
+                            viewModel.expandedItem = if (viewModel.expandedItem == party.id) null else party.id
+                            resetAdapter()
+                        }
+                        REMOVE_FROM_GROUP_COMMAND -> {
+                            viewModel.removeDuplicateFromGroup(party.id)
                         }
 
                         else -> {
@@ -309,9 +333,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
     private val binding get() = _binding!!
 
     @State
-    @JvmField
     var mergeMode: Boolean = false
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -320,6 +342,20 @@ class PartiesList : Fragment(), OnDialogResultListener {
             inject(this@PartiesList)
             inject(viewModel)
         }
+        childFragmentManager.setFragmentResultListener(DIALOG_MERGE_PARTY, this) { _, bundle ->
+            mergeMode = false
+            updateUiMergeMode()
+            val selectedItemIds = adapter.getSelected().map { it.id }
+            val idToKeep = selectedItemIds[bundle.getInt(KEY_POSITION)]
+            viewModel.mergeParties(
+                selectedItemIds.subtract(setOf(idToKeep)),
+                selectedItemIds[bundle.getInt(KEY_POSITION)],
+                bundle.getSerializable(KEY_STRATEGY) as MergeStrategy
+            )
+            adapter.clearSelection()
+            resetAdapter()
+        }
+
         StateSaver.restoreInstanceState(this, savedInstanceState)
     }
 
@@ -361,6 +397,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
         when (item.itemId) {
             R.id.MERGE_COMMAND -> {
                 mergeMode = !mergeMode
+                viewModel.expandedItem = null
                 updateUiMergeMode()
                 resetAdapter()
                 true
@@ -465,12 +502,13 @@ class PartiesList : Fragment(), OnDialogResultListener {
         const val DIALOG_EDIT_PARTY = "dialogEditParty"
         const val DIALOG_MERGE_PARTY = "dialogMergeParty"
         const val DIALOG_DELETE_PARTY = "dialogDeleteParty"
-        const val KEY_POSITION = "position"
         const val SELECT_COMMAND = -1
         const val EDIT_COMMAND = -2
         const val DELETE_COMMAND = -3
         const val NEW_DEBT_COMMAND = -4
         const val DEBT_SUB_MENU = -5
+        const val SHOW_DUPLICATES_COMMAND = -6
+        const val REMOVE_FROM_GROUP_COMMAND = -7
         const val STATE_CHECK_STATES = "checkStates"
 
         val DIFF_CALLBACK = object : DiffUtil.ItemCallback<Party>() {
@@ -505,19 +543,6 @@ class PartiesList : Fragment(), OnDialogResultListener {
                     return true
                 }
 
-                DIALOG_MERGE_PARTY -> {
-                    mergeMode = false
-                    updateUiMergeMode()
-                    val selectedItemIds = adapter.getSelected().map { it.id }
-                    viewModel.mergeParties(
-                        selectedItemIds.toLongArray(),
-                        selectedItemIds[extras.getInt(KEY_POSITION)]
-                    )
-                    adapter.clearSelection()
-                    resetAdapter()
-                    return true
-                }
-
                 DIALOG_DELETE_PARTY -> {
                     doDelete(extras.getLong(KEY_ROWID))
                 }
@@ -548,13 +573,7 @@ class PartiesList : Fragment(), OnDialogResultListener {
             }
         } else if (mergeMode) {
             val selected = adapter.getSelected().map { it.name }.toTypedArray()
-            SimpleFormDialog.build()
-                .fields(
-                    Hint.plain(R.string.merge_parties_select),
-                    Spinner.plain(KEY_POSITION).items(*selected).required().preset(0)
-                )
-                .autofocus(false)
-                .show(this, DIALOG_MERGE_PARTY)
+            MergePartiesDialogFragment.newInstance(selected).show(childFragmentManager, DIALOG_MERGE_PARTY)
         } else {
             showEditDialog(null)
         }

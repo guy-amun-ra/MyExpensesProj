@@ -65,7 +65,7 @@ class SplitEditTest : BaseExpenseEditTest() {
         testScenario = ActivityScenario.launch(baseIntent.apply { putExtra(KEY_ACCOUNTID, account1.id) })
         closeSoftKeyboard()
         onView(withId(R.id.CREATE_PART_COMMAND)).perform(scrollTo(), click())
-        enterAmountSave("50")
+        setAmount(50)
         onView(withId(R.id.OperationType)).perform(click())
         onData(
             allOf(
@@ -95,11 +95,11 @@ class SplitEditTest : BaseExpenseEditTest() {
     fun canceledSplitCleanup() {
         testScenario = ActivityScenario.launchActivityForResult(baseIntent)
         val uncommittedUri = TransactionProvider.UNCOMMITTED_URI
-        assertThat(Transaction.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(1)
+        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(1)
         closeSoftKeyboard()
         pressBackUnconditionally()
         assertCanceled()
-        assertThat(Transaction.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(0)
+        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(0)
     }
 
     @Test
@@ -116,7 +116,7 @@ class SplitEditTest : BaseExpenseEditTest() {
             onView(withId(R.id.CREATE_PART_COMMAND)).perform(nestedScrollToAction(), click())
             onView(withId(R.id.MANAGE_TEMPLATES_COMMAND)).check(doesNotExist())
             onView(withId(R.id.CREATE_TEMPLATE_COMMAND)).check(doesNotExist())
-            enterAmountSave("50")
+            setAmount(50)
             onView(withId(R.id.CREATE_COMMAND)).perform(click())//save part
         }
     }
@@ -130,7 +130,7 @@ class SplitEditTest : BaseExpenseEditTest() {
         onView(withId(R.id.list))
             .perform(RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, click()))
         onView(withText(R.string.menu_edit)).perform(click())
-        onView(withIdAndParent(R.id.AmountEditText, R.id.Amount)).perform(replaceText("150"))
+        setAmount(150)
         onView(withId(R.id.MANAGE_TEMPLATES_COMMAND)).check(doesNotExist())
         onView(withId(R.id.CREATE_TEMPLATE_COMMAND)).check(doesNotExist())
         onView(withId(R.id.CREATE_COMMAND)).perform(click())//save part
@@ -140,15 +140,15 @@ class SplitEditTest : BaseExpenseEditTest() {
 
     private fun prepareSplit(): Long {
         val currencyUnit = homeCurrency
-        return with(SplitTransaction.getNewInstance(account1.id, currencyUnit)) {
+        return with(SplitTransaction.getNewInstance(contentResolver, account1.id, currencyUnit)) {
             amount = Money(currencyUnit, 10000)
             status = DatabaseConstants.STATUS_NONE
-            save(true)
+            save(contentResolver, true)
             val part = Transaction.getNewInstance(account1.id, currencyUnit, id)
             part.amount = Money(currencyUnit, 5000)
-            part.save()
+            part.save(contentResolver)
             part.amount = Money(currencyUnit, 5000)
-            part.saveAsNew()
+            part.saveAsNew(contentResolver)
             id
         }
     }
@@ -157,10 +157,10 @@ class SplitEditTest : BaseExpenseEditTest() {
     fun canceledTemplateSplitCleanup() {
         testScenario = ActivityScenario.launch(baseIntent.apply { putExtra(ExpenseEdit.KEY_NEW_TEMPLATE, true) })
         val uncommittedUri = TransactionProvider.TEMPLATES_UNCOMMITTED_URI
-        assertThat(Transaction.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(1)
+        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(1)
         closeSoftKeyboard()
         pressBackUnconditionally()
-        assertThat(Transaction.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(0)
+        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(0)
     }
 
     @Test
@@ -176,10 +176,5 @@ class SplitEditTest : BaseExpenseEditTest() {
         clickMenuItem(R.id.SAVE_AND_NEW_COMMAND, false) //toggle save and new off
         closeKeyboardAndSave()
         assertFinishing()
-    }
-
-    private fun enterAmountSave(amount: String) {
-        onView(withIdAndParent(R.id.AmountEditText, R.id.Amount)).perform(typeText(amount))
-        closeSoftKeyboard()
     }
 }

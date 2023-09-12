@@ -16,7 +16,6 @@ import org.totschnig.myexpenses.databinding.OneExpenseBinding
 import org.totschnig.myexpenses.model.ITransfer
 import org.totschnig.myexpenses.model.Plan
 import org.totschnig.myexpenses.model.Transfer
-import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.ui.AmountInput
 import org.totschnig.myexpenses.ui.ExchangeRateEdit
 import org.totschnig.myexpenses.ui.MyTextWatcher
@@ -44,11 +43,9 @@ class TransferDelegate(
     private val lastExchangeRateRelevantInputs = intArrayOf(INPUT_EXCHANGE_RATE, INPUT_AMOUNT)
     private lateinit var transferAccountsAdapter: IdAdapter<Account>
 
-    @JvmField
     @State
     var mTransferAccountId: Long? = null
 
-    @JvmField
     @State
     var transferPeer: Long? = null
 

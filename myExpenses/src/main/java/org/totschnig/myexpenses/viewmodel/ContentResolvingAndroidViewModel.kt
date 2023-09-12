@@ -180,7 +180,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
             var failure = 0
             ids.forEach {
                 try {
-                    Template.delete(it, deletePlan)
+                    Template.delete(contentResolver, it, deletePlan)
                     success++
                 } catch (e: SQLiteConstraintException) {
                     CrashHandler.reportWithDbSchema(e)
@@ -321,7 +321,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
             helper.comment = helperComment
             helper.status = STATUS_HELPER
             handleDeleteOperation = ContentProviderOperation.newInsert(Transaction.CONTENT_URI)
-                .withValues(helper.buildInitialValues()).build()
+                .withValues(helper.buildInitialValues(contentResolver)).build()
         }
         val rowSelect = buildTransactionRowSelect(filter)
         var selectionArgs: Array<String>? = arrayOf(account.id.toString())
@@ -368,13 +368,13 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
                 accountId
             )
 
-        val selection = StringBuilder().apply {
+        val selection = buildString {
             filterSelection?.let { append(it) }
             accountSelection?.let {
                 if (isNotEmpty()) append(" AND ")
                 append(it)
             }
-        }.takeIf { it.isNotEmpty() }?.toString()
+        }.takeIf { it.isNotEmpty() }
         return selection to joinArrays(filterSelectionArgs, accountSelectionArgs)
     }
 

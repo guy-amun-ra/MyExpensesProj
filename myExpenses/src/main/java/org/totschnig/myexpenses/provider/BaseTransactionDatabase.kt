@@ -50,7 +50,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTION_ATTRIBUTES
 import timber.log.Timber
 
-const val DATABASE_VERSION = 146
+const val DATABASE_VERSION = 147
 
 private const val RAISE_UPDATE_SEALED_DEBT = "SELECT RAISE (FAIL, 'attempt to update sealed debt');"
 private const val RAISE_INCONSISTENT_CATEGORY_HIERARCHY =
@@ -94,6 +94,14 @@ BEFORE UPDATE ON $TABLE_CATEGORIES WHEN new.$KEY_PARENTID IS NOT old.$KEY_PARENT
 BEGIN $RAISE_INCONSISTENT_CATEGORY_HIERARCHY END
 """
 
+const val PARTY_HIERARCHY_TRIGGER = """
+CREATE TRIGGER party_hierarchy_update
+AFTER UPDATE OF $KEY_PARENTID ON $TABLE_PAYEES WHEN new.$KEY_PARENTID IS NOT NULL
+BEGIN
+UPDATE $TABLE_PAYEES SET $KEY_PARENTID = new.$KEY_PARENTID WHERE $KEY_PARENTID = new.$KEY_ROWID;
+END
+"""
+
 const val CATEGORY_LABEL_INDEX_CREATE =
     "CREATE UNIQUE INDEX categories_label ON $TABLE_CATEGORIES($KEY_LABEL,coalesce($KEY_PARENTID, 0))"
 
@@ -122,7 +130,15 @@ CREATE TABLE $TABLE_BANKS ($KEY_ROWID integer primary key autoincrement, $KEY_BL
 """
 
 const val PAYEE_CREATE = """
-CREATE TABLE $TABLE_PAYEES ($KEY_ROWID integer primary key autoincrement, $KEY_PAYEE_NAME text not null, $KEY_SHORT_NAME text, $KEY_IBAN text, $KEY_BIC text, $KEY_PAYEE_NAME_NORMALIZED text, unique($KEY_PAYEE_NAME, $KEY_IBAN));
+CREATE TABLE $TABLE_PAYEES (
+    $KEY_ROWID integer primary key autoincrement,
+    $KEY_PAYEE_NAME text not null,
+    $KEY_SHORT_NAME text,
+    $KEY_IBAN text,
+    $KEY_BIC text,
+    $KEY_PAYEE_NAME_NORMALIZED text,
+    $KEY_PARENTID integer references $TABLE_PAYEES($KEY_ROWID) ON DELETE CASCADE,
+    unique($KEY_PAYEE_NAME, $KEY_IBAN));
 """
 //the unique index on ($KEY_PAYEE_NAME, $KEY_IBAN) does not prevent duplicate names when iban is null
 const val PAYEE_UNIQUE_INDEX = """

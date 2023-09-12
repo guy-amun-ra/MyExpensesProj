@@ -3,6 +3,7 @@ package org.totschnig.myexpenses.service
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
@@ -28,7 +29,7 @@ import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.TimePreference
 import org.totschnig.myexpenses.provider.CalendarProviderProxy
 import org.totschnig.myexpenses.provider.DatabaseConstants
-import org.totschnig.myexpenses.util.CurrencyFormatter
+import org.totschnig.myexpenses.util.ICurrencyFormatter
 import org.totschnig.myexpenses.util.NotificationBuilderWrapper
 import org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup
 import org.totschnig.myexpenses.util.PermissionHelper.hasCalendarPermission
@@ -51,15 +52,18 @@ import javax.inject.Inject
 class PlanExecutor(context: Context, workerParameters: WorkerParameters) :
     BaseWorker(context, workerParameters) {
     @Inject
-    lateinit var currencyFormatter: CurrencyFormatter
+    lateinit var currencyFormatter: ICurrencyFormatter
     @Inject
     lateinit var repository: Repository
+
+    val contentResolver: ContentResolver
+        get() = repository.contentResolver
 
     init {
         context.injector.inject(this)
     }
 
-    override val channelId = NotificationBuilderWrapper.CHANNEL_ID_PLANNER
+    override val channelId: String = NotificationBuilderWrapper.CHANNEL_ID_PLANNER
     override val notificationId = NotificationBuilderWrapper.NOTIFICATION_PLANNER_ERROR
     override val notificationTitleResId = R.string.planner_notification_channel_name
 
@@ -171,7 +175,7 @@ class PlanExecutor(context: Context, workerParameters: WorkerParameters) :
         ContentUris.appendId(eventsUriBuilder, instancesUntil)
         val eventsUri = eventsUriBuilder.build()
         try {
-            applicationContext.contentResolver.query(
+            contentResolver.query(
                 eventsUri, null,
                 CalendarContract.Events.CALENDAR_ID + " = " + plannerCalendarId,
                 null,
@@ -200,7 +204,7 @@ class PlanExecutor(context: Context, workerParameters: WorkerParameters) :
                     //3) execute the template
                     log("found instance %d of plan %d", instanceId, planId)
                     //TODO if we have multiple Event instances for one plan, we should maybe cache the template objects
-                    val template = Template.getInstanceForPlanIfInstanceIsOpen(planId, instanceId)
+                    val template = Template.getInstanceForPlanIfInstanceIsOpen(contentResolver, planId, instanceId)
                     if (!(template == null || template.isSealed)) {
                         val dateSeconds = date / 1000
                         if (template.planExecutionAdvance >= diff) {
@@ -224,11 +228,13 @@ class PlanExecutor(context: Context, workerParameters: WorkerParameters) :
                                 builder.setContentText(content)
                                 if (template.isPlanExecutionAutomatic) {
                                     val (t, second) = Transaction.getInstanceFromTemplateWithTags(
-                                        template
+                                        contentResolver, template
                                     )
                                     t.originPlanInstanceId = instanceId
                                     t.date = dateSeconds
-                                    if (t.save(true) != null && t.saveTags(second)) {
+                                    if (t.save(contentResolver, true) != null &&
+                                        t.saveTags(contentResolver, second)
+                                        ) {
                                         val displayIntent: Intent =
                                             Intent(applicationContext, MyExpenses::class.java)
                                                 .putExtra(

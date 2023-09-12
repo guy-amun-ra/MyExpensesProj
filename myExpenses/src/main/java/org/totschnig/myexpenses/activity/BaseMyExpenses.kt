@@ -92,6 +92,7 @@ import org.totschnig.myexpenses.viewmodel.data.FullAccount
 import org.totschnig.myexpenses.viewmodel.data.PageAccount
 import org.totschnig.myexpenses.viewmodel.data.Transaction2
 import timber.log.Timber
+import java.io.File
 import java.io.Serializable
 import java.math.BigDecimal
 import java.text.SimpleDateFormat
@@ -511,6 +512,11 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     result?.onSuccess { data ->
                         LaunchedEffect(Unit) {
                             toolbar.isVisible = true
+                        }
+                        LaunchedEffect(data) {
+                            if (data.none { it.id == selectedAccountId }) {
+                                selectedAccountId = data.firstOrNull()?.id ?: 0L
+                            }
                         }
                         AccountList(
                             accountData = data,
@@ -1325,10 +1331,6 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                                 accountIds.size
                             )
                         )
-                        if (accountIds.any { it == selectedAccountId }) {
-                            selectedAccountId = 0
-                        }
-
                     }.onFailure {
                         if (it is AccountSealedException) {
                             showSnackBar(R.string.object_sealed_debt)
@@ -1730,7 +1732,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 ContribFeature.OCR -> {
                     if (featureViewModel.isFeatureAvailable(this, Feature.OCR)) {
                         if ((tag as Boolean)) {
-                            /*ocrViewModel.startOcrFeature(Uri.fromFile(File("/sdcard/OCR_bg.jpg")), supportFragmentManager);*/
+                            //ocrViewModel.startOcrFeature(Uri.parse("file:///android_asset/OCR.jpg"), supportFragmentManager);
                             startMediaChooserDo("SCAN", true)
                         } else {
                             activateOcrMode()

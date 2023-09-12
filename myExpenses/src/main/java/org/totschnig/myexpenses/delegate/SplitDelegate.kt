@@ -43,7 +43,6 @@ class SplitDelegate(
     lateinit var adapter: SplitPartRVAdapter
     private var transactionSum: Long = 0
 
-    @JvmField
     @State
     var userSetAmount: Boolean = false
     var automaticAmountUpdate: Boolean = false
@@ -122,7 +121,7 @@ class SplitDelegate(
     override fun prepareForNew() {
         super.prepareForNew()
         val account = currentAccount()!!
-        rowId = SplitTransaction.getNewInstance(account.id, account.currency, true).id
+        rowId = SplitTransaction.getNewInstance(context.contentResolver, account.id, account.currency, true).id
         host.viewModel.loadSplitParts(rowId, isTemplate)
     }
 

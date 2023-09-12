@@ -253,7 +253,6 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     }
 
     @State
-    @JvmField
     var downloadPending: String? = null
 
     @Inject
@@ -367,7 +366,7 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
 
                 is FeatureViewModel.FeatureState.Error -> {
                     with(featureState.throwable) {
-                        CrashHandler.report(this)
+                        report(this)
                         message?.let { showSnackBar(it) }
                     }
                 }
@@ -691,7 +690,7 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     fun processImageCaptureError(resultCode: Int, activityResult: CropImage.ActivityResult?) {
         if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
             val throwable = activityResult?.error ?: Throwable("ERROR")
-            CrashHandler.report(throwable)
+            report(throwable)
             showSnackBar(if (throwable is ActivityNotFoundException) getString(R.string.image_capture_not_installed) else throwable.safeMessage)
         }
     }
@@ -740,7 +739,7 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     }
 
     open fun reportMissingSnackBarContainer() {
-        CrashHandler.report(Exception("Class $javaClass is unable to display snackBar"))
+        report(Exception("Class $javaClass is unable to display snackBar"))
     }
 
     private val snackBarContainer: View?

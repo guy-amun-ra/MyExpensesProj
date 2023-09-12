@@ -29,9 +29,11 @@ import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_PREFKEY
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.Companion.KEY_TITLE
 import org.totschnig.myexpenses.model.*
+import org.totschnig.myexpenses.model2.Party
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.PrefKey.AUTO_FILL_HINT_SHOWN
 import org.totschnig.myexpenses.preference.shouldStartAutoFill
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
 import org.totschnig.myexpenses.provider.TransactionProvider
@@ -101,7 +103,11 @@ abstract class MainDelegate<T : ITransaction>(
             return null
         return buildMainTransaction(account).apply {
             this.amount = amount
-            payee = viewBinding.Payee.text.toString()
+            if (this@MainDelegate.payeeId != null) {
+                this.payeeId = this@MainDelegate.payeeId
+            } else {
+                payee = viewBinding.Payee.text.toString()
+            }
             this.debtId = this@MainDelegate.debtId
             this.methodId = this@MainDelegate.methodId
             val selectedItem = viewBinding.OriginalAmount.selectedCurrency
@@ -171,20 +177,19 @@ abstract class MainDelegate<T : ITransaction>(
         )
         viewBinding.Payee.setAdapter(payeeAdapter)
         payeeAdapter.filterQueryProvider = FilterQueryProvider { constraint: CharSequence? ->
-            var selection: String? = null
-            var selectArgs = arrayOfNulls<String>(0)
             if (constraint != null) {
-                selection = Payee.SELECTION
-                selectArgs =
-                    Payee.SELECTION_ARGS(Utils.escapeSqlLikeExpression(Utils.normalize(constraint.toString())))
-            }
-            context.contentResolver.query(
-                TransactionProvider.PAYEES_URI,
-                arrayOf(KEY_ROWID, KEY_PAYEE_NAME),
-                selection,
-                selectArgs,
-                null
-            )
+                val (selection, selectArgs) =
+                    " AND ${Party.SELECTION}" to Party.selectionArgs(
+                        Utils.escapeSqlLikeExpression(Utils.normalize(constraint.toString()))
+                    )
+                context.contentResolver.query(
+                    TransactionProvider.PAYEES_URI,
+                    arrayOf(KEY_ROWID, KEY_PAYEE_NAME),
+                    "$KEY_PARENTID IS NULL $selection",
+                    selectArgs,
+                    null
+                )
+            } else null
         }
         payeeAdapter.stringConversionColumn = 1
         viewBinding.Payee.onItemClickListener =
@@ -246,7 +251,7 @@ abstract class MainDelegate<T : ITransaction>(
         updateUiWithDebt(debts.find { it.id == debtId })
     }
 
-    fun updateUiWithDebt(debt: Debt?) {
+    private fun updateUiWithDebt(debt: Debt?) {
         if (debt == null) {
             if (viewBinding.DebtCheckBox.isChecked) {
                 viewBinding.DebtCheckBox.isChecked = false

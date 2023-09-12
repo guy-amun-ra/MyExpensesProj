@@ -76,7 +76,6 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNTS
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNTS_TAGS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNTTYES_METHODS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNT_EXCHANGE_RATES;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ATTRIBUTES;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_BANKS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_BUDGETS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_BUDGET_ALLOCATIONS;
@@ -96,7 +95,6 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TEMPLATE
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TEMPLATES_TAGS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS_TAGS;
-import static org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTION_ATTRIBUTES;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_ALL;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_CHANGES_EXTENDED;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_COMMITTED;
@@ -117,6 +115,7 @@ import static org.totschnig.myexpenses.provider.DbConstantsKt.categoryTreeSelect
 import static org.totschnig.myexpenses.provider.DbConstantsKt.categoryTreeWithBudget;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.categoryTreeWithMappedObjects;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.checkForSealedAccount;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.getPayeeWithDuplicatesCTE;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.transactionMappedObjectQuery;
 import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.computeWhere;
 import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.groupByForPaymentMethodQuery;
@@ -544,12 +543,18 @@ public class TransactionProvider extends BaseTransactionProvider {
         additionalWhere.append(KEY_ROWID + "=").append(uri.getPathSegments().get(1));
         break;
       case PAYEES:
+        if (uri.getBooleanQueryParameter(QUERY_PARAMETER_HIERARCHICAL, false)) {
+          String sql = getPayeeWithDuplicatesCTE(selection, getCollate());
+          c = measureAndLogQuery(db, uri, sql, selection, selectionArgs);
+          c.setNotificationUri(getContext().getContentResolver(), uri);
+          return c;
+        }
         qb = SupportSQLiteQueryBuilder.builder(TABLE_PAYEES);
         if (sortOrder == null) {
           sortOrder = KEY_PAYEE_NAME + " COLLATE " + getCollate();
         }
         if (projection == null)
-          projection = Companion.getPAYEE_PROJECTION();
+          projection = Companion.payeeProjection(TABLE_PAYEES);
         break;
       case MAPPED_TRANSFER_ACCOUNTS:
         qb = SupportSQLiteQueryBuilder.builder(TABLE_ACCOUNTS + " JOIN " + TABLE_TRANSACTIONS + " ON (" + KEY_TRANSFER_ACCOUNT + " = " + TABLE_ACCOUNTS + "." + KEY_ROWID + ")");
@@ -720,8 +725,10 @@ public class TransactionProvider extends BaseTransactionProvider {
       case AUTOFILL:
         qb = SupportSQLiteQueryBuilder.builder(VIEW_EXTENDED);
         selection = KEY_ROWID + "= (SELECT max(" + KEY_ROWID + ") FROM " + TABLE_TRANSACTIONS
-            + " WHERE " + WHERE_NOT_SPLIT + " AND " + KEY_PAYEEID + " = ?)";
-        selectionArgs = new String[]{uri.getPathSegments().get(1)};
+            + " WHERE " + WHERE_NOT_SPLIT + " AND " + KEY_PAYEEID + " IN (?, (SELECT " + KEY_PARENTID  +" FROM " + TABLE_PAYEES +
+                " WHERE " + KEY_ROWID + " = ?)))";
+        String id = uri.getPathSegments().get(1);
+        selectionArgs = new String[]{id,id};
         break;
       case ACCOUNT_EXCHANGE_RATE:
         qb = SupportSQLiteQueryBuilder.builder(TABLE_ACCOUNT_EXCHANGE_RATES);

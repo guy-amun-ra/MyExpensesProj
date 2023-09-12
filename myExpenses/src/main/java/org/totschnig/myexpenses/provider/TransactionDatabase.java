@@ -24,6 +24,7 @@ import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ACCOUN
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ACCOUNT_REMAP_TRANSFER_TRIGGER_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ATTRIBUTES_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.BANK_CREATE;
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.PARTY_HIERARCHY_TRIGGER;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.PAYEE_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.PAYEE_UNIQUE_INDEX;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTION_ATTRIBUTES_CREATE;
@@ -791,6 +792,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
 
     createOrRefreshCategoryHierarchyTrigger(db);
 
+    db.execSQL(PARTY_HIERARCHY_TRIGGER);
+
     createOrRefreshViews(db);
     //insertTestData(db, 50, 50);
     super.onCreate(db);
@@ -1527,7 +1530,11 @@ public class TransactionDatabase extends BaseTransactionDatabase {
             Cursor c = MoreDbUtilsKt.query(db,"templates", new String[]{"_id", "plan_id"}, "plan_id IS NOT null", null, null, null, null, null);
             if (c.moveToFirst()) {
               while (!c.isAfterLast()) {
-                Plan.updateCustomAppUri(c.getLong(1), Template.buildCustomAppUri(c.getLong(0)));
+                Plan.updateCustomAppUri(
+                        MyApplication.getInstance().getContentResolver(),
+                        c.getLong(1),
+                        Template.buildCustomAppUri(c.getLong(0))
+                );
                 c.moveToNext();
               }
             }
@@ -2258,6 +2265,11 @@ public class TransactionDatabase extends BaseTransactionDatabase {
         db.execSQL("ALTER TABLE payee add column short_name text");
         db.execSQL(PAYEE_UNIQUE_INDEX);
         createOrRefreshViews(db);
+      }
+      if (oldVersion < 147) {
+        db.execSQL("ALTER TABLE payee add column parent_id integer references payee(_id) ON DELETE CASCADE");
+        db.execSQL("update payee set short_name = null where short_name = ''");
+        db.execSQL(PARTY_HIERARCHY_TRIGGER);
       }
 
       TransactionProvider.resumeChangeTrigger(db);
