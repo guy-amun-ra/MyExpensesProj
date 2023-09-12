@@ -4,14 +4,13 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.annotation.VisibleForTesting
-import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.google.android.vending.licensing.PreferenceObfuscator
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contrib.Config
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.util.CurrencyFormatter
+import org.totschnig.myexpenses.util.ICurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 
@@ -21,7 +20,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
     repository: Repository,
-    currencyFormatter: CurrencyFormatter
+    currencyFormatter: ICurrencyFormatter
 ) : ContribStatusLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter) {
     val pricesPrefs: SharedPreferences = context.getSharedPreferences(PRICES_PREFS_FILE, Context.MODE_PRIVATE)
 

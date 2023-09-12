@@ -7,7 +7,7 @@ import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contrib.Config
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
-import org.totschnig.myexpenses.util.CurrencyFormatter
+import org.totschnig.myexpenses.util.ICurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 class StoreLicenceHandler(
@@ -16,7 +16,7 @@ class StoreLicenceHandler(
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
     repository: Repository,
-    currencyFormatter: CurrencyFormatter
+    currencyFormatter: ICurrencyFormatter
 ) :
         PlayStoreLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter) {
 

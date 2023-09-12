@@ -12,7 +12,7 @@ import com.google.android.vending.licensing.PreferenceObfuscator
 import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
-import org.totschnig.myexpenses.util.CurrencyFormatter
+import org.totschnig.myexpenses.util.ICurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import timber.log.Timber
 import java.util.*
@@ -23,7 +23,7 @@ open class PlayStoreLicenceHandler(
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
     repository: Repository,
-    currencyFormatter: CurrencyFormatter
+    currencyFormatter: ICurrencyFormatter
 ) : AbstractInAppPurchaseLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter) {
     private fun storeSkuDetails(inventory: List<ProductDetails>) {
         val editor = pricesPrefs.edit()

@@ -6,7 +6,7 @@ import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
-import org.totschnig.myexpenses.util.CurrencyFormatter
+import org.totschnig.myexpenses.util.ICurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 /**
@@ -18,7 +18,7 @@ abstract class ContribStatusLicenceHandler internal constructor(
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
     repository: Repository,
-    currencyFormatter: CurrencyFormatter
+    currencyFormatter: ICurrencyFormatter
 ) : LicenceHandler(
     context,
     preferenceObfuscator,
