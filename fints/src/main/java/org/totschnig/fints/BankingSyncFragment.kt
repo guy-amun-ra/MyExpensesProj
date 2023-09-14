@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -45,7 +44,7 @@ class BankingSyncFragment : ComposeBaseDialogFragment2() {
             Column {
                 when (workState.value) {
                     is BankingViewModel.WorkState.BankLoaded -> {
-                        val state: MutableState<BankingCredentials?> = remember {
+                        val state: MutableState<BankingCredentials> = remember {
                             mutableStateOf(
                                 BankingCredentials.fromBank((workState.value as BankingViewModel.WorkState.BankLoaded).bank)
                             )
@@ -55,9 +54,9 @@ class BankingSyncFragment : ComposeBaseDialogFragment2() {
                             Button(onClick = { dismiss() }) {
                                 Text(stringResource(id = android.R.string.cancel))
                             }
-                            Button(enabled = state.value?.isComplete == true, onClick = {
+                            Button(enabled = state.value.isComplete, onClick = {
                                 viewModel.syncAccount(
-                                    state.value!!,
+                                    state.value,
                                     requireArguments().getLong(KEY_ACCOUNTID)
                                 )
                             }) {
@@ -68,13 +67,10 @@ class BankingSyncFragment : ComposeBaseDialogFragment2() {
 
 
                     is BankingViewModel.WorkState.Done -> {
-                        errorState.value?.let {
-                            Text(
-                                color = MaterialTheme.colorScheme.error,
-                                text = it
-                            )
+                        Error(errorMessage = errorState.value)
+                        (workState.value as? BankingViewModel.WorkState.Success)?.message?.let {
+                            Text(it)
                         }
-                        Text((workState.value as BankingViewModel.WorkState.Done).message)
                         ButtonRow {
                             Button(onClick = { dismiss() }) {
                                 Text(stringResource(id = R.string.menu_close))

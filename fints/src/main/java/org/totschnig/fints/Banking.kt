@@ -1,11 +1,13 @@
 package org.totschnig.fints
 
+import android.app.Activity
 import android.os.Bundle
+import android.text.SpannableStringBuilder
 import android.text.TextUtils
 import android.widget.TextView
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.Image
+import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,20 +34,22 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -58,11 +62,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.DialogProperties
@@ -87,6 +89,12 @@ class Banking : ProtectedFragmentActivity() {
 
     private val viewModel: BankingViewModel by viewModels()
 
+    enum class DialogState {
+        NoShow, Credentials, Loading, AccountSelection, Done
+
+    }
+
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
 
@@ -96,304 +104,379 @@ class Banking : ProtectedFragmentActivity() {
             AppTheme {
 
                 val data = viewModel.banks.collectAsState()
-                val dialogShown: MutableState<BankingCredentials?> =
-                    rememberSaveable { mutableStateOf(null) }
+                var dialogState: DialogState by rememberSaveable {
+                    mutableStateOf(if (calledFromOnboarding) DialogState.Credentials else DialogState.NoShow)
+                }
+                val bankingCredentials: MutableState<BankingCredentials> =
+                    rememberSaveable { mutableStateOf(BankingCredentials.EMPTY) }
                 val tanRequested = viewModel.tanRequested.observeAsState()
                 val workState = viewModel.workState.collectAsState()
+                LaunchedEffect(workState.value) {
+                    when (workState.value) {
+                        is Initial -> {
+                            if (dialogState == DialogState.Loading) {
+                                dialogState = DialogState.Credentials
+                            }
+                        }
+                        is Loading -> {
+                            dialogState = DialogState.Loading
+                        }
+
+                        is AccountsLoaded -> {
+                            dialogState = DialogState.AccountSelection
+                        }
+
+                        is Done -> {
+                            dialogState = DialogState.Done
+                        }
+
+                        else -> {}
+                    }
+                }
                 val errorState = viewModel.errorState.collectAsState()
 
-                Scaffold(
-                    topBar = {
-                        TopAppBar(
-                            title = { Text("Banking") },
-                            navigationIcon = {
-                                IconButton(onClick = { finish() }) {
-                                    Icon(
-                                        imageVector = Icons.Filled.ArrowBack,
-                                        contentDescription = stringResource(id = androidx.appcompat.R.string.abc_action_bar_up_description)
-                                    )
-                                }
-                            }
-                        )
-                    },
-                    floatingActionButtonPosition = FabPosition.End,
-                    floatingActionButton = {
-                        FloatingActionButton(
-                            onClick = {
-                                dialogShown.value = BankingCredentials.EMPTY
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = stringResource(id = RF.string.add_new_bank)
-                            )
-                        }
-                    },
-                ) { paddingValues ->
-                    Box(
-                        modifier = Modifier
-                            .padding(paddingValues)
-                            .fillMaxSize()
-                    ) {
-                        if (data.value.isEmpty()) {
-                            Text(
-                                text = stringResource(org.totschnig.fints.R.string.no_bank_added_yet),
-                                modifier = Modifier.align(Alignment.Center)
-                            )
-                        } else {
-                            LazyColumn(modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.padding_main_screen))) {
-                                data.value.forEach {
-                                    item {
-                                        BankRow(
-                                            bank = it,
-                                            onDelete = {
-                                                if (it.count > 0) {
-                                                    confirmBankDelete(it)
-                                                } else {
-                                                    viewModel.deleteBank(it.id)
-                                                }
-                                            },
-                                            onShow = {
-                                                dialogShown.value = BankingCredentials.fromBank(it)
-                                            }
+                if (!calledFromOnboarding) {
+                    Scaffold(
+                        topBar = {
+                            TopAppBar(
+                                title = { Text("Banking") },
+                                navigationIcon = {
+                                    IconButton(onClick = { finish() }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.ArrowBack,
+                                            contentDescription = stringResource(id = androidx.appcompat.R.string.abc_action_bar_up_description)
                                         )
+                                    }
+                                }
+                            )
+                        },
+                        floatingActionButtonPosition = FabPosition.End,
+                        floatingActionButton = {
+                            FloatingActionButton(
+                                onClick = {
+                                    dialogState = DialogState.Credentials
+                                    bankingCredentials.value = BankingCredentials.EMPTY
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = stringResource(id = RF.string.add_new_bank)
+                                )
+                            }
+                        },
+                    ) { paddingValues ->
+                        Box(
+                            modifier = Modifier
+                                .padding(paddingValues)
+                                .fillMaxSize()
+                        ) {
+                            if (data.value.isEmpty()) {
+                                Text(
+                                    text = stringResource(org.totschnig.fints.R.string.no_bank_added_yet),
+                                    modifier = Modifier.align(Alignment.Center)
+                                )
+                            } else {
+                                LazyColumn(modifier = Modifier.padding(horizontal = dimensionResource(id = R.dimen.padding_main_screen))) {
+                                    data.value.forEach {
+                                        item {
+                                            BankRow(
+                                                bank = it,
+                                                onDelete = {
+                                                    if (it.count > 0) {
+                                                        confirmBankDelete(it)
+                                                    } else {
+                                                        viewModel.deleteBank(it.id)
+                                                    }
+                                                },
+                                                onShow = {
+                                                    dialogState = DialogState.Credentials
+                                                    bankingCredentials.value = BankingCredentials.fromBank(it)
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-                dialogShown.value?.let { bankingCredentials ->
-                    val selectedAccounts = rememberMutableStateMapOf<Int, Long>()
-                    var nrDays: Long? by remember { mutableStateOf(null) }
-                    val importMaxDuration = remember { derivedStateOf { nrDays == null } }
-
-                    val availableAccounts = viewModel.accounts.collectAsState(initial = emptyList())
-                    val targetOptions = remember {
-                        derivedStateOf {
-                            buildList {
-                                add(0L to getString(R.string.menu_create_account))
-                                availableAccounts.value.forEach {
-                                    add(it.id to it.label)
-                                }
-                            }
-                        }
+                SetupDialog(dialogState, workState.value, bankingCredentials, errorState) {
+                    if (calledFromOnboarding) {
+                        setResult(if (it) Activity.RESULT_OK else Activity.RESULT_CANCELED)
+                        finish()
+                    } else {
+                        dialogState = DialogState.NoShow
+                        bankingCredentials.value = BankingCredentials.EMPTY
+                        viewModel.reset()
                     }
-
-                    AlertDialog(
-                        //https://issuetracker.google.com/issues/221643630
-                        properties = DialogProperties(
-                            dismissOnClickOutside = false,
-                            usePlatformDefaultWidth = false
-                        ),
-                        onDismissRequest = {
-                            dialogShown.value = null
-                            viewModel.reset()
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = Icons.Filled.AccountBalance,
-                                contentDescription = null
-                            )
-                        },
-                        title = when (workState.value) {
-                            is AccountsLoaded -> RF.string.select_accounts
-                            Initial -> if (bankingCredentials.isNew) RF.string.add_new_bank else RF.string.enter_pin
-                            else -> null
-                        }?.let {
-                            {
-                                Text(
-                                    text = stringResource(id = it),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
-                        },
-                        confirmButton = {
-                            Button(
-                                onClick = {
-                                    when (workState.value) {
-                                        is AccountsLoaded -> {
-                                            val state =
-                                                workState.value as AccountsLoaded
-                                            viewModel.importAccounts(
-                                                bankingCredentials,
-                                                state.bank,
-                                                state.accounts.mapIndexedNotNull { index, pair ->
-                                                    selectedAccounts[index]?.let { pair.first to it }
-                                                },
-                                                nrDays?.let { LocalDate.now().minusDays(it) }
-                                            )
-                                        }
-
-                                        is Done -> {
-                                            viewModel.reset()
-                                            dialogShown.value = null
-                                        }
-
-                                        else -> {
-                                            viewModel.addBank(bankingCredentials)
-                                        }
-                                    }
-                                },
-                                enabled = when (workState.value) {
-                                    is AccountsLoaded -> selectedAccounts.size > 0
-                                    is Loading -> false
-                                    else -> bankingCredentials.isComplete
-                                }
-                            ) {
-                                Text(
-                                    stringResource(
-                                        when (workState.value) {
-                                            is AccountsLoaded -> R.string.menu_import
-                                            is Done -> R.string.menu_close
-                                            else -> RF.string.btn_load_accounts
-                                        }
-                                    )
-                                )
-                            }
-                        },
-                        dismissButton = if (workState.value is Done) null else {
-                            {
-                                Button(
-                                    onClick = {
-                                        dialogShown.value = null
-                                        viewModel.reset()
-
-                                    }) {
-                                    Text(stringResource(id = android.R.string.cancel))
-                                }
-                            }
-                        },
-                        text = {
-                            Column(
-                                modifier = Modifier
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                when (workState.value) {
-                                    is Loading -> {
-                                        Loading((workState.value as Loading).message)
-                                    }
-
-                                    is AccountsLoaded -> {
-                                        val help  = LocalContext.current.getText(RF.string.select_accounts_help)
-                                        AndroidView(
-                                            modifier = Modifier.padding(bottom = 8.dp),
-                                            factory = { context -> TextView(context) },
-                                            update = { it.text = help }
-                                        )
-                                        val accounts =
-                                            (workState.value as AccountsLoaded).accounts
-                                        accounts.forEachIndexed { index, account ->
-                                            AccountRow(
-                                                account.first,
-                                                !account.second,
-                                                targetOptions.value.find { it.first == selectedAccounts[index] }?.second,
-                                                targetOptions.value.filterNot { it.first != 0L && selectedAccounts.values.contains(it.first)  }
-                                            ) { selected, accountId ->
-                                                if (selected) selectedAccounts[index] =
-                                                    accountId else selectedAccounts.remove(
-                                                    index
-                                                )
-                                            }
-                                        }
-                                        if (!accounts.all { it.second }) {
-                                            Column(Modifier.selectableGroup()) {
-                                                Row(
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .selectable(
-                                                            selected = importMaxDuration.value,
-                                                            onClick = { nrDays = null },
-                                                            role = Role.RadioButton
-                                                        ),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    RadioButton(
-                                                        modifier = Modifier.minimumInteractiveComponentSize(),
-                                                        selected = importMaxDuration.value,
-                                                        onClick = null
-                                                    )
-                                                    Text(
-                                                        text = getString(org.totschnig.fints.R.string.import_maximum),
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                }
-                                                Row(
-                                                    Modifier
-                                                        .fillMaxWidth()
-                                                        .selectable(
-                                                            selected = !importMaxDuration.value,
-                                                            onClick = {
-                                                                if (nrDays == null) nrDays = 365
-                                                            },
-                                                            role = Role.RadioButton
-                                                        ),
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    RadioButton(
-                                                        modifier = Modifier.minimumInteractiveComponentSize(),
-                                                        selected = !importMaxDuration.value,
-                                                        onClick = null
-                                                    )
-                                                    val parts =
-                                                        stringResource(id = RF.string.import_only_n).split(
-                                                            '|'
-                                                        )
-                                                    Text(
-                                                        text = parts[0],
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                    DenseTextField(
-                                                        value = nrDays?.toString() ?: "",
-                                                        onValueChange = {
-                                                            nrDays = try {
-                                                                it.toLong()
-                                                            } catch (e: NumberFormatException) {
-                                                                0
-                                                            }
-                                                        },
-                                                        modifier = Modifier
-                                                            .width(IntrinsicSize.Min)
-                                                            .widthIn(min = 24.dp),
-                                                        keyboardOptions = KeyboardOptions(
-                                                            keyboardType = KeyboardType.Number
-                                                        )
-                                                    )
-                                                    Text(
-                                                        text = parts.getOrElse(1) { "" },
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    is Initial -> {
-                                        BankingCredentials(
-                                            bankingCredentials = dialogShown,
-                                            onDone = viewModel::addBank
-                                        )
-                                    }
-
-                                    is Done -> {
-                                        Text((workState.value as Done).message)
-                                    }
-
-                                    else -> {}
-                                }
-                                errorState.value?.let {
-                                    Text(
-                                        color = MaterialTheme.colorScheme.error,
-                                        text = it
-                                    )
-                                }
-                            }
-                        }
-                    )
                 }
                 TanDialog(tanRequest = tanRequested.value, submitTan = viewModel::submitTan)
             }
         }
+    }
+
+    @Composable
+    private fun SetupDialog(
+        dialogState: DialogState,
+        workState: BankingViewModel.WorkState,
+        bankingCredentials: MutableState<BankingCredentials>,
+        errorState: State<String?>,
+        dismiss: (success: Boolean) -> Unit
+    ) {
+        when (dialogState) {
+            DialogState.AccountSelection -> {
+                val accounts = (workState as? AccountsLoaded)?.accounts
+                    ?: return
+                val selectedAccounts = rememberMutableStateMapOf<Int, Long>()
+                var nrDays: Long? by remember { mutableStateOf(null) }
+                val importMaxDuration = remember { derivedStateOf { nrDays == null } }
+
+                val availableAccounts =
+                    viewModel.accounts.collectAsState(initial = emptyList())
+                val targetOptions = remember {
+                    derivedStateOf {
+                        buildList {
+                            add(0L to getString(R.string.menu_create_account))
+                            availableAccounts.value.forEach {
+                                add(it.id to it.label)
+                            }
+                        }
+                    }
+                }
+                AlertDialog(
+                    properties = DialogProperties(dismissOnClickOutside = false),
+                    onDismissRequest = { dismiss(false) },
+                    icon = { DialogIcon() },
+                    title = {
+                        Text(
+                            text = stringResource(id = RF.string.select_accounts),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.importAccounts(
+                                    bankingCredentials.value,
+                                    workState.bank,
+                                    workState.accounts.mapIndexedNotNull { index, pair ->
+                                        selectedAccounts[index]?.let { pair.first to it }
+                                    },
+                                    nrDays?.let { LocalDate.now().minusDays(it) }
+                                )
+                            },
+                            enabled = selectedAccounts.size > 0
+                        ) {
+                            Text(stringResource(R.string.menu_import))
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { dismiss(false) }) {
+                            Text(stringResource(id = android.R.string.cancel))
+                        }
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Error(errorMessage = errorState.value)
+                            Help(buildList {
+                                add(RF.string.select_accounts_help_1)
+                                if (!calledFromOnboarding) {
+                                    add(RF.string.select_accounts_help_2)
+                                }
+                                add(RF.string.select_accounts_help_3)
+                            })
+
+                            accounts.forEachIndexed { index, account ->
+                                AccountRow(
+                                    account.first,
+                                    !account.second,
+                                    targetOptions.value.find { it.first == selectedAccounts[index] }?.second,
+                                    targetOptions.value.filterNot {
+                                        it.first != 0L && selectedAccounts.values.contains(
+                                            it.first
+                                        )
+                                    }
+                                ) { selected, accountId ->
+                                    if (selected) selectedAccounts[index] =
+                                        accountId else selectedAccounts.remove(
+                                        index
+                                    )
+                                }
+                            }
+                            if (!accounts.all { it.second }) {
+                                Column(Modifier.selectableGroup()) {
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .selectable(
+                                                selected = importMaxDuration.value,
+                                                onClick = { nrDays = null },
+                                                role = Role.RadioButton
+                                            ),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            modifier = Modifier.minimumInteractiveComponentSize(),
+                                            selected = importMaxDuration.value,
+                                            onClick = null
+                                        )
+                                        Text(
+                                            text = getString(org.totschnig.fints.R.string.import_maximum),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                    Row(
+                                        Modifier
+                                            .fillMaxWidth()
+                                            .selectable(
+                                                selected = !importMaxDuration.value,
+                                                onClick = {
+                                                    if (nrDays == null) nrDays = 365
+                                                },
+                                                role = Role.RadioButton
+                                            ),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        RadioButton(
+                                            modifier = Modifier.minimumInteractiveComponentSize(),
+                                            selected = !importMaxDuration.value,
+                                            onClick = null
+                                        )
+                                        val parts =
+                                            stringResource(id = RF.string.import_only_n).split(
+                                                '|'
+                                            )
+                                        Text(
+                                            text = parts[0],
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        DenseTextField(
+                                            value = nrDays?.toString() ?: "",
+                                            onValueChange = {
+                                                nrDays = try {
+                                                    it.toLong()
+                                                } catch (e: NumberFormatException) {
+                                                    0
+                                                }
+                                            },
+                                            modifier = Modifier
+                                                .width(IntrinsicSize.Min)
+                                                .widthIn(min = 24.dp),
+                                            keyboardOptions = KeyboardOptions(
+                                                keyboardType = KeyboardType.Number
+                                            )
+                                        )
+                                        Text(
+                                            text = parts.getOrElse(1) { "" },
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+
+            DialogState.Credentials -> {
+                AlertDialog(
+                    properties = DialogProperties(dismissOnClickOutside = false),
+                    onDismissRequest = { dismiss(false) },
+                    icon = { DialogIcon() },
+                    title = {
+                        Text(
+                            text = stringResource(id = if (bankingCredentials.value.isNew) RF.string.add_new_bank else RF.string.enter_pin),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                viewModel.addBank(bankingCredentials.value)
+                            },
+                            enabled = bankingCredentials.value.isComplete
+                        ) {
+                            Text(
+                                stringResource(RF.string.btn_load_accounts)
+                            )
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { dismiss(false) }) {
+                            Text(stringResource(id = android.R.string.cancel))
+                        }
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Error(errorMessage = errorState.value)
+                            Help(buildList {
+                                add(RF.string.fints_intro_1)
+                                if (calledFromOnboarding) {
+                                    add(RF.string.fints_intro_2)
+                                }
+                            })
+                            BankingCredentials(
+                                bankingCredentials = bankingCredentials,
+                                onDone = viewModel::addBank
+                            )
+                        }
+                    }
+                )
+            }
+
+            DialogState.Done -> {
+                AlertDialog(
+                    onDismissRequest = { dismiss(workState is Success) },
+                    confirmButton = {
+                        Button(
+                            onClick = { dismiss(workState is Success) }
+                        ) {
+                            Text(stringResource( R.string.menu_close))
+                        }
+                    },
+                    text = {
+                        Column(
+                            modifier = Modifier
+                                .verticalScroll(rememberScrollState())
+                        ) {
+                            Error(errorMessage = errorState.value)
+                            (workState as? Success)?.message?.let { Text(it) }
+                        }
+                    }
+                )
+            }
+            DialogState.Loading -> {
+                AlertDialog(
+                    properties = DialogProperties(dismissOnClickOutside = false),
+                    onDismissRequest = { dismiss(false) },
+                    confirmButton = {
+                        Button(onClick = { dismiss(false) }) {
+                            Text(stringResource(id = android.R.string.cancel))
+                        }
+                    },
+                    icon = { DialogIcon() },
+                    text = {
+                        Loading((workState as? Loading)?.message)
+                    }
+                )
+            }
+
+            DialogState.NoShow -> {}
+        }
+    }
+
+    @Composable
+    private fun DialogIcon() {
+        Icon(
+            imageVector = Icons.Filled.AccountBalance,
+            contentDescription = null
+        )
     }
 
     override fun dispatchCommand(command: Int, tag: Any?) =
@@ -431,24 +514,18 @@ class Banking : ProtectedFragmentActivity() {
         )
             .show(supportFragmentManager, "DELETE_ACCOUNT")
     }
-}
 
-@Composable
-fun BankIconImpl(blz: String) {
-    getIcon(blz)?.let {
-        Image(painter = painterResource(id = it), contentDescription = null)
-    } ?: run {
-        Image(imageVector = Icons.Filled.AccountBalance, contentDescription = null)
+    @Composable
+    fun Help(@StringRes resIds: List<Int>) {
+        val help = resIds.joinTo(SpannableStringBuilder(), " ") {
+            getText(it)
+        }
+        AndroidView(
+            modifier = Modifier.width(OutlinedTextFieldDefaults.MinWidth).padding(bottom = 8.dp),
+            factory = { context -> TextView(context) },
+            update = { it.text = help }
+        )
     }
-}
-
-fun getIcon(blz: String) = when {
-    blz == "12030000" -> RF.drawable.dkb
-    blz == "43060967" -> RF.drawable.gls
-    blz.startsWith("200411") -> RF.drawable.comdirect
-    blz[3] == '5' -> RF.drawable.sparkasse
-    blz[3] == '9' -> RF.drawable.volksbank
-    else -> null
 }
 
 @Composable
@@ -520,19 +597,7 @@ fun AccountRow(
         Column {
             Text(text = "${account.type} ${account.name}${account.name2?.let { " $it" } ?: ""}")
             Text(account.dbNumber)
-            selected?.let { Text(stringResource(id = RF.string.import_into) + " " + it ) }
+            selected?.let { Text(stringResource(id = RF.string.import_into) + " " + it) }
         }
-    }
-}
-
-@Preview
-@Composable
-fun Loading(text: String? = "Loading") {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        CircularProgressIndicator()
-        Text(text ?: stringResource(id = R.string.loading))
     }
 }

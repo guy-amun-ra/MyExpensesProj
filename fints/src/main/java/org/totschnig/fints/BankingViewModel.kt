@@ -128,7 +128,11 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
             val accounts: List<Pair<Konto, Boolean>>
         ) : WorkState()
 
-        data class Done(val message: String = "") : WorkState()
+        abstract class Done() : WorkState()
+
+        class Abort: Done()
+
+        class Success(val message: String = ""): Done()
     }
 
     fun submitTan(tan: String?) {
@@ -153,14 +157,7 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
         HBCIUtils.setParam("client.passport.default", "PinTan")
         HBCIUtils.setParam("client.passport.PinTan.init", "1")
 
-        val info = HBCIUtils.getBankInfo(bankingCredentials.blz)
-
-        if (info == null) {
-            HBCIUtils.doneThread()
-            error(getString(R.string.blz_not_found, bankingCredentials.blz))
-            _workState.value = WorkState.Initial
-        }
-        return info
+        return HBCIUtils.getBankInfo(bankingCredentials.blz)
     }
 
     private fun buildPassportFile(info: BankInfo, user: String) =
@@ -178,13 +175,17 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
         }
 
     @WorkerThread
-    private fun doHBCI(
+    private suspend fun doHBCI(
         bankingCredentials: BankingCredentials,
-        work: (BankInfo, HBCIPassport, HBCIHandler) -> Unit,
+        work: suspend (BankInfo, HBCIPassport, HBCIHandler) -> Unit,
         onError: (Exception) -> Unit
     ) {
 
-        val info = initHBCI(bankingCredentials) ?: return
+        val info = initHBCI(bankingCredentials) ?: run {
+            HBCIUtils.doneThread()
+            onError(Exception(getString(R.string.blz_not_found, bankingCredentials.blz)))
+            return
+        }
 
         val passportFile = buildPassportFile(info, bankingCredentials.user)
 
@@ -232,13 +233,12 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
 
     fun addBank(bankingCredentials: BankingCredentials) {
         clearError()
-        _workState.value = WorkState.Loading()
 
         if (bankingCredentials.isNew && banks.value.any { it.blz == bankingCredentials.blz && it.userId == bankingCredentials.user }) {
-            _workState.value = WorkState.Initial
             error(getString(R.string.bank_already_added))
             return
         }
+        _workState.value = WorkState.Loading()
         viewModelScope.launch(context = coroutineContext()) {
             doHBCI(
                 bankingCredentials,
@@ -287,11 +287,13 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
             if (accountInformation == null) {
                 CrashHandler.report(Exception("Error while retrieving Information for account"))
                 error("Error while retrieving Information for account")
+                _workState.value = WorkState.Abort()
                 return@launch
             }
             if (accountInformation.lastSynced == null) {
                 CrashHandler.report(Exception("Error while retrieving Information for account (lastSynced)"))
                 error("Error while retrieving Information for account (lastSynced")
+                _workState.value = WorkState.Abort()
                 return@launch
             }
 
@@ -328,7 +330,7 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
                     if (!result.isOK) {
                         error(result.toString())
                         log(result.toString())
-                        _workState.value = WorkState.Done()
+                        _workState.value = WorkState.Abort()
                         return@doHBCI
                     }
 
@@ -350,7 +352,7 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
                     }
                     setAccountLastSynced(accountId)
                     _workState.value =
-                        WorkState.Done(
+                        WorkState.Success(
                             if (importCount > 0)
                                 getQuantityString(R.plurals.transactions_imported, importCount, importCount)
                             else
@@ -359,7 +361,7 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
                 },
                 onError = {
                     error(it)
-                    _workState.value = WorkState.Done()
+                    _workState.value = WorkState.Abort()
                 }
             )
         }
@@ -425,6 +427,7 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
                         val result = umsatzJob.jobResult as GVRKUms
 
                         if (!result.isOK) {
+                            _workState.value = WorkState.Abort()
                             error(result.toString())
                             log(result.toString())
                             return@doHBCI
@@ -460,12 +463,12 @@ class BankingViewModel(application: Application) : ContentResolvingAndroidViewMo
                     },
                     onError = {
                         error(it)
-                        _workState.value = WorkState.Done()
+                        _workState.value = WorkState.Abort()
                     }
                 )
             }
             licenceHandler.recordUsage(ContribFeature.BANKING)
-            _workState.value = WorkState.Done(
+            _workState.value = WorkState.Success(
                 getQuantityString(R.plurals.accounts_imported, successCount, successCount)
             )
         }
