@@ -11,7 +11,7 @@ import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.contrib.Config.amazonSkus
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
-import org.totschnig.myexpenses.util.CurrencyFormatter
+import org.totschnig.myexpenses.util.ICurrencyFormatter
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 
 class StoreLicenceHandler(
@@ -20,7 +20,7 @@ class StoreLicenceHandler(
     crashHandler: CrashHandler,
     prefHandler: PrefHandler,
     repository: Repository,
-    currencyFormatter: CurrencyFormatter
+    currencyFormatter: ICurrencyFormatter
 ) :
     AbstractInAppPurchaseLicenceHandler(
         context,
