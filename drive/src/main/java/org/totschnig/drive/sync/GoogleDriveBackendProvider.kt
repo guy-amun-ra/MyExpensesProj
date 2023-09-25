@@ -7,11 +7,10 @@ import android.net.Uri
 import com.google.api.client.googleapis.extensions.android.gms.auth.UserRecoverableAuthIOException
 import com.google.api.services.drive.model.File
 import org.acra.util.StreamReader
-import org.totschnig.myexpenses.MyApplication
+import org.totschnig.myexpenses.injector
 import org.totschnig.myexpenses.model.AccountType
 import org.totschnig.myexpenses.sync.AbstractSyncBackendProvider
 import org.totschnig.myexpenses.sync.GenericAccountService
-import org.totschnig.myexpenses.sync.SequenceNumber
 import org.totschnig.myexpenses.sync.SyncBackendProvider.AuthException
 import org.totschnig.myexpenses.sync.SyncBackendProvider.SyncParseException
 import org.totschnig.myexpenses.sync.json.AccountMetaData
@@ -40,6 +39,9 @@ class GoogleDriveBackendProvider internal constructor(
         throw SyncParseException(e)
     }
     override val sharedPreferencesName = "google_drive"
+
+    override val accountRes: File
+        get() = accountFolder
 
     override fun readFileContents(
         fromAccountDir: Boolean,
@@ -79,17 +81,7 @@ class GoogleDriveBackendProvider internal constructor(
     override val isEmpty: Boolean
         get() = driveServiceHelper.listChildren(baseFolder).isEmpty()
 
-    @Throws(IOException::class)
-    override fun getInputStreamForPicture(relativeUri: String): InputStream {
-        return getInputStream(accountFolder, relativeUri)
-    }
-
-    @Throws(IOException::class)
-    override fun getInputStreamForBackup(backupFile: String): InputStream {
-        val backupFolder = getBackupFolder(false)
-        return backupFolder?.let { getInputStream(it, backupFile) }
-            ?: throw IOException("No backup folder found")
-    }
+    override fun getInputStream(resource: File) = driveServiceHelper.read(resource.id)
 
     @Throws(IOException::class)
     private fun getInputStream(folder: File, title: String): InputStream {
@@ -97,15 +89,10 @@ class GoogleDriveBackendProvider internal constructor(
     }
 
     @Throws(IOException::class)
-    override fun saveUriToAccountDir(fileName: String, uri: Uri) {
-        saveUriToFolder(fileName, uri, accountFolder, true)
-    }
-
-    @Throws(IOException::class)
-    private fun saveUriToFolder(
+    override fun saveUriToCollection(
         fileName: String,
         uri: Uri,
-        driveFolder: File,
+        collection: File,
         maybeEncrypt: Boolean
     ) {
         (context.contentResolver.openInputStream(uri)
@@ -114,22 +101,10 @@ class GoogleDriveBackendProvider internal constructor(
                 fileName,
                 if (maybeEncrypt) maybeEncrypt(it) else it,
                 getMimeType(fileName),
-                driveFolder
+                collection
             )
         }
     }
-
-    @Throws(IOException::class)
-    override fun storeBackup(uri: Uri, fileName: String) {
-        saveUriToFolder(fileName, uri, getBackupFolder(true)!!, false)
-    }
-
-    @get:Throws(IOException::class)
-    override val storedBackups: List<String>
-        get() = getBackupFolder(false)?.let {
-            driveServiceHelper.listChildren(it)
-                .map { obj: File -> obj.name }
-        } ?: emptyList()
 
     @Throws(IOException::class)
     override fun saveFileContents(
@@ -142,7 +117,11 @@ class GoogleDriveBackendProvider internal constructor(
     ) {
         val base = if (toAccountDir) accountFolder else baseFolder
         val driveFolder = if (folder == null) base else {
-            getSubFolder(folder) ?: driveServiceHelper.createFolder(accountFolder.id, folder, null)
+            getResInAccountDir(folder) ?: driveServiceHelper.createFolder(
+                accountFolder.id,
+                folder,
+                null
+            )
         }
         saveFileContents(driveFolder, fileName, fileContents, mimeType, maybeEncrypt)
     }
@@ -227,8 +206,31 @@ class GoogleDriveBackendProvider internal constructor(
         }
     }
 
-    override fun collectionForShard(shardNumber: Int) =
-        if (shardNumber == 0) accountFolder else getSubFolder(folderForShard(shardNumber))
+    override fun getResInAccountDir(resourceName: String) =
+        driveServiceHelper.getFileByNameAndParent(accountFolder, resourceName)
+
+    override fun getCollection(collectionName: String, require: Boolean): File? {
+        val file = driveServiceHelper.getFileByNameAndParent(
+            baseFolder, collectionName
+        )
+        val key = collectionPropertyKey(collectionName)
+        return when {
+            file != null && file.appProperties != null &&
+                    getPropertyWithDefault(file.appProperties, key, false) -> file
+
+            require -> {
+                val properties: MutableMap<String, String> = HashMap()
+                properties[key] = "true"
+                driveServiceHelper.createFolder(
+                    baseFolder.id,
+                    collectionName,
+                    properties
+                )
+            }
+
+            else -> null
+        }
+    }
 
     override fun childrenForCollection(folder: File?) =
         driveServiceHelper.listChildren(folder ?: accountFolder)
@@ -236,17 +238,6 @@ class GoogleDriveBackendProvider internal constructor(
     override fun nameForResource(resource: File): String? = resource.name
 
     override fun isCollection(resource: File) = driveServiceHelper.isFolder(resource)
-
-    @Throws(IOException::class)
-    private fun getSubFolder(shard: String): File? {
-        return driveServiceHelper.getFileByNameAndParent(accountFolder, shard)
-    }
-
-    override fun getChangeSetFromResource(shardNumber: Int, resource: File) =
-        getChangeSetFromInputStream(
-            SequenceNumber(shardNumber, getSequenceFromFileName(resource.name)),
-            driveServiceHelper.read(resource.id)
-        )
 
     @get:Throws(IOException::class)
     override val remoteAccountList: List<Result<AccountMetaData>>
@@ -327,7 +318,7 @@ class GoogleDriveBackendProvider internal constructor(
     }
 
     private val homeCurrency: String
-        get() = (context.applicationContext as MyApplication).appComponent.homeCurrencyProvider().homeCurrencyString
+        get() = context.injector.homeCurrencyProvider().homeCurrencyString
 
     private fun getPropertyWithDefault(
         metadata: Map<String, String>,
@@ -369,31 +360,6 @@ class GoogleDriveBackendProvider internal constructor(
     }
 
     @Throws(IOException::class)
-    private fun getBackupFolder(require: Boolean): File? {
-        val file = driveServiceHelper.getFileByNameAndParent(
-            baseFolder, BACKUP_FOLDER_NAME
-        )
-        if (file != null && file.appProperties != null && getPropertyWithDefault(
-                file.appProperties,
-                IS_BACKUP_FOLDER,
-                false
-            )
-        ) {
-            return file
-        }
-        if (require) {
-            val properties: MutableMap<String, String> = HashMap()
-            properties[IS_BACKUP_FOLDER] = "true"
-            return driveServiceHelper.createFolder(
-                baseFolder.id,
-                BACKUP_FOLDER_NAME,
-                properties
-            )
-        }
-        return null
-    }
-
-    @Throws(IOException::class)
     private fun getExistingAccountFolder(uuid: String): File? {
         return driveServiceHelper.getFileByNameAndParent(baseFolder, uuid)
     }
@@ -413,7 +379,15 @@ class GoogleDriveBackendProvider internal constructor(
         private const val ACCOUNT_METADATA_TYPE_KEY = "accountMetadataType"
         private const val LOCK_TOKEN_KEY = KEY_LOCK_TOKEN
         private const val IS_BACKUP_FOLDER = "isBackupFolder"
+        private const val IS_ATTACHMENT_FOLDER = "isAttachmentFolder"
         const val IS_SYNC_FOLDER = "isSyncFolder"
+
+        private fun collectionPropertyKey(collectionName: String) =
+            when (collectionName) {
+                BACKUP_FOLDER_NAME -> IS_BACKUP_FOLDER
+                ATTACHMENT_FOLDER_NAME -> IS_ATTACHMENT_FOLDER
+                else -> throw NotImplementedError()
+            }
     }
 
     init {

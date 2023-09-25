@@ -3,12 +3,18 @@ package org.totschnig.myexpenses.util
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.res.ColorStateList
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.net.Uri
+import android.os.Build
+import android.os.CancellationSignal
 import android.text.method.LinkMovementMethod
+import android.util.Size
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.Spinner
@@ -27,12 +33,19 @@ import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.ui.filter.ScrollingChip
 import org.totschnig.myexpenses.util.UiUtils.DateMode
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import org.totschnig.myexpenses.viewmodel.ContentResolvingAndroidViewModel.Companion.lazyMap
+import org.totschnig.myexpenses.viewmodel.data.AttachmentInfo
 import org.totschnig.myexpenses.viewmodel.data.PageAccount
 import java.text.SimpleDateFormat
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
-fun <T> ChipGroup.addChipsBulk(chips: Iterable<T>, closeFunction: ((T) -> Unit)? = null, prettyPrint: (T) -> CharSequence = { it.toString() }) {
+fun <T> ChipGroup.addChipsBulk(
+    chips: Iterable<T>,
+    closeFunction: ((T) -> Unit)? = null,
+    prettyPrint: (T) -> CharSequence = { it.toString() }
+) {
     removeAllViews()
     for (chip in chips) {
         addView(ScrollingChip(context).also { scrollingChip ->
@@ -83,6 +96,7 @@ fun getDateMode(accountType: AccountType?, prefHandler: PrefHandler) = when {
     (accountType == null || accountType != AccountType.CASH) &&
             prefHandler.getBoolean(PrefKey.TRANSACTION_WITH_VALUE_DATE, false)
     -> DateMode.BOOKING_VALUE
+
     prefHandler.getBoolean(PrefKey.TRANSACTION_WITH_TIME, true) -> DateMode.DATE_TIME
     else -> DateMode.DATE
 }
@@ -109,12 +123,14 @@ fun dateTimeFormatterLegacy(account: PageAccount, prefHandler: PrefHandler, cont
                 it to if (is24HourFormat) 3f else 4.6f
             }
         }
+
         Grouping.MONTH ->
             if (prefHandler.getString(PrefKey.GROUP_MONTH_STARTS, "1")!!.toInt() == 1) {
                 SimpleDateFormat("dd", Utils.localeFromContext(context)) to 2f
             } else {
                 Utils.localizedYearLessDateFormat(context) to 3f
             }
+
         Grouping.WEEK -> SimpleDateFormat("EEE", Utils.localeFromContext(context)) to 2f
         Grouping.YEAR -> Utils.localizedYearLessDateFormat(context) to 3f
         Grouping.NONE -> Utils.ensureDateFormatWithShortYear(context) to 4.6f
@@ -139,9 +155,11 @@ fun View.configurePopupAnchor(
     infoText: CharSequence
 ) {
     setOnClickListener {
-        val host = context.getActivity() ?: throw java.lang.IllegalStateException("BaseActivity expected")
+        val host =
+            context.getActivity() ?: throw java.lang.IllegalStateException("BaseActivity expected")
         host.hideKeyboard()
-        val infoTextView = LayoutInflater.from(host).inflate(R.layout.textview_info, null) as TextView
+        val infoTextView =
+            LayoutInflater.from(host).inflate(R.layout.textview_info, null) as TextView
         PopupWindow(infoTextView).apply {
             isOutsideTouchable = true
             isFocusable = true
@@ -156,6 +174,67 @@ fun View.configurePopupAnchor(
         }
     }
 }
+
+fun ImageView.setAttachmentInfo(info: AttachmentInfo) {
+    if (info.thumbnail != null) {
+        setImageBitmap(info.thumbnail)
+    } else if (info.typeIcon != null) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            setImageIcon(info.typeIcon)
+        } else {
+            CrashHandler.report(IllegalStateException())
+        }
+    } else {
+        scaleType = ImageView.ScaleType.CENTER
+        setImageResource(info.fallbackResource ?: 0)
+    }
+}
+
+fun attachmentInfoMap(context: Context, withFile: Boolean = false): Map<Uri, AttachmentInfo> {
+    val contentResolver = context.contentResolver
+    return lazyMap { uri ->
+        when (uri.scheme) {
+            "content" -> {
+                val file = if (withFile) try {
+                    PictureDirHelper.getFileForUri(context, uri)
+                } catch (e: IllegalArgumentException) {
+                    null
+                } else null
+                contentResolver.getType(uri)?.let {
+                    if (it.startsWith("image")) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            val size = UiUtils.dp2Px(48f, context.resources)
+                            val cancellationSignal = CancellationSignal()
+                            try {
+                                AttachmentInfo.of(
+                                    contentResolver.loadThumbnail(
+                                        uri,
+                                        Size(size, size),
+                                        cancellationSignal
+                                    ), file
+                                )
+                            } catch (e: Exception) {
+                                null
+                            }
+                        } else {
+                            AttachmentInfo.of(R.drawable.ic_menu_camera, file)
+                        }
+                    } else {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            val icon = contentResolver.getTypeInfo(it).icon
+                            AttachmentInfo.of(icon, file)
+                        } else {
+                            AttachmentInfo.of(R.drawable.ic_menu_template, file)
+                        }
+                    }
+                }
+            }
+            "file" -> if (uri.pathSegments.first() == "android_asset")
+                AttachmentInfo.of(context.assets.open(uri.pathSegments[1]).use(BitmapFactory::decodeStream), null) else null
+            else -> null
+            } ?: AttachmentInfo.of(com.google.android.material.R.drawable.mtrl_ic_error, null)
+        }
+    }
 
 tailrec fun Context.getActivity(): BaseActivity? = this as? BaseActivity
     ?: (this as? ContextWrapper)?.baseContext?.getActivity()

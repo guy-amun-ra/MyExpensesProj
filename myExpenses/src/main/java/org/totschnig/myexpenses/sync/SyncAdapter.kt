@@ -705,6 +705,7 @@ class SyncAdapter @JvmOverloads constructor(
                     do {
                         var transactionChange = TransactionChange.create(changesCursor)
                         if (transactionChange.type() == TransactionChange.Type.created || transactionChange.type() == TransactionChange.Type.updated) {
+                            //noinspection Recycle
                             provider.query(
                                 TransactionProvider.TRANSACTIONS_TAGS_URI,
                                 null,
@@ -717,22 +718,28 @@ class SyncAdapter @JvmOverloads constructor(
                                 ),
                                 arrayOf(transactionChange.uuid()),
                                 null
-                            )?.use { tagCursor ->
-                                if (tagCursor.moveToFirst()) {
-                                    val tags: MutableList<String> = ArrayList()
-                                    do {
-                                        tags.add(
-                                            tagCursor.getString(
-                                                tagCursor.getColumnIndexOrThrow(
-                                                    KEY_LABEL
-                                                )
-                                            )
-                                        )
-                                    } while (tagCursor.moveToNext())
+                            )?.useAndMap { it.getString(KEY_LABEL) }
+                                ?.takeIf { it.isNotEmpty() }
+                                ?.let { tags ->
                                     transactionChange =
                                         transactionChange.toBuilder().setTags(tags).build()
                                 }
-                            }
+                            //noinspection Recycle
+                            provider.query(
+                                TransactionProvider.ATTACHMENTS_URI
+                                    .buildUpon()
+                                    .appendQueryParameter(KEY_UUID, transactionChange.uuid())
+                                    .build(),
+                                arrayOf(KEY_UUID),
+                                null,
+                                arrayOf(transactionChange.uuid()),
+                                null
+                            )?.useAndMap { it.getString(0) }
+                                ?.takeIf { it.isNotEmpty() }
+                                ?.let { attachments ->
+                                    transactionChange =
+                                        transactionChange.toBuilder().setAttachments(attachments).build()
+                                }
                         }
                         changesCursor.getLongOrNull(KEY_CATID)?.takeIf { it > 0 }?.let { catId ->
                             provider.query(ContentUris.withAppendedId(BaseTransactionProvider.CATEGORY_TREE_URI, catId),

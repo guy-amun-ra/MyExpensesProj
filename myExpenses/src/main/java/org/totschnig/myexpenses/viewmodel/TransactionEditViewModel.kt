@@ -5,39 +5,86 @@ import android.content.ContentUris
 import android.content.ContentValues
 import android.database.Cursor
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.content.pm.ShortcutManagerCompat.FLAG_MATCH_PINNED
-import androidx.lifecycle.*
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.liveData
+import androidx.lifecycle.viewModelScope
 import app.cash.copper.flow.mapToList
 import app.cash.copper.flow.observeQuery
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.adapter.SplitPartRVAdapter
+import org.totschnig.myexpenses.db2.addAttachments
+import org.totschnig.myexpenses.db2.deleteAttachments
 import org.totschnig.myexpenses.db2.getCurrencyUnitForAccount
 import org.totschnig.myexpenses.db2.getLastUsedOpenAccount
 import org.totschnig.myexpenses.db2.loadActiveTagsForAccount
+import org.totschnig.myexpenses.db2.loadAttachments
 import org.totschnig.myexpenses.exception.UnknownPictureSaveException
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.enumValueOrDefault
-import org.totschnig.myexpenses.provider.*
+import org.totschnig.myexpenses.provider.BaseTransactionProvider
 import org.totschnig.myexpenses.provider.BaseTransactionProvider.Companion.KEY_DEBT_LABEL
-import org.totschnig.myexpenses.provider.DatabaseConstants.*
+import org.totschnig.myexpenses.provider.DatabaseConstants.CATEGORY_ICON
+import org.totschnig.myexpenses.provider.DatabaseConstants.CAT_AS_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COLOR
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COMMENT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DEBT_ID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_EXCHANGE_RATE
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ICON
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHODID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PLANID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TAGLIST
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TITLE
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TYPE
+import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_UNCOMMITTED
+import org.totschnig.myexpenses.provider.FULL_LABEL
+import org.totschnig.myexpenses.provider.ProviderUtils
+import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.provider.TransactionProvider.QUERY_PARAMETER_ACCOUNTY_TYPE_LIST
+import org.totschnig.myexpenses.provider.fileName
+import org.totschnig.myexpenses.provider.getLong
+import org.totschnig.myexpenses.provider.getLongIfExists
+import org.totschnig.myexpenses.provider.getLongOrNull
+import org.totschnig.myexpenses.provider.getString
+import org.totschnig.myexpenses.provider.getStringIfExists
+import org.totschnig.myexpenses.provider.getStringOrNull
+import org.totschnig.myexpenses.provider.splitStringList
 import org.totschnig.myexpenses.util.ImageOptimizer
 import org.totschnig.myexpenses.util.PictureDirHelper
 import org.totschnig.myexpenses.util.ShortcutHelper
 import org.totschnig.myexpenses.util.asExtension
 import org.totschnig.myexpenses.util.io.FileCopyUtils
+import org.totschnig.myexpenses.util.io.getFileExtension
+import org.totschnig.myexpenses.util.io.getNameWithoutExtension
 import org.totschnig.myexpenses.viewmodel.data.Account
 import org.totschnig.myexpenses.viewmodel.data.PaymentMethod
 import timber.log.Timber
-import java.io.File
 import java.io.IOException
 import kotlin.math.pow
 import org.totschnig.myexpenses.viewmodel.data.Template as DataTemplate
@@ -125,7 +172,6 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
             emit(kotlin.runCatching {
                 val existingTemplateMaybeUpdateShortcut =
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && transaction is Template && transaction.id != 0L
-                savePicture(transaction)
                 val result =
                     transaction.save(contentResolver, true)?.let { ContentUris.parseId(it) }
                         ?: throw Throwable("Error while saving transaction")
@@ -152,60 +198,83 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
                         tagsLiveData.value
                     )
                 ) throw Throwable("Error while saving tags")
-
+                (originalUris - attachmentUris.value.toSet()).takeIf { it.isNotEmpty() }?.let {
+                    repository.deleteAttachments(transaction.id, it)
+                }
+                repository.addAttachments(
+                    transaction.id,
+                    (attachmentUris.value - originalUris.toSet()).map(::prepareUriForSave)
+                )
                 result
             })
         }
 
-    private fun savePicture(transaction: ITransaction) {
-        transaction.pictureUri?.let {
-            val pictureUriBase: String = PictureDirHelper.getPictureUriBase(false, getApplication())
-            if (it.toString().startsWith(pictureUriBase)) {
-                Timber.d("got Uri in our home space, nothing todo")
-            } else {
-                val pictureUriTemp = PictureDirHelper.getPictureUriBase(true, getApplication())
-                val isInTempFolder = it.toString().startsWith(pictureUriTemp)
-                val format = prefHandler.enumValueOrDefault(
-                    PrefKey.OPTIMIZE_PICTURE_FORMAT,
-                    Bitmap.CompressFormat.WEBP
-                )
-                val homeUri = PictureDirHelper.getOutputMediaUri(
-                    false,
-                    getApplication(),
-                    extension = format.asExtension
-                )
-                try {
-                    if (prefHandler.getBoolean(PrefKey.OPTIMIZE_PICTURE, true)) {
+    private val shouldCopyExternalUris
+        get() = prefHandler.getBoolean(PrefKey.COPY_ATTACHMENT, true)
+
+    private fun prepareUriForSave(uri: Uri): Uri {
+        val pictureUriBase: String = PictureDirHelper.getPictureUriBase(false, getApplication())
+        return if (uri.toString().startsWith(pictureUriBase)) {
+            Timber.d("nothing todo: Internal")
+            uri
+        } else {
+
+            val pictureUriTemp = PictureDirHelper.getPictureUriBase(true, getApplication())
+            val isInTempFolder = uri.toString().startsWith(pictureUriTemp)
+            val isExternal = !isInTempFolder
+
+            if (isExternal && !shouldCopyExternalUris) uri else {
+
+                val type = contentResolver.getType(uri)
+
+                val result = if (type!!.startsWith("image") && prefHandler.getBoolean(
+                        PrefKey.OPTIMIZE_PICTURE,
+                        true
+                    )
+                ) {
+                    val format = prefHandler.enumValueOrDefault(
+                        PrefKey.OPTIMIZE_PICTURE_FORMAT,
+                        Bitmap.CompressFormat.WEBP
+                    )
+
+                    val homeUri = PictureDirHelper.getOutputMediaUri(
+                        false,
+                        getApplication(),
+                        extension = format.asExtension
+                    )
+                    try {
+
                         val maxSize = prefHandler.getInt(PrefKey.OPTIMIZE_PICTURE_MAX_SIZE, 1000)
                         val quality = prefHandler.getInt(PrefKey.OPTIMIZE_PICTURE_QUALITY, 80)
                             .coerceAtLeast(0).coerceAtMost(100)
                         ImageOptimizer.optimize(
                             contentResolver,
-                            it,
+                            uri,
                             homeUri,
                             format,
                             maxSize,
                             maxSize,
                             quality
                         )
-                    } else {
-
-                        if (isInTempFolder && homeUri.scheme == "file") {
-                            if (!File(it.path!!).renameTo(File(homeUri.path!!))) {
-                                //fallback
-                                FileCopyUtils.copy(contentResolver, it, homeUri)
-                            }
-                        } else {
-                            FileCopyUtils.copy(contentResolver, it, homeUri)
-                        }
+                    } catch (e: IOException) {
+                        throw UnknownPictureSaveException(uri, homeUri, e)
                     }
-                } catch (e: IOException) {
-                    throw UnknownPictureSaveException(it, homeUri, e)
+                    homeUri
+                } else {
+                    val fileName = uri.fileName(getApplication())
+                    val homeUri = PictureDirHelper.getOutputMediaUri(
+                        false,
+                        getApplication(),
+                        fileName = getNameWithoutExtension(fileName),
+                        extension = getFileExtension(fileName)
+                    )
+                    FileCopyUtils.copy(contentResolver, uri, homeUri)
+                    homeUri
                 }
                 if (isInTempFolder) {
-                    contentResolver.delete(it, null, null)
+                    contentResolver.delete(uri, null, null)
                 }
-                transaction.pictureUri = homeUri
+                result
             }
         }
     }
@@ -374,7 +443,10 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
                     contentResolver, transactionId, homeCurrencyProvider.homeCurrencyUnit
                 )
             ) {
-                Pair(Template(contentResolver, this, payee ?: label), this.loadTags(contentResolver))
+                Pair(
+                    Template(contentResolver, this, payee ?: label),
+                    this.loadTags(contentResolver)
+                )
             }
         }?.also { pair ->
             if (forEdit) {
@@ -386,9 +458,17 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
             }
             emit(pair.first)
             pair.second?.takeIf { it.size > 0 }?.let { updateTags(it, false) }
+            if (task == InstantiationTask.TRANSACTION) {
+                originalUris = repository.loadAttachments(transactionId)
+            }
         } ?: run {
             emit(null)
         }
+    }
+
+    companion object {
+        private const val KEY_ATTACHMENT_URIS = "attachmentUris"
+        private const val KEY_ORIGINAL_URIS = "originalUris"
     }
 
     fun startAutoFill(id: Long, overridePreferences: Boolean, autoFillAccountFromExtra: Boolean) {
@@ -443,6 +523,29 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
 
     fun autoFillDone() {
         _autoFillData.tryEmit(null)
+    }
+
+    private var originalUris: ArrayList<Uri>
+        get() = savedStateHandle[KEY_ORIGINAL_URIS] ?: ArrayList()
+        set(value) {
+            savedStateHandle[KEY_ORIGINAL_URIS] = value
+            addAttachmentUris(*value.toTypedArray())
+        }
+
+    val attachmentUris: StateFlow<ArrayList<Uri>> =
+        savedStateHandle.getStateFlow(KEY_ATTACHMENT_URIS, ArrayList())
+
+    fun addAttachmentUris(vararg uris: Uri) {
+        savedStateHandle[KEY_ATTACHMENT_URIS] = ArrayList(mutableSetOf<Uri>().apply {
+            addAll(attachmentUris.value)
+            addAll(uris)
+        })
+    }
+
+    fun removeAttachmentUri(uri: Uri) {
+        savedStateHandle[KEY_ATTACHMENT_URIS] = ArrayList<Uri>().apply {
+            addAll(attachmentUris.value.filterNot { it == uri })
+        }
     }
 
     data class AutoFillData(

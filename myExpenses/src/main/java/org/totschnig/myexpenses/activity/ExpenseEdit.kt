@@ -15,20 +15,32 @@
 package org.totschnig.myexpenses.activity
 
 import android.app.NotificationManager
+import android.content.ClipData
 import android.content.ContentUris
 import android.content.Context
 import android.content.Intent
+import android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
 import android.database.ContentObserver
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Parcelable
 import android.provider.CalendarContract
-import android.view.*
+import android.view.ContextMenu
+import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.MenuRes
 import androidx.annotation.VisibleForTesting
+import androidx.appcompat.view.menu.MenuBuilder
 import androidx.appcompat.widget.PopupMenu
+import androidx.appcompat.widget.PopupMenu.OnMenuItemClickListener
 import androidx.core.view.ViewCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -38,7 +50,10 @@ import androidx.loader.app.LoaderManager
 import com.evernote.android.state.State
 import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.parcelize.Parcelize
 import org.totschnig.myexpenses.MyApplication
@@ -48,10 +63,15 @@ import org.totschnig.myexpenses.contract.TransactionsContract.Transactions
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_SPLIT
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSACTION
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSFER
+import org.totschnig.myexpenses.databinding.AttachmentItemBinding
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
 import org.totschnig.myexpenses.databinding.OneExpenseBinding
-import org.totschnig.myexpenses.delegate.*
+import org.totschnig.myexpenses.delegate.CategoryDelegate
+import org.totschnig.myexpenses.delegate.MainDelegate
+import org.totschnig.myexpenses.delegate.SplitDelegate
+import org.totschnig.myexpenses.delegate.TransactionDelegate
+import org.totschnig.myexpenses.delegate.TransferDelegate
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment
 import org.totschnig.myexpenses.dialog.ConfirmationDialogFragment.ConfirmationDialogListener
 import org.totschnig.myexpenses.exception.ExternalStorageNotAvailableException
@@ -60,23 +80,61 @@ import org.totschnig.myexpenses.feature.OcrResultFlat
 import org.totschnig.myexpenses.fragment.PlanMonthFragment
 import org.totschnig.myexpenses.fragment.TemplatesList
 import org.totschnig.myexpenses.injector
-import org.totschnig.myexpenses.model.*
+import org.totschnig.myexpenses.model.ContribFeature
+import org.totschnig.myexpenses.model.CrStatus
+import org.totschnig.myexpenses.model.ITransaction
+import org.totschnig.myexpenses.model.Model
+import org.totschnig.myexpenses.model.Money
+import org.totschnig.myexpenses.model.Plan
 import org.totschnig.myexpenses.model.Plan.Recurrence
 import org.totschnig.myexpenses.model.Template
+import org.totschnig.myexpenses.model.Transaction
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.preference.disableAutoFill
 import org.totschnig.myexpenses.preference.enableAutoFill
 import org.totschnig.myexpenses.preference.enumValueOrDefault
-import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.ui.*
-import org.totschnig.myexpenses.util.*
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ICON
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_INSTANCEID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEEID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_URI
+import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_NONE
+import org.totschnig.myexpenses.ui.AmountInput
+import org.totschnig.myexpenses.ui.ContextAwareRecyclerView
+import org.totschnig.myexpenses.ui.DateButton
+import org.totschnig.myexpenses.ui.DiscoveryHelper
+import org.totschnig.myexpenses.ui.ExchangeRateEdit
+import org.totschnig.myexpenses.ui.IDiscoveryHelper
+import org.totschnig.myexpenses.util.PermissionHelper
+import org.totschnig.myexpenses.util.PictureDirHelper
+import org.totschnig.myexpenses.util.Utils
+import org.totschnig.myexpenses.util.attachmentInfoMap
+import org.totschnig.myexpenses.util.checkMenuIcon
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import org.totschnig.myexpenses.util.safeMessage
+import org.totschnig.myexpenses.util.setAttachmentInfo
+import org.totschnig.myexpenses.util.setEnabledAndVisible
 import org.totschnig.myexpenses.util.tracking.Tracker
-import org.totschnig.myexpenses.viewmodel.*
+import org.totschnig.myexpenses.viewmodel.ContentResolvingAndroidViewModel
 import org.totschnig.myexpenses.viewmodel.ContentResolvingAndroidViewModel.DeleteState.DeleteComplete
+import org.totschnig.myexpenses.viewmodel.CurrencyViewModel
+import org.totschnig.myexpenses.viewmodel.TagBaseViewModel
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel
 import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask
-import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask.*
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask.FROM_INTENT_EXTRAS
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask.TEMPLATE
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask.TEMPLATE_FROM_TRANSACTION
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask.TRANSACTION
+import org.totschnig.myexpenses.viewmodel.TransactionEditViewModel.InstantiationTask.TRANSACTION_FROM_TEMPLATE
 import org.totschnig.myexpenses.viewmodel.data.Account
+import org.totschnig.myexpenses.viewmodel.data.AttachmentInfo
 import org.totschnig.myexpenses.viewmodel.data.Currency
 import org.totschnig.myexpenses.viewmodel.data.Tag
 import org.totschnig.myexpenses.widget.EXTRA_START_FROM_WIDGET
@@ -84,7 +142,6 @@ import java.io.Serializable
 import java.math.BigDecimal
 import java.time.LocalDate
 import javax.inject.Inject
-import kotlin.Result
 import kotlin.collections.set
 import org.totschnig.myexpenses.viewmodel.data.Template as DataTemplate
 
@@ -147,6 +204,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
     private var accountsLoaded = false
     private var pObserver: ContentObserver? = null
     private lateinit var currencyViewModel: CurrencyViewModel
+
+    private lateinit var attachmentInfoMap: Map<Uri, AttachmentInfo>
     override fun getDate(): LocalDate {
         return dateEditBinding.DateButton.date
     }
@@ -156,7 +215,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
     }
 
     @Inject
-    lateinit var imageViewIntentProvider: ImageViewIntentProvider
+    lateinit var viewIntentProvider: ViewIntentProvider
 
     @Inject
     lateinit var discoveryHelper: IDiscoveryHelper
@@ -249,6 +308,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             inject(viewModel)
             inject(currencyViewModel)
         }
+        attachmentInfoMap = attachmentInfoMap(this)
+
         //we enable it only after accountCursor has been loaded, preventing NPE when user clicks on it early
         amountInput.setTypeEnabled(false)
 
@@ -261,7 +322,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 methodRowBinding,
                 injector
             )
-            setupObservers(true)
+            setupObservers()
             delegate.bind(
                 null,
                 withTypeSpinner,
@@ -440,13 +501,63 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             prefHandler.putBoolean(PrefKey.DATES_ARE_LINKED, areDatesLinked)
             updateDateLink()
         }
-        rootBinding.AttachImage.setOnClickListener {
-            startMediaChooserDo()
-        }
-        rootBinding.PictureContainer.root.setOnClickListener {
-            showPicturePopupMenu(it)
-        }
         rootBinding.TagRow.bindListener()
+        rootBinding.newAttachment.setOnClickListener { view ->
+            showPicturePopupMenu(view, R.menu.create_attachment_options) { item ->
+                val types = prefHandler.requireString(
+                    PrefKey.ATTACHMENT_MIME_TYPES,
+                    getString(R.string.default_attachment_mime_types)
+                ).split(',').map { it.trim() }.toTypedArray()
+                when (item.itemId) {
+                    R.id.PHOTO_COMMAND -> startMediaChooserDo()
+                    R.id.ATTACH_COMMAND -> pickAttachment.launch(types)
+                }
+                true
+            }
+        }
+    }
+
+    private val pickAttachment: ActivityResultLauncher<Array<String>> =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null) {
+                setDirty()
+                viewModel.addAttachmentUris(uri)
+            }
+        }
+
+    private fun showAttachments(uris: List<Pair<Uri, AttachmentInfo>>) {
+        rootBinding.AttachmentGroup.removeViews(0, rootBinding.AttachmentGroup.childCount - 1)
+
+        uris.forEach { (uri, info) ->
+            AttachmentItemBinding.inflate(
+                layoutInflater,
+                rootBinding.AttachmentGroup,
+                false
+            ).root.apply {
+
+                rootBinding.AttachmentGroup.addView(
+                    this,
+                    rootBinding.AttachmentGroup.childCount - 1
+                )
+
+                setAttachmentInfo(info)
+
+                setOnClickListener {
+                    showPicturePopupMenu(it, R.menu.picture) { item ->
+                        when (item.itemId) {
+                            R.id.VIEW_COMMAND ->
+                                viewIntentProvider.startViewAction(this@ExpenseEdit, uri)
+
+                            R.id.DELETE_COMMAND -> {
+                                setDirty()
+                                viewModel.removeAttachmentUri(uri)
+                            }
+                        }
+                        true
+                    }
+                }
+            }
+        }
     }
 
     override fun onCreateContextMenu(
@@ -502,14 +613,23 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         }
     }
 
-    private fun setupObservers(fromSavedState: Boolean) {
-        loadAccounts(fromSavedState)
+    private fun setupObservers() {
+        loadAccounts()
         loadTemplates()
         linkInputsWithLabels()
         loadTags()
         loadCurrencies()
         observeMoveResult()
         observeAutoFillData()
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.attachmentUris
+                    .map { list ->
+                        list.map { it to attachmentInfoMap.getValue(it) } }
+                    .flowOn(Dispatchers.IO)
+                    .collect { showAttachments(it) }
+            }
+        }
     }
 
     private fun collectSplitParts() {
@@ -582,7 +702,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         }
     }
 
-    private fun loadAccounts(fromSavedState: Boolean) {
+    private fun loadAccounts() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.accounts.collect {
@@ -667,8 +787,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 startAutoFill(it.id, true)
             }
         }
-        intent.getParcelableExtra<Uri>(KEY_PICTURE_URI)?.let {
-            delegate.setPicture(it)
+        intent.getParcelableExtra<Uri>(KEY_URI)?.let {
+            viewModel.addAttachmentUris(it)
         }
         if (!intent.hasExtra(KEY_CACHED_DATA)) {
             amountInput.type = intent.getBooleanExtra(KEY_INCOME, false)
@@ -708,7 +828,15 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             transaction.amount = cached.amount
             transaction.originalAmount = cached.originalAmount
             transaction.equivalentAmount = cached.equivalentAmount
-            transaction.pictureUri = cached.pictureUri
+            intent.clipData?.let {
+                viewModel.addAttachmentUris(
+                    *buildList {
+                        for (i in 0 until it.itemCount) {
+                            add(it.getItemAt(i).uri)
+                        }
+                    }.toTypedArray()
+                )
+            }
             setDirty()
         } else {
             intent.getLongExtra(KEY_DATE, 0).takeIf { it != 0L }?.let {
@@ -724,7 +852,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             methodRowBinding,
             injector
         )
-        setupObservers(false)
+        setupObservers()
         if (intent.getBooleanExtra(KEY_CREATE_TEMPLATE, false)) {
             createTemplate = true
             delegate.setCreateTemplate(true)
@@ -1106,7 +1234,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE -> {
                 val result = CropImage.getActivityResult(intent)
                 if (resultCode == RESULT_OK) {
-                    setPicture(result.uri)
+                    viewModel.addAttachmentUris(result.uri)
+                    setDirty()
                     viewModel.cleanupOrigFile(result)
                 } else {
                     processImageCaptureError(resultCode, result)
@@ -1175,14 +1304,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             Money(it.currency, validateAmountInput(showToUser = false, ifPresent = false)!!)
         }
 
-    private fun unsetPicture() {
-        setPicture(null)
-    }
-
-    private fun setPicture(pictureUri: Uri?) {
-        delegate.setPicture(pictureUri)
-    }
-
     fun isValidType(type: Int): Boolean {
         return type == TYPE_SPLIT || type == TYPE_TRANSACTION || type == TYPE_TRANSFER
     }
@@ -1211,6 +1332,17 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     }
                 }
                 putExtra(KEY_CREATE_TEMPLATE, createTemplate)
+                val attachments = viewModel.attachmentUris.value
+                if (attachments.size > 0) {
+                    clipData = ClipData.newRawUri("Attachments", attachments.first()).apply {
+                        if (attachments.size > 1) {
+                            attachments.subList(1, attachments.size).forEach {
+                                addItem(ClipData.Item(it))
+                            }
+                        }
+                    }
+                    flags = FLAG_GRANT_READ_URI_PERMISSION
+                }
             }
             finish()
             startActivity(restartIntent)
@@ -1336,27 +1468,17 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         super.onPause()
     }
 
-    fun showPicturePopupMenu(v: View) {
-        val popup = PopupMenu(this, v)
-        popup.setOnMenuItemClickListener { item: MenuItem ->
-            handlePicturePopupMenuClick(item.itemId)
-            true
-        }
-        popup.inflate(R.menu.picture_popup)
-        popup.show()
-    }
-
-    private fun handlePicturePopupMenuClick(command: Int) {
-        when (command) {
-            R.id.DELETE_COMMAND -> unsetPicture()
-            R.id.VIEW_COMMAND -> delegate.pictureUri?.let {
-                imageViewIntentProvider.startViewIntent(
-                    this,
-                    it
-                )
-            }
-
-            R.id.CHANGE_COMMAND -> startMediaChooserDo()
+    private fun showPicturePopupMenu(
+        v: View,
+        @MenuRes menuRes: Int,
+        listener: OnMenuItemClickListener
+    ) {
+        with(PopupMenu(this, v)) {
+            setOnMenuItemClickListener(listener)
+            inflate(menuRes)
+            //noinspection RestrictedApi
+            (menu as? MenuBuilder)?.setOptionalIconsVisible(true)
+            show()
         }
     }
 
@@ -1455,7 +1577,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         val amount: Money,
         val originalAmount: Money?,
         val equivalentAmount: Money?,
-        val pictureUri: Uri?,
         val recurrence: Recurrence?,
         val tags: List<Tag>?
     ) : Parcelable
@@ -1489,7 +1610,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             amount,
             originalAmount,
             equivalentAmount,
-            pictureUri,
             withRecurrence,
             viewModel.tagsLiveData.value
         )

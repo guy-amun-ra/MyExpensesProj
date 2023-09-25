@@ -22,15 +22,21 @@ import static org.totschnig.myexpenses.model2.PaymentMethodKt.PAYMENT_METHOD_INC
 import static org.totschnig.myexpenses.model2.PaymentMethodKt.PAYMENT_METHOD_NEUTRAL;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ACCOUNT_ATTRIBUTES_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ACCOUNT_REMAP_TRANSFER_TRIGGER_CREATE;
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ATTACHMENTS_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.ATTRIBUTES_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.BANK_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.PARTY_HIERARCHY_TRIGGER;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.PAYEE_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.PAYEE_UNIQUE_INDEX;
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTIONS_ATTACHMENTS_CREATE;
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTIONS_CAT_ID_INDEX;
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTIONS_PAYEE_ID_INDEX;
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTIONS_UUID_INDEX_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTION_ATTRIBUTES_CREATE;
 import static org.totschnig.myexpenses.provider.DataBaseAccount.HOME_AGGREGATE_ID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.TAG_LIST_EXPRESSION;
+import static org.totschnig.myexpenses.provider.DbConstantsKt.associativeJoin;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.buildViewDefinition;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.tagGroupBy;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.tagJoin;
@@ -104,15 +110,11 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_STATUS + " integer default 0, "
           + KEY_CR_STATUS + " text not null check (" + KEY_CR_STATUS + " in (" + CrStatus.JOIN + ")) default '" + CrStatus.RECONCILED.name() + "',"
           + KEY_REFERENCE_NUMBER + " text, "
-          + KEY_PICTURE_URI + " text, "
           + KEY_UUID + " text, "
           + KEY_ORIGINAL_AMOUNT + " integer, "
           + KEY_ORIGINAL_CURRENCY + " text, "
           + KEY_EQUIVALENT_AMOUNT + " integer,  "
           + KEY_DEBT_ID + " integer references " + TABLE_DEBTS + "(" + KEY_ROWID + ") ON DELETE SET NULL);";
-
-  private static final String TRANSACTIONS_UUID_INDEX_CREATE = "CREATE UNIQUE INDEX transactions_account_uuid_index ON "
-      + TABLE_TRANSACTIONS + "(" + KEY_ACCOUNTID + "," + KEY_UUID + "," + KEY_STATUS + ")";
 
   public TransactionDatabase(@NonNull PrefHandler prefHandler) {
     super(prefHandler);
@@ -155,8 +157,9 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     }
 
     if (tableName.equals(TABLE_TRANSACTIONS)) {
-      stringBuilder.append(", ").append(TABLE_PLAN_INSTANCE_STATUS).append(".").append(KEY_TEMPLATEID);
-      stringBuilder.append(", ").append(TAG_LIST_EXPRESSION);
+      stringBuilder.append(", ").append(TABLE_PLAN_INSTANCE_STATUS).append(".").append(KEY_TEMPLATEID)
+              .append(", ").append(TAG_LIST_EXPRESSION)
+              .append(", count(").append(KEY_URI).append(") AS ").append(KEY_ATTACHMENT_COUNT);
     }
 
     stringBuilder.append(" FROM ").append(tableName).append(" LEFT JOIN ").append(TABLE_PAYEES).append(" ON ")
@@ -175,10 +178,9 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     if (tableName.equals(TABLE_TRANSACTIONS)) {
       stringBuilder.append(" LEFT JOIN ").append(TABLE_PLAN_INSTANCE_STATUS)
           .append(" ON ").append(tableName).append(".").append(KEY_ROWID).append(" = ")
-          .append(TABLE_PLAN_INSTANCE_STATUS).append(".").append(KEY_TRANSACTIONID);
-    }
-    if (tableName.equals(TABLE_TRANSACTIONS)) {
-      stringBuilder.append(tagJoin(tableName));
+          .append(TABLE_PLAN_INSTANCE_STATUS).append(".").append(KEY_TRANSACTIONID)
+          .append(tagJoin(tableName))
+          .append(associativeJoin(TABLE_TRANSACTIONS, TABLE_TRANSACTION_ATTACHMENTS, TABLE_ATTACHMENTS, KEY_TRANSACTIONID, KEY_ATTACHMENT_ID));
     }
     return stringBuilder.toString();
   }
@@ -336,19 +338,6 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           KEY_TRANSACTIONID + " integer UNIQUE references " + TABLE_TRANSACTIONS + "(" + KEY_ROWID + ") ON DELETE CASCADE, " +
           "primary key (" + KEY_TEMPLATEID + "," + KEY_INSTANCEID + "));";
 
-  private static final String STALE_URIS_CREATE =
-      "CREATE TABLE " + TABLE_STALE_URIS
-          + " ( " + KEY_PICTURE_URI + " text);";
-
-  private static final String STALE_URI_TRIGGER_CREATE =
-      "CREATE TRIGGER cache_stale_uri " +
-          "AFTER DELETE ON " + TABLE_TRANSACTIONS + " " +
-          "WHEN old." + KEY_PICTURE_URI + " NOT NULL " +
-          "AND NOT EXISTS " +
-          "(SELECT 1 FROM " + TABLE_TRANSACTIONS + " " +
-          "WHERE " + KEY_PICTURE_URI + " = old." + KEY_PICTURE_URI + ") " +
-          "BEGIN INSERT INTO " + TABLE_STALE_URIS + " VALUES (old." + KEY_PICTURE_URI + "); END";
-
   private static final String ACCOUNTS_TRIGGER_CREATE =
       "CREATE TRIGGER sort_key_default " +
           "AFTER INSERT ON " + TABLE_ACCOUNTS + " " +
@@ -402,8 +391,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_TRANSFER_ACCOUNT + " integer references " + TABLE_ACCOUNTS + "(" + KEY_ROWID + ") ON DELETE SET NULL,"
           + KEY_METHODID + " integer references " + TABLE_METHODS + "(" + KEY_ROWID + ") ON DELETE SET NULL,"
           + KEY_CR_STATUS + " text check (" + KEY_CR_STATUS + " in (" + CrStatus.JOIN + ")),"
-          + KEY_REFERENCE_NUMBER + " text, "
-          + KEY_PICTURE_URI + " text);";
+          + KEY_REFERENCE_NUMBER + " text);";
 
   private static final String BUDGETS_CREATE =
       "CREATE TABLE " + TABLE_BUDGETS + " ( "
@@ -451,8 +439,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       + KEY_TRANSFER_ACCOUNT + ", "
       + KEY_METHODID + ","
       + KEY_CR_STATUS + ", "
-      + KEY_REFERENCE_NUMBER + ", "
-      + KEY_PICTURE_URI + ") VALUES ('" + TransactionChange.Type.created + "', "
+      + KEY_REFERENCE_NUMBER + ") VALUES ('" + TransactionChange.Type.created + "', "
       + String.format(Locale.US, SELECT_SEQUENCE_NUMBER_TEMPLATE, "new") + ", "
       + "new." + KEY_UUID + ", "
       + String.format(Locale.US, SELECT_PARENT_UUID_TEMPLATE, "new") + ", "
@@ -469,8 +456,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       + "new." + KEY_TRANSFER_ACCOUNT + ", "
       + "new." + KEY_METHODID + ", "
       + "new." + KEY_CR_STATUS + ", "
-      + "new." + KEY_REFERENCE_NUMBER + ", "
-      + "new." + KEY_PICTURE_URI + "); END;";
+      + "new." + KEY_REFERENCE_NUMBER + "); END;";
 
   private static final String DELETE_TRIGGER_ACTION = " BEGIN INSERT INTO " + TABLE_CHANGES + "("
       + KEY_TYPE + ","
@@ -559,8 +545,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_TRANSFER_ACCOUNT + ", "
           + KEY_METHODID + ", "
           + KEY_CR_STATUS + ", "
-          + KEY_REFERENCE_NUMBER + ", "
-          + KEY_PICTURE_URI + ") VALUES ('" + TransactionChange.Type.updated + "', "
+          + KEY_REFERENCE_NUMBER + ") VALUES ('" + TransactionChange.Type.updated + "', "
           + String.format(Locale.US, SELECT_SEQUENCE_NUMBER_TEMPLATE, "old") + ", "
           + "new." + KEY_UUID + ", "
           + "new." + KEY_ACCOUNTID + ", "
@@ -577,37 +562,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + buildChangeTriggerDefinitionForColumn(KEY_TRANSFER_ACCOUNT) + ", "
           + buildChangeTriggerDefinitionForColumn(KEY_METHODID) + ", "
           + buildChangeTriggerDefinitionForColumn(KEY_CR_STATUS) + ", "
-          + buildChangeTriggerDefinitionForColumn(KEY_REFERENCE_NUMBER) + ", "
-          + buildChangeTriggerDefinitionForColumn(KEY_PICTURE_URI) + "); END;";
+          + buildChangeTriggerDefinitionForColumn(KEY_REFERENCE_NUMBER) + "); END;";
 
-  private static final String INCREASE_CATEGORY_USAGE_ACTION = " BEGIN UPDATE " + TABLE_CATEGORIES + " SET " + KEY_USAGES + " = " +
-      KEY_USAGES + " + 1, " + KEY_LAST_USED + " = strftime('%s', 'now')  WHERE " + KEY_ROWID +
-      " IN (new." + KEY_CATID + " , (SELECT " + KEY_PARENTID +
-      " FROM " + TABLE_CATEGORIES + " WHERE " + KEY_ROWID + " = new." + KEY_CATID + ")); END;";
-
-  private static final String INCREASE_CATEGORY_USAGE_INSERT_TRIGGER = "CREATE TRIGGER insert_increase_category_usage "
-      + "AFTER INSERT ON " + TABLE_TRANSACTIONS
-      + " WHEN new." + KEY_CATID + " IS NOT NULL AND new." + KEY_CATID + " != " + SPLIT_CATID + ""
-      + INCREASE_CATEGORY_USAGE_ACTION;
-
-  private static final String INCREASE_CATEGORY_USAGE_UPDATE_TRIGGER = "CREATE TRIGGER update_increase_category_usage "
-      + "AFTER UPDATE ON " + TABLE_TRANSACTIONS
-      + " WHEN new." + KEY_CATID + " IS NOT NULL AND (old." + KEY_CATID + " IS NULL OR new." + KEY_CATID + " != old." + KEY_CATID + ")"
-      + INCREASE_CATEGORY_USAGE_ACTION;
-
-  private static final String INCREASE_ACCOUNT_USAGE_ACTION = " BEGIN UPDATE " + TABLE_ACCOUNTS + " SET " + KEY_USAGES + " = " +
-      KEY_USAGES + " + 1, " + KEY_LAST_USED + " = strftime('%s', 'now')  WHERE " + KEY_ROWID +
-      " = new." + KEY_ACCOUNTID + "; END;";
-
-  private static final String INCREASE_ACCOUNT_USAGE_INSERT_TRIGGER = "CREATE TRIGGER insert_increase_account_usage "
-      + "AFTER INSERT ON " + TABLE_TRANSACTIONS
-      + " WHEN new." + KEY_PARENTID + " IS NULL"
-      + INCREASE_ACCOUNT_USAGE_ACTION;
-
-  private static final String INCREASE_ACCOUNT_USAGE_UPDATE_TRIGGER = "CREATE TRIGGER update_increase_account_usage "
-      + "AFTER UPDATE ON " + TABLE_TRANSACTIONS
-      + " WHEN new." + KEY_PARENTID + " IS NULL AND new." + KEY_ACCOUNTID + " != old." + KEY_ACCOUNTID + " AND (old." + KEY_TRANSFER_ACCOUNT + " IS NULL OR new." + KEY_ACCOUNTID + " != old." + KEY_TRANSFER_ACCOUNT + ")"
-      + INCREASE_ACCOUNT_USAGE_ACTION;
 
   private static final String UPDATE_ACCOUNT_SYNC_NULL_TRIGGER = "CREATE TRIGGER update_account_sync_null "
       + "AFTER UPDATE ON " + TABLE_ACCOUNTS
@@ -719,6 +675,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
   @Override
   public void onCreate(SupportSQLiteDatabase db) {
     db.execSQL(DATABASE_CREATE);
+    db.execSQL(ATTACHMENTS_CREATE);
+    db.execSQL(TRANSACTIONS_ATTACHMENTS_CREATE);
     db.execSQL(TRANSACTIONS_UUID_INDEX_CREATE);
     db.execSQL(PAYEE_CREATE);
     db.execSQL(PAYEE_UNIQUE_INDEX);
@@ -742,8 +700,6 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     db.insert(TABLE_CATEGORIES, CONFLICT_NONE, initialValues);
     insertCurrencies(db);
     db.execSQL(EVENT_CACHE_CREATE);
-    db.execSQL(STALE_URIS_CREATE);
-    db.execSQL(STALE_URI_TRIGGER_CREATE);
     db.execSQL(CHANGES_CREATE);
     db.execSQL(BANK_CREATE);
     db.execSQL(ATTRIBUTES_CREATE);
@@ -752,17 +708,14 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     db.execSQL(ACCOUNT_ATTRIBUTES_CREATE);
 
     //Index
-    db.execSQL("CREATE INDEX transactions_cat_id_index on " + TABLE_TRANSACTIONS + "(" + KEY_CATID + ")");
+    db.execSQL(TRANSACTIONS_CAT_ID_INDEX);
     db.execSQL("CREATE INDEX templates_cat_id_index on " + TABLE_TEMPLATES + "(" + KEY_CATID + ")");
-    db.execSQL("CREATE INDEX transactions_payee_id_index on " + TABLE_TRANSACTIONS + "(" + KEY_PAYEEID + ")");
+    db.execSQL(TRANSACTIONS_PAYEE_ID_INDEX);
     db.execSQL("CREATE INDEX templates_payee_id_index on " + TABLE_TEMPLATES + "(" + KEY_PAYEEID + ")");
 
     // Triggers
     createOrRefreshTransactionTriggers(db);
-    db.execSQL(INCREASE_CATEGORY_USAGE_INSERT_TRIGGER);
-    db.execSQL(INCREASE_CATEGORY_USAGE_UPDATE_TRIGGER);
-    db.execSQL(INCREASE_ACCOUNT_USAGE_INSERT_TRIGGER);
-    db.execSQL(INCREASE_ACCOUNT_USAGE_UPDATE_TRIGGER);
+    createOrRefreshTransactionUsageTriggers(db);
     createOrRefreshAccountTriggers(db);
     db.execSQL(SETTINGS_CREATE);
     //TODO evaluate if we should get rid of the split transaction category id
@@ -2264,12 +2217,17 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       if (oldVersion < 146) {
         db.execSQL("ALTER TABLE payee add column short_name text");
         db.execSQL(PAYEE_UNIQUE_INDEX);
-        createOrRefreshViews(db);
+        //createOrRefreshViews(db);
       }
       if (oldVersion < 147) {
         db.execSQL("ALTER TABLE payee add column parent_id integer references payee(_id) ON DELETE CASCADE");
         db.execSQL("update payee set short_name = null where short_name = ''");
         db.execSQL(PARTY_HIERARCHY_TRIGGER);
+      }
+      if (oldVersion < 148) {
+        upgradeTo148(db);
+        createOrRefreshViews(db);
+        createOrRefreshTransactionTriggers(db);
       }
 
       TransactionProvider.resumeChangeTrigger(db);

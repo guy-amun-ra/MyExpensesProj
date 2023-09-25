@@ -4,14 +4,21 @@ import org.totschnig.myexpenses.util.io.getFileExtension
 import org.totschnig.myexpenses.util.io.getNameWithoutExtension
 import timber.log.Timber
 import java.io.IOException
+import java.io.InputStream
 import java.util.regex.Pattern
 
-interface ShardingResourceStorage<Res> {
+interface ResourceStorage<Res> {
     companion object {
         val FILE_PATTERN: Pattern = Pattern.compile("_\\d+")
     }
 
     fun collectionForShard(shardNumber: Int): Res?
+
+    fun getCollection(collectionName: String, require: Boolean): Res?
+
+    fun requireCollection(collectionName: String): Res = getCollection(collectionName, true) ?: throw IOException()
+
+    fun getInputStream(resource: Res): InputStream
 
     /**
      * @param folder if null must return resources in account folder

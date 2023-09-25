@@ -468,9 +468,6 @@
     <string name="restore_calendar_handling_ignore">Do not restore plans</string>
     <string name="restore_not_possible_target_calendar_missing">The calendar %s set in the backup archive does not exist locally. Restore has been aborted.</string>
     <string name="restore_not_possible_local_calendar_missing">The current planning calendar is not available.</string>
-    <string name="menu_view_picture">View picture</string>
-    <string name="menu_delete_picture">Delete picture</string>
-    <string name="menu_change_picture">Attach different picture</string>
     <string name="menu_distribution_show_pie_char">Show pie chart</string>
     <string name="menu_distribution_aggreate">Aggregate expenses and income</string>
     <!-- Stale refers to pictures left over from deleted transactions  -->
@@ -1084,4 +1081,10 @@
     <string name="remove_from_group">Remove from group</string>
     <string name="whats_new_364_1">Import into multiple accounts from one CSV file</string>
     <string name="whats_new_364_2">New strategy for managing duplicate payer/payee information</string>
+    <string name="pref_attachment_mime_types_title">Allowed MIME types for attachments</string>
+    <string name="attachments">Attachments</string>
+    <string name="pref_copy_attachments_title">Copy attachments to application folder</string>
+    <string name="pref_copy_attachments_summary_on">Files are copied to application folder.</string>
+    <string name="pref_copy_attachments_summary_off">Files are not copied, only a reference is stored.</string>
+    <string name="whats_new_365">Attach arbitrary number of images and documents (PDF)</string>
 </resources>

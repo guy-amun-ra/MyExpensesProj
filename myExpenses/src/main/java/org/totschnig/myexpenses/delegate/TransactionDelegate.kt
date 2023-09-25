@@ -1,7 +1,6 @@
 package org.totschnig.myexpenses.delegate
 
 import android.content.Context
-import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -10,7 +9,6 @@ import android.widget.*
 import androidx.core.view.isVisible
 import com.evernote.android.state.State
 import com.evernote.android.state.StateSaver
-import com.squareup.picasso.Picasso
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
 import org.totschnig.myexpenses.adapter.CrStatusAdapter
@@ -67,9 +65,6 @@ abstract class TransactionDelegate<T : ITransaction>(
 
     @Inject
     lateinit var homeCurrencyProvider: HomeCurrencyProvider
-
-    @Inject
-    lateinit var picasso: Picasso
 
     val homeCurrency by lazy {
         homeCurrencyProvider.homeCurrencyUnit
@@ -152,9 +147,6 @@ abstract class TransactionDelegate<T : ITransaction>(
     var methodId: Long? = null
 
     @State
-    var pictureUri: Uri? = null
-
-    @State
     var _crStatus: CrStatus? = CrStatus.UNRECONCILED
 
     @State
@@ -217,7 +209,6 @@ abstract class TransactionDelegate<T : ITransaction>(
             parentId = transaction.parentId
             accountId = transaction.accountId
             methodId = transaction.methodId
-            setPicture(transaction.pictureUri)
             planId = (transaction as? Template)?.plan?.id
             _crStatus = transaction.crStatus
             originTemplateId = transaction.originTemplateId
@@ -245,7 +236,6 @@ abstract class TransactionDelegate<T : ITransaction>(
                     planButton.onClick()
                 }
             }
-            viewBinding.AttachImage.visibility = View.GONE
         }
         if (!isSplitPart) {
             //we set adapter even if spinner is not immediately visible, since it might become visible
@@ -263,6 +253,7 @@ abstract class TransactionDelegate<T : ITransaction>(
         }
         if (isSplitPart || isTemplate) {
             viewBinding.DateTimeRow.visibility = View.GONE
+            viewBinding.AttachmentsRow.visibility = View.GONE
         }
 
         createAdapters(withTypeSpinner, withAutoFill)
@@ -276,8 +267,6 @@ abstract class TransactionDelegate<T : ITransaction>(
                 setLocalDateTime(transaction)
             }
         } else {
-            configurePicture()
-
             populateStatusSpinner()
         }
         viewBinding.Amount.visibility = View.VISIBLE
@@ -664,10 +653,10 @@ abstract class TransactionDelegate<T : ITransaction>(
                             if (prefHandler.getBoolean(PrefKey.NEW_SPLIT_TEMPLATE_ENABLED, true)) {
                                 host.restartWithType(newType)
                             } else {
-                                host.contribFeatureRequested(ContribFeature.SPLIT_TEMPLATE, null)
+                                host.contribFeatureRequested(ContribFeature.SPLIT_TEMPLATE)
                             }
                         } else {
-                            host.contribFeatureRequested(ContribFeature.SPLIT_TRANSACTION, null)
+                            host.contribFeatureRequested(ContribFeature.SPLIT_TRANSACTION)
                         }
                     } else {
                         host.restartWithType(newType)
@@ -809,7 +798,7 @@ abstract class TransactionDelegate<T : ITransaction>(
                         )
                     }
                     this.defaultAction =
-                        Template.Action.values()[viewBinding.DefaultAction.selectedItemPosition]
+                        Template.Action.entries[viewBinding.DefaultAction.selectedItemPosition]
                     if (this.amount.amountMinor == 0L && forSave) {
                         if (plan == null && this.defaultAction == Template.Action.SAVE) {
                             host.showSnackBar(context.getString(R.string.template_default_action_without_amount_hint))
@@ -836,7 +825,6 @@ abstract class TransactionDelegate<T : ITransaction>(
                 }
             }
             crStatus = (statusSpinner.selectedItem as CrStatus)
-            this.pictureUri = this@TransactionDelegate.pictureUri
         }
     }
 
@@ -998,22 +986,6 @@ abstract class TransactionDelegate<T : ITransaction>(
 
     private fun disableAccountSpinner() {
         accountSpinner.isEnabled = false
-    }
-
-    fun setPicture(pictureUri: Uri?) {
-        this.pictureUri = pictureUri
-        configurePicture()
-    }
-
-    private fun configurePicture() {
-        if (pictureUri != null) {
-            viewBinding.PictureContainer.root.visibility = View.VISIBLE
-            picasso.load(pictureUri).fit().into(viewBinding.PictureContainer.picture)
-            viewBinding.AttachImage.visibility = View.GONE
-        } else {
-            viewBinding.AttachImage.visibility = View.VISIBLE
-            viewBinding.PictureContainer.root.visibility = View.GONE
-        }
     }
 
     open fun resetRecurrence() {

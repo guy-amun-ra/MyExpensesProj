@@ -12,6 +12,7 @@ import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contract.TransactionsContract.Transactions
 import org.totschnig.myexpenses.db2.Repository
+import org.totschnig.myexpenses.db2.addAttachments
 import org.totschnig.myexpenses.db2.findCategory
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model2.Account
@@ -39,8 +40,8 @@ class Fixture(inst: Instrumentation) {
     lateinit var account3: Account
         private set
     private lateinit var account4: Account
-    var budgetId: Long = 0L
-    var planId: Long = 0L
+    private var budgetId: Long = 0L
+    private var planId: Long = 0L
 
     init {
         testContext = inst.context
@@ -143,12 +144,10 @@ class Fixture(inst: Instrumentation) {
                     )
                 )
                 .date(offset - 300000)
+            val transaction = builder.persist()
             if (withPicture) {
-                builder.pictureUri(
-                    Uri.parse("file:///android_asset/screenshot.jpg")
-                )
+                repository.addAttachments(transaction.id, listOf(Uri.parse("file:///android_asset/screenshot.jpg")))
             }
-            builder.persist()
 
             //Transaction 2
             TransactionBuilder()
@@ -357,7 +356,6 @@ class Fixture(inst: Instrumentation) {
         private var catId: Long? = null
         private var date: Date? = null
         private var crStatus: CrStatus? = null
-        private var pictureUri: Uri? = null
         private var comment: String? = null
         private var payee: String? = null
         fun accountId(accountId: Long): TransactionBuilder {
@@ -390,11 +388,6 @@ class Fixture(inst: Instrumentation) {
             return this
         }
 
-        fun pictureUri(uri: Uri): TransactionBuilder {
-            pictureUri = uri
-            return this
-        }
-
         fun payee(payee: String): TransactionBuilder {
             this.payee = payee
             return this
@@ -415,7 +408,6 @@ class Fixture(inst: Instrumentation) {
             if (crStatus != null) {
                 transaction.crStatus = crStatus
             }
-            transaction.pictureUri = pictureUri
             transaction.payee = payee
             transaction.comment = comment
             transaction.parentId = parentId

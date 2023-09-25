@@ -20,18 +20,15 @@ import okio.source
 import org.acra.util.StreamReader
 import org.totschnig.myexpenses.sync.AbstractSyncBackendProvider
 import org.totschnig.myexpenses.sync.GenericAccountService
-import org.totschnig.myexpenses.sync.SequenceNumber
 import org.totschnig.myexpenses.sync.SyncBackendProvider.SyncParseException
 import org.totschnig.myexpenses.sync.getSyncProviderUrl
 import org.totschnig.myexpenses.sync.json.AccountMetaData
-import org.totschnig.myexpenses.sync.json.ChangeSet
 import org.totschnig.myexpenses.util.io.calculateSize
 import org.totschnig.myexpenses.util.io.getMimeType
 import org.totschnig.webdav.sync.client.CertificateHelper.fromString
 import org.totschnig.webdav.sync.client.InvalidCertificateException
 import org.totschnig.webdav.sync.client.WebDavClient
 import java.io.IOException
-import java.io.InputStream
 import java.security.cert.CertificateException
 import java.security.cert.X509Certificate
 
@@ -43,6 +40,9 @@ class WebDavBackendProvider @SuppressLint("MissingPermission") internal construc
 
     private var webDavClient: WebDavClient
     private val fallbackToClass1: Boolean
+
+    override val accountRes: DavResource
+        get() = webDavClient.getCollection(accountUuid)
 
     @Throws(IOException::class)
     override fun withAccount(account: org.totschnig.myexpenses.model2.Account) {
@@ -98,13 +98,17 @@ class WebDavBackendProvider @SuppressLint("MissingPermission") internal construc
         if (fromAccountDir)
             webDavClient.getResource(fileName, accountUuid)
         else
-            webDavClient.getResource(fileName), maybeDecrypt)
+            webDavClient.getResource(fileName), maybeDecrypt
+    )
 
     @Throws(IOException::class)
-    private fun readResourceIfExists(resource: LockableDavResource, maybeDecrypt: Boolean): String? {
+    private fun readResourceIfExists(
+        resource: LockableDavResource,
+        maybeDecrypt: Boolean
+    ): String? {
         return if (resource.exists()) {
             try {
-               StreamReader(maybeDecrypt(resource["text/plain"].byteStream(), maybeDecrypt)).read()
+                StreamReader(maybeDecrypt(resource["text/plain"].byteStream(), maybeDecrypt)).read()
             } catch (e: HttpException) {
                 throw IOException(e)
             } catch (e: DavException) {
@@ -148,28 +152,29 @@ class WebDavBackendProvider @SuppressLint("MissingPermission") internal construc
     private val lockFile: LockableDavResource
         get() = webDavClient.getResource(LOCK_FILE, accountUuid)
 
-    override fun getChangeSetFromResource(shardNumber: Int, resource: DavResource): ChangeSet {
-        return try {
-            getChangeSetFromInputStream(
-                SequenceNumber(
-                    shardNumber,
-                    getSequenceFromFileName(resource.fileName())
-                ),
-                resource[mimeTypeForData].byteStream()
-            )
-        } catch (e: HttpException) {
-            throw IOException(e)
-        } catch (e: DavException) {
-            throw IOException(e)
+    override fun getCollection(collectionName: String, require: Boolean): DavResource? {
+        if (require) {
+            webDavClient.mkCol(collectionName)
         }
+        return webDavClient.getCollection(collectionName).takeIf { it.exists() }
     }
 
-    override fun collectionForShard(shardNumber: Int) =
-        if (shardNumber == 0) webDavClient.getCollection(accountUuid)
-        else webDavClient.getCollection(folderForShard(shardNumber), accountUuid).takeIf { it.exists() }
+    override fun getInputStream(resource: DavResource) = try {
+        resource[mimeTypeForData].byteStream()
+    } catch (e: HttpException) {
+        throw IOException(e)
+    } catch (e: DavException) {
+        throw IOException(e)
+    }
+
+    override fun getResInAccountDir(resourceName: String) =
+        webDavClient.getCollection(resourceName, accountUuid)
+            .takeIf { it.exists() }
 
     override fun childrenForCollection(folder: DavResource?): Set<DavResource> =
-        if (folder != null) webDavClient.getFolderMembers(folder) else webDavClient.getFolderMembers(accountUuid)
+        if (folder != null) webDavClient.getFolderMembers(folder) else webDavClient.getFolderMembers(
+            accountUuid
+        )
 
     override fun nameForResource(resource: DavResource): String? = resource.fileName()
 
@@ -182,33 +187,12 @@ class WebDavBackendProvider @SuppressLint("MissingPermission") internal construc
         get() = webDavClient.getFolderMembers().isEmpty()
 
     @Throws(IOException::class)
-    override fun getInputStreamForPicture(relativeUri: String): InputStream {
-        return getInputStream(accountUuid!!, relativeUri)
-    }
-
-    @Throws(IOException::class)
-    override fun getInputStreamForBackup(backupFile: String): InputStream {
-        return getInputStream(BACKUP_FOLDER_NAME, backupFile)
-    }
-
-    @Throws(IOException::class)
-    private fun getInputStream(folderName: String, resourceName: String): InputStream {
-        return try {
-            webDavClient.getResource(resourceName, folderName)["*/*"].byteStream()
-        } catch (e: HttpException) {
-            throw IOException(e)
-        } catch (e: DavException) {
-            throw IOException(e)
-        }
-    }
-
-    @Throws(IOException::class)
-    override fun saveUriToAccountDir(fileName: String, uri: Uri) {
-        saveUriToFolder(fileName, uri, accountUuid!!, true)
-    }
-
-    @Throws(IOException::class)
-    private fun saveUriToFolder(fileName: String, uri: Uri, folder: String, maybeEncrypt: Boolean) {
+    override fun saveUriToCollection(
+        fileName: String,
+        uri: Uri,
+        collection: DavResource,
+        maybeEncrypt: Boolean
+    ) {
         val finalFileName = getLastFileNamePart(fileName)
         val encrypt = isEncrypted && maybeEncrypt
         val contentLength = if (encrypt) -1 else calculateSize(context.contentResolver, uri)
@@ -230,25 +214,11 @@ class WebDavBackendProvider @SuppressLint("MissingPermission") internal construc
             }
         }
         try {
-            webDavClient.upload(finalFileName, requestBody, folder)
+            webDavClient.upload(finalFileName, requestBody, collection)
         } catch (e: HttpException) {
             throw IOException(e)
         }
     }
-
-    @Throws(IOException::class)
-    override fun storeBackup(uri: Uri, fileName: String) {
-        webDavClient.mkCol(BACKUP_FOLDER_NAME)
-        saveUriToFolder(fileName, uri, BACKUP_FOLDER_NAME, false)
-    }
-
-    override val storedBackups: List<String>
-        get() = try {
-            webDavClient.getFolderMembers(BACKUP_FOLDER_NAME)
-                .map { obj: DavResource -> obj.fileName() }
-        } catch (e: IOException) {
-            ArrayList()
-        }
 
     @Throws(IOException::class)
     override fun saveFileContents(
@@ -259,17 +229,15 @@ class WebDavBackendProvider @SuppressLint("MissingPermission") internal construc
         mimeType: String,
         maybeEncrypt: Boolean
     ) {
-        val base = if(toAccountDir) webDavClient.getCollection(accountUuid) else webDavClient.base
-        val parent: LockableDavResource
-        if (folder != null) {
+        val base = if (toAccountDir) accountRes else webDavClient.base
+        val parent = if (folder != null) {
             webDavClient.mkCol(folder, base)
-            parent = webDavClient.getCollection(folder, accountUuid)
-            if (!parent.exists()) {
-                throw IOException("Cannot make folder")
+            webDavClient.getCollection(folder, accountUuid).also {
+                if (!it.exists()) {
+                    throw IOException("Cannot make folder")
+                }
             }
-        } else {
-            parent = base
-        }
+        } else base
         saveFileContents(fileName, fileContents, mimeType, maybeEncrypt, parent)
     }
 
@@ -280,7 +248,7 @@ class WebDavBackendProvider @SuppressLint("MissingPermission") internal construc
     @Throws(IOException::class)
     private fun saveFileContents(
         fileName: String, fileContents: String, mimeType: String,
-        maybeEncrypt: Boolean, parent: LockableDavResource
+        maybeEncrypt: Boolean, parent: DavResource
     ) {
         val encrypt = isEncrypted && maybeEncrypt
         val mediaType: MediaType? = "$mimeType; charset=utf-8".toMediaTypeOrNull()

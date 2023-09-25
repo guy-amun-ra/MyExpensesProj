@@ -14,11 +14,13 @@ import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ATTACHMENT_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ATTRIBUTE_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ATTRIBUTE_NAME
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_BANK_NAME
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_BIC
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_BLZ
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COLOR
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CONTEXT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CURRENCY
@@ -27,30 +29,43 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DEBT_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DESCRIPTION
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_IBAN
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LAST_USED
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEEID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME_NORMALIZED
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SHORT_NAME
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSACTIONID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_PEER
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_URI
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_USAGES
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_USER_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_VALUE
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNTS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNT_ATTRIBUTES
+import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ATTACHMENTS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ATTRIBUTES
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_BANKS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_CATEGORIES
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_DEBTS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_PAYEES
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS
+import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTION_ATTACHMENTS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTION_ATTRIBUTES
+import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_ALL
+import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_CHANGES_EXTENDED
+import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_COMMITTED
+import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_EXTENDED
+import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_UNCOMMITTED
+import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_WITH_ACCOUNT
 import timber.log.Timber
 
-const val DATABASE_VERSION = 147
+const val DATABASE_VERSION = 148
 
 private const val RAISE_UPDATE_SEALED_DEBT = "SELECT RAISE (FAIL, 'attempt to update sealed debt');"
 private const val RAISE_INCONSISTENT_CATEGORY_HIERARCHY =
@@ -172,9 +187,57 @@ CREATE TABLE $TABLE_ACCOUNT_ATTRIBUTES (
 );
 """
 
+const val ATTACHMENTS_CREATE = """
+CREATE TABLE $TABLE_ATTACHMENTS (
+    $KEY_ROWID integer primary key autoincrement,
+    $KEY_URI text not null unique,
+    $KEY_UUID text not null unique
+);
+"""
+
+const val TRANSACTIONS_ATTACHMENTS_CREATE = """
+CREATE TABLE $TABLE_TRANSACTION_ATTACHMENTS (
+    $KEY_TRANSACTIONID integer references $TABLE_TRANSACTIONS($KEY_ROWID) ON DELETE CASCADE,
+    $KEY_ATTACHMENT_ID integer references $TABLE_ATTACHMENTS($KEY_ROWID),
+    primary key ($KEY_TRANSACTIONID, $KEY_ATTACHMENT_ID)
+);
+"""
+
+private const val INCREASE_CATEGORY_USAGE_ACTION =
+    " BEGIN UPDATE $TABLE_CATEGORIES SET $KEY_USAGES = $KEY_USAGES + 1, $KEY_LAST_USED = strftime('%s', 'now')  WHERE $KEY_ROWID IN (new.$KEY_CATID , (SELECT $KEY_PARENTID FROM $TABLE_CATEGORIES WHERE $KEY_ROWID = new.$KEY_CATID)); END;"
+
+private val INCREASE_CATEGORY_USAGE_INSERT_TRIGGER =
+    "CREATE TRIGGER insert_increase_category_usage AFTER INSERT ON $TABLE_TRANSACTIONS WHEN new.$KEY_CATID IS NOT NULL AND new.$KEY_CATID != ${DatabaseConstants.SPLIT_CATID}$INCREASE_CATEGORY_USAGE_ACTION"
+
+private const val INCREASE_CATEGORY_USAGE_UPDATE_TRIGGER = "CREATE TRIGGER update_increase_category_usage AFTER UPDATE ON $TABLE_TRANSACTIONS WHEN new.$KEY_CATID IS NOT NULL AND (old.$KEY_CATID IS NULL OR new.$KEY_CATID != old.$KEY_CATID)$INCREASE_CATEGORY_USAGE_ACTION"
+
+private const val INCREASE_ACCOUNT_USAGE_ACTION =
+    " BEGIN UPDATE $TABLE_ACCOUNTS SET $KEY_USAGES = $KEY_USAGES + 1, $KEY_LAST_USED = strftime('%s', 'now')  WHERE $KEY_ROWID = new.$KEY_ACCOUNTID; END;"
+
+private const val INCREASE_ACCOUNT_USAGE_INSERT_TRIGGER =
+    "CREATE TRIGGER insert_increase_account_usage AFTER INSERT ON $TABLE_TRANSACTIONS WHEN new.$KEY_PARENTID IS NULL$INCREASE_ACCOUNT_USAGE_ACTION"
+
+private const val INCREASE_ACCOUNT_USAGE_UPDATE_TRIGGER =
+    "CREATE TRIGGER update_increase_account_usage AFTER UPDATE ON $TABLE_TRANSACTIONS WHEN new.$KEY_PARENTID IS NULL AND new.$KEY_ACCOUNTID != old.$KEY_ACCOUNTID AND (old.$KEY_TRANSFER_ACCOUNT IS NULL OR new.$KEY_ACCOUNTID != old.$KEY_TRANSFER_ACCOUNT)$INCREASE_ACCOUNT_USAGE_ACTION"
+
+const val TRANSACTIONS_UUID_INDEX_CREATE =
+    "CREATE UNIQUE INDEX transactions_account_uuid_index ON $TABLE_TRANSACTIONS($KEY_ACCOUNTID,$KEY_UUID,$KEY_STATUS)"
+
+const val TRANSACTIONS_CAT_ID_INDEX =
+    "CREATE INDEX transactions_cat_id_index on $TABLE_TRANSACTIONS($KEY_CATID)"
+
+const val TRANSACTIONS_PAYEE_ID_INDEX =
+    "CREATE INDEX transactions_payee_id_index on $TABLE_TRANSACTIONS($KEY_PAYEEID)"
 
 abstract class BaseTransactionDatabase(val prefHandler: PrefHandler) :
     SupportSQLiteOpenHelper.Callback(DATABASE_VERSION) {
+
+    fun createOrRefreshTransactionUsageTriggers(db: SupportSQLiteDatabase) {
+        db.execSQL(INCREASE_CATEGORY_USAGE_INSERT_TRIGGER)
+        db.execSQL(INCREASE_CATEGORY_USAGE_UPDATE_TRIGGER)
+        db.execSQL(INCREASE_ACCOUNT_USAGE_INSERT_TRIGGER)
+        db.execSQL(INCREASE_ACCOUNT_USAGE_UPDATE_TRIGGER)
+    }
 
     fun upgradeTo117(db: SupportSQLiteDatabase) {
         migrateCurrency(db, "VEB", CurrencyEnum.VES)
@@ -386,29 +449,142 @@ abstract class BaseTransactionDatabase(val prefHandler: PrefHandler) :
         }
     }
 
-    fun upgradeTo145(db: SupportSQLiteDatabase) {
-        with(db) {
-            execSQL("CREATE TABLE banks (_id integer primary key autoincrement, blz text not null, bic text not null, name text not null, user_id text not null, unique(blz, user_id))")
-            execSQL("ALTER TABLE accounts add column bank_id integer references banks(_id) ON DELETE SET NULL")
-            execSQL("ALTER TABLE payee RENAME to payee_old")
+    fun SupportSQLiteDatabase.upgradeTo145() {
+        execSQL("CREATE TABLE banks (_id integer primary key autoincrement, blz text not null, bic text not null, name text not null, user_id text not null, unique(blz, user_id))")
+        execSQL("ALTER TABLE accounts add column bank_id integer references banks(_id) ON DELETE SET NULL")
+        execSQL("ALTER TABLE payee RENAME to payee_old")
+        execSQL(
+            "CREATE TABLE payee (_id integer primary key autoincrement, name text not null, iban text, bic text, name_normalized text, unique(name, iban))"
+        )
+        execSQL("INSERT INTO payee (_id, name, name_normalized) SELECT _id, name, name_normalized FROM payee_old")
+        execSQL("DROP TABLE payee_old")
+        execSQL("CREATE TABLE attributes (_id integer primary key autoincrement,attribute_name text not null,context text not null, unique (attribute_name, context))")
+        Attribute.initDatabaseInternal(
+            this@upgradeTo145, FinTsAttribute::class.java,
+            "attributes", "attribute_name", "context"
+        )
+        Attribute.initDatabaseInternal(
+            this@upgradeTo145, BankingAttribute::class.java,
+            "attributes", "attribute_name", "context"
+        )
+        execSQL(
+            "CREATE TABLE transaction_attributes (transaction_id integer references transactions(_id) ON DELETE CASCADE,attribute_id integer references attributes(_id) ON DELETE CASCADE,value text not null,primary key (transaction_id, attribute_id))"
+        )
+        execSQL(
+            "CREATE TABLE account_attributes (account_id integer references accounts(_id) ON DELETE CASCADE,attribute_id integer references attributes(_id) ON DELETE CASCADE,value text not null,primary key (account_id, attribute_id))"
+        )
+        }
+
+    fun SupportSQLiteDatabase.upgradeTo148() {
+        execSQL("CREATE TABLE attachments (_id integer primary key autoincrement, uri text not null unique, uuid text not null unique)")
+        execSQL("CREATE TABLE transaction_attachments (transaction_id integer references transactions(_id) ON DELETE CASCADE, attachment_id integer references attachments(_id), primary key (transaction_id, attachment_id))")
+        execSQL("DROP TRIGGER IF EXISTS cache_stale_uri")
+        //insert existing attachments from transaction table into attachments table
+        //drop column picture_id
+        query("transactions", arrayOf("_id", "picture_id"), "picture_id is not null").use { cursor ->
+            val attachmentValues = ContentValues(2)
+            val joinValues = ContentValues(2)
+            cursor.asSequence.forEach {
+                attachmentValues.clear()
+                attachmentValues.put(KEY_URI, it.getString(1))
+                attachmentValues.put(KEY_UUID, Model.generateUuid())
+                val id = insert("attachments", attachmentValues)
+                joinValues.clear()
+                joinValues.put(KEY_TRANSACTIONID, it.getLong(0))
+                joinValues.put(KEY_ATTACHMENT_ID, id)
+                insert("transaction_attachments", joinValues)
+            }
+        }
+        query("stale_uris", arrayOf("picture_id"), selection = null).use { cursor ->
+            val attachmentValues = ContentValues(2)
+            cursor.asSequence.forEach {
+                attachmentValues.clear()
+                attachmentValues.put(KEY_URI, it.getString(0))
+                attachmentValues.put(KEY_UUID, Model.generateUuid())
+                insert("attachments", attachmentValues)
+            }
+        }
+        execSQL("DROP table stale_uris")
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ) {
+            execSQL("ALTER TABLE transactions RENAME to transactions_old")
             execSQL(
-                "CREATE TABLE payee (_id integer primary key autoincrement, name text not null, iban text, bic text, name_normalized text, unique(name, iban))"
-            )
-            execSQL("INSERT INTO payee (_id, name, name_normalized) SELECT _id, name, name_normalized FROM payee_old")
-            execSQL("DROP TABLE payee_old")
-            execSQL("CREATE TABLE attributes (_id integer primary key autoincrement,attribute_name text not null,context text not null, unique (attribute_name, context))")
-            Attribute.initDatabaseInternal(db, FinTsAttribute::class.java,
-                "attributes", "attribute_name", "context"
-            )
-            Attribute.initDatabaseInternal(db, BankingAttribute::class.java,
-                "attributes", "attribute_name", "context"
+                "CREATE TABLE transactions(" +
+                        "_id integer primary key autoincrement, " +
+                        "comment text, " +
+                        "date datetime not null, " +
+                        "value_date datetime not null, " +
+                        "amount integer not null, " +
+                        "cat_id integer references categories(_id), " +
+                        "account_id integer not null references accounts(_id) ON DELETE CASCADE, " +
+                        "payee_id integer references payee(_id), " +
+                        "transfer_peer integer references transactions(_id), " +
+                        "transfer_account integer references accounts(_id)," +
+                        "method_id integer references paymentmethods(_id)," +
+                        "parent_id integer references transactions(_id) ON DELETE CASCADE, " +
+                        "status integer default 0, " +
+                        "cr_status text not null check (cr_status in ('UNRECONCILED','CLEARED','RECONCILED','VOID')) default 'RECONCILED', " +
+                        "number text, " +
+                        "uuid text, " +
+                        "original_amount integer, " +
+                        "original_currency text, " +
+                        "equivalent_amount integer, " +
+                        "debt_id integer references debts(_id) ON DELETE SET NULL)"
             )
             execSQL(
-                "CREATE TABLE transaction_attributes (transaction_id integer references transactions(_id) ON DELETE CASCADE,attribute_id integer references attributes(_id) ON DELETE CASCADE,value text not null,primary key (transaction_id, attribute_id))"
+                "INSERT INTO transactions (" +
+                        "_id,comment,date,value_date,amount,cat_id,account_id,payee_id,transfer_peer,transfer_account,method_id,parent_id,status,cr_status,number,uuid,original_amount,original_currency,equivalent_amount,debt_id) " +
+                        "SELECT " +
+                        "_id,comment,date,value_date,amount,cat_id,account_id,payee_id,transfer_peer,transfer_account,method_id,parent_id,status,cr_status,number,uuid,original_amount,original_currency,equivalent_amount,debt_id FROM transactions_old"
+            )
+            execSQL("DROP TABLE transactions_old")
+            createOrRefreshTransactionUsageTriggers(this)
+            createOrRefreshTransactionDebtTriggers(this)
+            execSQL(ACCOUNT_REMAP_TRANSFER_TRIGGER_CREATE)
+            execSQL(TRANSACTIONS_UUID_INDEX_CREATE)
+            execSQL(TRANSACTIONS_CAT_ID_INDEX)
+            execSQL(TRANSACTIONS_PAYEE_ID_INDEX)
+            execSQL("ALTER TABLE changes RENAME to changes_old")
+            execSQL(
+                "CREATE TABLE changes (" +
+                        "account_id integer not null references accounts(_id) ON DELETE CASCADE," +
+                        "type text not null check (type in ('created','updated','deleted','unsplit','metadata','link')), " +
+                        "sync_sequence_local integer, " +
+                        "uuid text not null, " +
+                        "timestamp datetime DEFAULT (strftime('%s','now')), " +
+                        "parent_uuid text, " +
+                        "comment text, " +
+                        "date datetime, " +
+                        "value_date datetime, " +
+                        "amount integer, " +
+                        "original_amount integer, " +
+                        "original_currency text, " +
+                        "equivalent_amount integer, " +
+                        "cat_id integer references categories(_id) ON DELETE SET NULL, " +
+                        "payee_id integer references payee(_id) ON DELETE SET NULL, " +
+                        "transfer_account integer references accounts(_id) ON DELETE SET NULL," +
+                        "method_id integer references paymentmethods(_id) ON DELETE SET NULL," +
+                        "cr_status text check (cr_status in ('UNRECONCILED','CLEARED','RECONCILED','VOID'))," +
+                        "number text)"
             )
             execSQL(
-                "CREATE TABLE account_attributes (account_id integer references accounts(_id) ON DELETE CASCADE,attribute_id integer references attributes(_id) ON DELETE CASCADE,value text not null,primary key (account_id, attribute_id))"
+                "INSERT INTO changes (" +
+                        "account_id,type,sync_sequence_local,uuid,timestamp,parent_uuid,comment,date,value_date,amount,original_amount,original_currency,equivalent_amount,cat_id,payee_id,transfer_account,method_id,cr_status,number) " +
+                        "SELECT " +
+                        "account_id,type,sync_sequence_local,uuid,timestamp,parent_uuid,comment,date,value_date,amount,original_amount,original_currency,equivalent_amount,cat_id,payee_id,transfer_account,method_id,cr_status,number FROM changes_old"
             )
+            execSQL("DROP TABLE changes_old")
+        } else {
+            execSQL("DROP TRIGGER IF EXISTS insert_change_log")
+            execSQL("DROP TRIGGER IF EXISTS insert_after_update_change_log")
+            execSQL("DROP TRIGGER IF EXISTS update_change_log")
+            execSQL("DROP VIEW IF EXISTS $VIEW_COMMITTED")
+            execSQL("DROP VIEW IF EXISTS $VIEW_UNCOMMITTED")
+            execSQL("DROP VIEW IF EXISTS $VIEW_ALL")
+            execSQL("DROP VIEW IF EXISTS $VIEW_EXTENDED")
+            execSQL("DROP VIEW IF EXISTS $VIEW_CHANGES_EXTENDED")
+            execSQL("DROP VIEW IF EXISTS $VIEW_WITH_ACCOUNT")
+            execSQL("ALTER TABLE transactions DROP COLUMN picture_id")
+            execSQL("ALTER TABLE changes DROP COLUMN picture_id")
         }
     }
 

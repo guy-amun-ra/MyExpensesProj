@@ -49,6 +49,8 @@ import com.theartofdev.edmodo.cropper.CropImageView
 import com.vmadalin.easypermissions.EasyPermissions
 import com.vmadalin.easypermissions.dialogs.SettingsDialog
 import de.cketti.mailto.EmailIntentBuilder
+import eltos.simpledialogfragment.SimpleDialog
+import eltos.simpledialogfragment.SimpleDialog.OnDialogResultListener
 import eltos.simpledialogfragment.form.AmountInputHostDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,6 +72,7 @@ import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.maybeRepairRequerySchema
 import org.totschnig.myexpenses.service.PlanExecutor.Companion.enqueueSelf
+import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.ui.AmountInput
 import org.totschnig.myexpenses.ui.SnackbarAction
 import org.totschnig.myexpenses.util.*
@@ -97,7 +100,8 @@ import javax.inject.Inject
 import kotlin.math.sign
 
 abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener,
-    ConfirmationDialogListener, EasyPermissions.PermissionCallbacks, AmountInput.Host, ContribIFace {
+    ConfirmationDialogListener, EasyPermissions.PermissionCallbacks, AmountInput.Host, ContribIFace,
+    OnDialogResultListener{
     private var snackBar: Snackbar? = null
     private var pwDialog: AlertDialog? = null
 
@@ -482,6 +486,15 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
             }
         }
     }
+
+    override fun onResult(dialogTag: String, which: Int, extras: Bundle) =
+        if (dialogTag == DIALOG_INACTIVE_BACKEND && which == OnDialogResultListener.BUTTON_POSITIVE) {
+            GenericAccountService.activateSync(
+                extras.getString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME)!!,
+                prefHandler
+            )
+            true
+        } else false
 
     open fun hideWindow() {
         findViewById<View>(android.R.id.content).visibility = View.GONE
@@ -942,10 +955,10 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
 
     fun gdprNoConsent() {
         adHandlerFactory.clearConsent()
-        contribFeatureRequested(ContribFeature.AD_FREE, null)
+        contribFeatureRequested(ContribFeature.AD_FREE)
     }
 
-    open fun contribFeatureRequested(feature: ContribFeature, tag: Serializable?) {
+    open fun contribFeatureRequested(feature: ContribFeature, tag: Serializable? = null) {
         if (licenceHandler.hasAccessTo(feature)) {
             (this as ContribIFace).contribFeatureCalled(feature, tag)
         } else {
@@ -1191,9 +1204,22 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
         startActivity(Intent(this, bankingFeature.bankingActivityClass))
     }
 
+    fun requestSync(accountName: String, uuid: String? = null) {
+        if (!GenericAccountService.requestSync(accountName, uuid = uuid)) {
+            val bundle = Bundle(1)
+            bundle.putString(DatabaseConstants.KEY_SYNC_ACCOUNT_NAME, accountName)
+            SimpleDialog.build()
+                .msg("Backend is not ready to be synced")
+                .pos("Activate again")
+                .extra(bundle)
+                .show(this, DIALOG_INACTIVE_BACKEND)
+        }
+    }
+
 
     companion object {
         const val ASYNC_TAG = "ASYNC_TASK"
         const val PROGRESS_TAG = "PROGRESS"
+        private const val DIALOG_INACTIVE_BACKEND = "inactive_backend"
     }
 }

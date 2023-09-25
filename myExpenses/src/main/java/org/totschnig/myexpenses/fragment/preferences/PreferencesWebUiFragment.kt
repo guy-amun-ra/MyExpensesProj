@@ -71,19 +71,9 @@ class PreferencesWebUiFragment : BasePreferenceFragment() {
                 ) {
                     preferenceActivity.activateWebUi()
                 } else {
-                    preferenceActivity.contribFeatureRequested(ContribFeature.WEB_UI, null)
+                    preferenceActivity.contribFeatureRequested(ContribFeature.WEB_UI)
                 }
             }
-            true
-        }
-        matches(preference, PrefKey.HELP) -> {
-            startActivity(Intent(requireContext(), Help::class.java).apply {
-                putExtra(HelpDialogFragment.KEY_CONTEXT, "WebUI")
-                putExtra(
-                    HelpDialogFragment.KEY_TITLE,
-                    getString(R.string.title_webui)
-                )
-            })
             true
         }
         else -> false

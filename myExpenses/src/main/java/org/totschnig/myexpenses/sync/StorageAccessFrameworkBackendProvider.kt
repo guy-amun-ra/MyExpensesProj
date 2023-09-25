@@ -6,7 +6,6 @@ import androidx.documentfile.provider.DocumentFile
 import org.acra.util.StreamReader
 import org.totschnig.myexpenses.model2.Account
 import org.totschnig.myexpenses.sync.json.AccountMetaData
-import org.totschnig.myexpenses.sync.json.ChangeSet
 import org.totschnig.myexpenses.util.io.FileCopyUtils
 import org.totschnig.myexpenses.util.io.getMimeType
 import java.io.*
@@ -23,18 +22,21 @@ class StorageAccessFrameworkBackendProvider internal constructor(context: Contex
     private val metaDataFile
         get() = accountDir.findFile(accountMetadataFilename)
 
+    override val accountRes: DocumentFile
+        get() = accountDir
+
     @Throws(IOException::class)
     override fun withAccount(account: Account) {
         setAccountUuid(account)
-        accountDir = baseDir.requireFolder(account.uuid!!)
+        accountDir = baseDir.getFolder(account.uuid!!)!!
         writeAccount(account, false)
     }
 
-    private fun DocumentFile.requireFolder(name: String): DocumentFile {
+    private fun DocumentFile.getFolder(name: String, require: Boolean = true): DocumentFile? {
         check(isDirectory)
         return findFile(name)?.also {
             if (!it.isDirectory) throw IOException("file exists, but is no directory")
-        } ?: createDirectory(name) ?: throw IOException("cannot create directory")
+        } ?: (if (require) createDirectory(name) else null)
     }
 
     @Throws(IOException::class)
@@ -78,31 +80,21 @@ class StorageAccessFrameworkBackendProvider internal constructor(context: Contex
         }
 
     @Throws(IOException::class)
-    override fun getInputStreamForPicture(relativeUri: String) =
-        accountDir.findFile(relativeUri)?.let { contentResolver.openInputStream(it.uri) }
-            ?: throw FileNotFoundException()
-
-    @Throws(IOException::class)
-    override fun saveUriToAccountDir(fileName: String, uri: Uri) {
-        saveUriToFolder(fileName, uri, accountDir, true)
-    }
-
-    @Throws(IOException::class)
-    private fun saveUriToFolder(
+    override fun saveUriToCollection(
         fileName: String,
         uri: Uri,
-        folder: DocumentFile,
+        collection: DocumentFile,
         maybeEncrypt: Boolean
     ) {
         val input = contentResolver.openInputStream(uri)
-        val output = folder.createFile(getMimeType(fileName), fileName)
+        val output = collection.createFile(getMimeType(fileName), fileName)
             ?.let { contentResolver.openOutputStream(it.uri) }
 
         if (input == null) {
             throw IOException("Could not open InputStream $uri")
         }
         if (output == null) {
-            throw IOException("Could not open OutputStream $folder")
+            throw IOException("Could not open OutputStream $collection")
         }
 
         input.use { `in` ->
@@ -112,25 +104,10 @@ class StorageAccessFrameworkBackendProvider internal constructor(context: Contex
         }
     }
 
-    @Throws(IOException::class)
-    override fun storeBackup(uri: Uri, fileName: String) {
-        val backupDir = baseDir.requireFolder(BACKUP_FOLDER_NAME)
-        saveUriToFolder(fileName, uri, backupDir, false)
-    }
+    override fun getResInAccountDir(resourceName: String) = accountDir.findFile(resourceName)
 
-    override val storedBackups: List<String>
-        get() = baseDir.findFile(BACKUP_FOLDER_NAME)?.listFiles()?.mapNotNull { it.name }
-            ?: emptyList()
-
-    @Throws(FileNotFoundException::class)
-    override fun getInputStreamForBackup(backupFile: String): InputStream {
-        return baseDir.requireFolder(BACKUP_FOLDER_NAME).findFile(backupFile)?.uri?.let {
-            contentResolver.openInputStream(it)
-        } ?: throw FileNotFoundException()
-    }
-
-    override fun collectionForShard(shardNumber: Int) =
-        if (shardNumber == 0) accountDir else accountDir.findFile(folderForShard(shardNumber))
+    override fun getCollection(collectionName: String, require: Boolean) =
+        baseDir.getFolder(collectionName, require)
 
     override fun childrenForCollection(folder: DocumentFile?) =
         (folder ?: accountDir).listFiles().asList()
@@ -139,12 +116,7 @@ class StorageAccessFrameworkBackendProvider internal constructor(context: Contex
 
     override fun isCollection(resource: DocumentFile) = resource.isDirectory
 
-    override fun getChangeSetFromResource(shardNumber: Int, resource: DocumentFile): ChangeSet {
-        val inputStream = contentResolver.openInputStream(resource.uri) ?: throw IOException()
-        return getChangeSetFromInputStream(
-            SequenceNumber(shardNumber, getSequenceFromFileName(resource.name!!)), inputStream
-        )
-    }
+    override fun getInputStream(resource: DocumentFile) = contentResolver.openInputStream(resource.uri) ?: throw IOException()
 
     private fun getAccountMetaData(file: DocumentFile) = try {
         getAccountMetaDataFromInputStream(
@@ -169,7 +141,7 @@ class StorageAccessFrameworkBackendProvider internal constructor(context: Contex
         maybeEncrypt: Boolean
     ) {
         val base = if (toAccountDir) accountDir else baseDir
-        val dir = if (folder == null) base else base.requireFolder(folder)
+        val dir = if (folder == null) base else base.getFolder(folder)!!
         saveFileContents(dir, fileName, fileContents, mimeType, maybeEncrypt)
     }
 

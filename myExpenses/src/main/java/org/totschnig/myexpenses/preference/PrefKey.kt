@@ -44,7 +44,8 @@ enum class PrefKey(internal val resId: Int, internal val _key: String?) {
     UI_LANGUAGE(R.string.pref_ui_language_key),
     APP_DIR(R.string.pref_app_dir_key),
     CATEGORY_PRIVACY(R.string.pref_category_privacy_key),
-    CATEGORY_BACKUP_EXPORT(R.string.pref_category_export_backup_key),
+    CATEGORY_IO(R.string.pref_category_io_key),
+    CATEGORY_BACKUP_RESTORE(R.string.pref_category_backup_restore_key),
     CATEGORY_SECURITY(R.string.pref_category_security_key),
     ACCOUNT_GROUPING(R.string.pref_account_grouping_key),
     PLANNER_CALENDAR_PATH("planner_calendar_path"),
@@ -174,7 +175,9 @@ enum class PrefKey(internal val resId: Int, internal val _key: String?) {
     OPTIMIZE_PICTURE_QUALITY(R.string.pref_optimize_picture_quality_key),
     MANAGE_APP_DIR_FILES(R.string.pref_export_manage_files_key),
     ACCOUNT_PANEL_VISIBLE("account_panel_visible"),
-    BANKING_FINTS(R.string.pref_banking_fints_key)
+    BANKING_FINTS(R.string.pref_banking_fints_key),
+    COPY_ATTACHMENT(R.string.pref_copy_attachment_key),
+    ATTACHMENT_MIME_TYPES(R.string.pref_attachment_mime_types_key)
     ;
 
     @Deprecated("")

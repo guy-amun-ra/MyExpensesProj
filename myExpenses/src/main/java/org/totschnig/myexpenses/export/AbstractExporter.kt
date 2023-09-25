@@ -2,8 +2,9 @@ package org.totschnig.myexpenses.export
 
 import android.content.Context
 import android.database.Cursor
+import android.net.Uri
+import androidx.core.net.toFile
 import androidx.documentfile.provider.DocumentFile
-import org.apache.commons.lang3.StringUtils
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.db2.localizedLabelSqlColumn
 import org.totschnig.myexpenses.model.*
@@ -12,7 +13,9 @@ import org.totschnig.myexpenses.model2.Account
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TRANSFER_ACCOUNT_LABEL
 import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.TransactionProvider.TRANSACTIONS_ATTACHMENTS_URI
 import org.totschnig.myexpenses.provider.asSequence
+import org.totschnig.myexpenses.provider.fileName
 import org.totschnig.myexpenses.provider.filter.WhereFilter
 import org.totschnig.myexpenses.provider.getLongOrNull
 import org.totschnig.myexpenses.provider.getString
@@ -103,7 +106,6 @@ abstract class AbstractExporter
             ) + " AS " + KEY_METHOD_LABEL,
             KEY_CR_STATUS,
             KEY_REFERENCE_NUMBER,
-            KEY_PICTURE_URI,
             TRANSFER_ACCOUNT_LABEL
         )
 
@@ -129,14 +131,14 @@ abstract class AbstractExporter
         }
 
         fun Cursor.toDTO(isPart: Boolean = false): TransactionDTO {
-            val rowId = getLong(getColumnIndexOrThrow(KEY_ROWID)).toString()
+            val rowId = getLong(getColumnIndexOrThrow(KEY_ROWID))
             val catId = getLongOrNull(KEY_CATID)
             val isSplit = SPLIT_CATID == catId
             val splitCursor = if (isSplit) context.contentResolver.query(
                 Transaction.CONTENT_URI,
                 projection,
                 "$KEY_PARENTID = ?",
-                arrayOf(rowId),
+                arrayOf(rowId.toString()),
                 null
             ) else null
             val readCat =
@@ -147,9 +149,21 @@ abstract class AbstractExporter
                 TransactionProvider.TRANSACTIONS_TAGS_URI,
                 arrayOf(KEY_LABEL),
                 "$KEY_TRANSACTIONID = ?",
-                arrayOf(rowId),
+                arrayOf(rowId.toString()),
                 null
             )?.useAndMap { it.getString(0) }?.takeIf { it.isNotEmpty() }
+
+            //noinspection Recycle
+            val attachmentList = context.contentResolver.query(
+                TRANSACTIONS_ATTACHMENTS_URI,
+                arrayOf(KEY_URI),
+                "$KEY_TRANSACTIONID = ?", arrayOf(rowId.toString()),
+                null
+            )?.useAndMap {
+                val uri = Uri.parse(it.getString(0))
+                //We should only see file uri from unit test
+                if (uri.scheme == "file") uri.toFile().name else uri.fileName(context)
+            }?.takeIf { it.isNotEmpty() }?.filterNotNull()
 
             val transactionDTO = TransactionDTO(
                 getString(KEY_UUID),
@@ -167,7 +181,7 @@ abstract class AbstractExporter
                     ),
                 if (isPart) null else getStringOrNull(KEY_REFERENCE_NUMBER)
                     ?.takeIf { it.isNotEmpty() },
-                StringUtils.substringAfterLast(getStringOrNull(KEY_PICTURE_URI), "/"),
+                attachmentList,
                 tagList,
                 splitCursor?.let { splits ->
                     splits.moveToPosition(-1)

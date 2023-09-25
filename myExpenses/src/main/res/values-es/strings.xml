@@ -466,9 +466,6 @@
     <string name="restore_calendar_handling_ignore">No restaurar los proyectos</string>
     <string name="restore_not_possible_target_calendar_missing">El calendario %s configurado en la copia de seguridad no existe a nivel loca. La restauración ha sido cancelada.</string>
     <string name="restore_not_possible_local_calendar_missing">El actual calendario de planificación no está disponible.</string>
-    <string name="menu_view_picture">Ver imagen</string>
-    <string name="menu_delete_picture">Borrar imagen</string>
-    <string name="menu_change_picture">Adjuntar una imagen diferente</string>
     <string name="menu_distribution_show_pie_char">Mostrar el gráfico de sectores</string>
     <string name="menu_distribution_aggreate">Agregar gastos e ingresos</string>
     <!-- Stale refers to pictures left over from deleted transactions  -->
@@ -1054,4 +1051,6 @@
     <string name="read_from_data">Lectura de los datos</string>
     <string name="merge_parties_strategy_group">Los duplicados se agrupan como dependientes.</string>
     <string name="show_duplicates">Mostrar los duplicados</string>
+    <string name="whats_new_364_2">Nueva estrategia de gestión de la información duplicada sobre pagadores / beneficiarios</string>
+    <string name="whats_new_364_1">Importar a varias cuentas desde un archivo CSV</string>
 </resources>
