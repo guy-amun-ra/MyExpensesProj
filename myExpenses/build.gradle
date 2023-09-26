@@ -264,7 +264,7 @@ dependencies {
 
     api "com.jakewharton.timber:timber:$timberVersion"
 
-    withAdsImplementation 'com.google.android.gms:play-services-ads:22.3.0'
+    withAdsImplementation 'com.google.android.gms:play-services-ads:22.4.0'
     //noinspection GradleDynamicVersion
     //withAdsImplementation 'com.amazon.android:mobile-ads:5.+'
 
