@@ -37,8 +37,10 @@ import org.totschnig.myexpenses.compose.select
 import org.totschnig.myexpenses.compose.toggle
 import org.totschnig.myexpenses.compose.unselect
 import org.totschnig.myexpenses.db2.loadAccount
+import org.totschnig.myexpenses.db2.loadBanks
 import org.totschnig.myexpenses.model.*
 import org.totschnig.myexpenses.model.Transaction
+import org.totschnig.myexpenses.model2.Bank
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.GROUPING_AGGREGATE
@@ -174,14 +176,14 @@ open class MyExpensesViewModel(
         }
     }
 
-    private val pageSize = if (BuildConfig.DEBUG) 1500 else 150
+    private val pageSize = 150
 
     val items: Map<PageAccount, Flow<PagingData<Transaction2>>> = lazyMap {
         Pager(
             PagingConfig(
                 initialLoadSize = pageSize,
                 pageSize = pageSize,
-                prefetchDistance = 1,
+                prefetchDistance = 40,
                 enablePlaceholders = true
             ),
             pagingSourceFactory = pagingSourceFactories.getValue(it)
@@ -646,6 +648,14 @@ open class MyExpensesViewModel(
         pagingSourceFactories.forEach {
             it.value.clear()
         }
+    }
+
+    val banks: StateFlow<List<Bank>> by lazy {
+        repository.loadBanks().stateIn(
+            viewModelScope,
+            SharingStarted.Lazily,
+            emptyList()
+        )
     }
 
     companion object {
