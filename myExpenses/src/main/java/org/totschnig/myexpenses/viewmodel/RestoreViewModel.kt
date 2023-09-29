@@ -255,7 +255,7 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
                 }
             }
             val encrypt = args.getBoolean(KEY_ENCRYPT, false)
-            if (DbUtils.restore(backupFile, encrypt)) {
+            if (DbUtils.restore(getApplication(), backupFile, encrypt)) {
                 publishProgress(R.string.restore_db_success)
 
                 //since we already started reading settings, we can not just copy the file
@@ -372,7 +372,7 @@ class RestoreViewModel(application: Application) : ContentResolvingAndroidViewMo
 
                 //3. move pictures home and update uri
                 val backupPictureDir = File(workingDir, ZipUtils.PICTURES)
-                val backupFiles = backupPictureDir.listFiles()!!
+                val backupFiles = backupPictureDir.listFiles() ?: emptyArray()
                 contentResolver.query(
                     TransactionProvider.ATTACHMENTS_URI,
                     arrayOf(DatabaseConstants.KEY_ROWID, KEY_URI),

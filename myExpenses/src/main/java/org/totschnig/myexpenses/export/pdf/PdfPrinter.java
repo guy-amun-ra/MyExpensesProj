@@ -28,6 +28,9 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_YEAR;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_YEAR_OF_WEEK_START;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.SPLIT_CATID;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.CTE_TRANSACTION_GROUPS;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.getLongOrNull;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.getString;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.requireString;
 import static org.totschnig.myexpenses.util.ArrayUtilsKt.joinArrays;
 import static org.totschnig.myexpenses.util.CurrencyFormatterKt.convAmount;
 import static org.totschnig.myexpenses.util.CurrencyFormatterKt.formatMoney;
@@ -66,7 +69,6 @@ import org.totschnig.myexpenses.model.Transaction;
 import org.totschnig.myexpenses.model.Transfer;
 import org.totschnig.myexpenses.model2.Account;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
-import org.totschnig.myexpenses.provider.DbUtils;
 import org.totschnig.myexpenses.provider.MoreDbUtilsKt;
 import org.totschnig.myexpenses.provider.filter.WhereFilter;
 import org.totschnig.myexpenses.util.AppDirHelper;
@@ -232,26 +234,19 @@ public class PdfPrinter {
     int columnIndexComment = transactionCursor.getColumnIndex(KEY_COMMENT);
     int columnIndexReferenceNumber = transactionCursor.getColumnIndex(KEY_REFERENCE_NUMBER);
     int columnIndexPayee = transactionCursor.getColumnIndex(KEY_PAYEE_NAME);
-    int columnIndexTransferPeer = transactionCursor.getColumnIndex(KEY_TRANSFER_PEER);
     int columnIndexDate = transactionCursor.getColumnIndex(KEY_DATE);
     int columnIndexCrStatus = transactionCursor.getColumnIndex(KEY_CR_STATUS);
 
-    DateFormat itemDateFormat;
-    switch (account.getGrouping()) {
-      case DAY:
-        itemDateFormat = android.text.format.DateFormat.getTimeFormat(context);
-        break;
-      case MONTH:
+    DateFormat itemDateFormat = switch (account.getGrouping()) {
+      case DAY -> android.text.format.DateFormat.getTimeFormat(context);
+      case MONTH ->
         //noinspection SimpleDateFormat
-        itemDateFormat = new SimpleDateFormat("dd");
-        break;
-      case WEEK:
+              new SimpleDateFormat("dd");
+      case WEEK ->
         //noinspection SimpleDateFormat
-        itemDateFormat = new SimpleDateFormat("EEE");
-        break;
-      default:
-        itemDateFormat = Utils.localizedYearLessDateFormat(context);
-    }
+              new SimpleDateFormat("EEE");
+      default -> Utils.localizedYearLessDateFormat(context);
+    };
     PdfPTable table = null;
 
     int prevHeaderId = 0, currentHeaderId;
@@ -265,46 +260,31 @@ public class PdfPrinter {
       int month = transactionCursor.getInt(columnIndexMonth);
       int week = transactionCursor.getInt(columnIndexWeek);
       int day = transactionCursor.getInt(columnIndexDay);
-      int second = -1;
 
-      switch (account.getGrouping()) {
-        case DAY:
-          currentHeaderId = year * 1000 + day;
-          break;
-        case WEEK:
-          currentHeaderId = year * 1000 + week;
-          break;
-        case MONTH:
-          currentHeaderId = year * 1000 + month;
-          break;
-        case YEAR:
-          currentHeaderId = year * 1000;
-          break;
-        default:
-          currentHeaderId = 1;
-      }
+      currentHeaderId = switch (account.getGrouping()) {
+        case DAY -> year * 1000 + day;
+        case WEEK -> year * 1000 + week;
+        case MONTH -> year * 1000 + month;
+        case YEAR -> year * 1000;
+        default -> 1;
+      };
       if (currentHeaderId != prevHeaderId) {
         if (table != null) {
           document.add(table);
         }
-        switch (account.getGrouping()) {
-          case DAY:
-            second = transactionCursor.getInt(columnIndexDay);
-            break;
-          case MONTH:
-            second = transactionCursor.getInt(columnIndexMonth);
-            break;
-          case WEEK:
-            second = transactionCursor.getInt(columnIndexWeek);
-            break;
-        }
+        int second = switch (account.getGrouping()) {
+          case DAY -> transactionCursor.getInt(columnIndexDay);
+          case MONTH -> transactionCursor.getInt(columnIndexMonth);
+          case WEEK -> transactionCursor.getInt(columnIndexWeek);
+          default -> -1;
+        };
         table = helper.newTable(2);
         table.setWidthPercentage(100f);
         PdfPCell cell = helper.printToCell(account.getGrouping().getDisplayTitle(context, year, second, DateInfo.fromCursor(transactionCursor)), FontType.HEADER);
         table.addCell(cell);
         if (groupCursor.isAfterLast()) {
-          Timber.w("Grouping: %s, currentHeaderId; %d, prevHeaderId: %d, filter: %s",
-                  account.getGrouping(), currentHeaderId, prevHeaderId, filter);
+          Timber.w("Account: %s, currentHeaderId; %d, prevHeaderId: %d, filter: %s, accountId: ",
+                  account, currentHeaderId, prevHeaderId, filter);
           throw new IllegalStateException();
         }
         long sumExpense = groupCursor.getLong(columnIndexGroupSumExpense);
@@ -405,19 +385,19 @@ public class PdfPrinter {
       }
 
       String catText = transactionCursor.getString(columnIndexLabel);
-      if (DbUtils.getLongOrNull(transactionCursor, columnIndexTransferPeer) != null) {
+      if (getLongOrNull(transactionCursor, KEY_TRANSFER_PEER) != null) {
         catText = Transfer.getIndicatorPrefixForLabel(amount) + catText;
       } else {
-        Long catId = DbUtils.getLongOrNull(transactionCursor, KEY_CATID);
+        Long catId = getLongOrNull(transactionCursor, KEY_CATID);
         if (SPLIT_CATID.equals(catId)) {
           Cursor splits = context.getContentResolver().query(Transaction.CONTENT_URI, null,
               KEY_PARENTID + " = " + transactionCursor.getLong(columnIndexRowId), null, null);
           splits.moveToFirst();
           StringBuilder catTextBuilder = new StringBuilder();
           while (splits.getPosition() < splits.getCount()) {
-            String splitText = DbUtils.getString(splits, KEY_LABEL);
+            String splitText =  getString(splits, KEY_LABEL);
             if (splitText.length() > 0) {
-              if (DbUtils.getLongOrNull(splits, KEY_TRANSFER_PEER) != null) {
+              if (getLongOrNull(splits, KEY_TRANSFER_PEER) != null) {
                 splitText = "[" + splitText + "]";
               }
             } else {
@@ -425,8 +405,8 @@ public class PdfPrinter {
             }
             splitText += " " + convAmount(currencyFormatter, splits.getLong(
                 splits.getColumnIndexOrThrow(KEY_DISPLAY_AMOUNT)), currencyUnit());
-            String splitComment = DbUtils.getString(splits, KEY_COMMENT);
-            if (splitComment != null && splitComment.length() > 0) {
+            String splitComment = getString(splits, KEY_COMMENT);
+            if (splitComment.length() > 0) {
               splitText += " (" + splitComment + ")";
             }
             catTextBuilder.append(splitText);
