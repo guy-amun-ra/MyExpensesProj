@@ -127,7 +127,6 @@
     <string name="grouping_year">שנה</string>
     <string name="help_button_rate">דרג או כתוב סקירה</string>
     <string name="help_heading_credits">נקודות זכות</string>
-    <string name="help_heading_license">רישיון</string>
     <string name="help_heading_whats_new">מה חדש</string>
     <string name="import_select_transactions">עסקאות</string>
     <string name="income">הכנסה</string>
@@ -1073,4 +1072,5 @@
     <string name="attachments">קבצים מצורפים</string>
     <string name="pref_copy_attachments_title">העתקת קבצים מצורפים לתיקיית היישומון</string>
     <string name="pref_copy_attachments_summary_off">קבצים לא מועתקים, מאוחסנת רק הפניה.</string>
+    <string name="whats_new_365">צירוף מספר שרירותי של תמונות ומסמכים (PDF)</string>
 </resources>
