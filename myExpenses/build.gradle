@@ -25,6 +25,8 @@ def getPropertyIfDefined(property, defaultValue) {
     return defaultValue
 }
 
+def RELEASE_DIR="/home/michael/MyExpensesReleases"
+
 android {
     compileSdk project.compileSdkVersion
     useLibrary 'android.test.runner'
@@ -125,7 +127,7 @@ android {
                 task("${flavor.name}EchoPublishTag") {
                     doLast {
                         def tag = "${project.versionCode}${flavor.ext.gitTagSuffix}"
-                        def dir = "/home/michael/MyExpensesReleases/${tag}"
+                        def dir = "${RELEASE_DIR}/${tag}"
                         def outputFolder = flavor.name == 'play' ? 'bundle' : 'apk_from_bundle'
                         def artifactSuffix = flavor.name == 'play' ? '.aab' : '-universal.apk'
                         def renameTarget = flavor.name == 'huawei' ? '/myExpenses.apk' : ''
