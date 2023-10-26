@@ -98,7 +98,7 @@ public class CustomEvent implements CustomEventBanner, CustomEventInterstitial {
 
     final List<PartnerProgram> partnerPrograms = parsePrograms(serverParameter);
 
-    final AppComponent appComponent = MyApplication.getInstance().getAppComponent();
+    final AppComponent appComponent = MyApplication.Companion.getInstance().getAppComponent();
     if (size == null || partnerPrograms.isEmpty()) {
       listener.onAdFailedToLoad(com.google.android.gms.ads.AdRequest.ERROR_CODE_INVALID_REQUEST);
     } else {
@@ -157,7 +157,7 @@ public class CustomEvent implements CustomEventBanner, CustomEventInterstitial {
 
     final List<PartnerProgram> partnerPrograms = parsePrograms(serverParameter);
 
-    final AppComponent appComponent = MyApplication.getInstance().getAppComponent();
+    final AppComponent appComponent = MyApplication.Companion.getInstance().getAppComponent();
     if (partnerPrograms.isEmpty()) {
       listener.onAdFailedToLoad(com.google.android.gms.ads.AdRequest.ERROR_CODE_INVALID_REQUEST);
     } else {

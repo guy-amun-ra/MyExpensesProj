@@ -32,7 +32,7 @@ public class UnlockHandler extends Handler {
 
   @Override
   public void handleMessage(Message msg) {
-    MyApplication app = MyApplication.getInstance();
+    MyApplication app = MyApplication.Companion.getInstance();
     Timber.i("Now handling answer from license verification service; got status %d.", msg.what);
     switch (msg.what) {
       case STATUS_FINAL:
@@ -51,7 +51,7 @@ public class UnlockHandler extends Handler {
   }
 
   private void doUnlock(int status) {
-    MyApplication app = MyApplication.getInstance();
+    MyApplication app = MyApplication.Companion.getInstance();
     LicenceHandler licenceHandler = app.getLicenceHandler();
     boolean unlocked = licenceHandler.registerUnlockLegacy();
     if (unlocked) {
@@ -61,7 +61,7 @@ public class UnlockHandler extends Handler {
   }
 
   private void showNotif(String text) {
-    MyApplication app = MyApplication.getInstance();
+    MyApplication app = MyApplication.Companion.getInstance();
     NotificationManager notificationManager =
         (NotificationManager) app.getSystemService(Context.NOTIFICATION_SERVICE);
     String title = concatResStrings(app, " ", R.string.app_name, R.string.contrib_key);
