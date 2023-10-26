@@ -31,7 +31,7 @@ open class PlayStoreLicenceHandler(
             val price: String? = if (productDetails.productType == ProductType.INAPP) {
                 productDetails.oneTimePurchaseOfferDetails?.formattedPrice
             } else { //SUBS
-                productDetails.subscriptionOfferDetails?.get(0)?.pricingPhases?.pricingPhaseList?.get(0)?.formattedPrice
+                productDetails.subscriptionOfferDetails?.getOrNull(0)?.pricingPhases?.pricingPhaseList?.getOrNull(0)?.formattedPrice
             }
             if (price != null) {
                 editor.putString(prefKeyForSkuPrice(productDetails.productId), price)
