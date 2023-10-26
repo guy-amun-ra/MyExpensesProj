@@ -39,6 +39,7 @@ abstract class IapActivity: ProtectedFragmentActivity(), BillingListener {
             }: ${userCountry ?: ""}"
         sendEmail(INVOICES_EMAIL, subject, messageBody)
     }
+    open fun onPurchaseCancelled() {}
 
     fun onPurchaseFailed(code: Int) {
         showMessage(
