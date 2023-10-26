@@ -85,11 +85,12 @@ open class PlayStoreLicenceHandler(
             }
 
             override fun onPurchaseCanceled() {
-                log().i("onPurchasesUpdated() - user cancelled the purchase flow - skipping")
+                log().i("user cancelled the purchase flow - skipping")
+                activity.onPurchaseCancelled()
             }
 
             override fun onPurchaseFailed(resultCode: Int) {
-                Timber.e("onPurchasesUpdated() got unknown resultCode: %s", resultCode)
+                Timber.e("onPurchaseFailed -  got unknown resultCode: %s", resultCode)
                 activity.onPurchaseFailed(resultCode)
             }
         }
