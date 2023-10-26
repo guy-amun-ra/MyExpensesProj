@@ -4,7 +4,6 @@ import android.accounts.AccountManager
 import android.app.Application
 import android.content.ContentProviderOperation
 import android.content.ContentResolver
-import android.database.Cursor
 import android.database.sqlite.SQLiteConstraintException
 import android.os.Build
 import android.text.TextUtils
@@ -16,6 +15,7 @@ import androidx.lifecycle.viewModelScope
 import app.cash.copper.flow.mapToList
 import app.cash.copper.flow.observeQuery
 import com.theartofdev.edmodo.cropper.CropImage
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.MyApplication
@@ -29,7 +29,6 @@ import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.*
 import org.totschnig.myexpenses.provider.BaseTransactionProvider.Companion.ACCOUNTS_MINIMAL_URI_WITH_AGGREGATES
-import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.AGGREGATE_HOME_CURRENCY_CODE
 import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.HOME_AGGREGATE_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.TransactionProvider.*
@@ -47,8 +46,7 @@ import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider
 import org.totschnig.myexpenses.viewmodel.ExportViewModel.Companion.EXPORT_HANDLE_DELETED_CREATE_HELPER
 import org.totschnig.myexpenses.viewmodel.ExportViewModel.Companion.EXPORT_HANDLE_DELETED_UPDATE_BALANCE
 import org.totschnig.myexpenses.viewmodel.data.AccountMinimal
-import org.totschnig.myexpenses.viewmodel.data.Budget
-import org.totschnig.myexpenses.viewmodel.data.DateInfo2
+import org.totschnig.myexpenses.viewmodel.data.DateInfo
 import org.totschnig.myexpenses.viewmodel.data.Debt
 import javax.inject.Inject
 import kotlin.collections.set
@@ -106,7 +104,7 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
         }
     }
 
-    val dateInfo: Flow<DateInfo2> = flow {
+    val dateInfo: Flow<DateInfo> = flow {
         contentResolver.query(
             DUAL_URI,
             arrayOf(
@@ -120,31 +118,9 @@ abstract class ContentResolvingAndroidViewModel(application: Application) :
             null, null, null, null
         )?.use { cursor ->
             cursor.moveToFirst()
-            emit(DateInfo2.fromCursor(cursor))
+            emit(DateInfo.fromCursor(cursor))
         }
-    }
-
-    val budgetCreatorFunction: (Cursor) -> Budget = { cursor ->
-        val currency = cursor.getString(KEY_CURRENCY)
-        val currencyUnit = if (currency == AGGREGATE_HOME_CURRENCY_CODE)
-            homeCurrencyProvider.homeCurrencyUnit else currencyContext.get(currency)
-        val budgetId = cursor.getLong(KEY_ROWID)
-        val accountId = cursor.getLong(KEY_ACCOUNTID)
-        val grouping = Grouping.valueOf(cursor.getString(KEY_GROUPING))
-        Budget(
-            id = budgetId,
-            accountId = accountId,
-            title = cursor.getString(KEY_TITLE),
-            description = cursor.getString(KEY_DESCRIPTION),
-            currency = currencyUnit,
-            grouping = grouping,
-            color = cursor.getInt(KEY_COLOR),
-            start = cursor.getStringOrNull(KEY_START),
-            end = cursor.getStringOrNull(KEY_END),
-            accountName = cursor.getStringOrNull(KEY_ACCOUNT_LABEL),
-            default = cursor.getBoolean(KEY_IS_DEFAULT)
-        )
-    }
+    }.flowOn(Dispatchers.IO)
 
     fun accountsMinimal(query: String? = null, withAggregates: Boolean = true): Flow<List<AccountMinimal>> = contentResolver.observeQuery(
         if (withAggregates) ACCOUNTS_MINIMAL_URI_WITH_AGGREGATES else ACCOUNTS_MINIMAL_URI, null,

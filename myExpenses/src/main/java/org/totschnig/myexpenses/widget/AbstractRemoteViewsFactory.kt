@@ -2,7 +2,6 @@ package org.totschnig.myexpenses.widget
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.Resources
 import android.database.Cursor
 import android.database.sqlite.SQLiteException
 import android.os.Binder
@@ -68,7 +67,6 @@ abstract class AbstractRemoteViewsFactory(
     abstract fun RemoteViews.populate(cursor: Cursor)
 
     companion object {
-
 
         val rowLayout: Int
             get() = when(AppCompatDelegate.getDefaultNightMode()) {

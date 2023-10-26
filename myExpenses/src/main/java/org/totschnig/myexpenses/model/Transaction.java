@@ -60,9 +60,9 @@ import static org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_ALL;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_UNCOMMITTED;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.FULL_LABEL;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.checkSealedWithAlias;
-import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.getLongOrNull;
-import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.getString;
-import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.getStringOrNull;
+import static org.totschnig.myexpenses.provider.CursorExtKt.getLongOrNull;
+import static org.totschnig.myexpenses.provider.CursorExtKt.getString;
+import static org.totschnig.myexpenses.provider.CursorExtKt.getStringOrNull;
 import static org.totschnig.myexpenses.provider.TransactionProvider.TRANSACTIONS_TAGS_URI;
 import static org.totschnig.myexpenses.provider.TransactionProvider.UNCOMMITTED_URI;
 import static org.totschnig.myexpenses.util.CurrencyFormatterKt.formatMoney;
@@ -88,12 +88,10 @@ import org.totschnig.myexpenses.R;
 import org.totschnig.myexpenses.db2.RepositoryPartyKt;
 import org.totschnig.myexpenses.provider.DatabaseConstants;
 import org.totschnig.myexpenses.provider.TransactionProvider;
-import org.totschnig.myexpenses.util.AppDirHelper;
 import org.totschnig.myexpenses.util.ICurrencyFormatter;
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler;
 import org.totschnig.myexpenses.viewmodel.data.Tag;
 
-import java.io.File;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -375,7 +373,7 @@ public class Transaction extends Model implements ITransaction {
    */
   public static Transaction getInstanceFromDb(ContentResolver contentResolver, long id, @Nullable CurrencyUnit homeCurrency) {
     Transaction t;
-    final CurrencyContext currencyContext = MyApplication.getInstance().getAppComponent().currencyContext();
+    final CurrencyContext currencyContext = MyApplication.Companion.getInstance().getAppComponent().currencyContext();
     String[] projection = new String[]{KEY_ROWID, KEY_DATE, KEY_VALUE_DATE, KEY_AMOUNT, KEY_COMMENT, KEY_CATID,
         FULL_LABEL, KEY_PAYEEID, KEY_PAYEE_NAME, KEY_TRANSFER_PEER, KEY_TRANSFER_ACCOUNT, TRANSFER_CURRENCY, KEY_DEBT_ID,
         KEY_ACCOUNTID, KEY_METHODID, KEY_PARENTID, KEY_CR_STATUS, KEY_REFERENCE_NUMBER, KEY_CURRENCY,
@@ -677,12 +675,12 @@ public class Transaction extends Model implements ITransaction {
               (!isEmpty(getPayee()) ? getPayee() :
                       (!isSplit() && !isEmpty(getLabel()) ? getLabel() :
                               (!isEmpty(getComment()) ? getComment() :
-                                      MyApplication.getInstance().getString(R.string.menu_create_template)
+                                      MyApplication.Companion.getInstance().getString(R.string.menu_create_template)
                               )
                       )
               );
       Template originTemplate = new Template(contentResolver, this, title);
-      String description = originTemplate.compileDescription(MyApplication.getInstance()); //TODO proper context
+      String description = originTemplate.compileDescription(MyApplication.Companion.getInstance()); //TODO proper context
       originTemplate.setPlanExecutionAutomatic(true);
       Long withLinkedTransaction = null;
       if (initialPlan.getSecond() != Plan.Recurrence.NONE) {

@@ -6,21 +6,14 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.content.res.Configuration
 import android.net.Uri
-import android.os.Bundle
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 import androidx.appcompat.app.AppCompatDelegate
 import org.totschnig.myexpenses.R
-import org.totschnig.myexpenses.activity.PreferenceActivity
 import org.totschnig.myexpenses.injector
-import org.totschnig.myexpenses.model.CurrencyContext
-import org.totschnig.myexpenses.myApplication
-import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import timber.log.Timber
-import javax.inject.Inject
 
 
 const val WIDGET_CLICK = "org.totschnig.myexpenses.WIDGET_CLICK"
@@ -47,17 +40,11 @@ fun updateWidgets(
         putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds)
     })
 
-abstract class AbstractWidget(
+abstract class AbstractListWidget(
     private val clazz: Class<out RemoteViewsService>,
-    private val protectionKey: PrefKey
-) : AppWidgetProvider() {
+    protectionKey: PrefKey
+) : BaseWidget(protectionKey) {
     abstract val emptyTextResourceId: Int
-
-    @Inject
-    lateinit var prefHandler: PrefHandler
-
-    @Inject
-    lateinit var currencyContext: CurrencyContext
 
     override fun onReceive(context: Context, intent: Intent) {
         context.injector.inject(this)
@@ -84,61 +71,29 @@ abstract class AbstractWidget(
 
     abstract fun handleWidgetClick(context: Context, intent: Intent)
 
-    fun availableWidth(
+    fun clickBaseIntent(context: Context) = Intent(WIDGET_CLICK, null, context, javaClass)
+
+    override fun updateWidgetDo(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
-    ) = appWidgetManager.getAppWidgetOptions(appWidgetId).getInt(
-        when (context.resources.configuration.orientation) {
-            Configuration.ORIENTATION_LANDSCAPE -> AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH
-            else -> AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH
-        }, Int.MAX_VALUE
-    ) - (WIDGET_ROW_RESERVED_SPACE_FOR_INFO * context.resources.configuration.fontScale).toInt()
-
-    fun clickBaseIntent(context: Context) = Intent(WIDGET_CLICK, null, context, javaClass)
-
-    open fun updateWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
-
-        appWidgetManager.updateAppWidget(appWidgetId, if (isProtected(context)) {
-            RemoteViews(context.packageName, R.layout.widget_locked).apply {
-                setOnClickPendingIntent(
-                    R.id.text,
-                    PendingIntent.getActivity(
-                        context,
-                        appWidgetId,
-                        PreferenceActivity.getIntent(
-                            context, prefHandler.getKey(PrefKey.CATEGORY_SECURITY)
-                        ),
-                        PendingIntent.FLAG_IMMUTABLE
-                    )
-                )
-                setTextViewText(
-                    R.id.text, context.getString(R.string.warning_password_protected) + " " +
-                            context.getString(R.string.warning_widget_disabled)
-                )
-            }
-        } else {
-            val clickPI = PendingIntent.getBroadcast(
-                context,
-                appWidgetId,
-                clickBaseIntent(context),
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-            )
-
-            RemoteViews(
-                context.packageName,
-                when (AppCompatDelegate.getDefaultNightMode()) {
-                    AppCompatDelegate.MODE_NIGHT_NO -> R.layout.widget_list_light
-                    AppCompatDelegate.MODE_NIGHT_YES -> R.layout.widget_list_dark
-                    else -> R.layout.widget_list
-                }
-            ).apply {
+    ) {
+        val clickPI = PendingIntent.getBroadcast(
+            context,
+            appWidgetId,
+            clickBaseIntent(context),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+        )
+        appWidgetManager.updateAppWidget(
+            appWidgetId,
+            RemoteViews(context.packageName, listLayout).apply {
                 setEmptyView(R.id.list, R.id.emptyView)
                 setOnClickPendingIntent(R.id.emptyView, clickPI)
 
                 setRemoteAdapter(R.id.list, Intent(context, clazz).apply {
                     putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
-                    val availableWidth = availableWidth(context, appWidgetManager, appWidgetId)
+                    val availableWidth =
+                        availableWidthForButtons(context, appWidgetManager, appWidgetId)
                     Timber.i("availableWidth: %d", availableWidth)
                     putExtra(KEY_WIDTH, availableWidth)
                     // When intents are compared, the extras are ignored, so we need to embed the extras
@@ -151,30 +106,16 @@ abstract class AbstractWidget(
                 )
                 setPendingIntentTemplate(R.id.list, clickPI)
             }
-        })
+        )
     }
 
-    override fun onAppWidgetOptionsChanged(
+    fun availableWidthForButtons(
         context: Context,
         appWidgetManager: AppWidgetManager,
-        appWidgetId: Int,
-        newOptions: Bundle
-    ) {
-        updateWidget(context, appWidgetManager, appWidgetId)
-    }
-
-    override fun onUpdate(
-        context: Context,
-        appWidgetManager: AppWidgetManager,
-        appWidgetIds: IntArray
-    ) {
-        appWidgetIds.forEach { appWidgetId ->
-            updateWidget(context, appWidgetManager, appWidgetId)
-        }
-    }
-
-    protected open fun isProtected(context: Context): Boolean {
-        return (context.myApplication).isProtected &&
-                !prefHandler.getBoolean(protectionKey, false)
-    }
+        appWidgetId: Int
+    ) = availableWidth(
+        context,
+        appWidgetManager,
+        appWidgetId
+    ) - (WIDGET_ROW_RESERVED_SPACE_FOR_INFO * context.resources.configuration.fontScale).toInt()
 }

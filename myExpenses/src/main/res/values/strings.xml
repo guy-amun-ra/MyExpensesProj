@@ -475,6 +475,7 @@
     <string name="image_deleted">Picture has been deleted</string>
     <string name="transaction_deleted">Transaction has been deleted</string>
     <string name="account_deleted">Account has been deleted</string>
+    <string name="budget_deleted">Budget has been deleted</string>
     <string name="dialog_export_applied_to_filter">Only transactions matched by the current filter will be considered.</string>
     <string name="export_handle_deleted_create_helper">Create helper transaction</string>
     <string name="export_handle_deleted_update_balance">Update opening balance</string>
@@ -714,7 +715,8 @@
     <string name="budget_table_header_budgeted">Budgeted</string>
     <string name="budget_table_header_allocated">Allocated</string>
     <string name="budget_table_header_spent">Spent</string>
-    <string name="budget_table_header_remainder">Remainder</string>
+    <string name="budget_table_header_available">Available</string>
+    <string name="budget_table_header_overspent">Overspent</string>
     <string name="budget_allocated_amount">Allocated amount</string>
     <string name="budget_exceeded_error_1_1">All but %s of your budget has been allocated to other categories.</string>
     <string name="budget_exceeded_error_1_2">All your budget has been allocated to other categories.</string>
@@ -925,6 +927,8 @@
     <string name="account_widget_configuration_sum_total">Include future transactions</string>
     <!-- Title of dialogue that allows to configure account widget -->
     <string name="account_widget_configuration">Account widget configuration</string>
+    <!-- Title of dialogue that allows to configure budget widget -->
+    <string name="budget_widget_configuration">Select budget</string>
     <!-- Title of a menu entry allowing to merge duplicate entries in the parties table (payee/payer) -->
     <string name="menu_merge">Merge</string>
     <!-- When user selects duplicate parties to be merged, he sees this prompt asking him to select which name should be selected for the merged party -->
@@ -1086,4 +1090,6 @@
     <string name="pref_copy_attachments_summary_on">Files are copied to application folder.</string>
     <string name="pref_copy_attachments_summary_off">Files are not copied, only a reference is stored.</string>
     <string name="whats_new_365">Attach arbitrary number of images and documents (PDF)</string>
+    <string name="widget_title_budget">My budget</string>
+    <string name="whats_new_366">Home Screen Widget displaying current state of budget.</string>
 </resources>

@@ -121,6 +121,7 @@ import static org.totschnig.myexpenses.provider.DbConstantsKt.checkForSealedAcco
 import static org.totschnig.myexpenses.provider.DbConstantsKt.getPayeeWithDuplicatesCTE;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.transactionMappedObjectQuery;
 import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.computeWhere;
+import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.dualQuery;
 import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.groupByForPaymentMethodQuery;
 import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.havingForPaymentMethodQuery;
 import static org.totschnig.myexpenses.provider.MoreDbUtilsKt.mapPaymentMethodProjection;
@@ -688,7 +689,7 @@ public class TransactionProvider extends BaseTransactionProvider {
         }
         break;
       case DUAL:
-        return db.query(SupportSQLiteQueryBuilder.builder("sqlite_master").columns(projection).selection(selection, selectionArgs).create());
+        return dualQuery(db, projection);
       case EVENT_CACHE:
         qb = SupportSQLiteQueryBuilder.builder(TABLE_EVENT_CACHE);
         break;
@@ -1744,7 +1745,7 @@ public class TransactionProvider extends BaseTransactionProvider {
     int baseLength = baseProjection.length;
     String[] projection = new String[baseLength + 1];
     System.arraycopy(baseProjection, 0, projection, 0, baseLength);
-    projection[baseLength] = checkForSealedAccount(baseTable, TABLE_TEMPLATES) + " AS " + KEY_SEALED;
+    projection[baseLength] = checkForSealedAccount(baseTable, TABLE_TEMPLATES, true) + " AS " + KEY_SEALED;
     return projection;
   }
 

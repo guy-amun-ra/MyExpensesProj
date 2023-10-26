@@ -6,13 +6,14 @@ import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.provider.DatabaseConstants.*
 import org.totschnig.myexpenses.provider.getInt
-import org.totschnig.myexpenses.provider.getIntIfExistsOr0
+import org.totschnig.myexpenses.provider.getLocalDateIfExists
 import org.totschnig.myexpenses.provider.getLong
+import java.time.LocalDate
 
 data class HeaderData(
     val account: PageAccount,
     val groups: Map<Int, HeaderRow>,
-    val dateInfo: DateInfo2,
+    val dateInfo: DateInfo,
     val isFiltered: Boolean
 ) {
 
@@ -47,8 +48,7 @@ data class HeaderRow(
     val previousBalance: Money,
     val delta: Money,
     val interimBalance: Money,
-    val weekStart: Int,
-    val weekEnd: Int
+    val weekStart: LocalDate?
 ) {
 
     companion object {
@@ -61,8 +61,7 @@ data class HeaderRow(
             expenseSum: Long,
             transferSum: Long,
             previousBalance: Long,
-            weekStart: Int,
-            weekEnd: Int
+            weekStart: LocalDate?
         ): HeaderRow {
             val delta = incomeSum + expenseSum + transferSum
             return HeaderRow(
@@ -74,8 +73,7 @@ data class HeaderRow(
                 Money(currency, previousBalance),
                 Money(currency, delta),
                 Money(currency, previousBalance + delta),
-                weekStart,
-                weekEnd
+                weekStart
             )
         }
 
@@ -87,8 +85,7 @@ data class HeaderRow(
             expenseSum = cursor.getLong(KEY_SUM_EXPENSES),
             transferSum = cursor.getLong(KEY_SUM_TRANSFERS),
             previousBalance = previousBalance,
-            weekStart = cursor.getIntIfExistsOr0(KEY_WEEK_START),
-            weekEnd = cursor.getIntIfExistsOr0(KEY_WEEK_END)
+            weekStart = cursor.getLocalDateIfExists(KEY_WEEK_START)
         )
     }
 }

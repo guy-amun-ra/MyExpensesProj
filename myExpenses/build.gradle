@@ -189,7 +189,7 @@ android {
     lint {
         abortOnError true
         checkDependencies true
-        disable 'InvalidPackage', 'MissingQuantity', 'MissingTranslation', 'ImpliedQuantity'
+        disable 'InvalidPackage', 'MissingQuantity', 'MissingTranslation', 'ImpliedQuantity', 'Instantiatable'
     }
     namespace 'org.totschnig.myexpenses'
 }
@@ -283,7 +283,7 @@ dependencies {
     implementation "androidx.recyclerview:recyclerview:$recyclerview"
     implementation 'androidx.cardview:cardview:1.0.0'
 
-    api 'com.google.android.material:material'
+    api "com.google.android.material:material:$materialComponents"
 
     implementation 'androidx.gridlayout:gridlayout:1.0.0'
     api project(':preferences')
@@ -345,6 +345,7 @@ dependencies {
 
     implementation 'com.github.mtotschnig:Android-Image-Cropper:3ead230612'
     api "androidx.core:core-ktx:$ktxVersion"
+    implementation "androidx.core:core-remoteviews:1.0.0"
     implementation "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
 
     implementation 'androidx.work:work-runtime-ktx:2.8.1'

@@ -301,6 +301,15 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".activity.BudgetWidgetConfigure"
+            android:exported="true"
+            android:label="@string/budget_widget_configuration"
+            android:theme="@style/Configuration">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <activity
             android:name=".activity.TemplateShortcutSelect"
             android:icon="@drawable/ic_menu_template_shortcut"
             android:exported="true"
@@ -446,6 +455,19 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/template_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widget.BudgetWidget"
+            android:exported="false"
+            android:label="@string/widget_title_budget">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/budget_widget_info" />
         </receiver>
 
         <service

@@ -4,10 +4,14 @@ import android.content.ContentProviderOperation
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import androidx.core.database.getLongOrNull
 import org.totschnig.myexpenses.model.CurrencyContext
+import org.totschnig.myexpenses.model.Grouping
 import org.totschnig.myexpenses.preference.PrefHandler
+import org.totschnig.myexpenses.provider.DataBaseAccount
+import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID
@@ -19,7 +23,15 @@ import org.totschnig.myexpenses.provider.TransactionProvider.QUERY_PARAMETER_MAR
 import org.totschnig.myexpenses.provider.TransactionProvider.TRANSACTIONS_URI
 import org.totschnig.myexpenses.provider.TransactionProvider.TRANSACTION_ATTACHMENT_SINGLE_URI
 import org.totschnig.myexpenses.provider.appendBooleanQueryParameter
+import org.totschnig.myexpenses.provider.getBoolean
+import org.totschnig.myexpenses.provider.getEnum
+import org.totschnig.myexpenses.provider.getInt
+import org.totschnig.myexpenses.provider.getLong
+import org.totschnig.myexpenses.provider.getString
+import org.totschnig.myexpenses.provider.getStringOrNull
 import org.totschnig.myexpenses.util.ICurrencyFormatter
+import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider
+import org.totschnig.myexpenses.viewmodel.data.Budget
 import org.totschnig.myexpenses.viewmodel.data.Debt
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,7 +41,8 @@ open class Repository @Inject constructor(
     val context: Context,
     val currencyContext: CurrencyContext,
     val currencyFormatter: ICurrencyFormatter,
-    val prefHandler: PrefHandler
+    val prefHandler: PrefHandler,
+    val homeCurrencyProvider: HomeCurrencyProvider
 ) {
     companion object {
         const val UUID_SEPARATOR = ":"
@@ -110,6 +123,28 @@ open class Repository @Inject constructor(
     )?.use {
         if (it.moveToFirst()) it.getLong(0) else null
     } ?: 0L
+
+    val budgetCreatorFunction: (Cursor) -> Budget = { cursor ->
+        val currency = cursor.getString(DatabaseConstants.KEY_CURRENCY)
+        val currencyUnit = if (currency == DataBaseAccount.AGGREGATE_HOME_CURRENCY_CODE)
+            homeCurrencyProvider.homeCurrencyUnit else currencyContext.get(currency)
+        val budgetId = cursor.getLong(DatabaseConstants.KEY_ROWID)
+        val accountId = cursor.getLong(KEY_ACCOUNTID)
+        val grouping = cursor.getEnum(DatabaseConstants.KEY_GROUPING, Grouping.NONE)
+        Budget(
+            id = budgetId,
+            accountId = accountId,
+            title = cursor.getString(DatabaseConstants.KEY_TITLE),
+            description = cursor.getString(DatabaseConstants.KEY_DESCRIPTION),
+            currency = currencyUnit,
+            grouping = grouping,
+            color = cursor.getInt(DatabaseConstants.KEY_COLOR),
+            start = if (grouping == Grouping.NONE) cursor.getString(DatabaseConstants.KEY_START) else null,
+            end = if (grouping == Grouping.NONE) cursor.getString(DatabaseConstants.KEY_END) else null,
+            accountName = cursor.getStringOrNull(DatabaseConstants.KEY_ACCOUNT_LABEL),
+            default = cursor.getBoolean(DatabaseConstants.KEY_IS_DEFAULT)
+        )
+    }
 }
 
 @JvmInline

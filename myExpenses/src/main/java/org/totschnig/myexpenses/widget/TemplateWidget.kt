@@ -22,7 +22,7 @@ import org.totschnig.myexpenses.util.doAsync
 const val CLICK_ACTION_SAVE = "save"
 const val CLICK_ACTION_EDIT = "edit"
 
-class TemplateWidget: AbstractWidget(TemplateWidgetService::class.java, PrefKey.PROTECTION_ENABLE_TEMPLATE_WIDGET) {
+class TemplateWidget: AbstractListWidget(TemplateWidgetService::class.java, PrefKey.PROTECTION_ENABLE_TEMPLATE_WIDGET) {
     override val emptyTextResourceId = R.string.no_templates
 
     override fun handleWidgetClick(context: Context, intent: Intent) {
@@ -35,7 +35,7 @@ class TemplateWidget: AbstractWidget(TemplateWidgetService::class.java, PrefKey.
                 })
             }
             CLICK_ACTION_SAVE -> {
-                if (MyApplication.getInstance().shouldLock(null)) {
+                if (MyApplication.instance.shouldLock(null)) {
                     Toast.makeText(context,
                             context.getString(R.string.warning_instantiate_template_from_widget_password_protected),
                             Toast.LENGTH_LONG).show()
