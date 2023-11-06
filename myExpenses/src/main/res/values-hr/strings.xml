@@ -626,7 +626,6 @@
     <string name="image_deleted">Slika je izbrisana</string>
     <string name="pref_manage_stale_images_summary">Upravljaj slikama koje su preostale od izbrisanih transakcija</string>
     <string name="pref_manage_stale_images_title">Stara slika</string>
-    <string name="menu_distribution_aggreate">Kumuliraj troškove i prihode</string>
     <string name="licence_validation_premium">Premium funkcije su otključane.</string>
     <string name="dialog_title_warning_delete_category">Izbrisati kategoriju\?</string>
     <string name="dialog_contrib_usage_limit_split_templates">Tvoje trenutačno stanje licence (%1$s) dozvoljava stvaranje jednog predloška za višedjelne transakcije.</string>
@@ -981,4 +980,9 @@
     <string name="merge_parties_strategy_group">Duplikati su grupirani zajedno.</string>
     <string name="pref_copy_attachments_summary_off">Datoteke se ne kopiraju. Sprema se samo referenca.</string>
     <string name="show_duplicates">Prikaži duplikate</string>
+    <string name="budget_deleted">Proračun je izbrisan</string>
+    <string name="widget_title_budget">Moj proračun</string>
+    <string name="budget_widget_configuration">Odaberi proračun</string>
+    <string name="whats_new_366">Widget na početnom ekranu koji prikazuje aktualno stanje proračuna.</string>
+    <string name="budget_table_header_overspent">Prekoračeno</string>
 </resources>

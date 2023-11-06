@@ -13,7 +13,10 @@ import org.totschnig.myexpenses.model.Model
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNT_LABEL
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNT_TYPE
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ATTACHMENT_COUNT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ATTACHMENT_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ATTRIBUTE_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ATTRIBUTE_NAME
@@ -31,14 +34,19 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DEBT_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DESCRIPTION
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_EQUIVALENT_AMOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_EXCLUDE_FROM_TOTALS
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_IBAN
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ICON
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LAST_USED
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHODID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHOD_ICON
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHOD_LABEL
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_OPENING_BALANCE
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ORIGINAL_AMOUNT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ORIGINAL_CURRENCY
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PATH
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEEID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PAYEE_NAME_NORMALIZED
@@ -47,6 +55,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SHORT_NAME
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TEMPLATEID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSACTIONID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_PEER
@@ -57,6 +66,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_USER_ID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_UUID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_VALUE
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_VALUE_DATE
+import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_UNCOMMITTED
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNTS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ACCOUNT_ATTRIBUTES
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ATTACHMENTS
@@ -64,7 +74,9 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_ATTRIBUTES
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_BANKS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_CATEGORIES
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_DEBTS
+import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_METHODS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_PAYEES
+import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_PLAN_INSTANCE_STATUS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTIONS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTION_ATTACHMENTS
 import org.totschnig.myexpenses.provider.DatabaseConstants.TABLE_TRANSACTION_ATTRIBUTES
@@ -76,7 +88,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_UNCOMMITTED
 import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_WITH_ACCOUNT
 import timber.log.Timber
 
-const val DATABASE_VERSION = 149
+const val DATABASE_VERSION = 151
 
 private const val RAISE_UPDATE_SEALED_DEBT = "SELECT RAISE (FAIL, 'attempt to update sealed debt');"
 private const val RAISE_INCONSISTENT_CATEGORY_HIERARCHY =
@@ -114,7 +126,7 @@ BEGIN
 END
 """
 
-private val CATEGORY_HIERARCHY_TRIGGER = """
+private const val CATEGORY_HIERARCHY_TRIGGER = """
 CREATE TRIGGER category_hierarchy_update
 BEFORE UPDATE ON $TABLE_CATEGORIES WHEN new.$KEY_PARENTID IS NOT old.$KEY_PARENTID AND new.$KEY_PARENTID IN ($categoryTreeSelectForTrigger)
 BEGIN $RAISE_INCONSISTENT_CATEGORY_HIERARCHY END
@@ -148,7 +160,47 @@ CREATE TRIGGER category_label_unique_update
     WHEN new.$KEY_PARENTID IS NULL ANd new.$KEY_LABEL != old.$KEY_LABEL AND exists (SELECT 1 from $TABLE_CATEGORIES WHERE $KEY_LABEL = new.$KEY_LABEL AND $KEY_PARENTID IS NULL)
     BEGIN
     SELECT RAISE (FAIL, 'main category exists');
-END
+    END
+"""
+
+private const val CATEGORY_TYPE_INSERT_TRIGGER = """
+CREATE TRIGGER category_type_insert
+    AFTER INSERT
+    ON $TABLE_CATEGORIES
+    WHEN new.$KEY_PARENTID IS NOT NULL
+    BEGIN
+        UPDATE $TABLE_CATEGORIES SET $KEY_TYPE = (SELECT $KEY_TYPE FROM $TABLE_CATEGORIES WHERE $KEY_ROWID = new.$KEY_PARENTID) WHERE $KEY_ROWID = new.$KEY_ROWID;
+    END
+"""
+
+private const val CATEGORY_TYPE_UPDATE_TRIGGER_MAIN = """
+CREATE TRIGGER category_type_update_type_main
+    AFTER UPDATE
+    ON $TABLE_CATEGORIES
+    WHEN new.$KEY_TYPE IS NOT old.$KEY_TYPE
+    BEGIN
+        UPDATE $TABLE_CATEGORIES SET $KEY_TYPE = new.$KEY_TYPE WHERE $KEY_PARENTID IN ($categoryTreeSelectForTrigger);
+    END
+"""
+
+private const val CATEGORY_TYPE_UPDATE_TRIGGER_SUB = """
+CREATE TRIGGER category_type_update_type_sub
+    BEFORE UPDATE
+    ON $TABLE_CATEGORIES
+    WHEN new.$KEY_TYPE IS NOT old.$KEY_TYPE AND new.$KEY_PARENTID IS NOT NULL AND new.$KEY_TYPE IS NOT (SELECT $KEY_TYPE FROM $TABLE_CATEGORIES WHERE $KEY_ROWID = new.$KEY_PARENTID)
+    BEGIN
+        SELECT RAISE (FAIL, 'sub category type must match parent type');
+    END
+"""
+
+private const val CATEGORY_TYPE_MOVE_TRIGGER = """
+CREATE TRIGGER category_type_move
+    AFTER UPDATE
+    ON $TABLE_CATEGORIES
+    WHEN new.$KEY_PARENTID IS NOT old.$KEY_PARENTID AND new.$KEY_PARENTID IS NOT NULL
+    BEGIN
+        UPDATE $TABLE_CATEGORIES SET $KEY_TYPE = (SELECT $KEY_TYPE FROM $TABLE_CATEGORIES WHERE $KEY_ROWID = new.$KEY_PARENTID) WHERE $KEY_ROWID = new.$KEY_ROWID;
+    END
 """
 
 const val BANK_CREATE = """
@@ -279,6 +331,11 @@ const val TRANSACTIONS_SEALED_DELETE_TRIGGER_CREATE =
  BEFORE DELETE ON $TABLE_TRANSACTIONS
  WHEN (SELECT $KEY_SEALED FROM $TABLE_ACCOUNTS WHERE $KEY_ROWID = old.$KEY_ACCOUNTID) = 1
  BEGIN $RAISE_UPDATE_SEALED_ACCOUNT END"""
+
+
+const val VIEW_WITH_ACCOUNT_DEFINITION =
+    """CREATE VIEW $VIEW_WITH_ACCOUNT AS SELECT $TABLE_TRANSACTIONS.*, $TABLE_CATEGORIES.$KEY_TYPE, $TABLE_ACCOUNTS.$KEY_COLOR, $KEY_CURRENCY, $KEY_EXCLUDE_FROM_TOTALS, $TABLE_ACCOUNTS.$KEY_TYPE AS $KEY_ACCOUNT_TYPE, $TABLE_ACCOUNTS.$KEY_LABEL AS $KEY_ACCOUNT_LABEL FROM $TABLE_TRANSACTIONS LEFT JOIN $TABLE_CATEGORIES on $KEY_CATID = $TABLE_CATEGORIES.$KEY_ROWID LEFT JOIN $TABLE_ACCOUNTS ON $KEY_ACCOUNTID = $TABLE_ACCOUNTS.$KEY_ROWID WHERE $KEY_STATUS != $STATUS_UNCOMMITTED"""
+
 
 abstract class BaseTransactionDatabase(val prefHandler: PrefHandler) :
     SupportSQLiteOpenHelper.Callback(DATABASE_VERSION) {
@@ -537,7 +594,7 @@ abstract class BaseTransactionDatabase(val prefHandler: PrefHandler) :
             "transactions",
             arrayOf("_id", "picture_id"),
             "picture_id is not null"
-        ).useAndMap{ cursor ->
+        ).useAndMap { cursor ->
             cursor.getLong(0) to cursor.getString(1)
         }.groupBy({ it.second }, { it.first }).forEach { (uri, transactionIds) ->
             attachmentValues.clear()
@@ -738,9 +795,57 @@ abstract class BaseTransactionDatabase(val prefHandler: PrefHandler) :
         }
     }
 
+    fun createCategoryTypeTriggers(db: SupportSQLiteDatabase) {
+        db.execSQL(CATEGORY_TYPE_INSERT_TRIGGER)
+        db.execSQL(CATEGORY_TYPE_UPDATE_TRIGGER_MAIN)
+        db.execSQL(CATEGORY_TYPE_UPDATE_TRIGGER_SUB)
+        db.execSQL(CATEGORY_TYPE_MOVE_TRIGGER)
+    }
+
     fun insertFinTSAttributes(db: SupportSQLiteDatabase) {
         Attribute.initDatabase(db, FinTsAttribute::class.java)
         Attribute.initDatabase(db, BankingAttribute::class.java)
+    }
+
+    fun buildViewDefinitionExtended(tableName: String) = buildString {
+        append(" AS ")
+        if (tableName != DatabaseConstants.TABLE_CHANGES) {
+            append(getCategoryTreeForView())
+        }
+        append(" SELECT $tableName.*, coalesce($TABLE_PAYEES.$KEY_SHORT_NAME,$TABLE_PAYEES.$KEY_PAYEE_NAME) AS $KEY_PAYEE_NAME, ")
+        append("$TABLE_METHODS.$KEY_LABEL AS $KEY_METHOD_LABEL, ")
+        append("$TABLE_METHODS.$KEY_ICON AS $KEY_METHOD_ICON")
+        if (tableName != DatabaseConstants.TABLE_CHANGES) {
+            append(", Tree.$KEY_PATH, Tree.$KEY_ICON, Tree.$KEY_TYPE, $KEY_COLOR, $KEY_CURRENCY, $KEY_SEALED, $KEY_EXCLUDE_FROM_TOTALS, ")
+            append("$TABLE_ACCOUNTS.$KEY_TYPE AS $KEY_ACCOUNT_TYPE, ")
+            append("$TABLE_ACCOUNTS.$KEY_LABEL AS $KEY_ACCOUNT_LABEL")
+        }
+        if (tableName == TABLE_TRANSACTIONS) {
+            append(", $TABLE_PLAN_INSTANCE_STATUS.$KEY_TEMPLATEID, ")
+            append(TAG_LIST_EXPRESSION)
+            append(", count($KEY_URI) AS $KEY_ATTACHMENT_COUNT")
+            append(", $KEY_IBAN")
+        }
+        append(" FROM $tableName")
+        append(" LEFT JOIN $TABLE_PAYEES ON $KEY_PAYEEID = $TABLE_PAYEES.$KEY_ROWID")
+        append(" LEFT JOIN $TABLE_METHODS ON $KEY_METHODID = $TABLE_METHODS.$KEY_ROWID")
+        if (tableName != DatabaseConstants.TABLE_CHANGES) {
+            append(" LEFT JOIN $TABLE_ACCOUNTS ON $KEY_ACCOUNTID = $TABLE_ACCOUNTS.$KEY_ROWID")
+            append(" LEFT JOIN Tree ON $KEY_CATID = TREE.$KEY_ROWID")
+        }
+        if (tableName == TABLE_TRANSACTIONS) {
+            append(" LEFT JOIN $TABLE_PLAN_INSTANCE_STATUS ON $tableName.$KEY_ROWID = $TABLE_PLAN_INSTANCE_STATUS.$KEY_TRANSACTIONID")
+            append(tagJoin(tableName))
+            append(
+                associativeJoin(
+                    TABLE_TRANSACTIONS,
+                    TABLE_TRANSACTION_ATTACHMENTS,
+                    TABLE_ATTACHMENTS,
+                    KEY_TRANSACTIONID,
+                    KEY_ATTACHMENT_ID
+                )
+            )
+        }
     }
 }
 

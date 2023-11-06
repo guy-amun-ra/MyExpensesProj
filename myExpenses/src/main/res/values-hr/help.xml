@@ -66,7 +66,6 @@
     <string name="cab_ManageCategories_create_sub_cat_help_text">Otvara dijalog za stvaranje nove potkategorije ispod odabrane kategorije. Potkategorije se mogu smjestiti na proizvoljnu razinu.</string>
     <string name="cab_ManageCategories_move_help_text">Bilo koja kategorija (zajedno sa svojim potkategorijama) može se premjestiti u novu nadređenu kategoriju. Potkategorije se mogu promijeniti u glavne kategorije.</string>
     <string name="menu_distribution_show_pie_char_help_text">Uključi/isključi vidljivost kružnog dijagrama.</string>
-    <string name="menu_distribution_aggreate_help_text">Prema zadanim postavkama, izračunati zbrojevi uključuju troškove i prihode. Mogu se prikazati zasebno, gumb u traci radnji omogućuje prebacivanje između troškova i prihoda.</string>
     <string name="menu_ManageCategories_search_help_text">Prikazat će se samo glavne kategorije i potkategorije koje odgovaraju tvom upitu.</string>
     <string name="menu_ManageCategories_sort_help_text">Popis kategorija može se razvrstati po naslovu (abecednim redom), po učestalosti korištenja ili po zadnjem vremenu mapiranja transakcije.</string>
     <string name="cab_ManageCategories_color_help_text">Glavnim kategorijama možeš dodijeliti boju. Ova će se boja koristiti za predstavljanje kategorije u dijagramima. Podkategorije će koristiti nijanse boje glavne kategorije.</string>
@@ -95,7 +94,7 @@
     <string name="help_ExpenseEdit_splitPartTransfer_title">Obrazac za prijenos podjela</string>
     <string name="form_amount_switch_help_text">Koristi sklopku za prikazivanje troškova ili prihoda.</string>
     <string name="form_calculator_help_text">Gumb &lt;img src=\?calcIcon&gt; otvara kalukulator.</string>
-    <string name="menu_HistoryActivity_history_transfers_help_text">Uključi/Isključi, ako se prijenosi trebaju tretirati kao redovni prihod ili rashod.</string>
+    <string name="menu_HistoryActivity_history_transfers_help_text">Uključi/Isključi, ako se prijenosi trebaju tretirati kao redovni prihod ili trošak.</string>
     <string name="form_account_help_text">Odaberi račun kojemu transakcija pripada.</string>
     <string name="form_date_time_help_text">Upiši datum i vrijeme izvršavanja transakcije.</string>
     <string name="form_payer_or_payee_help_text">Ovo polje pamti vrijednosti koje uneseš i predložit će ih u budućnosti.</string>
@@ -123,4 +122,14 @@
     <string name="form_currency_help_text">Odaberi valutu iz popisa svih aktualnih valuta.</string>
     <string name="form_synchronization_help_text_select">Odaberi pozadinski sustav za sinkronizaciju u oblaku.</string>
     <string name="form_AccountEdit_label_help_text">Oznaka identifira račun u popisu računa.</string>
+    <string name="form_AccountEdit_amount_switch_help_text">Koristi prekidač za počinjanje s negativnim početnim saldom.</string>
+    <string name="menu_invert_transfer_help_text">Obrni smjer prijenosa zamjenom računa „Šalje” i „Prima”.</string>
+    <string name="menu_create_template_from_transaction_help_text">Ako je ovo označeno, transakcija će se također spremiti kao predložak. Možeš odrediti njegov naslov i po želji postaviti plan za automatsko ponavljanje.</string>
+    <string name="form_AccountEdit_active_tags_help_text">Svakom računu možeš pridružiti jednu ili više aktivnih oznaka. Kada stvoriš novu transakciju, ona se automatski s njima označava na temelju odabranog računa.</string>
+    <string name="menu_save_and_new_help_text">Ako je ovo označeno, nakon što spremiš podatke obrazac će ostati otvoren za izradu nove transakcije s istim podacima.</string>
+    <string name="form_color_help_text">Na popisu transakcija za račun, njegova će se boja koristiti kao primarna boja korisničkog sučelja.</string>
+    <string name="form_synchronization_help_text_add">Pozadinski sustavi se mogu dodati u ekranu „Postavke”.</string>
+    <string name="form_plan_help_text">Kada stvoriš plan za predložak, on se dodaje u privatni kalendar kojim upravlja tvoja aplikacija Kalendar. Plan možeš definirati kao jednokratni događaj ili kao dnevno, tjedno, mjesečno ili godišnje ponavljajući događaj.</string>
+    <string name="menu_templates_help_text">Otvori izbornik s popisom svih predložaka koji omogućuje njihovo brzo učitavanje u obrazac.</string>
+    <string name="form_plan_help_text_advanced">Nakon što spremiš predložak, možeš konfigurirati naprednije vrste ponavljanja koristeći svoju aplikaciju kalendara.</string>
 </resources>

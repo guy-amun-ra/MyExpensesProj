@@ -38,13 +38,11 @@ import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSA
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTIONS_UUID_INDEX_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSACTION_ATTRIBUTES_CREATE;
 import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.TRANSFER_SEALED_UPDATE_TRIGGER_CREATE;
+import static org.totschnig.myexpenses.provider.BaseTransactionDatabaseKt.VIEW_WITH_ACCOUNT_DEFINITION;
 import static org.totschnig.myexpenses.provider.DataBaseAccount.HOME_AGGREGATE_ID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.*;
-import static org.totschnig.myexpenses.provider.DbConstantsKt.TAG_LIST_EXPRESSION;
-import static org.totschnig.myexpenses.provider.DbConstantsKt.associativeJoin;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.buildViewDefinition;
 import static org.totschnig.myexpenses.provider.DbConstantsKt.tagGroupBy;
-import static org.totschnig.myexpenses.provider.DbConstantsKt.tagJoin;
 import static org.totschnig.myexpenses.util.ColorUtils.MAIN_COLORS;
 import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
 
@@ -125,71 +123,6 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     super(prefHandler);
   }
 
-  private static String buildViewWithAccount() {
-    return " AS SELECT " + TABLE_TRANSACTIONS + ".*" + ", " +
-            KEY_COLOR + ", " +
-            KEY_CURRENCY + ", " +
-            KEY_EXCLUDE_FROM_TOTALS + ", " +
-            TABLE_ACCOUNTS + "." + KEY_TYPE + " AS " + KEY_ACCOUNT_TYPE + ", " +
-            TABLE_ACCOUNTS + "." + KEY_LABEL + " AS " + KEY_ACCOUNT_LABEL +
-            " FROM " + TABLE_TRANSACTIONS + " LEFT JOIN " +
-            TABLE_ACCOUNTS + " ON " + KEY_ACCOUNTID +
-            " = " + TABLE_ACCOUNTS + "." + KEY_ROWID;
-  }
-
-  private String buildViewDefinitionExtended(String tableName) {
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append( " AS ");
-    if (!tableName.equals(TABLE_CHANGES)) {
-      stringBuilder.append(DbConstantsKt.getCategoryTreeForView());
-    }
-    stringBuilder.append(" SELECT ").append(tableName).append(".*, coalesce(").append(TABLE_PAYEES)
-        .append(".").append(KEY_SHORT_NAME).append(",").append(TABLE_PAYEES)
-            .append(".").append(KEY_PAYEE_NAME) .append(") AS ").append(KEY_PAYEE_NAME).append(", ")
-        .append(TABLE_METHODS).append(".").append(KEY_LABEL).append(" AS ").append(KEY_METHOD_LABEL).append(", ")
-        .append(TABLE_METHODS).append(".").append(KEY_ICON).append(" AS ").append(KEY_METHOD_ICON);
-
-    if (!tableName.equals(TABLE_CHANGES)) {
-      stringBuilder.append(", ")
-          .append("Tree.").append(KEY_PATH).append(", ")
-          .append("Tree.").append(KEY_ICON).append(", ")
-          .append(KEY_COLOR).append(", ")
-          .append(KEY_CURRENCY).append(", ")
-          .append(KEY_SEALED).append(", ")
-          .append(KEY_EXCLUDE_FROM_TOTALS).append(", ")
-          .append(TABLE_ACCOUNTS).append(".").append(KEY_TYPE).append(" AS ").append(KEY_ACCOUNT_TYPE).append(", ")
-          .append(TABLE_ACCOUNTS).append(".").append(KEY_LABEL).append(" AS ").append(KEY_ACCOUNT_LABEL);
-    }
-
-    if (tableName.equals(TABLE_TRANSACTIONS)) {
-      stringBuilder.append(", ").append(TABLE_PLAN_INSTANCE_STATUS).append(".").append(KEY_TEMPLATEID)
-              .append(", ").append(TAG_LIST_EXPRESSION)
-              .append(", count(").append(KEY_URI).append(") AS ").append(KEY_ATTACHMENT_COUNT);
-    }
-
-    stringBuilder.append(" FROM ").append(tableName).append(" LEFT JOIN ").append(TABLE_PAYEES).append(" ON ")
-        .append(KEY_PAYEEID).append(" = ").append(TABLE_PAYEES).append(".").append(KEY_ROWID)
-        .append(" LEFT JOIN ")
-        .append(TABLE_METHODS).append(" ON ").append(KEY_METHODID).append(" = ").append(TABLE_METHODS)
-        .append(".").append(KEY_ROWID);
-
-    if (!tableName.equals(TABLE_CHANGES)) {
-      stringBuilder.append(" LEFT JOIN ").append(TABLE_ACCOUNTS).append(" ON ").append(KEY_ACCOUNTID)
-          .append(" = ").append(TABLE_ACCOUNTS).append(".").append(KEY_ROWID)
-           .append(" LEFT JOIN Tree ON ").append(KEY_CATID)
-           .append(" = TREE.").append(KEY_ROWID);
-    }
-
-    if (tableName.equals(TABLE_TRANSACTIONS)) {
-      stringBuilder.append(" LEFT JOIN ").append(TABLE_PLAN_INSTANCE_STATUS)
-          .append(" ON ").append(tableName).append(".").append(KEY_ROWID).append(" = ")
-          .append(TABLE_PLAN_INSTANCE_STATUS).append(".").append(KEY_TRANSACTIONID)
-          .append(tagJoin(tableName))
-          .append(associativeJoin(TABLE_TRANSACTIONS, TABLE_TRANSACTION_ATTACHMENTS, TABLE_ATTACHMENTS, KEY_TRANSACTIONID, KEY_ATTACHMENT_ID));
-    }
-    return stringBuilder.toString();
-  }
-
   /**
    * SQL statement for accounts TABLE
    */
@@ -249,6 +182,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_COLOR + " integer, "
           + KEY_ICON + " string, " //TODO migrate to text
           + KEY_UUID + " text, "
+          + KEY_TYPE + " integer, "
           + "UNIQUE (" + KEY_LABEL + "," + KEY_PARENTID + "));";
 
   private static final String CATEGORY_UUID_INDEX_CREATE = "CREATE UNIQUE INDEX categories_uuid ON "
@@ -696,6 +630,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     createOrRefreshTransactionTriggers(db);
     createOrRefreshTransactionUsageTriggers(db);
     createOrRefreshAccountTriggers(db);
+    createCategoryTypeTriggers(db);
+
     db.execSQL(SETTINGS_CREATE);
     //TODO evaluate if we should get rid of the split transaction category id
     db.execSQL("CREATE TRIGGER protect_split_transaction" +
@@ -2036,7 +1972,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       }
       if (oldVersion < 105) {
         db.execSQL("DROP VIEW IF EXISTS " + VIEW_WITH_ACCOUNT);
-        db.execSQL("CREATE VIEW " + VIEW_WITH_ACCOUNT + buildViewWithAccount() + " WHERE " + KEY_STATUS + " != " + STATUS_UNCOMMITTED + ";");
+        db.execSQL(VIEW_WITH_ACCOUNT_DEFINITION);
       }
       if (oldVersion < 106) {
         db.execSQL("DROP TRIGGER IF EXISTS update_change_log");
@@ -2207,11 +2143,19 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       }
       if (oldVersion < 148) {
         upgradeTo148(db);
-        createOrRefreshViews(db);
         createOrRefreshTransactionTriggers(db);
       }
       if (oldVersion < 149) {
         createOrRefreshTransactionSealedTriggers(db);
+      }
+/*      if (oldVersion < 150) {
+        createOrRefreshViews(db);
+      }*/
+      if (oldVersion < 151) {
+        db.execSQL("ALTER TABLE categories add column type integer");
+        db.execSQL("UPDATE categories set type = 3 where _id != 0");
+        createOrRefreshViews(db);
+        createCategoryTypeTriggers(db);
       }
 
       TransactionProvider.resumeChangeTrigger(db);
@@ -2299,7 +2243,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
             tagGroupBy + ";");
 
     db.execSQL("CREATE VIEW " + VIEW_CHANGES_EXTENDED + buildViewDefinitionExtended(TABLE_CHANGES));
-    db.execSQL("CREATE VIEW " + VIEW_WITH_ACCOUNT + buildViewWithAccount() + " WHERE " + KEY_STATUS + " != " + STATUS_UNCOMMITTED + ";");
+    db.execSQL(VIEW_WITH_ACCOUNT_DEFINITION);
 
     createOrRefreshTemplateViews(db);
   }

@@ -94,6 +94,7 @@ import org.totschnig.myexpenses.model.ExportFormat
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.Sort
 import org.totschnig.myexpenses.model.Sort.Companion.fromCommandId
+import org.totschnig.myexpenses.model2.Account.Companion.DEFAULT_COLOR
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.provider.CheckSealedHandler
 import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.HOME_AGGREGATE_ID
@@ -177,12 +178,13 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
 
     var selectedAccountId: Long
         get() = viewModel.selectedAccountId
-        set(value) { viewModel.selectedAccountId = value }
+        set(value) {
+            viewModel.selectedAccountId = value
+        }
 
     private val accountForNewTransaction: FullAccount?
         get() = currentAccount?.let { current ->
-            current.takeIf { !it.isAggregate } ?:
-            viewModel.accountData.value?.getOrNull()
+            current.takeIf { !it.isAggregate } ?: viewModel.accountData.value?.getOrNull()
                 ?.filter { !it.isAggregate && (current.isHomeAggregate || it.currency == current.currency) }
                 ?.maxByOrNull { it.lastUsed }
         }
@@ -607,7 +609,12 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             expansionHandlerAccounts = viewModel.expansionHandler("collapsedAccounts"),
                             bankIcon = { modifier, id ->
                                 banks.value.find { it.id == id }
-                                    ?.let { bank -> bankingFeature.bankIconRenderer?.invoke(modifier, bank) }
+                                    ?.let { bank ->
+                                        bankingFeature.bankIconRenderer?.invoke(
+                                            modifier,
+                                            bank
+                                        )
+                                    }
                             }
                         )
                     }?.onFailure {
@@ -699,9 +706,10 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         }
     }
 
-    private fun editAccount(accountId: Long) {
+    private fun editAccount(account: FullAccount) {
         startActivityForResult(Intent(this, AccountEdit::class.java).apply {
-            putExtra(KEY_ROWID, accountId)
+            putExtra(KEY_ROWID, account.id)
+            putExtra(KEY_COLOR, account._color)
         }, EDIT_ACCOUNT_REQUEST)
 
     }
@@ -740,6 +748,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     }
                 }
                 val pagerState = remember { PagerState(initialPage = currentPage) }
+                // 1.6 val pagerState = rememberPagerState { accountData.count() }
                 if (accountData.isNotEmpty()) {
                     LaunchedEffect(viewModel.selectedAccountId) {
                         if (pagerState.currentPage != currentPage) {
@@ -758,6 +767,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             },
                         verticalAlignment = Alignment.Top,
                         state = pagerState,
+                        //remove next line when upgrading to 1.6
                         pageCount = accountData.count(),
                         pageSpacing = 10.dp,
                         key = { accountData[it].id }
@@ -1005,7 +1015,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 startActivityForResult(
                     Intent(this, ExpenseEdit::class.java).apply {
                         putExtra(KEY_ROWID, transaction.id)
-                        putExtra(KEY_COLOR, transaction.color)
+                        putExtra(KEY_COLOR, transaction.color ?: currentAccount?._color)
                         if (clone) {
                             putExtra(ExpenseEdit.KEY_CLONE, true)
                         }
@@ -1304,6 +1314,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                     closeDrawer()
                     startActivityForResult(Intent(this, AccountEdit::class.java).apply {
                         if (tag != null) putExtra(KEY_CURRENCY, tag as String?)
+                        putExtra(KEY_COLOR, DEFAULT_COLOR)
                     }, CREATE_ACCOUNT_REQUEST)
                 } else {
                     showContribDialog(ContribFeature.ACCOUNTS_UNLIMITED, null)
@@ -1442,7 +1453,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                 contribFeatureRequested(ContribFeature.BANKING, it.bankId to it.id)
             }
 
-            R.id.EDIT_ACCOUNT_COMMAND -> currentAccount?.let { editAccount(it.id) }
+            R.id.EDIT_ACCOUNT_COMMAND -> currentAccount?.let { editAccount(it) }
             R.id.DELETE_ACCOUNT_COMMAND -> currentAccount?.let { confirmAccountDelete(it) }
             R.id.HIDE_ACCOUNT_COMMAND -> currentAccount?.let {
                 viewModel.setAccountVisibility(true, it.id)
@@ -1803,6 +1814,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                         featureViewModel.requestFeature(this, Feature.OCR)
                     }
                 }
+
                 ContribFeature.BANKING -> {
                     val (bankId, accountId) = tag as Pair<Long, Long>
                     bankingFeature.startSyncFragment(bankId, accountId, supportFragmentManager)
