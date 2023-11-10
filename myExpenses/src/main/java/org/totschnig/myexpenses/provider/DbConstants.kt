@@ -49,7 +49,7 @@ fun categoryTreeSelect(
     sortOrder = sortOrder,
     matches = matches,
     categorySeparator = categorySeparator,
-    type = typeParameter?.toUByte()
+    type = typeParameter?.toByte()
 ) + "SELECT ${projection?.joinToString() ?: "*"} FROM Tree ${selection?.let { "WHERE $it" } ?: ""}"
 
 const val categoryTreeSelectForTrigger = """
@@ -227,14 +227,14 @@ fun categoryTreeCTE(
     sortOrder: String? = null,
     matches: String? = null,
     categorySeparator: String? = null,
-    type: UByte? = null
+    type: Byte? = null
 ): String {
     val where = rootExpression ?: buildString {
         append("$KEY_PARENTID IS NULL")
         if (type != null) {
             append(" AND $KEY_TYPE  ")
             append(
-                if (type == 0.toUByte()) "= 0"
+                if (type == 0.toByte()) "= 0"
                 else "& $type > 0"
             )
         }
@@ -491,6 +491,6 @@ fun transactionSumQuery(
     return """
     WITH $CTE_TRANSACTION_AMOUNTS AS (
     SELECT ${effectiveTypeExpression(typeWithFallBack)}, $KEY_AMOUNT, $KEY_PARENTID, $KEY_ACCOUNTID, $KEY_CURRENCY, $KEY_EQUIVALENT_AMOUNT FROM $VIEW_WITH_ACCOUNT 
-    WHERE ($KEY_CATID IS NOT $SPLIT_CATID AND $KEY_CR_STATUS != 'VOID' AND ${selection ?: ""}))
+    WHERE ($KEY_CATID IS NOT $SPLIT_CATID AND $KEY_CR_STATUS != 'VOID' ${if (selection.isNullOrEmpty()) "" else " AND $selection"}))
     SELECT $typeColumn $sumExpression AS $KEY_SUM FROM $CTE_TRANSACTION_AMOUNTS WHERE $KEY_TYPE $typeQuery $groupBy"""
 }
