@@ -3,7 +3,7 @@ buildscript {
     ext {
         compose_compiler_version = '1.5.3'
         kotlin_version = '1.9.10'
-        agp_version = '8.2.0-rc02'
+        agp_version = '8.2.0-rc03'
     }
 }
 
@@ -18,8 +18,8 @@ plugins {
 }
 
 ext {
-    versionCode = 664
-    versionName = '3.6.7.1'
+    versionCode = 665
+    versionName = '3.6.7.2'
     compileSdkVersion = 34
     minSdkVersion = 21
     targetSdkVersion = 33
