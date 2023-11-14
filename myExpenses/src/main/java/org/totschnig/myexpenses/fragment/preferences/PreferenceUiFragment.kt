@@ -229,7 +229,7 @@ class PreferenceUiFragment : BasePreferenceFragment() {
             onPreferenceChangeListener =
                 Preference.OnPreferenceChangeListener { _, newValue ->
                     val newLocale = newValue as String
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU && newLocale != MyApplication.DEFAULT_LANGUAGE) {
+                    if (newLocale != MyApplication.DEFAULT_LANGUAGE) {
                         featureManager.requestLocale(newLocale)
                     } else {
                         preferenceActivity.setLanguage(newLocale)
