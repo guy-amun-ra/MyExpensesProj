@@ -183,7 +183,7 @@ data class Transaction2(
                 "${getWeek()} AS $KEY_WEEK",
                 "$DAY AS $KEY_DAY",
                 KEY_ICON,
-                effectiveTypeExpression(typeWithFallBack(prefHandler))
+                "${effectiveTypeExpression(typeWithFallBack(prefHandler))} AS $KEY_TYPE"
             ).let {
                 if (extended) it + listOf(
                     KEY_CURRENCY,

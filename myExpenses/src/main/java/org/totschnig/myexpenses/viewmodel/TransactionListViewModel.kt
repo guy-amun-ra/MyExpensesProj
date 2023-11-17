@@ -8,13 +8,23 @@ import app.cash.copper.flow.mapToOne
 import app.cash.copper.flow.observeQuery
 import kotlinx.coroutines.flow.Flow
 import kotlinx.parcelize.Parcelize
+import org.totschnig.myexpenses.db2.FLAG_NEUTRAL
+import org.totschnig.myexpenses.db2.FLAG_TRANSFER
+import org.totschnig.myexpenses.db2.asCategoryType
 import org.totschnig.myexpenses.model.CurrencyUnit
 import org.totschnig.myexpenses.model.Grouping
-import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.isAggregate
 import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.isHomeAggregate
 import org.totschnig.myexpenses.provider.DataBaseAccount.Companion.uriBuilderForTransactionList
-import org.totschnig.myexpenses.provider.DatabaseConstants.*
-import org.totschnig.myexpenses.provider.TransactionProvider
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TYPE
+import org.totschnig.myexpenses.provider.DatabaseConstants.VIEW_COMMITTED
+import org.totschnig.myexpenses.provider.DatabaseConstants.WHERE_NOT_SPLIT
+import org.totschnig.myexpenses.provider.DatabaseConstants.WHERE_NOT_SPLIT_PART
+import org.totschnig.myexpenses.provider.DatabaseConstants.WHERE_NOT_VOID
+import org.totschnig.myexpenses.provider.DatabaseConstants.getAmountHomeEquivalent
+import org.totschnig.myexpenses.provider.DbUtils
+import org.totschnig.myexpenses.provider.effectiveTypeExpression
 import org.totschnig.myexpenses.viewmodel.data.Transaction2
 
 const val KEY_LOADING_INFO = "loadingInfo"
@@ -36,8 +46,9 @@ class TransactionListViewModel(
         val groupingClause: String?,
         val groupingArgs: List<String> = emptyList(),
         val label: String?,
-        val type: Int,
-        val withTransfers: Boolean = true,
+        val type: Boolean,
+        val aggregateNeutral: Boolean = false,
+        val withTransfers: Boolean = false,
         val icon: String? = null
     ) : Parcelable
 
@@ -45,26 +56,29 @@ class TransactionListViewModel(
         get() = with(loadingInfo) {
             val (selection, selectionArgs) = selectionInfo
             contentResolver.observeQuery(
-                TransactionProvider.TRANSACTIONS_URI.let {
-                    if (catId != 0L) {
-                        it.buildUpon().appendQueryParameter(KEY_CATID, catId.toString()).build()
-                    } else it
-                }, arrayOf("sum($amountCalculation)"), selection, selectionArgs
+                transactionUri, arrayOf("sum($amountCalculation)"), selection, selectionArgs
             ).mapToOne {
                 it.getLong(0)
             }
         }
 
+    private val transactionUri
+        get() = uriBuilderForTransactionList(
+            loadingInfo.accountId,
+            loadingInfo.currency.code,
+            shortenComment = true,
+            extended = false
+        ).apply {
+            if (loadingInfo.catId != 0L) {
+                appendQueryParameter(KEY_CATID, loadingInfo.catId.toString())
+            }
+        }.build()
 
     val transactions: Flow<List<Transaction2>>
         get() = with(loadingInfo) {
             val (selection, selectionArgs) = selectionInfo
             contentResolver.observeQuery(
-                uriBuilderForTransactionList(shortenComment = true, extended = false).apply {
-                    if (catId != 0L) {
-                        appendQueryParameter(KEY_CATID, catId.toString())
-                    }
-                }.build(),
+                transactionUri,
                 Transaction2.projection(
                     accountId,
                     Grouping.NONE,
@@ -92,42 +106,24 @@ class TransactionListViewModel(
             val selectionParts = mutableListOf<String>()
             val selectionArgs = mutableListOf<String>()
             selectionParts += WHERE_NOT_VOID
-            when {
-                isHomeAggregate(accountId) -> {}
-                isAggregate(accountId) -> {
-                    selectionParts += buildString {
-                        append(KEY_ACCOUNTID)
-                        append(" IN (SELECT ")
-                        append(KEY_ROWID)
-                        append(" FROM ")
-                        append(TABLE_ACCOUNTS)
-                        append(" WHERE ")
-                        append(KEY_CURRENCY)
-                        append(" = ? AND ")
-                        append(KEY_EXCLUDE_FROM_TOTALS)
-                        append(" = 0)")
-                    }
-                    selectionArgs += currency.code
-                }
-
-                else -> {
-                    selectionParts += "$KEY_ACCOUNTID = ?"
-                    selectionArgs += accountId.toString()
-                }
-            }
             if (catId == 0L) {
-                selectionParts += WHERE_NOT_SPLIT_PART
+                selectionParts += WHERE_NOT_SPLIT
             }
             groupingClause?.takeIf { it.isNotEmpty() }?.let {
                 selectionParts += it
                 selectionArgs.addAll(groupingArgs.toTypedArray())
             }
-            if (type != 0) {
-                selectionParts += KEY_AMOUNT + (if (type == -1) "<" else ">") + "0"
+            val types = buildList {
+                add(type.asCategoryType)
+                if(aggregateNeutral) {
+                    add(FLAG_NEUTRAL)
+                }
+                if(withTransfers) {
+                    add(FLAG_TRANSFER)
+                }
             }
-            if (!withTransfers) {
-                selectionParts += "$KEY_TRANSFER_PEER is null"
-            }
+            val typeExpression = if(aggregateNeutral) KEY_TYPE else effectiveTypeExpression(DbUtils.typeWithFallBack(prefHandler))
+            selectionParts += "$typeExpression IN (${types.joinToString()})"
             selectionParts.joinToString(" AND ") to selectionArgs.toTypedArray()
         }
 }

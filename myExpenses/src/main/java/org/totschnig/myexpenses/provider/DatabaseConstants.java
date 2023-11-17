@@ -24,8 +24,6 @@ import org.totschnig.myexpenses.MyApplication;
 import org.totschnig.myexpenses.di.AppComponent;
 import org.totschnig.myexpenses.model.CrStatus;
 import org.totschnig.myexpenses.preference.PrefHandler;
-import org.totschnig.myexpenses.preference.PrefKey;
-import org.totschnig.myexpenses.util.Utils;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -489,7 +487,7 @@ public class DatabaseConstants {
 
   public static final String WHERE_SELF_OR_PEER = KEY_TRANSFER_PEER + " = ? OR " + KEY_ROWID + " = ?";
 
-  public static final String WHERE_SELF_OR_DEPENDENT = KEY_ROWID + " = ? OR " + WHERE_DEPENDENT;
+  public static final String WHERE_SELF_OR_RELATED = WHERE_SELF_OR_PEER + " OR " + WHERE_DEPENDENT;
 
   public static final String IS_SAME_CURRENCY = KEY_CURRENCY + " = (SELECT " + KEY_CURRENCY + " from " +
       TABLE_ACCOUNTS + " WHERE " + KEY_ROWID + " = " + KEY_TRANSFER_ACCOUNT + ")";
