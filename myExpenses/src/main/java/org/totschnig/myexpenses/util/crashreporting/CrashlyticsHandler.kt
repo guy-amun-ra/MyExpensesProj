@@ -5,6 +5,7 @@ import android.os.Handler
 import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import kotlinx.coroutines.delay
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.preference.PrefKey
@@ -15,17 +16,14 @@ class CrashlyticsHandler(val prefHandler: PrefHandler) : CrashHandler() {
     private var crashReportingTree: CrashReportingTree? = null
 
     override fun onAttachBaseContext(application: MyApplication) {}
-    override fun setupLogging(context: Context) {
+    override suspend fun setupLogging(context: Context) {
         if (crashReportingTree == null) {
             crashReportingTree = CrashReportingTree().also {
                 Timber.plant(it)
             }
         }
-        Handler().apply {
-            postDelayed({
-                setKeys(context)
-            }, 5000)
-        }
+        delay(5000)
+        setKeys(context)
     }
 
     override fun setKeys(context: Context) {
