@@ -18,7 +18,7 @@ plugins {
 }
 
 ext {
-    versionCode = 668
+    versionCode = 669
     versionName = '3.6.8'
     compileSdkVersion = 34
     minSdkVersion = 21
@@ -61,5 +61,5 @@ ext {
     barista = "4.3.0"
     googleHttp = "1.43.3"
     composeBom = "androidx.compose:compose-bom:2023.06.01"
-    activityCompose = "1.8.0"
+    activityCompose = "1.8.1"
 }
