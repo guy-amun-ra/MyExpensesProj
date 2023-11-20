@@ -58,7 +58,7 @@ abstract class ImportDataViewModel(application: Application) :
     }
 
     fun insertAccounts(accounts: List<ImportAccount>, currencyUnit: CurrencyUnit, uri: Uri): Int {
-        val nrOfAccounts = repository.countAccounts(null, null)
+        val nrOfAccounts = repository.countAccounts()
         val hasUnlimitedAccounts = getApplication<MyApplication>().appComponent.licenceHandler()
             .hasAccessTo(ContribFeature.ACCOUNTS_UNLIMITED)
         var importCount = 0
@@ -81,7 +81,7 @@ abstract class ImportDataViewModel(application: Application) :
                                 R.string.qif_parse_failure_found_multiple_accounts,
                                 format
                             ) + " " +
-                                    ContribFeature.ACCOUNTS_UNLIMITED.buildUsageLimitString(
+                                    ContribFeature.ACCOUNTS_UNLIMITED.buildTrialString(
                                         localizedContext
                                     ) +
                                     ContribFeature.ACCOUNTS_UNLIMITED.buildRemoveLimitation(

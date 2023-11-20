@@ -27,6 +27,7 @@ import android.widget.RadioButton
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.content.res.ResourcesCompat.getColor
 import androidx.core.text.HtmlCompat
 import androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
 import androidx.core.view.isVisible
@@ -54,13 +55,16 @@ import java.io.Serializable
 import java.util.*
 import javax.inject.Inject
 
-class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListener, View.OnClickListener {
+class ContribDialogFragment : BaseDialogFragment(), View.OnClickListener {
     private var _binding: ContribDialogBinding? = null
     private val binding get() = _binding!!
     private var feature: ContribFeature? = null
     private var contribVisible = false
     private var extendedVisible = false
     private var singleVisible = false
+
+    private val trialButton
+        get() = binding.tryButton
 
     private val contribButton
         get() = binding.contribFeatureContainer.packageButton
@@ -98,32 +102,43 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
         _binding = ContribDialogBinding.inflate(LayoutInflater.from(builder.context))
         dialogView = binding.root
 
-        //prepare HEADER
-        val message = feature?.let { feature ->
-            val featureDescription = feature.buildFullInfoString(ctx)
+        //prepare trial card
+        feature?.let { feature ->
             val removePhrase = feature.buildRemoveLimitation(requireContext(), true)
-            feature.buildUsagesLeftString(ctx, licenceHandler)?.let {
-                binding.usagesLeft.text = it
-                binding.usagesLeft.isVisible = true
+            val trialString = feature.buildTrialString(ctx, licenceHandler)
+            if (licenceHandler.hasTrialAccessTo(feature)) {
+                binding.intro.text = removePhrase
+                binding.trialInfoCard.isVisible = true
+                binding.trialInfoCard.setOnClickListener(this)
+                trialButton.setOnClickListener(this)
+                binding.trialInfo.text = trialString
+            } else {
+                binding.trialInfoCard.isVisible = false
+                binding.intro.text = TextUtils.concat(trialString, " ", removePhrase)
             }
-
-            TextUtils.concat(featureDescription, "\n", removePhrase)
-        } ?: Utils.getTextWithAppName(context, R.string.dialog_contrib_text_2).let {
-            if (isGithub)
-                TextUtils.concat(Utils.getTextWithAppName(context, R.string.dialog_contrib_text_1), " ", it)
-            else it
-
+        } ?: run {
+            binding.trialInfoCard.isVisible = false
+            binding.intro.text = TextUtils.concat(
+                *buildList {
+                    if (isGithub) {
+                        add(Utils.getTextWithAppName(context, R.string.dialog_contrib_text_1))
+                        add(" ")
+                    }
+                    add(Utils.getTextWithAppName(context, R.string.dialog_contrib_text_2))
+                }.toTypedArray()
+            )
         }
-        binding.featureInfo.text = message
+
         val contribFeatureLabelsAsList = getContribFeatureLabelsAsList(ctx, LicenceStatus.CONTRIB)
         val extendedFeatureLabelsAsList = getContribFeatureLabelsAsList(ctx, LicenceStatus.EXTENDED)
 
         //prepare CONTRIB section
         with(binding.contribFeatureContainer) {
-            root.setBackgroundColor(ResourcesCompat.getColor(resources, LicenceStatus.CONTRIB.color, null))
+            root.setBackgroundColorFromLicenceStatus(LicenceStatus.CONTRIB)
             if (licenceStatus == null && LicenceStatus.CONTRIB.covers(feature)) {
                 contribVisible = true
-                val contribList = Utils.makeBulletList(ctx, contribFeatureLabelsAsList, R.drawable.ic_menu_done)
+                val contribList =
+                    Utils.makeBulletList(ctx, contribFeatureLabelsAsList, R.drawable.ic_menu_done)
                 packageFeatureList.text = contribList
                 packageLabel.setText(R.string.contrib_key)
                 packagePrice.text = licenceHandler.getFormattedPrice(Package.Contrib)
@@ -136,8 +151,10 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
 
         //prepare EXTENDED section
         with(binding.extendedFeatureContainer) {
-            root.setBackgroundColor(ResourcesCompat.getColor(resources, LicenceStatus.EXTENDED.color, null))
-            if (LicenceStatus.CONTRIB.greaterOrEqual(licenceStatus) && LicenceStatus.EXTENDED.covers(feature)) {
+            root.setBackgroundColorFromLicenceStatus(LicenceStatus.EXTENDED)
+            if (LicenceStatus.CONTRIB.greaterOrEqual(licenceStatus) &&
+                LicenceStatus.EXTENDED.covers(feature)
+            ) {
                 extendedVisible = true
                 val lines = ArrayList<CharSequence>()
                 if (contribVisible) {
@@ -148,7 +165,8 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
                 lines.addAll(extendedFeatureLabelsAsList)
                 packageFeatureList.text = Utils.makeBulletList(ctx, lines, R.drawable.ic_menu_done)
                 packageLabel.setText(R.string.extended_key)
-                packagePrice.text = licenceHandler.getFormattedPrice(if (licenceStatus == null) Package.Extended else Package.Upgrade)
+                packagePrice.text =
+                    licenceHandler.getFormattedPrice(if (licenceStatus == null) Package.Extended else Package.Upgrade)
                 root.setOnClickListener(this@ContribDialogFragment)
                 extendedButton.setOnClickListener(this@ContribDialogFragment)
             } else {
@@ -159,7 +177,7 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
         //prepare PROFESSIONAL section
         with(binding.professionalFeatureContainer) {
             val lines = ArrayList<CharSequence>()
-            root.setBackgroundColor(ResourcesCompat.getColor(resources, LicenceStatus.PROFESSIONAL.color, null))
+            root.setBackgroundColorFromLicenceStatus(LicenceStatus.PROFESSIONAL)
             if (extendedVisible) {
                 lines.add(getString(R.string.all_extended_key_features) + "\n+")
             } else if (feature?.isProfessional == true) {
@@ -187,7 +205,7 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
         //single FEATURE
         with(binding.singleFeatureContainer) {
             feature?.let {
-                root.setBackgroundColor(ResourcesCompat.getColor(resources, it.licenceStatus.color, null))
+                root.setBackgroundColorFromLicenceStatus(it.licenceStatus)
                 singleVisible = true
                 packageLabel.setText(it.labelResId)
                 packagePrice.text = licenceHandler.getFormattedPrice(getSinglePackage())
@@ -203,8 +221,10 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
         //FOOTER
         if (isGithub) {
             binding.githubExtraInfo.isVisible = true
-            binding.githubExtraInfo.text = concatResStrings(requireActivity(),
-                    " ", R.string.professional_key_fallback_info, R.string.eu_vat_info)
+            binding.githubExtraInfo.text = concatResStrings(
+                requireActivity(),
+                " ", R.string.professional_key_fallback_info, R.string.eu_vat_info
+            )
             binding.githubSponsors.isVisible = true
             binding.githubSponsors.text = HtmlCompat.fromHtml(
                 getString(R.string.github_sponsors, "https://github.com/sponsors/mtotschnig"),
@@ -212,54 +232,67 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
             )
             binding.githubSponsors.movementMethod = LinkMovementMethod.getInstance()
         }
-        builder.setTitle(if (feature == null) R.string.menu_contrib else R.string.dialog_title_contrib_feature)
-                .setView(dialogView)
-                .setIcon(R.mipmap.ic_launcher_alt)
-                .setPositiveButton(R.string.upgrade_now, null)
         feature?.let {
-            if (licenceHandler.hasTrialAccessTo(it)) {
-                builder.setNeutralButton(it.trialButton, this)
-            }
-        }
+            builder.setTitle(
+                concatResStrings(
+                    requireContext(),
+                    " : ",
+                    R.string.dialog_title_contrib_feature,
+                    it.labelResId
+                )
+            )
+        } ?: builder.setTitle(R.string.menu_contrib)
+
+        builder.setView(dialogView)
+            .setIcon(R.mipmap.ic_launcher_alt)
+            .setPositiveButton(feature?.let {
+                if (licenceHandler.hasTrialAccessTo(it)) it.trialButton else null
+            } ?: R.string.upgrade_now, null
+            )
+
         val dialog = builder.create()
         dialog.setOnShowListener {
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener { onUpgradeClicked() }
+            val button = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            button.setOnClickListener { onButtonClicked() }
             if (savedInstanceState != null) {
-                selectedPackage?.let {
-                    when (it) {
-                        Package.Contrib -> contribButton
-                        Package.Extended, Package.Upgrade -> extendedButton
-                        is ProfessionalPackage -> {
-                            updateProPrice(licenceStatus)
-                            professionalButton
+                updateButtons(
+                    selectedPackage.let {
+                        when (it) {
+                            Package.Contrib -> contribButton
+                            Package.Extended, Package.Upgrade -> extendedButton
+                            is ProfessionalPackage -> {
+                                updateProPrice(licenceStatus)
+                                professionalButton
+                            }
+
+                            is AddOnPackage -> singleButton
+                            else -> trialButton
                         }
-                        is AddOnPackage -> singleButton
-                    }.isChecked = true
-                }
+                    }
+                )
             }
         }
         return dialog
     }
 
-    private fun getSinglePackage(): AddOnPackage =
-        AddOnPackage.values.find { it.feature == feature } ?: throw  IllegalStateException()
+    private fun View.setBackgroundColorFromLicenceStatus(licenceStatus: LicenceStatus) {
+        setBackgroundColor(getColor(resources, licenceStatus.color, null))
+    }
 
-    private fun onUpgradeClicked() {
+    private fun getSinglePackage(): AddOnPackage =
+        AddOnPackage.values.find { it.feature == feature } ?: throw IllegalStateException()
+
+    private fun onButtonClicked() {
         val ctx = activity as ContribInfoDialogActivity? ?: return
         selectedPackage?.let {
             ctx.contribBuyDo(it)
             dismiss()
         } ?: run {
-            showSnackBar(R.string.select_package)
-        }
-    }
-
-    override fun onClick(dialog: DialogInterface, which: Int) {
-        val ctx = activity as ContribInfoDialogActivity? ?: return
-        when (which) {
-            AlertDialog.BUTTON_NEUTRAL -> {
+            if (feature != null) {
                 ctx.logEvent(Tracker.EVENT_CONTRIB_DIALOG_NEGATIVE, null)
                 ctx.finish(false)
+            } else {
+                showSnackBar(R.string.select_package)
             }
         }
     }
@@ -283,12 +316,16 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
                 }
                 binding.professionalFeatureContainer.packagePrice.text = formattedPrice
             }
-        } ?: CrashHandler.report(java.lang.IllegalStateException("called without selectedPackage being professional"))
+        }
+            ?: CrashHandler.report(java.lang.IllegalStateException("called without selectedPackage being professional"))
     }
 
     override fun onClick(v: View) {
         val licenceStatus = licenceHandler.licenceStatus
-        if (v.id == R.id.contrib_feature_container || v === contribButton) {
+        if (v.id == R.id.trial_info_card || v == trialButton) {
+            selectedPackage = null
+            updateButtons(trialButton)
+        } else if (v.id == R.id.contrib_feature_container || v === contribButton) {
             selectedPackage = Package.Contrib
             updateButtons(contribButton)
         } else if (v.id == R.id.extended_feature_container || v === extendedButton) {
@@ -312,7 +349,8 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
                 }
                 for (aPackage in proPackages.withIndex()) {
                     var title = licenceHandler.getFormattedPrice(aPackage.value)
-                    if (title == null) title = aPackage::class.java.simpleName //fallback if prices have not been loaded
+                    if (title == null) title =
+                        aPackage::class.java.simpleName //fallback if prices have not been loaded
                     popup.menu.add(Menu.NONE, aPackage.index, Menu.NONE, title)
                 }
                 popup.setOnDismissListener {
@@ -326,10 +364,14 @@ class ContribDialogFragment : BaseDialogFragment(), DialogInterface.OnClickListe
     }
 
     private fun updateButtons(selected: RadioButton?) {
+        trialButton.isChecked = trialButton === selected
         if (contribVisible) contribButton.isChecked = contribButton === selected
         if (extendedVisible) extendedButton.isChecked = extendedButton === selected
         if (singleVisible) singleButton.isChecked = singleButton === selected
         professionalButton.isChecked = professionalButton === selected
+        (dialog as AlertDialog).getButton(DialogInterface.BUTTON_POSITIVE).setText(
+            if (trialButton === selected) feature!!.trialButton else R.string.upgrade_now
+        )
     }
 
     override fun onDestroyView() {
