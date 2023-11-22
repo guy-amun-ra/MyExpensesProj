@@ -189,7 +189,6 @@
     <string name="menu_reset_plan_instance">Reiniciar</string>
     <string name="menu_save">Guardar</string>
     <string name="menu_save_and_new">Guardar y nuevo</string>
-    <string name="menu_settings">Configuraciones</string>
     <string name="menu_share">Contarle a un amigo/a</string>
     <string name="button_label_share_file">Compartir</string>
     <string name="button_label_close">Cerrar</string>
@@ -263,7 +262,6 @@
     <string name="pref_category_title_import">Importar</string>
     <string name="pref_category_title_manage">Administrar</string>
     <string name="pref_category_title_more_information">Más información</string>
-    <string name="pref_category_title_security">Seguridad</string>
     <string name="pref_category_title_ui">Interfaz de usuario</string>
     <string name="pref_checkbox_enabled">Habilitado</string>
     <string name="pref_checkbox_disabled">Inhabilitado</string>
@@ -295,7 +293,6 @@
     <string name="pref_manage_sync_backends_summary">Añadir servicios de sincronización a las cuentas (%s).</string>
     <string name="pref_more_info_dialog_title">Licencia &amp; Créditos</string>
     <string name="pref_password_not_equal">Las contraseñas no coinciden</string>
-    <string name="pref_perform_protection_title">Protección</string>
     <string name="pref_perform_share_title">Enviar exportaciones y copias de seguridad</string>
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">Crear nuevo calendario de planificación local</string>
@@ -1062,6 +1059,8 @@
     <string name="pref_unmapped_transaction_as_transfer_summary_off">se contabilizan como gastos / ingresos</string>
     <string name="whats_new_367">Las categorías pueden configurarse ahora como categorías de gastos o de ingresos, lo que afectará a la forma en que se calculan las sumas de gastos e ingresos.</string>
     <string name="menu_aggregate_neutral_categories">Categorías neutrales agregadas</string>
-    <string name="dialog_contrib_trial_info">El estado actual de su licencia (%1$s) le permite probar %2$s durante %3$d días (hasta %4$s).</string>
-    <string name="one_time_payment">Pago único</string>
+    <string name="dialog_contrib_trial_info">El estado de su licencia actual (%1$s) le permite probar %2$s durante %3$d días (hasta %4$s).</string>
+    <string name="one_time_payment">Un único pago</string>
+    <string name="dialog_contrib_trial_info_play">Esta prueba gratuita <b>nunca</b> se convertirá en ningún tipo de suscripción.</string>
+    <string name="dialog_contrib_subscription_info_play">Esta suscripción tiene efecto inmediato, se factura mensual o anualmente y puede cancelarse en cualquier momento.</string>
 </resources>

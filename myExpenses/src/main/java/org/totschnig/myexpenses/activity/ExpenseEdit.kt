@@ -314,7 +314,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
 
         //we enable it only after accountCursor has been loaded, preventing NPE when user clicks on it early
         amountInput.setTypeEnabled(false)
-
+        rootBinding.CREATEPARTCOMMAND.setOnClickListener {
+            createRow()
+        }
         if (savedInstanceState != null) {
             delegate = TransactionDelegate.create(
                 operationType,
@@ -795,7 +797,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             viewModel.addAttachmentUris(it)
         }
         if (!intent.hasExtra(KEY_CACHED_DATA)) {
-            amountInput.type = intent.getBooleanExtra(KEY_INCOME, false)
+            delegate.setType(intent.getBooleanExtra(KEY_INCOME, false))
         }
         (intent.getSerializableExtra(KEY_AMOUNT) as? BigDecimal)?.let {
             amountInput.setAmount(it)
@@ -887,9 +889,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         cached?.tags?.let {
             viewModel.updateTags(it, true)
         }
-        rootBinding.CREATEPARTCOMMAND.setOnClickListener {
-            createRow()
-        }
     }
 
     private val saveAndNewPrefKey: PrefKey
@@ -940,7 +939,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         if (shouldLoadMethods) {
             loadMethods(currentAccount)
         }
-        (delegate as? MainDelegate)?.onAmountChanged()
         discoveryHelper.markDiscovered(DiscoveryHelper.Feature.expense_income_switch)
     }
 

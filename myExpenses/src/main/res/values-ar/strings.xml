@@ -192,7 +192,6 @@
     <string name="menu_reset_plan_instance">إعادة تعيين</string>
     <string name="menu_save">حفظ</string>
     <string name="menu_save_and_new">حفظ وجديد</string>
-    <string name="menu_settings">الاعدادات</string>
     <string name="menu_share">اخبر صديق</string>
     <string name="button_label_share_file">مشاركة</string>
     <string name="button_label_close">إغلاق</string>
@@ -272,7 +271,6 @@
     <string name="pref_category_title_import">استيراد</string>
     <string name="pref_category_title_manage">إدارة</string>
     <string name="pref_category_title_more_information">المزيد من المعلومات</string>
-    <string name="pref_category_title_security">الأمان</string>
     <string name="pref_category_title_ui">واجهة المستخدم</string>
     <string name="pref_checkbox_enabled">مفعل</string>
     <string name="pref_checkbox_disabled">معطل</string>
@@ -304,7 +302,6 @@
     <string name="pref_manage_sync_backends_summary">إضافة الواجهات الخلفية لمزامنة حسابات (%s).</string>
     <string name="pref_more_info_dialog_title">الرخصة &amp; الشكر</string>
     <string name="pref_password_not_equal">كلمات المرور لا تتطابق</string>
-    <string name="pref_perform_protection_title">الحماية</string>
     <string name="pref_perform_share_title">مشاركة النسخ الاحتياطية والملفات المصدّرة</string>
     <!-- This entry is added to the list of available calendars, if no local calendar has been set up yet -->
     <string name="pref_planning_calendar_create_local">انشاء مخطِط تقويم محلي جديد</string>
@@ -1092,4 +1089,6 @@
     <string name="debt_installment_receive">أحصل على قسط من %s.</string>
     <string name="dialog_contrib_trial_info">تسمح لك حالة الترخيص الحالية (%1$s) بتجربة %2$s لمدة %3$d أيام (حتى %4$s).</string>
     <string name="one_time_payment">دفعة مالية لمرة واحدة</string>
+    <string name="dialog_contrib_trial_info_play">لن يتم تحويل هذه النسخة التجريبية المجانية <b> أبدًا </b> إلى أي نوع من الاشتراكات.</string>
+    <string name="dialog_contrib_subscription_info_play">يسري هذا الاشتراك على الفور ، ويتم إصدار فاتورة شهرية أو سنوية ويمكن إلغاؤه في أي وقت.</string>
 </resources>
