@@ -8,7 +8,8 @@
   * ./gradlew lintPlayWithAdsInternRelease
   * ./gradlew testPlayWithAdsInternDebugUnitTest (-PBETA=true)
   * adb uninstall org.totschnig.myexpenses.debug
-  * ./gradlew clean connectedPlayWithAdsInternDebugAndroidTest
+  * adb shell settings put global hidden_api_policy 1 # needed for LocaleUtil
+  * ./gradlew connectedPlayWithAdsInternDebugAndroidTest
   * ./gradlew clean bundlePlayWithAdsInternRelease
 * test upgrade mechanism
 * execute command returned by ./gradlew playEchoPublishTag
