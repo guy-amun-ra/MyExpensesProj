@@ -18,6 +18,7 @@ package org.totschnig.myexpenses.model;
 import static org.totschnig.myexpenses.contract.TransactionsContract.Transactions.TYPE_TRANSFER;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_AMOUNT;
+import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CATID;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_COMMENT;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_CR_STATUS;
 import static org.totschnig.myexpenses.provider.DatabaseConstants.KEY_DATE;
@@ -134,6 +135,7 @@ public class Transfer extends Transaction implements ITransfer {
     initialValues.put(KEY_TRANSFER_ACCOUNT, getTransferAccountId());
     initialValues.put(KEY_CR_STATUS, getCrStatus().name());
     initialValues.put(KEY_ACCOUNTID, getAccountId());
+    initialValues.put(KEY_CATID, getCatId());
     if (getId() == 0) {
       //both parts of the transfer share uuid
       initialValues.put(KEY_UUID, requireUuid());
@@ -251,10 +253,6 @@ public class Transfer extends Transaction implements ITransfer {
    */
   public static char getIndicatorCharForLabel(boolean direction) {
     return direction ? RIGHT_ARROW : LEFT_ARROW;
-  }
-
-  public String printLabelWithPrefix() {
-    return getIndicatorPrefixForLabel(getAmount().getAmountMinor()) + " " + getLabel();
   }
 
   @Override

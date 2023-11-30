@@ -5,6 +5,7 @@ import android.text.Editable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
+import androidx.core.view.isVisible
 import com.evernote.android.state.State
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
@@ -20,6 +21,7 @@ import org.totschnig.myexpenses.ui.AmountInput
 import org.totschnig.myexpenses.ui.ExchangeRateEdit
 import org.totschnig.myexpenses.ui.MyTextWatcher
 import org.totschnig.myexpenses.ui.SpinnerHelper
+import org.totschnig.myexpenses.util.ui.validateAmountInput
 import org.totschnig.myexpenses.viewmodel.data.Account
 import java.math.BigDecimal
 
@@ -48,6 +50,9 @@ class TransferDelegate(
 
     @State
     var transferPeer: Long? = null
+
+    @State
+    var categoryVisible = false
 
     override val helpVariant: ExpenseEdit.HelpVariant
         get() = when {
@@ -79,8 +84,8 @@ class TransferDelegate(
         viewBinding.TransferAmount.addTextChangedListener(LinkedTransferAmountTextWatcher(false))
         viewBinding.ERR.ExchangeRate.setExchangeRateWatcher(LinkedExchangeRateTextWatcher())
         viewBinding.Amount.hideTypeButton()
-        viewBinding.CategoryRow.visibility = View.GONE
-        viewBinding.TransferAccountRow.visibility = View.VISIBLE
+        viewBinding.CategoryRow.isVisible = false
+        viewBinding.TransferAccountRow.isVisible = true
         viewBinding.AccountLabel.setText(R.string.transfer_from_account)
         super.bind(
             transaction,
@@ -91,6 +96,7 @@ class TransferDelegate(
         )
         hideRowsSpecificToMain()
         configureTransferDirection()
+        configureCategoryVisibility()
     }
 
     override fun populateFields(transaction: ITransfer, withAutoFill: Boolean) {
@@ -163,8 +169,8 @@ class TransferDelegate(
         val currency = currentAccount.currency
         val transferAccountCurrencyUnit = transferAccount.currency
         val isSame = currency == transferAccountCurrencyUnit
-        setVisibility(viewBinding.TransferAmountRow, !isSame)
-        setVisibility(viewBinding.ERR.root as ViewGroup, !isSame && !isTemplate)
+        viewBinding.TransferAmountRow.isVisible = !isSame
+        (viewBinding.ERR.root as ViewGroup).isVisible = !isSame && !isTemplate
         addCurrencyToInput(
             viewBinding.TransferAmountLabel,
             viewBinding.TransferAmount,
@@ -251,7 +257,7 @@ class TransferDelegate(
     }
 
     private fun applyExchangeRate(from: AmountInput, to: AmountInput, rate: BigDecimal?) {
-        val input = validateAmountInput(from, showToUser = false, ifPresent = true)
+        val input = from.validateAmountInput(showToUser = false, ifPresent = true)
         to.setAmount(
             if (rate != null && input != null) input.multiply(rate) else BigDecimal(0),
             false
@@ -259,9 +265,9 @@ class TransferDelegate(
     }
 
     private fun updateExchangeRates() {
-        val amount = validateAmountInput(viewBinding.Amount, showToUser = false, ifPresent = true)
+        val amount = viewBinding.Amount.validateAmountInput(showToUser = false, ifPresent = true)
         val transferAmount =
-            validateAmountInput(viewBinding.TransferAmount, showToUser = false, ifPresent = true)
+            viewBinding.TransferAmount.validateAmountInput(showToUser = false, ifPresent = true)
         viewBinding.ERR.ExchangeRate.calculateAndSetRate(amount, transferAmount)
     }
 
@@ -276,7 +282,10 @@ class TransferDelegate(
         val transferAmount = if (isSame && amount != null) {
             amount.negate()
         } else {
-            validateAmountInput(viewBinding.TransferAmount, forSave, true, transferAccount.currency).getOrNull()?.let {
+            viewBinding.TransferAmount.validateAmountInput(
+                transferAccount.currency,
+                showToUser = forSave
+            ).getOrNull()?.let {
                 if (isIncome) it.negate() else it
             }
         }
@@ -347,6 +356,15 @@ class TransferDelegate(
             applyExchangeRate(constant, variable, exchangeFactor)
             isProcessingLinkedAmountInputs = false
         }
+    }
+
+    fun toggleCategory() {
+        categoryVisible = !categoryVisible
+        configureCategoryVisibility()
+    }
+
+    private fun configureCategoryVisibility() {
+        viewBinding.CategoryRow.isVisible = categoryVisible
     }
 
     companion object {

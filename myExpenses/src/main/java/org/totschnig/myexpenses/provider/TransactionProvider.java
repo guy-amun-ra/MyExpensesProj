@@ -193,6 +193,9 @@ public class TransactionProvider extends BaseTransactionProvider {
       Uri.parse("content://" + AUTHORITY + "/transactions");
   public static final Uri UNCOMMITTED_URI =
       Uri.parse("content://" + AUTHORITY + "/transactionsUncommitted");
+  public static final Uri EXTENDED_URI =
+          TRANSACTIONS_URI.buildUpon().appendQueryParameter(
+                  TransactionProvider.QUERY_PARAMETER_EXTENDED, "1").build();
   public static final Uri TEMPLATES_URI =
       Uri.parse("content://" + AUTHORITY + "/templates");
   public static final Uri TEMPLATES_UNCOMMITTED_URI =
@@ -440,16 +443,14 @@ public class TransactionProvider extends BaseTransactionProvider {
         additionalWhere.append(KEY_ROWID + "=").append(uri.getPathSegments().get(1));
         break;
       case TRANSACTIONS_SUMS: {
-        String accountSelector = getAccountSelector(uri);
-        selection = TextUtils.isEmpty(selection) ? accountSelector : selection + " AND " + accountSelector;
-        String sumExpression = aggregateFunction + "(" + amountCalculation(uri, CTE_TRANSACTION_AMOUNTS, getHomeCurrency(), false) + ")";
         // if type flag is passed in, then we only return one type, otherwise two rows for expense and income are returned
         String sql = transactionSumQuery(
+                uri,
                 projection,
-                getTypeWithFallBack(),
                 selection,
-                sumExpression,
-                uri.getBooleanQueryParameter(QUERY_PARAMETER_AGGREGATE_NEUTRAL, false)
+                getTypeWithFallBack(),
+                aggregateFunction,
+                getHomeCurrency()
         );
         c = measureAndLogQuery(db, uri, sql, selection, selectionArgs);
         return c;

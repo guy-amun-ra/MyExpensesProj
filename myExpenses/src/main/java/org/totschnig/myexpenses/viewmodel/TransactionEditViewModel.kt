@@ -30,6 +30,7 @@ import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.adapter.SplitPartRVAdapter
 import org.totschnig.myexpenses.db2.addAttachments
 import org.totschnig.myexpenses.db2.deleteAttachments
+import org.totschnig.myexpenses.db2.getCategoryPath
 import org.totschnig.myexpenses.db2.getCurrencyUnitForAccount
 import org.totschnig.myexpenses.db2.getLastUsedOpenAccount
 import org.totschnig.myexpenses.db2.loadActiveTagsForAccount
@@ -54,6 +55,7 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ICON
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_LABEL
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_METHODID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PARENTID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PATH
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_PLANID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_SEALED
@@ -63,7 +65,6 @@ import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TITLE
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TRANSFER_ACCOUNT
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_TYPE
 import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_UNCOMMITTED
-import org.totschnig.myexpenses.provider.FULL_LABEL
 import org.totschnig.myexpenses.provider.PlannerUtils
 import org.totschnig.myexpenses.provider.ProviderUtils
 import org.totschnig.myexpenses.provider.TransactionProvider
@@ -305,6 +306,16 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
         }
     }
 
+    private fun Transaction.applyDefaultTransferCategory() {
+        if(isTransfer) {
+            catId = prefHandler.getLong(PrefKey.DEFAULT_TRANSFER_CATEGORY, -1L)
+                .takeIf { it != -1L }
+            catId?.let {
+                categoryPath = repository.getCategoryPath(it)
+            }
+        }
+    }
+
     suspend fun newTemplate(
         operationType: Int,
         parentId: Long?
@@ -317,7 +328,9 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
                 it.second,
                 true,
                 parentId
-            )
+            )?.apply {
+               applyDefaultTransferCategory()
+            }
         }
     }
 
@@ -340,8 +353,8 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
         accountId: Long,
         currencyUnit: CurrencyUnit?,
         parentId: Long?
-    ): Transaction? = ensureLoadData(accountId, currencyUnit)?.let {
-        Transaction.getNewInstance(it.first, it.second, parentId)
+    ): Transaction? = ensureLoadData(accountId, currencyUnit)?.let { (accountId, currencyUnit) ->
+        Transaction.getNewInstance(accountId, currencyUnit, parentId)
     }
 
     suspend fun newTransfer(
@@ -349,13 +362,15 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
         currencyUnit: CurrencyUnit?,
         transferAccountId: Long?,
         parentId: Long?
-    ): Transfer? = ensureLoadData(accountId, currencyUnit)?.let {
-        Transfer.getNewInstance(it.first, it.second, transferAccountId, parentId)
+    ): Transfer? = ensureLoadData(accountId, currencyUnit)?.let { (accountId, currencyUnit) ->
+        Transfer.getNewInstance(accountId, currencyUnit, transferAccountId, parentId).apply {
+            applyDefaultTransferCategory()
+        }
     }
 
     suspend fun newSplit(accountId: Long, currencyUnit: CurrencyUnit?): SplitTransaction? =
-        ensureLoadData(accountId, currencyUnit)?.let {
-            SplitTransaction.getNewInstance(contentResolver, it.first, it.second, true)
+        ensureLoadData(accountId, currencyUnit)?.let { (accountId, currencyUnit) ->
+            SplitTransaction.getNewInstance(contentResolver, accountId, currencyUnit, true)
         }
 
     fun loadSplitParts(parentId: Long, parentIsTemplate: Boolean) {
@@ -372,7 +387,7 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
                 KEY_ROWID,
                 KEY_AMOUNT,
                 KEY_COMMENT,
-                FULL_LABEL,
+                KEY_PATH,
                 KEY_TRANSFER_ACCOUNT,
                 if (parentIsTemplate) null else BaseTransactionProvider.DEBT_LABEL_EXPRESSION,
                 KEY_TAGLIST,
@@ -450,7 +465,7 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
                 )
             ) {
                 Pair(
-                    Template(contentResolver, this, payee ?: label),
+                    Template(contentResolver, this, payee ?: categoryPath),
                     this.loadTags(contentResolver)
                 )
             }
@@ -584,7 +599,7 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
         override val id: Long,
         override val amountRaw: Long,
         override val comment: String?,
-        override val label: String?,
+        override val categorPath: String?,
         override val isTransfer: Boolean,
         override val debtLabel: String?,
         override val tagList: String?,
@@ -596,7 +611,7 @@ class TransactionEditViewModel(application: Application, savedStateHandle: Saved
                     cursor.getLong(KEY_ROWID),
                     cursor.getLong(KEY_AMOUNT),
                     cursor.getStringOrNull(KEY_COMMENT),
-                    cursor.getStringOrNull(KEY_LABEL),
+                    cursor.getStringOrNull(KEY_PATH),
                     cursor.getLongOrNull(KEY_TRANSFER_ACCOUNT) != null,
                     cursor.getStringIfExists(KEY_DEBT_LABEL),
                     cursor.splitStringList(KEY_TAGLIST).joinToString(),

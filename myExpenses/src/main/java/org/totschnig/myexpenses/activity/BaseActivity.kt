@@ -5,6 +5,7 @@ import android.app.DownloadManager
 import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.*
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Configuration.UI_MODE_NIGHT_NO
@@ -94,6 +95,8 @@ import org.totschnig.myexpenses.util.distrib.DistributionHelper.marketSelfUri
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider
 import org.totschnig.myexpenses.util.tracking.Tracker
+import org.totschnig.myexpenses.util.ui.UiUtils
+import org.totschnig.myexpenses.util.ui.setBackgroundTintList
 import org.totschnig.myexpenses.viewmodel.FeatureViewModel
 import org.totschnig.myexpenses.viewmodel.OcrViewModel
 import org.totschnig.myexpenses.viewmodel.ShareViewModel
@@ -108,7 +111,7 @@ import kotlin.math.sign
 
 abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.MessageDialogListener,
     ConfirmationDialogListener, EasyPermissions.PermissionCallbacks, AmountInput.Host, ContribIFace,
-    OnDialogResultListener {
+    OnDialogResultListener, OnSharedPreferenceChangeListener {
     private var snackBar: Snackbar? = null
     private var pwDialog: AlertDialog? = null
 
@@ -366,7 +369,9 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
     }
 
     private val contentColor: Int
-        get() = if (canUseContentColor) color.takeIf { it != 0 } ?: intent.getIntExtra(KEY_COLOR, 0) else 0
+        get() = if (canUseContentColor)
+            color.takeIf { it != 0 } ?: intent.getIntExtra(KEY_COLOR, 0)
+        else 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         with(injector) {
@@ -398,7 +403,7 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                 )
 
                 is FeatureViewModel.FeatureState.FeatureAvailable -> {
-                    Feature.values().find { featureState.modules.contains(it.moduleName) }?.let {
+                    Feature.values.find { featureState.modules.contains(it.moduleName) }?.let {
                         showSnackBar(
                             getString(
                                 R.string.feature_downloaded,
@@ -455,6 +460,12 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                     }
                 }
             }
+        }
+        if (prefHandler.shouldSecureWindow) {
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
         }
     }
 
@@ -583,6 +594,27 @@ abstract class BaseActivity : AppCompatActivity(), MessageDialogFragment.Message
                 R.string.warning_device_lock_screen_not_set_up_2
             )
         )
+    }
+
+    override fun onSharedPreferenceChanged(
+        sharedPreferences: SharedPreferences,
+        key: String?
+    ) {
+        if (key != null && prefHandler.matches(
+                key,
+                PrefKey.CUSTOM_DATE_FORMAT,
+                PrefKey.DB_SAFE_MODE,
+                PrefKey.GROUP_MONTH_STARTS,
+                PrefKey.GROUP_WEEK_STARTS,
+                PrefKey.HOME_CURRENCY,
+                PrefKey.PROTECTION_ALLOW_SCREENSHOT,
+                PrefKey.PROTECTION_DEVICE_LOCK_SCREEN,
+                PrefKey.PROTECTION_LEGACY,
+                PrefKey.UI_FONTSIZE
+            )
+        ) {
+            scheduledRestart = true
+        }
     }
 
     override fun onPause() {

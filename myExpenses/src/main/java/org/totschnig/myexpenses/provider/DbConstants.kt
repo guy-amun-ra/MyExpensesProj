@@ -1,7 +1,9 @@
 package org.totschnig.myexpenses.provider
 
 import android.net.Uri
+import android.text.TextUtils
 import androidx.core.text.isDigitsOnly
+import org.totschnig.myexpenses.db2.DEFAULT_CATEGORY_PATH_SEPARATOR
 import org.totschnig.myexpenses.db2.FLAG_EXPENSE
 import org.totschnig.myexpenses.db2.FLAG_INCOME
 import org.totschnig.myexpenses.db2.FLAG_NEUTRAL
@@ -360,7 +362,7 @@ UNION ALL
 SELECT
     subtree.$KEY_LABEL,
     subtree.$KEY_UUID,
-    Tree.$KEY_PATH || '${categorySeparator ?: " > "}' || ${
+    Tree.$KEY_PATH || '${categorySeparator ?: DEFAULT_CATEGORY_PATH_SEPARATOR}' || ${
         maybeEscapeLabel(
             categorySeparator,
             "subtree"
@@ -398,14 +400,8 @@ fun categoryPathFromLeave(rowId: String): String {
 """.trimIndent()
 }
 
-/**
- * for transfer label of transfer_account, for transaction full breadcrumb of category
- */
-const val FULL_LABEL =
-    "CASE WHEN  $KEY_TRANSFER_ACCOUNT THEN (SELECT $KEY_LABEL FROM $TABLE_ACCOUNTS WHERE $KEY_ROWID = $KEY_TRANSFER_ACCOUNT) ELSE $KEY_PATH END AS  $KEY_LABEL"
-
 const val TRANSFER_ACCOUNT_LABEL =
-    "CASE WHEN  $KEY_TRANSFER_ACCOUNT THEN (SELECT $KEY_LABEL FROM $TABLE_ACCOUNTS WHERE $KEY_ROWID = $KEY_TRANSFER_ACCOUNT) END AS  $KEY_TRANSFER_ACCOUNT_LABEL"
+    "CASE WHEN $KEY_TRANSFER_ACCOUNT THEN (SELECT $KEY_LABEL FROM $TABLE_ACCOUNTS WHERE $KEY_ROWID = $KEY_TRANSFER_ACCOUNT) END AS $KEY_TRANSFER_ACCOUNT_LABEL"
 
 fun accountQueryCTE(
     homeCurrency: String,
@@ -416,10 +412,10 @@ fun accountQueryCTE(
     val futureCriterion =
         if (futureStartsNow) "'now'" else "'now', 'localtime', 'start of day', '+1 day', 'utc'"
     val isExpense =
-        "$KEY_TRANSFER_PEER IS NULL AND ($KEY_TYPE = $FLAG_EXPENSE OR ($KEY_TYPE = $FLAG_NEUTRAL AND $KEY_AMOUNT < 0))"
+        "$KEY_TYPE = $FLAG_EXPENSE OR ($KEY_TYPE = $FLAG_NEUTRAL AND $KEY_AMOUNT < 0)"
     val isIncome =
-        "$KEY_TRANSFER_PEER IS NULL AND ($KEY_TYPE = $FLAG_INCOME OR ($KEY_TYPE = $FLAG_NEUTRAL AND $KEY_AMOUNT > 0))"
-    val isTransfer = "$KEY_TRANSFER_PEER IS NOT NULL OR $KEY_TYPE = $FLAG_TRANSFER"
+        "$KEY_TYPE = $FLAG_INCOME OR ($KEY_TYPE = $FLAG_NEUTRAL AND $KEY_AMOUNT > 0)"
+    val isTransfer = "$KEY_TYPE = $FLAG_TRANSFER"
     return """
 WITH now as (
     SELECT
@@ -567,10 +563,6 @@ fun buildTransactionGroupCte(
         append(KEY_TRANSFER_PEER)
         append(",")
         append("$typeWithFallBack AS $KEY_TYPE")
-        if (forHome != null) {
-            append(",")
-            append("$KEY_TYPE AS raw_type")
-        }
         append(", cast(")
         append(getAmountCalculation(forHome))
         append(" AS integer) AS $KEY_DISPLAY_AMOUNT")
@@ -580,35 +572,47 @@ fun buildTransactionGroupCte(
 }
 
 fun effectiveTypeExpression(typeWithFallback: String): String =
-    "CASE WHEN $KEY_TRANSFER_PEER IS NULL THEN CASE $typeWithFallback WHEN $FLAG_NEUTRAL THEN CASE WHEN $KEY_AMOUNT > 0 THEN $FLAG_INCOME ELSE $FLAG_EXPENSE END ELSE $typeWithFallback END ELSE 0 END"
+    "CASE $typeWithFallback WHEN $FLAG_NEUTRAL THEN CASE WHEN $KEY_AMOUNT > 0 THEN $FLAG_INCOME ELSE $FLAG_EXPENSE END ELSE $typeWithFallback END"
 
 fun transactionSumQuery(
+    uri: Uri,
     projection: Array<String>,
+    selectionIn: String?,
     typeWithFallBack: String,
-    selection: String?,
-    sumExpression: String,
-    aggregateNeutral: Boolean
-) = if (aggregateNeutral) {
-    require(projection.size == 1)
-    val column = projection.first()
-    val type = when (column) {
-        KEY_SUM_INCOME -> FLAG_INCOME
-        KEY_SUM_EXPENSES -> FLAG_EXPENSE
-        else -> throw IllegalArgumentException()
-    }
-    """SELECT $sumExpression AS $column FROM $VIEW_WITH_ACCOUNT WHERE $KEY_TYPE IN ($type, $FLAG_NEUTRAL)
-AND ($KEY_CATID IS NOT $SPLIT_CATID AND $KEY_CR_STATUS != 'VOID' ${if (selection.isNullOrEmpty()) "" else " AND $selection"})"""
-} else {
-    val columns = projection.map {
-        when (it) {
-            KEY_SUM_EXPENSES -> "(SELECT $sumExpression FROM $CTE_TRANSACTION_AMOUNTS WHERE $KEY_TYPE = $FLAG_EXPENSE) AS $KEY_SUM_EXPENSES"
-            KEY_SUM_INCOME -> "(SELECT $sumExpression FROM $CTE_TRANSACTION_AMOUNTS WHERE $KEY_TYPE = $FLAG_INCOME) AS $KEY_SUM_INCOME"
+    aggregateFunction: String,
+    homeCurrency: String
+): String {
+    val accountSelector: String = uri.accountSelector
+    val selection =
+        if (TextUtils.isEmpty(selectionIn)) accountSelector else "$selectionIn AND $accountSelector"
+    val aggregateNeutral = uri.getBooleanQueryParameter(QUERY_PARAMETER_AGGREGATE_NEUTRAL, false)
+
+    return if (aggregateNeutral) {
+        require(projection.size == 1)
+        val column = projection.first()
+        val type = when (column) {
+            KEY_SUM_INCOME -> FLAG_INCOME
+            KEY_SUM_EXPENSES -> FLAG_EXPENSE
             else -> throw IllegalArgumentException()
         }
-    }
-    require(columns.isNotEmpty())
-    """WITH $CTE_TRANSACTION_AMOUNTS AS (
+        val sumExpression =
+            "$aggregateFunction(${uri.amountCalculation(VIEW_WITH_ACCOUNT, homeCurrency, false)})"
+        """SELECT $sumExpression AS $column FROM $VIEW_WITH_ACCOUNT WHERE $typeWithFallBack IN ($type, $FLAG_NEUTRAL)
+AND ($KEY_CATID IS NOT $SPLIT_CATID AND $KEY_CR_STATUS != 'VOID' AND $selection)"""
+    } else {
+        val sumExpression =
+            "$aggregateFunction(${uri.amountCalculation(CTE_TRANSACTION_AMOUNTS, homeCurrency, false)})"
+        val columns = projection.map {
+            when (it) {
+                KEY_SUM_EXPENSES -> "(SELECT $sumExpression FROM $CTE_TRANSACTION_AMOUNTS WHERE $KEY_TYPE = $FLAG_EXPENSE) AS $KEY_SUM_EXPENSES"
+                KEY_SUM_INCOME -> "(SELECT $sumExpression FROM $CTE_TRANSACTION_AMOUNTS WHERE $KEY_TYPE = $FLAG_INCOME) AS $KEY_SUM_INCOME"
+                else -> throw IllegalArgumentException()
+            }
+        }
+        require(columns.isNotEmpty())
+        """WITH $CTE_TRANSACTION_AMOUNTS AS (
     SELECT ${effectiveTypeExpression(typeWithFallBack)} AS $KEY_TYPE, $KEY_AMOUNT, $KEY_PARENTID, $KEY_ACCOUNTID, $KEY_CURRENCY, $KEY_EQUIVALENT_AMOUNT FROM $VIEW_WITH_ACCOUNT
-    WHERE ($KEY_CATID IS NOT $SPLIT_CATID AND $KEY_CR_STATUS != 'VOID' ${if (selection.isNullOrEmpty()) "" else " AND $selection"}))
+    WHERE ($KEY_CATID IS NOT $SPLIT_CATID AND $KEY_CR_STATUS != 'VOID' AND $selection))
     SELECT ${columns.joinToString()}"""
+    }
 }

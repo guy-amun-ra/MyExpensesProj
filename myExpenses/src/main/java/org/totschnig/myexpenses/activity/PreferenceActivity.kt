@@ -39,7 +39,7 @@ import org.totschnig.myexpenses.service.AutoBackupWorker
 import org.totschnig.myexpenses.sync.GenericAccountService
 import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
-import org.totschnig.myexpenses.util.setNightMode
+import org.totschnig.myexpenses.util.ui.setNightMode
 import org.totschnig.myexpenses.viewmodel.LicenceValidationViewModel
 import org.totschnig.myexpenses.viewmodel.SettingsViewModel
 import org.totschnig.myexpenses.widget.AccountWidget
@@ -225,7 +225,6 @@ class PreferenceActivity : ProtectedFragmentActivity(), ContribIFace {
 
             getKey(PrefKey.PROTECTION_LEGACY), getKey(PrefKey.PROTECTION_DEVICE_LOCK_SCREEN) -> {
                 if (sharedPreferences.getBoolean(key, false)) {
-                    showSnackBar(R.string.pref_protection_screenshot_information)
                     if (prefHandler.getBoolean(PrefKey.AUTO_BACKUP, false)) {
                         showUnencryptedBackupWarning()
                     }
@@ -359,9 +358,7 @@ class PreferenceActivity : ProtectedFragmentActivity(), ContribIFace {
     }
 
     fun protectionCheck(pref: Preference) =
-        if (pref.key == prefHandler.getKey(PrefKey.CATEGORY_SECURITY) &&
-            (application as MyApplication).isProtected
-        ) {
+        if (pref.key == prefHandler.getKey(PrefKey.CATEGORY_SECURITY) && prefHandler.isProtected) {
             confirmCredentials(
                 CONFIRM_DEVICE_CREDENTIALS_MANAGE_PROTECTION_SETTINGS_REQUEST,
                 { twoPanePreference.startPerformProtection() },

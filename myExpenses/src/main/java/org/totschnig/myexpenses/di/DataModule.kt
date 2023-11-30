@@ -35,7 +35,7 @@ interface SqlCryptProvider {
 }
 
 @Module
-open class DataModule {
+open class DataModule(private val shouldInsertDefaultTransferCategory: Boolean = true) {
     companion object {
         val cryptProvider: SqlCryptProvider by lazy {
             Class.forName("org.totschnig.sqlcrypt.SQLiteOpenHelperFactory")
@@ -79,16 +79,15 @@ open class DataModule {
         prefHandler: PrefHandler,
         @Named(AppComponent.DATABASE_NAME) provideDatabaseName: (@JvmSuppressWildcards Boolean) -> String
     ): SupportSQLiteOpenHelper {
-        Timber.w("building SupportSQLiteOpenHelper")
         val encryptDatabase = prefHandler.encryptDatabase
+        Timber.w("building SupportSQLiteOpenHelper (encryptDatabase %b)", encryptDatabase)
         return when {
             encryptDatabase -> cryptProvider.provideEncryptedDatabase(appContext)
             else -> FrameworkSQLiteOpenHelperFactory()
         }.create(
             SupportSQLiteOpenHelper.Configuration.builder(appContext)
                 .name(provideDatabaseName(encryptDatabase)).callback(
-                    //Robolectric uses native Sqlite which as of now does not include Json extension
-                    TransactionDatabase(prefHandler)
+                    TransactionDatabase(appContext, prefHandler, shouldInsertDefaultTransferCategory)
                 ).build()
         ).also {
             it.setWriteAheadLoggingEnabled(false)

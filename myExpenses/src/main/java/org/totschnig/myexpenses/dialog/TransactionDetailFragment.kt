@@ -47,12 +47,12 @@ import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.Plan
 import org.totschnig.myexpenses.provider.DatabaseConstants
 import org.totschnig.myexpenses.util.ICurrencyFormatter
-import org.totschnig.myexpenses.util.UiUtils.DateMode
-import org.totschnig.myexpenses.util.addChipsBulk
-import org.totschnig.myexpenses.util.attachmentInfoMap
-import org.totschnig.myexpenses.util.getDateMode
+import org.totschnig.myexpenses.util.ui.UiUtils.DateMode
+import org.totschnig.myexpenses.util.ui.addChipsBulk
+import org.totschnig.myexpenses.util.ui.attachmentInfoMap
+import org.totschnig.myexpenses.util.ui.getDateMode
 import org.totschnig.myexpenses.util.locale.HomeCurrencyProvider
-import org.totschnig.myexpenses.util.setAttachmentInfo
+import org.totschnig.myexpenses.util.ui.setAttachmentInfo
 import org.totschnig.myexpenses.viewmodel.TransactionDetailViewModel
 import org.totschnig.myexpenses.viewmodel.data.AttachmentInfo
 import org.totschnig.myexpenses.viewmodel.data.Transaction
@@ -238,9 +238,9 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
                 val amountText: String
                 if (transaction.isTransfer) {
                     binding.Account.text =
-                        if (isIncome) transaction.label else transaction.accountLabel
+                        if (isIncome) transaction.categorPath else transaction.accountLabel
                     binding.Category.text =
-                        if (isIncome) transaction.accountLabel else transaction.label
+                        if (isIncome) transaction.accountLabel else transaction.categorPath
                     amountText = if (transaction.isSameCurrency) {
                         formatCurrencyAbs(transaction.amount)
                     } else {
@@ -251,7 +251,7 @@ class TransactionDetailFragment : DialogViewBinding<TransactionDetailBinding>(),
                 } else {
                     binding.Account.text = transaction.accountLabel
                     if (transaction.catId != null && transaction.catId > 0) {
-                        binding.Category.text = transaction.label
+                        binding.Category.text = transaction.categorPath
                     } else {
                         binding.CategoryRow.visibility = View.GONE
                     }

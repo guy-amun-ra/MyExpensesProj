@@ -1,6 +1,7 @@
 package org.totschnig.myexpenses.test.espresso
 
 import android.content.Intent
+import android.net.Uri
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.closeSoftKeyboard
@@ -18,11 +19,10 @@ import androidx.test.espresso.matcher.ViewMatchers.withSpinnerText
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import com.adevinta.android.barista.interaction.BaristaScrollInteractions.scrollTo
 import com.adevinta.android.barista.internal.viewaction.NestedEnabledScrollToAction.nestedScrollToAction
-import org.assertj.core.api.Assertions.assertThat
+import com.google.common.truth.Truth.assertThat
 import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.instanceOf
-import org.junit.Before
 import org.junit.Test
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.ExpenseEdit
@@ -31,9 +31,10 @@ import org.totschnig.myexpenses.contract.TransactionsContract.Transactions
 import org.totschnig.myexpenses.model.Money
 import org.totschnig.myexpenses.model.SplitTransaction
 import org.totschnig.myexpenses.model.Transaction
-import org.totschnig.myexpenses.provider.DatabaseConstants
-import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ACCOUNTID
 import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_ROWID
+import org.totschnig.myexpenses.provider.DatabaseConstants.KEY_STATUS
+import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_NONE
+import org.totschnig.myexpenses.provider.DatabaseConstants.STATUS_UNCOMMITTED
 import org.totschnig.myexpenses.provider.TransactionProvider
 import org.totschnig.myexpenses.testutils.withAccount
 
@@ -45,10 +46,48 @@ class SplitEditTest : BaseExpenseEditTest() {
             putExtra(Transactions.OPERATION_TYPE, Transactions.TYPE_SPLIT)
         }
 
-    @Before
-    fun fixture() {
-        account1 = buildAccount(accountLabel1)
+    private fun assertUncommittedCount(uri: Uri, count: Int) {
+        assertThat(repository.count(uri, "$KEY_STATUS= $STATUS_UNCOMMITTED"))
+            .isEqualTo(count)
     }
+
+    private fun assertUncommittedTransactions(count: Int) {
+        assertUncommittedCount(TransactionProvider.UNCOMMITTED_URI, count)
+    }
+
+    private fun assertUncommittedTemplates(count: Int) {
+        assertUncommittedCount(TransactionProvider.TEMPLATES_UNCOMMITTED_URI, count)
+    }
+
+    private fun launch(
+        excludeFromTotals: Boolean = false,
+        configureIntent: Intent.() -> Unit = {}
+    ) {
+        account1 = buildAccount(accountLabel1, excludeFromTotals = excludeFromTotals)
+        testScenario = ActivityScenario.launchActivityForResult(
+            baseIntent.apply(configureIntent)
+        )
+    }
+
+    private fun launchEdit(excludeFromTotals: Boolean = false) {
+        launch(excludeFromTotals) { putExtra(KEY_ROWID, prepareSplit()) }
+    }
+
+    private fun prepareSplit(): Long {
+        val currencyUnit = homeCurrency
+        return with(SplitTransaction.getNewInstance(contentResolver, account1.id, currencyUnit)) {
+            amount = Money(currencyUnit, 10000)
+            status = STATUS_NONE
+            save(contentResolver, true)
+            val part = Transaction.getNewInstance(account1.id, currencyUnit, id)
+            part.amount = Money(currencyUnit, 5000)
+            part.save(contentResolver)
+            part.amount = Money(currencyUnit, 5000)
+            part.saveAsNew(contentResolver)
+            id
+        }
+    }
+
 
     /*
     Verify resolution of
@@ -57,7 +96,7 @@ class SplitEditTest : BaseExpenseEditTest() {
     @Test
     fun bug987() {
         val account2 = buildAccount("Test Account 2")
-        testScenario = ActivityScenario.launch(baseIntent.apply { putExtra(KEY_ACCOUNTID, account1.id) })
+        launch()
         closeSoftKeyboard()
         onView(withId(R.id.CREATE_PART_COMMAND)).perform(scrollTo(), click())
         setAmount(50)
@@ -77,47 +116,126 @@ class SplitEditTest : BaseExpenseEditTest() {
                 withAccount(account2.label)
             )
         ).perform(click())
-        onView(withId(R.id.Account)).check(matches(withSpinnerText(CoreMatchers.containsString(account1.label))))
+        onView(withId(R.id.Account)).check(
+            matches(
+                withSpinnerText(
+                    CoreMatchers.containsString(
+                        account1.label
+                    )
+                )
+            )
+        )
     }
 
     @Test
     fun canceledSplitCleanup() {
-        testScenario = ActivityScenario.launchActivityForResult(baseIntent)
-        val uncommittedUri = TransactionProvider.UNCOMMITTED_URI
-        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(1)
+        launch()
+        assertUncommittedTransactions(1)
         closeSoftKeyboard()
         pressBackUnconditionally()
         assertCanceled()
-        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(0)
+        assertUncommittedTransactions(0)
+    }
+
+    @Test
+    fun canceledTemplateSplitCleanup() {
+        launch { putExtra(ExpenseEdit.KEY_NEW_TEMPLATE, true) }
+        assertUncommittedTemplates(1)
+        closeSoftKeyboard()
+        pressBackUnconditionally()
+        assertCanceled()
+        assertUncommittedTemplates(0)
+    }
+
+    /*
+    This also verifies #1316
+     */
+    @Test
+    fun loadCancelCleanup() {
+        launchEdit()
+        assertUncommittedTransactions(2)
+        closeSoftKeyboard()
+        pressBackUnconditionally()
+        assertCanceled()
+        assertUncommittedTransactions(0)
+    }
+
+    @Test
+    fun loadCancelRotateCleanup() {
+        launchEdit()
+        assertUncommittedTransactions(2)
+        rotate()
+        assertUncommittedTransactions(2)
+        closeSoftKeyboard()
+        pressBackUnconditionally()
+        assertCanceled()
+        assertUncommittedTransactions(0)
+    }
+
+    private fun verifyTypeToggle(initiallyChecked: Boolean) {
+        checkType(initiallyChecked)
+        toggleType()
+        checkType(!initiallyChecked)
     }
 
     @Test
     fun createPartAndSave() {
-        testScenario = ActivityScenario.launchActivityForResult(baseIntent)
+        launch()
+        verifyTypeToggle(false)
         createParts(5)
-        onView(withId(R.id.CREATE_COMMAND)).perform(click())//amount is now updated automatically
+        verifyTypeToggle(true)
+        verifyTypeToggle(false)
+        onView(withId(R.id.CREATE_COMMAND)).perform(click())
         assertFinishing()
     }
 
-    private fun createParts(times: Int) {
+    @Test
+    fun withAccountExcludedFromTotalsCreateNewSplit() {
+        launch(excludeFromTotals = true)
+        createParts(1)
+        onView(withId(R.id.CREATE_COMMAND)).perform(click())
+        assertFinishing()
+    }
+
+    @Test
+    fun withAccountExcludedFromTotalsEditExistingSplit() {
+        launchEdit(excludeFromTotals = true)
+        onView(withId(R.id.list)).check(matches(hasChildCount(2)))
+    }
+
+    private fun createParts(
+        times: Int,
+        amount: Int = 50,
+        toggleType: Boolean = false,
+        initialChildCount: Int = 0
+    ) {
         repeat(times) {
             closeSoftKeyboard()
             onView(withId(R.id.CREATE_PART_COMMAND)).perform(nestedScrollToAction(), click())
             onView(withId(R.id.MANAGE_TEMPLATES_COMMAND)).check(doesNotExist())
             onView(withId(R.id.CREATE_TEMPLATE_COMMAND)).check(doesNotExist())
-            setAmount(50)
+            if (toggleType) {
+                toggleType()
+            }
+            setAmount(amount)
             onView(withId(R.id.CREATE_COMMAND)).perform(click())//save part
+            onView(withId(R.id.list)).check(matches(hasChildCount(initialChildCount + it + 1)))
         }
     }
 
     @Test
     fun loadEditSaveSplit() {
-        testScenario = ActivityScenario.launchActivityForResult(baseIntent.apply { putExtra(KEY_ROWID, prepareSplit()) })
+        launchEdit()
         onView(withId(R.id.list)).check(matches(hasChildCount(2)))
         closeSoftKeyboard()
         scrollTo(R.id.list)
         onView(withId(R.id.list))
-            .perform(RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(0, click()))
+            .perform(
+                RecyclerViewActions.actionOnItemAtPosition<RecyclerView.ViewHolder>(
+                    0,
+                    click()
+                )
+            )
         onView(withText(R.string.menu_edit)).perform(click())
         setAmount(150)
         onView(withId(R.id.MANAGE_TEMPLATES_COMMAND)).check(doesNotExist())
@@ -127,43 +245,28 @@ class SplitEditTest : BaseExpenseEditTest() {
         assertFinishing()
     }
 
-    private fun prepareSplit(): Long {
-        val currencyUnit = homeCurrency
-        return with(SplitTransaction.getNewInstance(contentResolver, account1.id, currencyUnit)) {
-            amount = Money(currencyUnit, 10000)
-            status = DatabaseConstants.STATUS_NONE
-            save(contentResolver, true)
-            val part = Transaction.getNewInstance(account1.id, currencyUnit, id)
-            part.amount = Money(currencyUnit, 5000)
-            part.save(contentResolver)
-            part.amount = Money(currencyUnit, 5000)
-            part.saveAsNew(contentResolver)
-            id
-        }
-    }
-
-    @Test
-    fun canceledTemplateSplitCleanup() {
-        testScenario = ActivityScenario.launch(baseIntent.apply { putExtra(ExpenseEdit.KEY_NEW_TEMPLATE, true) })
-        val uncommittedUri = TransactionProvider.TEMPLATES_UNCOMMITTED_URI
-        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(1)
-        closeSoftKeyboard()
-        pressBackUnconditionally()
-        assertThat(repository.count(uncommittedUri, DatabaseConstants.KEY_STATUS + "= ?", arrayOf(DatabaseConstants.STATUS_UNCOMMITTED.toString()))).isEqualTo(0)
-    }
-
     @Test
     fun create_and_save() {
-        testScenario = ActivityScenario.launchActivityForResult(baseIntent)
+        launch()
         createParts(1)
         clickMenuItem(R.id.SAVE_AND_NEW_COMMAND, false) //toggle save and new on
         onView(withId(R.id.CREATE_COMMAND)).perform(click())
         onView(withId(com.google.android.material.R.id.snackbar_text))
-                .check(matches(withText(R.string.save_transaction_and_new_success)))
+            .check(matches(withText(R.string.save_transaction_and_new_success)))
         waitForSnackbarDismissed()
         createParts(1)
         clickMenuItem(R.id.SAVE_AND_NEW_COMMAND, false) //toggle save and new off
         closeKeyboardAndSave()
         assertFinishing()
+    }
+
+    /**
+     * Bug https://github.com/mtotschnig/MyExpenses/issues/1323
+     */
+    @Test
+    fun createPartsWhichFlipSign() {
+        launch()
+        createParts(1, 50, false)
+        createParts(1, 100, true, initialChildCount = 1)
     }
 }

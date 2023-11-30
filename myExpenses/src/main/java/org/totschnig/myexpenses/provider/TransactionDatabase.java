@@ -49,6 +49,7 @@ import static org.totschnig.myexpenses.util.ColorUtils.MAIN_COLORS;
 import static org.totschnig.myexpenses.util.PermissionHelper.PermissionGroup.CALENDAR;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.SQLException;
@@ -86,6 +87,7 @@ import java.util.Locale;
 import timber.log.Timber;
 
 public class TransactionDatabase extends BaseTransactionDatabase {
+  protected boolean shouldInsertDefaultTransferCategory;
 
   /**
    * SQL statement for expenses TABLE
@@ -121,8 +123,9 @@ public class TransactionDatabase extends BaseTransactionDatabase {
           + KEY_EQUIVALENT_AMOUNT + " integer,  "
           + KEY_DEBT_ID + " integer references " + TABLE_DEBTS + "(" + KEY_ROWID + ") ON DELETE SET NULL);";
 
-  public TransactionDatabase(@NonNull PrefHandler prefHandler) {
-    super(prefHandler);
+  public TransactionDatabase(@NonNull Context context, @NonNull PrefHandler prefHandler, boolean shouldInsertDefaultTransferCategory) {
+    super(context, prefHandler);
+    this.shouldInsertDefaultTransferCategory = shouldInsertDefaultTransferCategory;
   }
 
   /**
@@ -615,6 +618,9 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     initialValues.put(KEY_PARENTID, SPLIT_CATID);
     initialValues.put(KEY_LABEL, "__SPLIT_TRANSACTION__");
     db.insert(TABLE_CATEGORIES, CONFLICT_NONE, initialValues);
+    if (shouldInsertDefaultTransferCategory) {
+      insertDefaultTransferCategory(db);
+    }
     insertCurrencies(db);
     db.execSQL(EVENT_CACHE_CREATE);
     db.execSQL(CHANGES_CREATE);
@@ -2158,7 +2164,7 @@ public class TransactionDatabase extends BaseTransactionDatabase {
       if (oldVersion < 151) {
         db.execSQL("ALTER TABLE categories add column type integer");
         db.execSQL("UPDATE categories set type = 3 where _id != 0");
-        createOrRefreshViews(db);
+        //createOrRefreshViews(db);
         createCategoryTypeTriggers(db);
       }
 
@@ -2171,6 +2177,14 @@ public class TransactionDatabase extends BaseTransactionDatabase {
         db.execSQL("DROP TRIGGER IF EXISTS category_type_update_type_main");
         db.execSQL(CATEGORY_TYPE_UPDATE_TRIGGER_MAIN);
         db.execSQL("UPDATE categories SET type = (SELECT type FROM categories parent WHERE parent._id = categories.parent_id) WHERE parent_id IN (SELECT _id FROM categories WHERE parent_id IS NULL)");
+      }
+
+      if (oldVersion < 154) {
+        createOrRefreshViews(db);
+      }
+
+      if (oldVersion < 155) {
+        insertDefaultTransferCategory(db);
       }
 
       TransactionProvider.resumeChangeTrigger(db);
@@ -2253,9 +2267,8 @@ public class TransactionDatabase extends BaseTransactionDatabase {
     String viewDefinition = buildViewDefinition(TABLE_TRANSACTIONS);
     db.execSQL("CREATE VIEW " + VIEW_COMMITTED + viewDefinition + " WHERE " + KEY_STATUS + " != " + STATUS_UNCOMMITTED  + tagGroupBy + ";");
     db.execSQL("CREATE VIEW " + VIEW_UNCOMMITTED + viewDefinition + " WHERE " + KEY_STATUS + " = " + STATUS_UNCOMMITTED + tagGroupBy + ";");
-    db.execSQL("CREATE VIEW " + VIEW_ALL + viewExtended + tagGroupBy);
-    db.execSQL("CREATE VIEW " + VIEW_EXTENDED + viewExtended + " WHERE " + KEY_STATUS + " != " + STATUS_UNCOMMITTED +
-            tagGroupBy + ";");
+    db.execSQL("CREATE VIEW " + VIEW_ALL + viewExtended);
+    db.execSQL("CREATE VIEW " + VIEW_EXTENDED + viewExtended + " WHERE " + KEY_STATUS + " != " + STATUS_UNCOMMITTED);
 
     db.execSQL("CREATE VIEW " + VIEW_CHANGES_EXTENDED + buildViewDefinitionExtended(TABLE_CHANGES));
     db.execSQL(VIEW_WITH_ACCOUNT_DEFINITION);

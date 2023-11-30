@@ -48,8 +48,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.loader.app.LoaderManager
 import com.evernote.android.state.State
-import com.google.android.material.color.DynamicColors
-import com.google.android.material.color.DynamicColorsOptions
 import com.google.android.material.snackbar.Snackbar
 import com.theartofdev.edmodo.cropper.CropImage
 import kotlinx.coroutines.Dispatchers
@@ -69,8 +67,7 @@ import org.totschnig.myexpenses.databinding.AttachmentItemBinding
 import org.totschnig.myexpenses.databinding.DateEditBinding
 import org.totschnig.myexpenses.databinding.MethodRowBinding
 import org.totschnig.myexpenses.databinding.OneExpenseBinding
-import org.totschnig.myexpenses.db2.FLAG_EXPENSE
-import org.totschnig.myexpenses.db2.FLAG_INCOME
+import org.totschnig.myexpenses.db2.FLAG_TRANSFER
 import org.totschnig.myexpenses.db2.asCategoryType
 import org.totschnig.myexpenses.delegate.CategoryDelegate
 import org.totschnig.myexpenses.delegate.MainDelegate
@@ -120,13 +117,13 @@ import org.totschnig.myexpenses.ui.ExchangeRateEdit
 import org.totschnig.myexpenses.ui.IDiscoveryHelper
 import org.totschnig.myexpenses.util.PermissionHelper
 import org.totschnig.myexpenses.util.PictureDirHelper
-import org.totschnig.myexpenses.util.UiUtils
+import org.totschnig.myexpenses.util.ui.UiUtils
 import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.attachmentInfoMap
+import org.totschnig.myexpenses.util.ui.attachmentInfoMap
 import org.totschnig.myexpenses.util.checkMenuIcon
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.safeMessage
-import org.totschnig.myexpenses.util.setAttachmentInfo
+import org.totschnig.myexpenses.util.ui.setAttachmentInfo
 import org.totschnig.myexpenses.util.setEnabledAndVisible
 import org.totschnig.myexpenses.util.tracking.Tracker
 import org.totschnig.myexpenses.viewmodel.CategoryViewModel.Companion.KEY_TYPE_FILTER
@@ -340,6 +337,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 refreshPlanData(false)
             }
             floatingActionButton.show()
+            updateOnBackPressedCallbackEnabled()
         } else {
             areDatesLinked = prefHandler.getBoolean(PrefKey.DATES_ARE_LINKED, false)
             updateDateLink()
@@ -390,7 +388,6 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 }
                 val isNewTemplate = intent.getBooleanExtra(KEY_NEW_TEMPLATE, false)
                 if (isSplitParent) {
-                    updateOnBackPressedCallbackEnabled()
                     val (contribFeature, allowed) = if (isNewTemplate) {
                         ContribFeature.SPLIT_TEMPLATE to
                                 prefHandler.getBoolean(PrefKey.NEW_SPLIT_TEMPLATE_ENABLED, true)
@@ -852,6 +849,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             }
         }
         operationType = transaction.operationType()
+        updateOnBackPressedCallbackEnabled()
         delegate = TransactionDelegate.create(
             transaction,
             rootBinding,
@@ -971,6 +969,9 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 }
                 it.setEnabledAndVisible(menuItem2TemplateMap.isNotEmpty())
             }
+            menu.findItem(R.id.CATEGORY_COMMAND)?.let {
+                it.isChecked = (delegate as? TransferDelegate)?.categoryVisible == true
+            }
         }
         return super.onPrepareOptionsMenu(menu)
     }
@@ -1013,6 +1014,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
             menu.add(Menu.NONE, R.id.INVERT_TRANSFER_COMMAND, 0, R.string.menu_invert_transfer)
                 .setIcon(R.drawable.ic_menu_move)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            menu.add(Menu.NONE, R.id.CATEGORY_COMMAND, 0 , R.string.category).isCheckable = true
         } else if (isMainTransaction) {
             menu.add(
                 Menu.NONE,
@@ -1143,6 +1145,14 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                     return true
                 }
             }
+
+            R.id.CATEGORY_COMMAND -> {
+                if (::delegate.isInitialized) {
+                    (delegate as? TransferDelegate)?.toggleCategory()
+                    invalidateOptionsMenu()
+                    return true
+                }
+            }
         }
         return false
     }
@@ -1180,7 +1190,8 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
                 putExtra(KEY_PROTECTION_INFO, ManageCategories.ProtectionInfo(it, isTemplate))
             }
             putExtra(KEY_COLOR, color)
-            putExtra(KEY_TYPE_FILTER, delegate.isIncome.asCategoryType)
+            putExtra(KEY_TYPE_FILTER, if (delegate is TransferDelegate) FLAG_TRANSFER
+            else delegate.isIncome.asCategoryType)
         }, SELECT_CATEGORY_REQUEST)
     }
 
@@ -1229,7 +1240,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
         super.onActivityResult(requestCode, resultCode, intent)
         when (requestCode) {
             SELECT_CATEGORY_REQUEST -> if (intent != null) {
-                (delegate as? CategoryDelegate)?.setCategory(
+                delegate.setCategory(
                     intent.getStringExtra(KEY_LABEL),
                     intent.getStringExtra(KEY_ICON),
                     intent.getLongExtra(KEY_ROWID, 0)
@@ -1406,7 +1417,7 @@ open class ExpenseEdit : AmountActivity<TransactionEditViewModel>(), ContribIFac
 
                     else -> {
                         CrashHandler.report(it)
-                        (delegate as? CategoryDelegate)?.resetCategory()
+                        delegate.resetCategory()
                         "Error while saving transaction: ${it.safeMessage}"
                     }
                 }

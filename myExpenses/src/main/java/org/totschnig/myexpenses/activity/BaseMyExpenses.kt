@@ -133,11 +133,11 @@ import org.totschnig.myexpenses.util.ContribUtils
 import org.totschnig.myexpenses.util.TextUtils
 import org.totschnig.myexpenses.util.TextUtils.withAmountColor
 import org.totschnig.myexpenses.util.Utils
-import org.totschnig.myexpenses.util.asDateTimeFormatter
+import org.totschnig.myexpenses.util.ui.asDateTimeFormatter
 import org.totschnig.myexpenses.util.configureSortDirectionMenu
 import org.totschnig.myexpenses.util.convAmount
-import org.totschnig.myexpenses.util.dateTimeFormatter
-import org.totschnig.myexpenses.util.dateTimeFormatterLegacy
+import org.totschnig.myexpenses.util.ui.dateTimeFormatter
+import org.totschnig.myexpenses.util.ui.dateTimeFormatterLegacy
 import org.totschnig.myexpenses.util.distrib.DistributionHelper
 import org.totschnig.myexpenses.util.distrib.ReviewManager
 import org.totschnig.myexpenses.util.formatMoney
@@ -1720,7 +1720,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
     }
 
     override fun contribFeatureCalled(feature: ContribFeature, tag: Serializable?) {
-        currentAccount?.let { currentAccount ->
+        currentAccount?.also { currentAccount ->
             when (feature) {
                 ContribFeature.DISTRIBUTION -> {
                     recordUsage(feature)
@@ -1798,7 +1798,7 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
                             putExtra(KEY_ROWID, budgetId)
                             fillIntentForGroupingFromTag(headerId)
                         })
-                    } else if (selectedAccountId != 0L) {
+                    } else {
                         recordUsage(feature)
                         val i = Intent(this, ManageBudgets::class.java)
                         startActivity(i)
@@ -1825,6 +1825,8 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
 
                 else -> {}
             }
+        } ?: run {
+            showSnackBar(R.string.no_accounts)
         }
     }
 
@@ -1960,12 +1962,21 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
         } else {
             lifecycleScope.launch(Dispatchers.IO) {
                 if ((!licenceHandler.hasTrialAccessTo(ContribFeature.SYNCHRONIZATION)
-                            && viewModel.repository.countAccounts("$KEY_SYNC_ACCOUNT_NAME IS NOT NULL", null) > 0
-                            && !prefHandler.getBoolean(PrefKey.SYNC_UPSELL_NOTIFICATION_SHOWN, false)
-                        )
+                            && viewModel.repository.countAccounts(
+                        "$KEY_SYNC_ACCOUNT_NAME IS NOT NULL",
+                        null
+                    ) > 0
+                            && !prefHandler.getBoolean(
+                        PrefKey.SYNC_UPSELL_NOTIFICATION_SHOWN,
+                        false
+                    )
+                            )
                 ) {
                     prefHandler.putBoolean(PrefKey.SYNC_UPSELL_NOTIFICATION_SHOWN, true)
-                    ContribUtils.showContribNotification(this@BaseMyExpenses, ContribFeature.SYNCHRONIZATION)
+                    ContribUtils.showContribNotification(
+                        this@BaseMyExpenses,
+                        ContribFeature.SYNCHRONIZATION
+                    )
                 }
             }
         }
@@ -2089,18 +2100,22 @@ abstract class BaseMyExpenses : LaunchActivity(), OcrHost, OnDialogResultListene
             R.id.SPLIT_TRANSACTION_COMMAND -> {
                 finishActionMode()
                 val ids = args.getLongArray(KEY_ROW_IDS)!!
-                viewModel.split(ids).observe(this) {
-                    recordUsage(ContribFeature.SPLIT_TRANSACTION)
-                    it.onSuccess {
-                        showSnackBar(
-                            if (ids.size > 1)
-                                getString(R.string.split_transaction_one_success)
-                            else
-                                getString(R.string.split_transaction_group_success, ids.size)
-                        )
-                    }.onFailure {
-                        showSnackBar(getString(R.string.split_transaction_not_possible))
-                    }
+                viewModel.split(ids).observe(this) { result ->
+                    showSnackBar(result.fold(
+                        onSuccess = {
+                            if (it) {
+                                recordUsage(ContribFeature.SPLIT_TRANSACTION)
+                                if (ids.size > 1)
+                                    getString(R.string.split_transaction_one_success)
+                                else
+                                    getString(
+                                        R.string.split_transaction_group_success,
+                                        ids.size
+                                    )
+                            } else getString(R.string.split_transaction_not_possible)
+                        },
+                        onFailure = { it.safeMessage }
+                    ))
                 }
             }
 
