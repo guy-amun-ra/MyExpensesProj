@@ -122,7 +122,7 @@ class PlatformSplitManager(
     }
 
     private val installedModules: Set<String>
-        get() = if (BuildConfig.DEBUG) Feature.values()
+        get() = if (BuildConfig.DEBUG) Feature.values
             .mapTo(mutableSetOf()) { it.moduleName } else manager.installedModules
 
     override fun installedFeatures(
