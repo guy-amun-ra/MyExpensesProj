@@ -605,7 +605,6 @@
     <!-- During onboarding, user can select to restore data from automatically saved backup files . This is the title for the tab where the backup files are listed -->
     <string name="onboarding_restore_from_cloud_backup">Резервные копии</string>
     <string name="onboarding_restore_from_local">Восстановить из локального файла</string>
-    <string name="dialog_button_add">Добавить</string>
     <string name="contributed_by">Вклад внесен %s</string>
     <string name="pref_sync_notification_summary">Уведомить о состоянии синхронизации</string>
     <string name="pref_debug_logging_summary">Записывать отладочную информацию в системный лог</string>
@@ -906,7 +905,7 @@
         <item quantity="other">Долг %1$s имеет %2$d сопоставленных операций.</item>
     </plurals>
     <string name="account_widget_configuration_sum_total">Включить будущие операции</string>
-    <string name="warning_link_transfer">Две выбранные операции будут связаны как перевод. Информация о получателе/плательщике и категории будет удалена.</string>
+    <string name="warning_link_transfer">Две выбранные транзакции будут объединены. Информация об отправителей/получателей средств и категории будут удалены.</string>
     <string name="warning_party_delete_debt">При удалении этой стороны долги, определенные для нее, также будут удалены.</string>
     <string name="merge_parties_select">Выберите название объединенной стороны:</string>
     <string name="account_widget_configuration">Настройка виджета счета</string>
