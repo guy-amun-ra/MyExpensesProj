@@ -48,7 +48,7 @@
     <string name="contrib_feature_print_label">ייצא רשימת עסקאות ל- PDF</string>
     <string name="contrib_feature_csv_import_label">ייבוא CSV</string>
     <string name="contrib_feature_split_template_label">מספר בלתי מוגבל של תבניות מפוצלות</string>
-    <string name="contrib_feature_pro_support_label"><b>שלח בקשה לתמיכה</b> בדוא\"ל עם תגובה מובטחת בתוך 2 ימי עסקים</string>
+    <string name="contrib_feature_pro_support_label">אפשר <b>לשלוח בקשה לתמיכה</b> בדוא״ל כאשר מובטחת תגובה תוך 2 ימי עסקים</string>
     <string name="contrib_feature_roadmap_voting_label" tools:ignore="UnusedResources">זכות הצבעה על <b>מפת דרכים להמשך הפיתוח</b></string>
     <string name="contrib_feature_history_label" tools:ignore="UnusedResources">תרשים היסטוריה</string>
     <string name="licence_status_free">חופשי / חינמי</string>
@@ -1074,6 +1074,6 @@
     <string name="pref_unmapped_transaction_as_transfer_summary_off">נחשבות כהוצאה / הכנסה</string>
     <string name="whats_new_367">אפשר להגדיר קטגוריות כהוצאה או הכנסה, מה שישפיע על איך מחושבים הסכומים של ההוצאות וההכנסות.</string>
     <string name="one_time_payment">תשלום חד פעמי</string>
-    <string name="dialog_contrib_trial_info_play">תקופת הניסיון החינמית הזו <b>לעולם</b> לא תומר לסוג כלשהו של מנוי.</string>
+    <string name="dialog_contrib_trial_info_play">תקופת הניסיון החינמית הזו לעולם לא תומר לסוג כלשהו של מנוי.</string>
     <string name="dialog_contrib_subscription_info_play">מנוי זה נכנס לתוקף באופן מיידי, מחויב מדי חודש או מדי שנה וניתן לבטלו בכל עת.</string>
 </resources>
