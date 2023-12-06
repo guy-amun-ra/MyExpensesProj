@@ -3,6 +3,7 @@ package org.totschnig.myexpenses.util.licence
 import android.app.Application
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
+import androidx.lifecycle.lifecycleScope
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClient.ProductType
 import com.android.billingclient.api.BillingResult
@@ -10,6 +11,7 @@ import com.android.billingclient.api.ProductDetails
 import com.android.billingclient.api.ProductDetailsResponseListener
 import com.android.billingclient.api.Purchase
 import com.google.android.vending.licensing.PreferenceObfuscator
+import kotlinx.coroutines.launch
 import org.totschnig.myexpenses.activity.IapActivity
 import org.totschnig.myexpenses.db2.Repository
 import org.totschnig.myexpenses.preference.PrefHandler
@@ -78,13 +80,14 @@ open class PlayStoreLicenceHandler(
                 purchases: List<Purchase>?,
                 newPurchase: Boolean
             ): Boolean {
-                if (purchases != null) {
-                    val oldStatus = licenceStatus
-                    val oldFeatures = addOnFeatures.size
-                    registerInventory(purchases, newPurchase)
+                val oldStatus = licenceStatus
+                val oldFeatures = addOnFeatures.size
+                registerInventory(purchases, newPurchase)
 
-                    if (newPurchase || oldStatus != licenceStatus || addOnFeatures.size > oldFeatures) {
-                        activity.onLicenceStatusSet(prettyPrintStatus(activity))
+                if (newPurchase || oldStatus != licenceStatus || addOnFeatures.size > oldFeatures) {
+                    activity.onLicenceStatusSet(prettyPrintStatus(activity))
+                    activity.lifecycleScope.launch {
+                        licenceStatusUpdated()
                     }
                 }
                 return licenceStatus != null || addOnFeatures.isNotEmpty()
@@ -112,14 +115,14 @@ open class PlayStoreLicenceHandler(
     }
 
     @VisibleForTesting
-    fun findHighestValidPurchase(inventory: List<Purchase>) = inventory.mapNotNull { purchase ->
+    fun findHighestValidPurchase(inventory: List<Purchase>?) = inventory?.mapNotNull { purchase ->
         extractLicenceStatusFromSku(purchase.products[0])?.let {
             Pair(purchase, it)
         }
-    }.maxByOrNull { pair -> pair.second }?.first
+    }?.maxByOrNull { pair -> pair.second }?.first
 
-    private fun registerInventory(inventory: List<Purchase>, newPurchase: Boolean) {
-        inventory.forEach { purchase: Purchase ->
+    private fun registerInventory(inventory: List<Purchase>?, newPurchase: Boolean) {
+        inventory?.forEach { purchase: Purchase ->
             log().i(
                 "%s (acknowledged %b)",
                 purchase.products.joinToString(),
