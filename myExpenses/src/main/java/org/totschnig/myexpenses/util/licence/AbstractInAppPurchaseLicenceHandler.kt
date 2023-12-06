@@ -21,8 +21,16 @@ abstract class AbstractInAppPurchaseLicenceHandler(
     prefHandler: PrefHandler,
     repository: Repository,
     currencyFormatter: ICurrencyFormatter
-) : ContribStatusLicenceHandler(context, preferenceObfuscator, crashHandler, prefHandler, repository, currencyFormatter) {
-    val pricesPrefs: SharedPreferences = context.getSharedPreferences(PRICES_PREFS_FILE, Context.MODE_PRIVATE)
+) : ContribStatusLicenceHandler(
+    context,
+    preferenceObfuscator,
+    crashHandler,
+    prefHandler,
+    repository,
+    currencyFormatter
+) {
+    val pricesPrefs: SharedPreferences =
+        context.getSharedPreferences(PRICES_PREFS_FILE, Context.MODE_PRIVATE)
 
     override val legacyStatus: Int = STATUS_ENABLED_LEGACY_SECOND
 
@@ -31,6 +39,7 @@ abstract class AbstractInAppPurchaseLicenceHandler(
         d("init")
         readContribStatusFromPrefs()
     }
+
     override fun getFormattedPrice(aPackage: Package): String? {
         val pricesPrefsString = getDisplayPriceForPackage(aPackage)
         return if (pricesPrefsString != null)
@@ -56,7 +65,11 @@ abstract class AbstractInAppPurchaseLicenceHandler(
      */
     fun maybeCancel() {
         if (contribStatus != STATUS_ENABLED_LEGACY_SECOND) {
-            if (System.currentTimeMillis() - licenseStatusPrefs.getString(prefHandler.getKey(PrefKey.LICENSE_INITIAL_TIMESTAMP), "0").toLong() > REFUND_WINDOW) {
+            if (System.currentTimeMillis() - licenseStatusPrefs.getString(
+                    prefHandler.getKey(PrefKey.LICENSE_INITIAL_TIMESTAMP),
+                    "0"
+                ).toLong() > REFUND_WINDOW
+            ) {
                 cancel()
             }
         }
@@ -122,12 +135,14 @@ abstract class AbstractInAppPurchaseLicenceHandler(
         }
     }
 
-    override fun getProLicenceStatus(context: Context) =
-            when (licenseStatusPrefs.getString(KEY_CURRENT_SUBSCRIPTION_SKU, "")) {
-                Config.SKU_PROFESSIONAL_1, Config.SKU_EXTENDED2PROFESSIONAL_1 -> R.string.monthly_plain
-                Config.SKU_PROFESSIONAL_12, Config.SKU_EXTENDED2PROFESSIONAL_12 -> R.string.yearly_plain
-                else -> 0
-            }.takeIf { it != 0 }?.let { context.getString(it) }
+    val currentSubscriptionSku: String?
+        get() = licenseStatusPrefs.getString(KEY_CURRENT_SUBSCRIPTION_SKU, null)
+
+    override fun getProLicenceStatus(context: Context) = when (currentSubscriptionSku) {
+        Config.SKU_PROFESSIONAL_1, Config.SKU_EXTENDED2PROFESSIONAL_1 -> R.string.monthly_plain
+        Config.SKU_PROFESSIONAL_12, Config.SKU_EXTENDED2PROFESSIONAL_12 -> R.string.yearly_plain
+        else -> 0
+    }.takeIf { it != 0 }?.let { context.getString(it) }
 
     override fun buildRoadmapVoteKey() =
         purchaseExtraInfo.takeIf { isProfessionalEnabled } ?: super.buildRoadmapVoteKey()

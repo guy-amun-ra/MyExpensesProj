@@ -1,6 +1,7 @@
 package org.totschnig.myexpenses.util.licence
 
 import android.app.Application
+import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import com.android.billingclient.api.BillingClient
 import com.android.billingclient.api.BillingClient.ProductType
@@ -60,11 +61,16 @@ open class PlayStoreLicenceHandler(
      */
     private val currentSubscription: Pair<String, String>?
         get() {
-            val sku = licenseStatusPrefs.getString(KEY_CURRENT_SUBSCRIPTION_SKU, null)
+            val sku = currentSubscriptionSku
             val purchaseToken =
                 licenseStatusPrefs.getString(KEY_CURRENT_SUBSCRIPTION_PURCHASE_TOKEN, null)
             return if (sku != null && purchaseToken != null) Pair(sku, purchaseToken) else null
         }
+
+    override val subscriptionManagementLink: Uri?
+        get() = if (licenceStatus == LicenceStatus.PROFESSIONAL) {
+            currentSubscriptionSku?.let { Uri.parse("https://play.google.com/store/account/subscriptions?sku=$it&package=${context.packageName}") }
+        } else null
 
     override fun initBillingManager(activity: IapActivity, query: Boolean): BillingManager {
         val billingUpdatesListener: BillingUpdatesListener = object : BillingUpdatesListener {
