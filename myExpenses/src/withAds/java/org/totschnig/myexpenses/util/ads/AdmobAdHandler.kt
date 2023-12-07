@@ -1,11 +1,9 @@
 package org.totschnig.myexpenses.util.ads
 
 import android.os.Build
-import android.os.Bundle
 import android.util.DisplayMetrics
 import android.view.View
 import android.view.ViewGroup
-import com.google.ads.mediation.admob.AdMobAdapter
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdSize
@@ -17,7 +15,6 @@ import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.BaseActivity
-import org.totschnig.myexpenses.preference.PrefKey
 import timber.log.Timber
 
 internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup, baseActivity: BaseActivity, private val bannerUnitId: Int, private val interstitialUnitId: Int) : BaseAdHandler(factory, adContainer, baseActivity) {
@@ -75,15 +72,7 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
             return AdSize.getCurrentOrientationAnchoredAdaptiveBannerAdSize(activity, adWidth)
         }
 
-    private fun buildAdmobRequest(): AdRequest {
-        val builder = AdRequest.Builder()
-        if (!prefHandler.getBoolean(PrefKey.PERSONALIZED_AD_CONSENT, true)) {
-            val extras = Bundle()
-            extras.putString("npa", "1")
-            builder.addNetworkExtrasBundle(AdMobAdapter::class.java, extras)
-        }
-        return builder.build()
-    }
+    private fun buildAdmobRequest() = AdRequest.Builder().build()
 
     private val isTest: Boolean
         get() = BuildConfig.DEBUG
