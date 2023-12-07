@@ -16,13 +16,21 @@ import org.totschnig.myexpenses.BuildConfig
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.preference.PrefHandler
+import org.totschnig.myexpenses.util.crashreporting.CrashHandler
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import timber.log.Timber
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 
 @Keep
-class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userCountry: String, licenceHandler: LicenceHandler) : DefaultAdHandlerFactory(context, prefHandler, userCountry, licenceHandler) {
+class PlatformAdHandlerFactory(
+    context: Context,
+    prefHandler: PrefHandler,
+    userCountry: String,
+    licenceHandler: LicenceHandler
+) : DefaultAdHandlerFactory(context, prefHandler, userCountry, licenceHandler) {
     private val isMobileAdsInitializeCalled = AtomicBoolean(false)
 
     override fun create(adContainer: ViewGroup, baseActivity: BaseActivity): AdHandler {
@@ -30,8 +38,8 @@ class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userC
             val remoteConfig = FirebaseRemoteConfig.getInstance()
             if (BuildConfig.DEBUG) {
                 val configSettings = FirebaseRemoteConfigSettings.Builder()
-                        .setMinimumFetchIntervalInSeconds(0)
-                        .build()
+                    .setMinimumFetchIntervalInSeconds(0)
+                    .build()
                 remoteConfig.setConfigSettingsAsync(configSettings)
             }
             remoteConfig.setDefaultsAsync(R.xml.remote_config_defaults)
@@ -44,50 +52,64 @@ class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userC
                     }
                 }
             }
-            remoteConfig.getString("ad_handling_waterfall").split(":".toRegex()).getOrNull(0) ?: "AdMob"
+            remoteConfig.getString("ad_handling_waterfall").split(":".toRegex()).getOrNull(0)
+                ?: "AdMob"
         }
         FirebaseAnalytics.getInstance(context).setUserProperty("AdHandler", adHandler)
         return instantiate(adHandler, adContainer, baseActivity)
     }
 
-    private fun instantiate(handler: String, adContainer: ViewGroup, baseActivity: BaseActivity): AdHandler {
+    private fun instantiate(
+        handler: String,
+        adContainer: ViewGroup,
+        baseActivity: BaseActivity
+    ): AdHandler {
         return when (handler) {
-            "Custom" -> AdmobAdHandler(this, adContainer, baseActivity,
-                    R.string.admob_unitid_custom_banner, R.string.admob_unitid_custom_interstitial)
-            "AdMob" -> AdmobAdHandler(this, adContainer, baseActivity,
-                    R.string.admob_unitid_mainscreen, R.string.admob_unitid_interstitial)
+            "Custom" -> AdmobAdHandler(
+                this, adContainer, baseActivity,
+                R.string.admob_unitid_custom_banner, R.string.admob_unitid_custom_interstitial
+            )
+
+            "AdMob" -> AdmobAdHandler(
+                this, adContainer, baseActivity,
+                R.string.admob_unitid_mainscreen, R.string.admob_unitid_interstitial
+            )
+
             else -> NoOpAdHandler
         }
     }
 
+    private fun consentRequestParameters(): ConsentRequestParameters =
+        ConsentRequestParameters.Builder()
+            .setTagForUnderAgeOfConsent(false)
+/*            .setConsentDebugSettings(
+                if (BuildConfig.DEBUG)
+                    ConsentDebugSettings.Builder(context)
+                        .addTestDeviceHashedId("C972FBF2309407189542F2244481D500")
+                        .setDebugGeography(ConsentDebugSettings.DebugGeography.DEBUG_GEOGRAPHY_EEA)
+                        .build() else null
+            )*/
+            .build()
+
     override fun gdprConsent(context: Activity, forceShow: Boolean) {
-        if (forceShow || !isAdDisabled) {
-            val params = ConsentRequestParameters.Builder()
-                .setTagForUnderAgeOfConsent(false)
-                .build()
+        if (forceShow) {
+            UserMessagingPlatform.showPrivacyOptionsForm(context) { loadAndShowError ->
+                loadAndShowError?.report()
+            }
+        } else if (!isAdDisabled) {
 
             val consentInformation = UserMessagingPlatform.getConsentInformation(context)
             consentInformation.requestConsentInfoUpdate(
                 context,
-                params,
+                consentRequestParameters(),
                 {
                     UserMessagingPlatform.loadAndShowConsentFormIfRequired(context) { loadAndShowError ->
-                        if (loadAndShowError != null) {
-                            Timber.w(
-                                "%s: %s",
-                                loadAndShowError.errorCode,
-                                loadAndShowError.message
-                            )
-
-                        }
+                        loadAndShowError?.report()
                         consentInformation.maybeInitialize(context)
 
                     }
-                },
-                { requestConsentError: FormError ->
-                    // Consent gathering failed.
-                    Timber.w("%s: %s", requestConsentError.errorCode, requestConsentError.message)
-                })
+                }
+            ) { requestConsentError: FormError -> requestConsentError.report() }
             consentInformation.maybeInitialize(context)
         }
     }
@@ -98,6 +120,27 @@ class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userC
         if (canRequestAds) {
             initializeMobileAdsSdk(context)
         }
+    }
+
+    private fun FormError.report() {
+        CrashHandler.report(Exception("$errorCode: $message"))
+    }
+
+    override suspend fun isPrivacyOptionsRequired(activity: Activity) = suspendCoroutine { cont ->
+        val consentInformation = UserMessagingPlatform.getConsentInformation(activity)
+        consentInformation.requestConsentInfoUpdate(
+            activity,
+            consentRequestParameters(),
+            {
+                cont.resume(
+                    consentInformation.privacyOptionsRequirementStatus ==
+                            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+                )
+            },
+            { requestConsentError: FormError ->
+                requestConsentError.report()
+                cont.resume(false)
+            })
     }
 
     private fun initializeMobileAdsSdk(context: Context) {
