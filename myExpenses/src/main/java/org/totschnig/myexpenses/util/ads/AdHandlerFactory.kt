@@ -6,8 +6,7 @@ import android.view.ViewGroup
 import org.totschnig.myexpenses.activity.BaseActivity
 
 interface AdHandlerFactory {
-    val isRequestLocationInEeaOrUnknown: Boolean
-        get() = false
+    suspend fun isPrivacyOptionsRequired() = false
     val isAdDisabled: Boolean
         get() = true
 
@@ -18,6 +17,4 @@ interface AdHandlerFactory {
      * @param forceShow if false, consent form is only shown if consent is unknown
      */
     fun gdprConsent(context: Activity, forceShow: Boolean) {}
-    fun clearConsent() {}
-    fun setConsent(context: Context?, personalized: Boolean) {}
 }
