@@ -1,8 +1,14 @@
 package org.totschnig.myexpenses.util.ads
 
+import android.app.Activity
 import android.content.Context
 import android.view.ViewGroup
 import androidx.annotation.Keep
+import com.google.android.gms.ads.MobileAds
+import com.google.android.ump.ConsentInformation
+import com.google.android.ump.ConsentRequestParameters
+import com.google.android.ump.FormError
+import com.google.android.ump.UserMessagingPlatform
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.remoteconfig.FirebaseRemoteConfig
 import com.google.firebase.remoteconfig.FirebaseRemoteConfigSettings
@@ -12,11 +18,15 @@ import org.totschnig.myexpenses.activity.BaseActivity
 import org.totschnig.myexpenses.preference.PrefHandler
 import org.totschnig.myexpenses.util.licence.LicenceHandler
 import timber.log.Timber
+import java.util.concurrent.atomic.AtomicBoolean
+
 
 @Keep
 class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userCountry: String, licenceHandler: LicenceHandler) : DefaultAdHandlerFactory(context, prefHandler, userCountry, licenceHandler) {
+    private val isMobileAdsInitializeCalled = AtomicBoolean(false)
+
     override fun create(adContainer: ViewGroup, baseActivity: BaseActivity): AdHandler {
-        val adHandler = if (isAdDisabled) "NoOp" else {
+        val adHandler = if (isAdDisabled || !isMobileAdsInitializeCalled.get()) "NoOp" else {
             val remoteConfig = FirebaseRemoteConfig.getInstance()
             if (BuildConfig.DEBUG) {
                 val configSettings = FirebaseRemoteConfigSettings.Builder()
@@ -49,4 +59,54 @@ class PlatformAdHandlerFactory(context: Context, prefHandler: PrefHandler, userC
             else -> NoOpAdHandler
         }
     }
+
+    override fun gdprConsent(context: Activity, forceShow: Boolean) {
+        if (forceShow || !isAdDisabled) {
+            val params = ConsentRequestParameters.Builder()
+                .setTagForUnderAgeOfConsent(false)
+                .build()
+
+            val consentInformation = UserMessagingPlatform.getConsentInformation(context)
+            consentInformation.requestConsentInfoUpdate(
+                context,
+                params,
+                {
+                    UserMessagingPlatform.loadAndShowConsentFormIfRequired(context) { loadAndShowError ->
+                        if (loadAndShowError != null) {
+                            Timber.w(
+                                "%s: %s",
+                                loadAndShowError.errorCode,
+                                loadAndShowError.message
+                            )
+
+                        }
+                        consentInformation.maybeInitialize(context)
+
+                    }
+                },
+                { requestConsentError: FormError ->
+                    // Consent gathering failed.
+                    Timber.w("%s: %s", requestConsentError.errorCode, requestConsentError.message)
+                })
+            consentInformation.maybeInitialize(context)
+        }
+    }
+
+    private fun ConsentInformation.maybeInitialize(context: Context) {
+        val canRequestAds = canRequestAds()
+        Timber.d("canRequestAds : %b", canRequestAds)
+        if (canRequestAds) {
+            initializeMobileAdsSdk(context)
+        }
+    }
+
+    private fun initializeMobileAdsSdk(context: Context) {
+        if (isMobileAdsInitializeCalled.getAndSet(true)) {
+            return
+        }
+
+        // Initialize the Google Mobile Ads SDK.
+        MobileAds.initialize(context)
+    }
+
 }

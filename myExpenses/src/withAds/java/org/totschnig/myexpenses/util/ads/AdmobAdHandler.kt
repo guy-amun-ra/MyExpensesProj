@@ -26,13 +26,6 @@ internal class AdmobAdHandler(factory: AdHandlerFactory, adContainer: ViewGroup,
     private var mAdMobBannerShown = false
     private var mInterstitialShown = false
     private var interstitialCounter = 0
-    public override fun initInternal() {
-        MobileAds.initialize(activity)
-        /*    List<String> testDeviceIds = Collections.singletonList("837D45A603F3C5E72CECC450C2CE4A63");
-    RequestConfiguration configuration =
-        new RequestConfiguration.Builder().setTestDeviceIds(testDeviceIds).build();
-    MobileAds.setRequestConfiguration(configuration);*/
-    }
 
     override val shouldHideAd: Boolean
         get() = super.shouldHideAd ||
