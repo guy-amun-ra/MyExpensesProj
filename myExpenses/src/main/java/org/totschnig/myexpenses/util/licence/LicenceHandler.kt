@@ -311,7 +311,7 @@ open class LicenceHandler(
         get() = false
 
     open val needsKeyEntry: Boolean
-        get() = !hasValidKey()
+        get() = true
 
     fun getPaypalUri(aPackage: Package): String {
         val host = if (isSandbox) "www.sandbox.paypal.com" else "www.paypal.com"
@@ -468,7 +468,7 @@ open class LicenceHandler(
                     Button(
                         modifier = Modifier.wrapContentSize(),
                         onClick = { contribBuyDo(null) }) {
-                        Text(stringResource(id = R.string.pref_contrib_purchase_title))
+                        Text(stringResource(id = R.string.menu_contrib))
                     }
                 } else {
                     val isPro = licenceStatus == LicenceStatus.PROFESSIONAL

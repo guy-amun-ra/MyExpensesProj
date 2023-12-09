@@ -45,6 +45,8 @@ enum class PrefKey(internal val resId: Int, internal val _key: String?) {
     UI_LANGUAGE(R.string.pref_ui_language_key),
     APP_DIR(R.string.pref_app_dir_key),
     CATEGORY_PRIVACY(R.string.pref_category_privacy_key),
+    CATEGORY_ADS(R.string.pref_category_privacy_key),
+    NO_ADS(R.string.pref_no_ads_key),
     CATEGORY_IO(R.string.pref_category_io_key),
     CATEGORY_BACKUP_RESTORE(R.string.pref_category_backup_restore_key),
     CATEGORY_SECURITY(R.string.pref_category_security_key),
@@ -180,7 +182,7 @@ enum class PrefKey(internal val resId: Int, internal val _key: String?) {
     ATTACHMENT_MIME_TYPES(R.string.pref_attachment_mime_types_key),
     TRANLATION_IMPROVEMENT(R.string.pref_translation_improvement_key),
     UNMAPPED_TRANSACTION_AS_TRANSFER(R.string.pref_unmapped_transaction_as_transfer_key),
-    DEFAULT_TRANSFER_CATEGORY("default_transfer_category"),
+    DEFAULT_TRANSFER_CATEGORY(R.string.pref_default_transfer_category_key),
     PROTECTION_ALLOW_SCREENSHOT(R.string.pref_protection_allow_screenshot_key)
     ;
 

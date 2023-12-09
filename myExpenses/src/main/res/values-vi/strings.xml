@@ -253,14 +253,8 @@
     <string name="pref_category_title_ui">Giao diện người dùng</string>
     <string name="pref_checkbox_enabled">Bật</string>
     <string name="pref_checkbox_disabled">Tắt</string>
-    <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_contrib_purchase_summary">Nâng cấp để dùng các tính năng trả phí.</string>
-    <string name="pref_contrib_purchase_title">Mua một khóa</string>
     <string name="pref_contrib_purchase_title_upgrade">Nâng cấp khóa</string>
-    <string name="pref_contrib_purchase_title_in_app">Mua hàng trong ứng dụng</string>
     <string name="pref_custom_currency_title">Tùy chỉnh các loại tiền tệ</string>
-    <!-- premium features refers to features of all three levels (Contrib, Extended, Professional -->
-    <string name="pref_enter_licence_summary">Nếu bạn đã nhận một khóa, hãy nâng cấp lên các tính năng trả phí.</string>
     <string name="pref_enter_licence_title">Nhập khóa</string>
     <string name="pref_export_format_title">Định dạng dữ liệu</string>
     <string name="pref_import_from_grisbi_summary">Nhập các phân loại (và các nhóm) Grisbi XML</string>
@@ -637,9 +631,6 @@
     <string name="licence_expired_yesterday">Khoá cao cấp của bạn đã hết hạn trong ngày hôm qua.</string>
     <string name="licence_has_expired_n_days">Khoá cao cấp của bạn đã hết hạn %d ngày trước.</string>
     <string name="pref_category_title_privacy">Riêng tư</string>
-    <string name="pref_ad_consent_title">Quảng cáo được tuỳ biến</string>
-    <string name="ad_consent_non_personalized">Quảng cáo không được cá nhân hóa</string>
-    <string name="gdpr_consent_button_yes" tools:ignore="UnusedResources">OK, sống chung với quảng cáo</string>
     <string name="gdpr_consent_button_no">Mua bản không quảng cáo</string>
     <string name="sort_order">Thứ tự sắp xếp</string>
     <string name="navigation_drawer_accounts_title">Quản lý tài khoản</string>
