@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checkbox_is_default">"ნაგულისხმევი"</string>
+    <string name="action_download">"ჩამოტვირთვა"</string>
+    <string name="menu">"მენიუ"</string>
+    <string name="action_move_down">"ქვემოთ გადატანა"</string>
+    <string name="action_move_up">"ზემოთ გადატანა"</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checkbox_is_default">"Privzeto"</string>
+    <string name="action_download">"Prenos"</string>
+    <string name="menu">"Meni"</string>
+    <string name="action_move_down">"Premakni navzdol"</string>
+    <string name="action_move_up">"Premakni navzgor"</string>
+</resources>

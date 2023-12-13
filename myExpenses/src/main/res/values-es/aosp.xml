@@ -65,4 +65,10 @@
     <string name="screenshot">"Capturas de pantalla"</string>
     <string name="menu_add">"Añadir"</string>
     <string name="about_ads">"Anuncios"</string>
+    <string name="menu_merge">Combinar</string>
+    <string name="checkbox_is_default">"Predeterminado"</string>
+    <string name="action_download">"Descargar"</string>
+    <string name="menu">"Menú"</string>
+    <string name="action_move_down">"Mover hacia abajo"</string>
+    <string name="action_move_up">"Mover hacia arriba"</string>
 </resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checkbox_is_default">"Standard"</string>
+    <string name="action_download">"Ladda ned"</string>
+    <string name="menu">"Meny"</string>
+    <string name="action_move_down">"Flytta nedåt"</string>
+    <string name="action_move_up">"Flytta uppåt"</string>
+</resources>

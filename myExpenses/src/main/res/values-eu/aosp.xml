@@ -65,4 +65,10 @@
     <string name="screen_lock">"Pantailaren blokeoa"</string>
     <string name="menu_add">"Gehitu"</string>
     <string name="about_ads">"Iragarkiak"</string>
+    <string name="menu_merge">Bateratu</string>
+    <string name="checkbox_is_default">"Lehenetsia"</string>
+    <string name="action_download">"Deskargatu"</string>
+    <string name="menu">"Menua"</string>
+    <string name="action_move_down">"Eraman behera"</string>
+    <string name="action_move_up">"Eraman gora"</string>
 </resources>

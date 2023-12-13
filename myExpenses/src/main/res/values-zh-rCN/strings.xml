@@ -767,8 +767,6 @@
     <string name="onboarding_privacy_title">您的数据掌握在您的手中</string>
     <string name="onboarding_privacy_intro">您的财务数据不会发送到任何由我们或任何第三方运营的服务器。</string>
     <string name="app_restart_required">新配置需要重启应用程序才能生效。</string>
-    <!-- Label for checkbox that allows to configure an object as the default, for example a default budget will be shown in the transaction list. -->
-    <string name="checkbox_is_default">选用默认设置</string>
     <!-- Title of the submenu for changing the category, payer, payment method of multiple transactions. The entries of the submenu read "Category, "Payer", "Payment method" -->
     <string name="menu_remap">重新分配映射</string>
     <string name="dialog_title_confirm_remap">确定更改映射(%s)?</string>
@@ -836,7 +834,6 @@
     <string name="scan_result_no_amount">找不到金额</string>
     <string name="scan_result_no_date">找不到日期</string>
     <string name="scan_result_no_payee">找不到收款人</string>
-    <string name="button_download">下载</string>
     <string name="pref_feature_uninstall_title">要求卸载\"功能\"和\"语言\"</string>
     <string name="pref_feature_uninstall_summary">Google Play 商店 尝试在后台删除这些模块。</string>
     <string name="pref_feature_uninstall_languages_title">语言</string>
@@ -882,8 +879,6 @@
     <string name="account_widget_configuration_sum_total">包括未来交易</string>
     <!-- Title of dialogue that allows to configure account widget -->
     <string name="account_widget_configuration">配置账户小部件widget</string>
-    <!-- Title of a menu entry allowing to merge duplicate entries in the parties table (payee/payer) -->
-    <string name="menu_merge">合并</string>
     <!-- When user selects duplicate parties to be merged, he sees this prompt asking him to select which name should be selected for the merged party -->
     <string name="merge_parties_select">请选择要合并的交易对象：</string>
     <string name="pref_category_title_crash_reports">故障报告</string>
@@ -903,7 +898,6 @@
     <string name="active_tags">活跃标签</string>
     <string name="pref_news_title">新闻</string>
     <string name="debt_managment">债务管理</string>
-    <string name="whats_new_338">任意深的类别层次结构</string>
     <string name="dialog_title_purge_backups">清除旧备份</string>
     <string name="dialog_title_delete_debt">删除债务？</string>
     <string name="debt">债务</string>
@@ -927,8 +921,6 @@
     </plurals>
     <string name="cb_label_merge_accounts">合并账户</string>
     <string name="pref_mlkit_script_title">MlKit 脚本</string>
-    <string name="whats_new_336_1">分享债务概览</string>
-    <string name="whats_new_336_2">拆分款项的标签</string>
     <string name="setup_completed">设置完成</string>
     <string name="pref_debug_logging_share_summary">分享日志文件</string>
     <string name="contrib_feature_category_tree_label" tools:ignore="UnusedResources">类别树</string>
@@ -939,7 +931,6 @@
     <string name="title_activity_debt_overview">债务概览</string>
     <string name="debt_owes_me">欠债人 %s</string>
     <string name="warning_party_delete_debt">删除该交易对象时，相关的债务也将一并删除。</string>
-    <string name="whats_new_340">支持多行备注</string>
     <string name="webui_warning_move_transaction">交易将移至账户 {account}。</string>
     <string name="pref_csv_export_split_date_time_summary">日期和时间单独一列</string>
     <string name="pref_csv_export_split_amount_summary">收入和支出单独一列</string>

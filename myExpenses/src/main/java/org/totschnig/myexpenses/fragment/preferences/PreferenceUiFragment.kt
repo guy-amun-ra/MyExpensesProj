@@ -23,12 +23,13 @@ import kotlinx.coroutines.withContext
 import org.totschnig.myexpenses.MyApplication
 import org.totschnig.myexpenses.R
 import org.totschnig.myexpenses.contract.TransactionsContract
+import org.totschnig.myexpenses.dialog.CustomizeMenuDialogFragment
 import org.totschnig.myexpenses.model.ContribFeature
 import org.totschnig.myexpenses.preference.PrefKey
 import org.totschnig.myexpenses.util.ShortcutHelper
-import org.totschnig.myexpenses.util.ui.UiUtils
 import org.totschnig.myexpenses.util.Utils
 import org.totschnig.myexpenses.util.crashreporting.CrashHandler
+import org.totschnig.myexpenses.util.ui.UiUtils
 import timber.log.Timber
 import java.text.DateFormatSymbols
 import java.util.Calendar
@@ -149,6 +150,12 @@ class PreferenceUiFragment : BasePreferenceFragment() {
                 R.string.split_transaction, TransactionsContract.Transactions.TYPE_SPLIT,
                 R.drawable.shortcut_create_split_icon_lollipop
             )
+            true
+        }
+
+        matches(preference, PrefKey.CUSTOMIZE_MAIN_MENU) -> {
+            CustomizeMenuDialogFragment()
+                .show(childFragmentManager, "CUSTOMIZE_MENU")
             true
         }
 

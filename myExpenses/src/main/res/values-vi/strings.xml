@@ -685,7 +685,6 @@
     <string name="menu_edit_budget">Sửa quỹ</string>
     <!-- Title of a section on the Settings screen where each entry corresponds to a subsection dedicated to one feature (functionality)  -->
     <string name="pref_category_title_features">Tính năng</string>
-    <string name="button_download">Tải xuống</string>
     <string name="menu_save_and_new_content_description">Lưu dữ liệu, để trạng thái mở cho mẫu đơn để tạo một giao dịch mới với cùng dữ liệu.</string>
     <string name="crash_reports_user_info">{app_name} sẽ tự động gửi báo cáo về những lần ứng dụng bị lỗi tới nhà phát triển của nó, việc này sẽ giúp họ sửa chữa lỗi nhanh hơn.</string>
     <string name="pref_category_title_crash_reports">Báo cáo lỗi</string>
@@ -698,10 +697,8 @@
     <string name="title_scan_receipt_feature">Quét biên lai</string>
     <string name="debt_managment">Quản lý nợ</string>
     <string name="ui_refinement">Cải tiến giao diện người dùng</string>
-    <string name="whats_new_338">Hệ thống phân cấp thể loại sâu tùy ý</string>
     <string name="bug_fixes" tools:ignore="UnusedResources">Sửa lỗi</string>
     <string name="dialog_title_purge_backups">Thanh lọc các bản sao lưu cũ</string>
-    <string name="whats_new_359">Các biểu tượng cho phương thức thanh toán có thể được tùy chỉnh.</string>
     <string name="dialog_contrib_trial_info">Trạng thái giấy phép hiện tại của bạn (%1$s) cho phép bạn dùng thử %2$s trong %3$d ngày (cho đến %4$s).</string>
     <string name="dialog_contrib_trial_info_play">Bản dùng thử miễn phí này sẽ không bao giờ chuyển đổi sang bất kỳ loại đăng ký nào.</string>
     <string name="dialog_contrib_subscription_info_play">Đăng ký này có hiệu lực ngay lập tức, được lập hóa đơn hàng tháng hoặc hàng năm và có thể bị hủy bất kỳ lúc nào.</string>

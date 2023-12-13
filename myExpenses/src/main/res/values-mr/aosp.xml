@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checkbox_is_default">"डीफॉल्ट"</string>
+    <string name="action_download">"डाउनलोड करा"</string>
+    <string name="menu">"मेनू"</string>
+    <string name="action_move_down">"खाली हलवा"</string>
+    <string name="action_move_up">"वर हलवा"</string>
+</resources>

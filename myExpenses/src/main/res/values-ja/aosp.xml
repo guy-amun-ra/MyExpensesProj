@@ -64,4 +64,10 @@
     <string name="screenshot">"スクリーンショット"</string>
     <string name="menu_add">"追加"</string>
     <string name="about_ads">"広告"</string>
+    <string name="menu_merge">統合</string>
+    <string name="checkbox_is_default">"デフォルト"</string>
+    <string name="action_download">"ダウンロード"</string>
+    <string name="menu">"メニュー"</string>
+    <string name="action_move_down">"下に移動します"</string>
+    <string name="action_move_up">"上に移動します"</string>
 </resources>

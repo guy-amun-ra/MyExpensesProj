@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checkbox_is_default">"Zadano"</string>
+    <string name="menu">"Meni"</string>
+    <string name="action_move_down">"Pomjeri nadolje"</string>
+    <string name="action_move_up">"Pomjeri nagore"</string>
+</resources>

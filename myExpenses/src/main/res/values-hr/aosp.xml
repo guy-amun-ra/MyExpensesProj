@@ -67,4 +67,10 @@
     <string name="screenshot">"Snimak zaslona"</string>
     <string name="menu_add">"Dodavanje"</string>
     <string name="about_ads">"Oglasi"</string>
+    <string name="menu_merge">Spoji</string>
+    <string name="checkbox_is_default">"Zadano"</string>
+    <string name="action_download">"Preuzmi"</string>
+    <string name="menu">"Izbornik"</string>
+    <string name="action_move_down">"Premještanje dolje"</string>
+    <string name="action_move_up">"Premještanje gore"</string>
 </resources>

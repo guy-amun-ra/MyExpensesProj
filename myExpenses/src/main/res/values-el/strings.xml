@@ -692,8 +692,6 @@
     <string name="budget_filter_all_tags">Όλες οι ετικέτες</string>
     <string name="budget_form_label_filter">Φίλτρο</string>
     <string name="menu_edit_budget">Επεξεργασία προϋπολογισμού</string>
-    <!-- Label for checkbox that allows to configure an object as the default, for example a default budget will be shown in the transaction list. -->
-    <string name="checkbox_is_default">Προεπιλογή</string>
     <string name="tags_create_or_select">Δημιουργία ή επιλογή ετικετών</string>
     <string name="tags">Ετικέτες</string>
     <string name="pref_manage_tags_summary">Προσθήκη, επεξεργασία, διαγραφή ετικετών.</string>
@@ -714,7 +712,6 @@
     <!-- Title of a section on the Settings screen where each entry corresponds to a subsection dedicated to one feature (functionality)  -->
     <string name="pref_category_title_features">Χαρακτηριστικά</string>
     <string name="scan_result_no_data">Δεν υπάρχουν δεδομένα</string>
-    <string name="button_download">Λήψη</string>
     <string name="pref_feature_uninstall_languages_title">Γλώσσες</string>
     <!-- Title of a preference where user can select between Ml Kit and Tesseract as Engine for Optical character recognition -->
     <string name="pref_ocr_engine_title">Μηχανή αναγνώρισης κειμένου</string>
@@ -781,15 +778,11 @@
     <string name="licence_expired_yesterday">Το επαγγελματικό σας κλειδί έληξε χθες.</string>
     <string name="select_package">Επιλέξτε πακέτο άδειας.</string>
     <string name="debt">Χρέος</string>
-    <string name="whats_new_336_1">Μοιραστείτε την σύνοψη χρέους</string>
-    <string name="whats_new_336_2">Ετικέτες για χωρισμένα μέρη</string>
     <string name="title_activity_debt_overview">Επισκόπηση χρέους</string>
     <string name="budget_exceeded_error_1_2">Όλος ο προϋπολογισμός σας έχει διατεθεί σε άλλες κατηγορίες.</string>
     <string name="pref_scroll_to_current_date_summary">Κατά την έναρξη της εφαρμογής, μεταβείτε στη λίστα συναλλαγών στην τρέχουσα ημερομηνία</string>
-    <string name="whats_new_338">Αυθαίρετα βαθιά ιεραρχία κατηγοριών</string>
     <string name="dialog_title_purge_backups">Εκκαθάριση παλαιών αντιγράφων ασφαλείας</string>
     <string name="menu_reconfigure">Επαναδιαμόρφωση</string>
-    <string name="whats_new_359">Τα εικονίδια για τις μεθόδους πληρωμής μπορούν να προσαρμοστούν.</string>
     <string name="dialog_contrib_trial_info">Η τρέχουσα κατάσταση άδειας χρήσης (%1$s) σάς επιτρέπει να δοκιμάσετε το %2$s για %3$d ημέρες (μέχρι το %4$s).</string>
     <string name="dialog_contrib_trial_info_play">Αυτή η δωρεάν δοκιμή ποτέ δεν θα μετατραπεί σε κανένα είδος συνδρομής.</string>
     <string name="dialog_contrib_subscription_info_play">Αυτή η συνδρομή τίθεται σε άμεση ισχύ, χρεώνεται μηνιαία ή ετήσια και μπορεί να ακυρωθεί ανά πάσα στιγμή.</string>
@@ -884,7 +877,6 @@
     <string name="menu_save_and_new_content_description">Αποθηκεύστε τα δεδομένα, αφήστε τη φόρμα ανοιχτή για τη δημιουργία μιας νέας συναλλαγής με τα ίδια δεδομένα.</string>
     <string name="warning_balance_account_delete">Εάν προχωρήσετε, όλες οι συμφωνημένες συναλλαγές αυτού του λογαριασμού θα διαγραφούν από τη βάση δεδομένων και δεν θα μπορείτε να τις επαναφέρετε.</string>
     <string name="synchronization_select_folder_dialog_title">Επιλέξτε έναν υπάρχοντα φάκελο ή δημιουργήστε έναν νέο</string>
-    <string name="menu_merge">Συγχώνευση</string>
     <string name="sync_io_error_cannot_connect">Δεν είναι δυνατή η σύνδεση στο backend συγχρονισμού.</string>
     <string name="clone_and_remap_result">Οι επιλεγμένες συναλλαγές κλωνοποιήθηκαν και αναδιατυπώθηκαν.</string>
     <string name="menu_remap">Αναδιατύπωση</string>

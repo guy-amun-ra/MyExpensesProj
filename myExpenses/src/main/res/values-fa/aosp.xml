@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checkbox_is_default">"پیش‌فرض"</string>
+    <string name="action_download">"دانلود"</string>
+    <string name="menu">"منو"</string>
+    <string name="action_move_down">"انتقال به پایین"</string>
+    <string name="action_move_up">"انتقال به بالا"</string>
+</resources>

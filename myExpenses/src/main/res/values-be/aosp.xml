@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="checkbox_is_default">"Стандартна"</string>
+    <string name="menu">"Меню"</string>
+    <string name="action_move_down">"Перамясціць ніжэй"</string>
+    <string name="action_move_up">"Перамясціць вышэй"</string>
+</resources>
